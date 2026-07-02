@@ -15,6 +15,8 @@
    - 02_portfolio/holdings.md (보유 종목·평단·손절목표가)
    - 02_portfolio/watchlist.md (관심 종목·감시 가격)
    - 00_principles/investment-principles.md (지켜야 할 규칙)
+   - 05_reference/investing-knowledge.md (시장 데이터 해석 프레임)
+   - 05_reference/dca-playbook.md (적립식 실행 절차·리밸런싱·하락장 대응)
 
 2. 05_reference/data-sources.md의 신뢰 사이트를 웹 조회해 다음을 수집:
    - 미국: S&P500/나스닥/VIX/10년물 금리 (전일 마감)

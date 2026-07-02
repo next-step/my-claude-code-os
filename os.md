@@ -32,6 +32,8 @@
 | `04_daily/YYYY-MM-DD.md` | 산출물 | 날짜별 데일리 리포트 | 복기 | ② 매일 |
 | `05_reference/data-sources.md` | 참조(거의 불변) | 신뢰 증권/분석 사이트 | ② 필요시 | 연 단위 갱신 |
 | `05_reference/tax-and-fees.md` | 참조(거의 불변) | 세금·거래세·수수료 | ② 실수익 계산시 | 연 단위 갱신 |
+| `05_reference/investing-knowledge.md` | 참조(연 단위) | 투자 도메인 지식(ETF·지수·매크로 해석 프레임) | ② 항상 참조 | Q&A 인터뷰로 확정 |
+| `05_reference/dca-playbook.md` | 참조(반기 단위) | 적립식 실행 절차(리밸런싱·하락장·세제 캘린더) | ② 항상 참조 | Q&A 인터뷰로 확정 |
 | `prompts/daily-advice-prompt.md` | 참조 | 데일리 조언 프롬프트 | ② | 사용자 명시 |
 
 ---

@@ -19,6 +19,8 @@ model: opus
 - `02_portfolio/watchlist.md` — 관심 종목·감시가
 - `00_principles/investment-principles.md` — 불변 규칙
 - `05_reference/tax-and-fees.md` — 실수익 판단용
+- `05_reference/investing-knowledge.md` — 시장 데이터 해석 프레임(ETF·지수·매크로 구간별 의미)
+- `05_reference/dca-playbook.md` — 적립식 실행 절차(리밸런싱 룰·하락장 시나리오·세제 캘린더)
 
 > 성향·보유가 비어 있으면 그 사실을 리포트에 명시하고 일반 요약만. 임의 가정 금지.
 
