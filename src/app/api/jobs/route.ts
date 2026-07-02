@@ -13,8 +13,15 @@
 //    DB 조회 후 애플리케이션에서 처리. M1 데이터 규모(수십 건)에서 정확·단순.
 //    이유: partialHiddenCount 는 "null 때문에 가려진 PARTIAL"만 세야 하므로
 //    단순 WHERE 로는 FULL 탈락과 구분이 안 됨.
-//  - 정렬: deadline=null(상시)은 항상 맨 뒤(12.6). Prisma nulls 옵션의 SQLite 지원이
+//  - 정렬: deadline=null(상시)은 항상 맨 뒤(12.6). recent 는 postedAt 내림차순 +
+//    postedAt=null 항상 맨 뒤(deadline 규약과 대칭). Prisma nulls 옵션의 SQLite 지원이
 //    불확실하여 정렬을 앱에서 명시적으로 수행(계약 정확성 우선).
+//  - 집계(12.6): totalCount = 필터·includeExpired 적용 후 매칭 전체 수(PARTIAL 숨김 반영 전)
+//    = kept + partialHidden. partialHiddenCount 는 그 부분집합. 따라서 items 는 kept 만
+//    페이지네이션하지만 totalCount 에는 숨긴 PARTIAL 도 포함한다.
+//  - 미지의 필터값(카탈로그 밖 role/location/experience)은 조용히 무시(500 금지):
+//    membership 검사(includes / DB in) 특성상 미지값은 어떤 공고와도 매칭되지 않아
+//    자연히 걸러진다. 모든 값이 미지여도 items:[] 로 정상 응답(예외 아님).
 // ============================================================================
 
 import { NextRequest, NextResponse } from "next/server";
@@ -109,10 +116,12 @@ export async function GET(req: NextRequest) {
   // --- 정렬(12.6) ---
   kept.sort((a, b) => {
     if (sort === "recent") {
-      const pa = a.postedAt ? a.postedAt.getTime() : 0;
-      const pb = b.postedAt ? b.postedAt.getTime() : 0;
+      // 최신순: postedAt 내림차순. null 은 항상 맨 뒤 → -Infinity 로 명시(deadline 규약과 대칭).
+      // 둘 다 null 이면 -Infinity===-Infinity 라 pb!==pa 가 false → NaN 비교 없이 id tiebreak 로.
+      const pa = a.postedAt ? a.postedAt.getTime() : -Infinity;
+      const pb = b.postedAt ? b.postedAt.getTime() : -Infinity;
       if (pb !== pa) return pb - pa;
-      return a.id < b.id ? -1 : 1;
+      return a.id < b.id ? -1 : 1; // 커서 (postedAt, id) 복합의 2차 키
     }
     // deadline: 마감임박순, deadline=null(상시)은 항상 맨 뒤
     const da = a.deadline ? a.deadline.getTime() : Infinity;
@@ -134,7 +143,9 @@ export async function GET(req: NextRequest) {
   const body: JobsListResponse = {
     items: page.map(toJobDTO),
     nextCursor,
-    totalCount: kept.length,
+    // 12.6: PARTIAL 숨김 반영 전 매칭 전체 수 = 표시분(kept) + 숨긴 PARTIAL.
+    // partialHiddenCount 가 이 값의 부분집합이 되도록 반드시 합산한다.
+    totalCount: kept.length + partialHiddenCount,
     partialHiddenCount,
   };
   return NextResponse.json(body);

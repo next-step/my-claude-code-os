@@ -23,6 +23,11 @@ import type {
   CreateBookmarkResponse,
   UpdateBookmarkResponse,
 } from "@/types/contract";
+import {
+  DEV_ROLE_OPTIONS,
+  LOCATION_OPTIONS,
+  EXPERIENCE_OPTIONS,
+} from "@/types/contract";
 
 /** 피드 필터 상태(화면 ↔ 쿼리 직렬화 사이의 단일 형태) */
 export interface FeedFilters {
@@ -88,6 +93,50 @@ export function buildJobsQuery(f: FeedFilters): string {
   if (f.includeExpired) p.set("includeExpired", "true");
   if (f.cursor) p.set("cursor", f.cursor);
   return p.toString();
+}
+
+// ---- URL ↔ 필터 역직렬화 (새로고침·공유 안전) ------------------------------
+// URL 쿼리(= JobsQuery 직렬화, buildJobsQuery 와 동일 규약)를 FeedFilters 로 복원.
+// 미지의 값/빈 값은 조용히 무시(OS.md 12.6 "미지의 필터값은 무시"). cursor 는 복원하지 않음.
+
+const ROLE_VALUES = new Set(DEV_ROLE_OPTIONS.map((o) => o.value));
+const LOCATION_VALUES = new Set(LOCATION_OPTIONS.map((o) => o.value));
+const EXPERIENCE_VALUES = new Set(EXPERIENCE_OPTIONS.map((o) => o.value));
+
+/** 필터를 나타내는 쿼리 파라미터가 하나라도 있는지(있으면 URL이 진실, 없으면 온보딩 프리셋 사용) */
+export function hasFilterParams(params: URLSearchParams): boolean {
+  return [
+    "role",
+    "location",
+    "experience",
+    "keyword",
+    "sort",
+    "deadlineWithin",
+    "includeExpired",
+  ].some((k) => (params.get(k) ?? "").trim() !== "");
+}
+
+export function filtersFromParams(params: URLSearchParams): FeedFilters {
+  const multi = (key: string, allow: Set<string>) =>
+    (params.get(key) ?? "")
+      .split(",")
+      .map((s) => s.trim())
+      .filter((v) => v !== "" && allow.has(v)); // 카탈로그에 없는 값은 무시
+
+  const dwRaw = params.get("deadlineWithin");
+  const deadlineWithin =
+    dwRaw != null && /^\d+$/.test(dwRaw.trim()) ? Number(dwRaw) : null;
+
+  return {
+    roles: multi("role", ROLE_VALUES),
+    locations: multi("location", LOCATION_VALUES),
+    experiences: multi("experience", EXPERIENCE_VALUES),
+    keyword: params.get("keyword") ?? "",
+    sort: params.get("sort") === "recent" ? "recent" : "deadline",
+    deadlineWithin,
+    includeExpired: params.get("includeExpired") === "true",
+    cursor: null,
+  };
 }
 
 export async function fetchJobs(

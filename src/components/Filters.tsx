@@ -168,7 +168,7 @@ export default function Filters({
           마감 지난 공고 포함
         </label>
         <button type="button" className="btn btn--ghost btn--sm" onClick={onReset}>
-          필터 초기화
+          필터 전체 해제
         </button>
       </div>
     </section>

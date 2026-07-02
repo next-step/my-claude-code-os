@@ -330,6 +330,55 @@ a {
   color: var(--text-mute);
 }
 
+/* ---- 적용된 필터 요약 (칩별 제거 + 전체 초기화) ---- */
+.applied {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  margin-top: 0.1rem;
+}
+.applied__label {
+  flex: 0 0 auto;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--text-mute);
+}
+.applied__chips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+}
+.chip--removable {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+.chip__x {
+  font-size: 1rem;
+  line-height: 1;
+  opacity: 0.85;
+}
+.chip--removable:hover {
+  background: var(--brand-dark);
+  border-color: var(--brand-dark);
+  color: #fff;
+}
+.applied__reset {
+  border: none;
+  background: none;
+  color: var(--text-dim);
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  text-decoration: underline;
+  padding: 0.2rem 0.3rem;
+}
+.applied__reset:hover {
+  color: var(--brand-dark);
+}
+
 /* ---- PARTIAL 접이식 배너 ---- */
 .partialBanner {
   background: var(--warn-soft);

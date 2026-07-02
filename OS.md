@@ -83,6 +83,8 @@
 ```
 
 - **온보딩 조건과 피드 필터의 관계(전제)**: 온보딩 입력은 피드의 **초기 필터 프리셋**이다. 사용자는 **피드에서 조건을 언제든 자유롭게 변경**할 수 있고, preference도 언제든 수정 가능(고정 필터 아님). frontend 화면 설계의 전제.
+- **"필터 전체 해제"(초기화)의 의미**: 피드의 초기화 동작은 **모든 필터 조건을 풀고 전체 보기**로 돌아가는 것이다(온보딩 프리셋으로 되돌리는 것이 **아님**). 오해 방지를 위해 버튼 라벨은 "**필터 전체 해제**"로 표기한다.
+- **온보딩 프리셋의 위치**: 온보딩 프리셋은 **최초 진입 시 기본값**일 뿐, 초기화가 되돌아갈 목표점이 아니다. 프리셋으로 되돌리는 "프리셋 복원" 버튼은 **M2+ 후보**(M1 범위 밖).
 
 ---
 
@@ -264,8 +266,12 @@ type JobDTO = Job & {
 ### 12.6 정렬·필터 규약 (양쪽 합의)
 - **마감 지난 공고는 기본 제외**(`includeExpired=false`). 단 GET /api/bookmarks는 includeExpired 무시(마감도 표시).
 - **마감임박순(sort=deadline)**: 커서는 `(deadline, id)` 복합. `deadline=null`(상시채용)은 **항상 맨 뒤**, 프론트는 "상시" 뱃지.
-- **PARTIAL 공고**: 조건 필터 시 null 필드 때문에 전부 사라지지 않도록, 필터로 가려지는 PARTIAL 공고 수를 `partialHiddenCount`로 반환 → 프론트는 "조건 확인 어려운 공고 N건"을 접이식으로 노출(모아보기 가치 보호). PARTIAL은 전용 카드(원문 직접 확인 CTA).
+- **최신순(sort=recent)**: `postedAt` **내림차순**. `postedAt=null`은 **항상 맨 뒤**(deadline 규약과 대칭), 커서는 `(postedAt, id)` 복합.
+- **PARTIAL 공고**: 조건 필터 시 null 필드 때문에 전부 사라지지 않도록, 필터로 가려지는 PARTIAL 공고 수를 `partialHiddenCount`로 반환 → 프론트는 "조건 확인 어려운 공고 N건"을 접이식으로 노출(모아보기 가치 보호).
+  - **두 경우를 구분한다**: ① **결과에 포함된 PARTIAL**(필터엔 걸렸으나 일부 필드 null) = **전용 카드**(원문 직접 확인 CTA). ② **필터로 가려진 PARTIAL**(필터 축 값이 null이라 확인 불가로 빠진 것) = `partialHiddenCount` **카운트 넛지만 노출**(항목 데이터 미포함·카드 확장 없음). 가려진 항목을 카드로 펼치면 필터에 맞지 않는 공고를 피드에 섞어 필터 신뢰를 깨므로, 계약(`JobsListResponse`) 확장 없이 카운트+필터 완화 안내에 그친다.
+- **집계 기준**: `totalCount` = 필터·`includeExpired` 적용 후 매칭된 전체 수(**PARTIAL 숨김 반영 전**). `partialHiddenCount`는 그중 필터로 가려진 PARTIAL 수(`totalCount`의 부분집합). 프론트의 "결과 N건"은 `totalCount`를 쓴다.
 - 필터 다중값 허용(콤마, 값 간 **OR/합집합**): `role=backend,fullstack`, `location=서울,경기`, `experience` 복수. 온보딩에서 직무를 복수 선택하면 피드 프리셋의 `role`에 합집합으로 반영된다(12.4 흐름과 일관).
+- **미지의 필터값은 무시**(에러 아님): 카탈로그에 없는 `role`/`location`/`experience` 값이나 빈 값은 조용히 무시한다(HTTP 500 금지). 모든 값이 무시되어도 정상 응답(`items: []`)으로 반환한다.
 
 ### 12.7 M1 작업 분배·순서
 - **backend**: 스캐폴딩 → Prisma 스키마 → **타입 export + Mock seed 공개(프론트 unblock)** → SaraminAdapter(API 우선, 약관/robots 점검) → Normalizer(코드→라벨, **개발직군 job_cd 한정**)+dedupKey → API. 사람인 API는 이용신청→승인 + 하루 500콜·요청당 count≈110 상한 → day-1은 mock, 승인 후 실수집 교체.

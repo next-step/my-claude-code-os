@@ -21,6 +21,7 @@
 - 실 DB 읽기(Prisma + SQLite), 북마크 CRUD, `role` 다중값 필터
 - API 엔드포인트 8종 (GET /api/jobs … DELETE /api/bookmarks/:id)
 - 컨텍스트 보강: CLAUDE.md 항상-참인 사실 주입
+- **피드 정렬·필터 UX 개선** (orchestrate 시연) — `sort=recent` 정렬·집계 규약 구현(`totalCount` 부분집합 버그 수정), 필터↔URL 동기화(새로고침·공유 복원), 적용된 필터 칩·"필터 전체 해제". 계약 모호점을 OS.md 12.6/6장에 명문화(DECISIONS.md 자동 기록)
 
 ## 🚧 진행 중 · 남은 것 (M1)
 

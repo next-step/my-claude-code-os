@@ -9,8 +9,9 @@
 // - 북마크 토글(클라이언트 스토어) / 커서 더보기 / 로딩·빈·에러 상태
 // ============================================================================
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import type { JobDTO, UserPreference } from "@/types/contract";
 import { DEV_ROLE_OPTIONS, LOCATION_OPTIONS } from "@/types/contract";
 import {
@@ -18,10 +19,13 @@ import {
   fetchJobs,
   fetchPreferences,
   buildJobsQuery,
+  filtersFromParams,
+  hasFilterParams,
   ApiRequestError,
   type FeedFilters,
 } from "@/lib/api";
 import Filters from "@/components/Filters";
+import AppliedFilters from "@/components/AppliedFilters";
 import JobCard from "@/components/JobCard";
 import { CardSkeletonList, EmptyState, ErrorState } from "@/components/states";
 
@@ -48,7 +52,11 @@ function presetFromPreference(pref: UserPreference): FeedFilters {
   };
 }
 
-export default function FeedPage() {
+function FeedInner() {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
   const [filters, setFilters] = useState<FeedFilters>(DEFAULT_FILTERS);
   const [filtersReady, setFiltersReady] = useState(false);
 
@@ -61,12 +69,20 @@ export default function FeedPage() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showPartial, setShowPartial] = useState(false);
+  const [reloadNonce, setReloadNonce] = useState(0); // 에러 재시도용(같은 필터 강제 refetch)
 
   const abortRef = useRef<AbortController | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // 1) 최초: 사용자 조건 로드 → 필터 프리셋. 실패해도 기본 필터로 진행.
+  // 1) 최초 필터 확정: URL이 진실. 필터 쿼리가 있으면 그대로 복원(새로고침·공유 안전),
+  //    없으면(깨끗한 URL) 온보딩 조건을 프리셋으로. 프리셋 로드 실패해도 기본 필터로 진행.
   useEffect(() => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (hasFilterParams(params)) {
+      setFilters(filtersFromParams(params));
+      setFiltersReady(true);
+      return;
+    }
     let alive = true;
     fetchPreferences()
       .then((pref) => {
@@ -81,7 +97,20 @@ export default function FeedPage() {
     return () => {
       alive = false;
     };
+    // 최초 1회만 URL/프리셋으로 초기화. 이후 변경은 applyFilters 가 URL 로 동기화.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // 필터 변경의 단일 관문: 상태 갱신 + URL 동기화(replace, 히스토리 오염/스크롤 튐 방지).
+  // buildJobsQuery 는 API 쿼리와 동일 직렬화 규약 → URL 이 곧 JobsQuery.
+  const applyFilters = useCallback(
+    (next: FeedFilters) => {
+      setFilters(next);
+      const qs = buildJobsQuery({ ...next, cursor: null });
+      router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+    },
+    [router, pathname]
+  );
 
   // 목록 새로 로드(필터 변경 시). cursor=null 로 첫 페이지.
   const listKey = buildJobsQuery({ ...filters, cursor: null });
@@ -114,9 +143,9 @@ export default function FeedPage() {
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
     };
-    // listKey 로 필터 변화를 감지(문자열이므로 안정적)
+    // listKey 로 필터 변화를 감지(문자열이므로 안정적). reloadNonce 로 재시도 강제.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [listKey, filtersReady]);
+  }, [listKey, filtersReady, reloadNonce]);
 
   const loadMore = useCallback(() => {
     if (!nextCursor || loadingMore) return;
@@ -132,11 +161,11 @@ export default function FeedPage() {
       .finally(() => setLoadingMore(false));
   }, [filters, nextCursor, loadingMore]);
 
-  const resetFilters = () => setFilters(DEFAULT_FILTERS);
+  const resetFilters = () => applyFilters(DEFAULT_FILTERS);
 
   // partialHiddenCount 펼침 → 이 공고들을 실제로 보이게: 직무/지역 필터 해제
   const revealPartial = () =>
-    setFilters((f) => ({ ...f, roles: [], locations: [], cursor: null }));
+    applyFilters({ ...filters, roles: [], locations: [], cursor: null });
 
   return (
     <div className="page">
@@ -158,7 +187,13 @@ export default function FeedPage() {
         </Link>
       </div>
 
-      <Filters value={filters} onChange={setFilters} onReset={resetFilters} />
+      <Filters value={filters} onChange={applyFilters} onReset={resetFilters} />
+
+      <AppliedFilters
+        value={filters}
+        onChange={applyFilters}
+        onReset={resetFilters}
+      />
 
       {/* PARTIAL 접이식 배너 — 모아보기 가치 보호 */}
       {partialHiddenCount > 0 && (
@@ -196,7 +231,7 @@ export default function FeedPage() {
       ) : error ? (
         <ErrorState
           message={error}
-          onRetry={() => setFilters((f) => ({ ...f }))}
+          onRetry={() => setReloadNonce((n) => n + 1)}
         />
       ) : items.length === 0 ? (
         <EmptyState
@@ -204,7 +239,7 @@ export default function FeedPage() {
           description="필터를 넓히거나 초기화해 보세요. 마감 지난 공고를 포함할 수도 있어요."
           action={
             <button className="btn btn--primary" onClick={resetFilters}>
-              필터 초기화
+              필터 전체 해제
             </button>
           }
         />
@@ -232,5 +267,23 @@ export default function FeedPage() {
         </>
       )}
     </div>
+  );
+}
+
+// useSearchParams(초기 URL 필터 복원) 는 App Router 에서 Suspense 경계를 요구한다.
+export default function FeedPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="page">
+          <div className="pageHead">
+            <h1 className="pageHead__title">공고 피드</h1>
+          </div>
+          <CardSkeletonList count={4} />
+        </div>
+      }
+    >
+      <FeedInner />
+    </Suspense>
   );
 }
