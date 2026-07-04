@@ -92,8 +92,13 @@
   - 서브에이전트(전문 일꾼·재사용 "눈") — 둘로 갈림:
     - `visual-judge` — 스샷 **1장** → ok/warn/error **절대** 판정("깨졌나"). **`visual-check`·`visual-confidence` 두 스킬이 공유.**
     - `visual-comparator` — **2장**(before/after) → same/expected/unexpected **상대** 판정("의도 외로 바뀌었나"). `visual-regress` 가 호출. judge 의 짝.
+- **컨텍스트 엔지니어링** — 공유 지식을 md 로 빼고, 훅이 필요한 순간에만 강제 주입:
+  - `.claude/context/` — `glossary.md`(공통 용어)·`stage.md`(무대 계약)·`artifacts.md`(산출물 스키마) + 정본 `visual-rubric.md`(판정 헌법).
+  - `manifest.json` — "어떤 파일을 → 어떤 스킬·서브에이전트에" 매핑. **지식(md)과 배선(매핑)의 분리** — 새 컨텍스트 추가 = md 작성 + 한 항목.
+  - 왜 훅 주입인가: CLAUDE.md(매 턴 로딩)는 토큰 낭비, lazy 참조("이 파일 읽어라")는 안 읽을 위험. 훅은 **그 스킬·에이전트가 뜨는 순간에만, 기계적으로 보장** 로딩한다.
 - **훅(hook)** — 자동화:
   - `record-skill-usage.py` (PreToolUse·Skill) — 스킬 호출 통계 기록.
+  - `inject-context.py` (PreToolUse·Skill + SubagentStart) — 위 컨텍스트 매니페스트 기반 자동 주입. 스킬엔 호출 순간 메인 대화로, 서브에이전트엔 **SubagentStart 로 본인 컨텍스트에 직접** 넣는다. (PreToolUse 의 additionalContext 는 호출자에게만 보여 서브에이전트에겐 안 닿는다 — 그래서 이벤트를 갈랐다)
   - `stop-dev-server.sh` (SessionEnd) — 시각 검증이 *자동 기동한* dev 서버만 소유권(PID 마커) 추적해 세션 끝에 정리. 사용자가 직접 띄운 서버는 안 건드린다.
 
 ## 진행 단계

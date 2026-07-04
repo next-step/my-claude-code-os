@@ -1,6 +1,6 @@
 ---
 name: visual-regress
-description: 코드 변경 전후(before/after)로 공통 컴포넌트의 변형들을 다시 촬영해, "의도한 변경 말고 딸려서 바뀐 게 있나"를 잡는 시각 회귀 검증. 픽셀 비교(WHAT)로 바뀐 변형을 추리고, 공유 서브에이전트 visual-comparator(MATTER)가 그게 의도 외 변경인지 판정한다. 결과는 대화창 마크다운 표가 1순위, 빨간 줄 있을 때만 HTML 드릴다운. 사용자가 "회귀 검사", "바뀐 거 있나 봐줘", "before after 비교", "visual-regress", "내 변경이 딴 데 영향 줬나" 등을 말할 때 사용한다. demo-app 에서 동작한다.
+description: 코드 변경 전후(before/after)로 공통 컴포넌트 변형들을 다시 촬영해 "의도한 변경 말고 딸려서 바뀐 게 있나"를 잡는 시각 회귀 검증. 사용자가 "회귀 검사", "바뀐 거 있나 봐줘", "before after 비교", "visual-regress", "내 변경이 딴 데 영향 줬나" 등을 말할 때 사용한다. demo-app 에서 동작한다.
 model: sonnet
 effort: medium
 ---
@@ -16,9 +16,8 @@ before/after 를 다시 촬영해 잡는다. (OS.md 7단계)
 - 둘은 서로의 사각지대를 메운다 → 변경 후엔 보통 둘 다 돌린다(아래 메모).
 
 ## 역할 분담 (이 OS의 핵심 철학)
-- **픽셀 차이(`regress-diff.mjs`) = WHAT.** "무엇이 바뀌었나"를 정밀하게(1px·미세색) 잰다. 판정은 안 한다.
-- **AI 눈(`visual-comparator`) = MATTER.** "그 변화가 의도 외냐"를 맥락으로 판정한다. 픽셀 differ 위에 앉은 리뷰어.
-- 즉 픽셀이 *바뀐 변형을 추려주면*, AI 는 **바뀐 것만** 보고 same/expected/unexpected 를 가린다(비용↓, 노이즈↓).
+→ **판정 공통어(절대/상대·블라인드·코드↔AI 역할분담·사각지대)는 `.claude/visual-rubric.md` 가 정본이며, 이 스킬 호출 시 훅(inject-context)이 자동 주입한다. 주입된 내용을 따르고 파일을 다시 Read 하지 않는다**(이중 로딩 방지).
+- 이 스킬에 해당하는 부분: **픽셀 차이(`regress-diff.mjs`) = WHAT**(무엇이 바뀌었나, 판정 안 함) / **AI 눈(`visual-comparator`) = MATTER**(그 변화가 의도 외냐). 픽셀이 *바뀐 변형을 추려주면* AI 는 **바뀐 것만** 보고 same/expected/unexpected 를 가린다(비용↓·노이즈↓).
 
 대상 프로젝트: `demo-app`. 기준선 `screenshots/<T>/baseline/` · 현재 `screenshots/<T>/*.png`.
 
@@ -27,9 +26,10 @@ before/after 를 다시 촬영해 잡는다. (OS.md 7단계)
 ### 0. 대상 + 의도 확정
 - 대상 키 `<T>` (기본 `card`).
 - **사용자가 이번에 의도한 변경**을 한 줄로 받아둔다(예: "제목을 굵게"). 안 주면 물어보거나, 없이 진행(그러면 *모든* 의미 있는 변화를 unexpected 로 본다).
-- dev 서버 확인:
+- dev 서버 확인 (무대 URL 은 config seam CLI 에서 — 하드코딩 금지):
 ```bash
-cd demo-app && (curl -sf "http://localhost:5173/gallery?c=<T>" >/dev/null && echo UP || echo DOWN)
+URL=$(node "$CLAUDE_PROJECT_DIR/.claude/scripts/visual-config.mjs" <T>)
+curl -sf "$URL" >/dev/null && echo UP || echo DOWN
 ```
   - **UP** = 사용자가 띄운 서버 → 그대로 쓰고 **마커 안 남김**.
   - **DOWN** = 직접 띄우고 **PID 마커 기록**(세션 끝 SessionEnd 훅이 이것만 정리):

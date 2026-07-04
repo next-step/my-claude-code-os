@@ -1,8 +1,8 @@
 ---
 name: visual-remove
 description: 시각 검증에 등록된 컴포넌트를 시스템에서 제거(등록 해제)한다 — 변형 목록·레지스트리 항목·스크린샷 산출물을 지운다. 여러 개를 한 번에 지울 수 있다. visual-add 의 짝(반대) 스킬이다. 실제 제품 컴포넌트(.tsx)는 기본적으로 건드리지 않고, 지울지 따로 확인한다. 사용자가 "시각 검증에서 빼줘", "<X> 등록 해제", "이거 검증 대상에서 지워줘", "visual-remove" 등을 말할 때 사용한다. demo-app 에서 동작한다.
-model: haiku
-effort: low
+model: sonnet
+effort: medium
 ---
 
 # visual-remove — 컴포넌트 시각 검증 등록 해제 (visual-add 의 짝)

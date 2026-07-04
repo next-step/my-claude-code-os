@@ -18,9 +18,8 @@ effort: medium
 대상 프로젝트: `demo-app`. 등록처 `src/gallery/registry.ts` · 변형 `src/gallery/variants/<키>.ts` · 화면 `/gallery?c=<키>`.
 
 ## 핵심 원칙 (역할 분담)
-- **코드는 "사실"만 잰다.** overflow·대비 수치·색 hex·opacity·크기. 맥락 무관 깨짐인 **overflow(잘림)만 코드가 단정**, 나머지는 수치로만.
-- **AI 눈(visual-judge)이 "판정"한다.** 스샷을 보고 맥락으로 ok/warn/error. 같은 대비 1.97이라도 *비활성이면 정상, 본문이면 깨짐*.
-- **둘이 어긋나는 칸(코드는 수치만인데 AI가 깨짐/어긋남)이 가장 중요한 신호** — 갤러리에서 초록 테두리.
+→ **판정 공통어(절대/상대·블라인드·코드↔AI 역할분담·사각지대)는 `.claude/visual-rubric.md` 가 정본이며, 이 스킬 호출 시 훅(inject-context)이 자동 주입한다. 주입된 내용을 따르고 파일을 다시 Read 하지 않는다**(이중 로딩 방지). 여기서 다시 설명하지 않는다.
+- 이 스킬에 해당하는 부분: **코드는 사실만**(overflow 잘림만 단정, 나머진 수치) / **AI 눈(visual-judge)이 판정**(ok/warn/error) / **둘이 어긋나는 칸이 가장 중요한 신호** — 갤러리에서 초록 테두리.
 
 ## 절차
 
@@ -29,8 +28,10 @@ effort: medium
 - 대상이 없으면 `visual-list` 로 목록을 보고 고르게 안내. 없는 키면 `visual-add` 로 등록 안내.
 
 ### 0-B. dev 서버 확인
+무대 URL 은 하드코딩하지 않는다 — config seam(CLI)에서 얻는다:
 ```bash
-cd demo-app && (curl -sf "http://localhost:5173/gallery?c=<T>" >/dev/null && echo UP || echo DOWN)
+URL=$(node "$CLAUDE_PROJECT_DIR/.claude/scripts/visual-config.mjs" <T>)
+curl -sf "$URL" >/dev/null && echo UP || echo DOWN
 ```
 - **UP 이면** 사용자가 이미 띄운 서버다 — 그대로 쓰고 **마커를 남기지 않는다**(남의 서버는 SessionEnd 훅이 안 건드림).
 - **DOWN 이면** 직접 띄우되, **이 OS가 띄웠다는 PID 마커를 남긴다**(세션 끝에 훅이 이것만 정리):

@@ -1,0 +1,29 @@
+{
+  "$comment": "컨텍스트 자동 주입 매핑 — inject-context.py(PreToolUse 훅)가 읽는다. 스킬 호출(Skill)·서브에이전트 스폰(Agent) 순간, 매칭되는 file 내용을 additionalContext 로 주입한다. 새 컨텍스트는 여기 한 항목이면 배선 끝. 매핑은 '필요한 곳에만' — 전부에 다 주입하면 토큰 낭비이자 소음이다.",
+  "contexts": [
+    {
+      "file": ".claude/visual-rubric.md",
+      "title": "시각 판정 공통어 (rubric) — 판정 헌법",
+      "skills": ["visual-check", "visual-regress", "visual-confidence"],
+      "agents": ["visual-judge", "visual-comparator"]
+    },
+    {
+      "file": ".claude/context/stage.md",
+      "title": "무대(stage) 계약 — config seam·DOM 컨벤션·dev 서버 소유권",
+      "skills": ["visual-check", "visual-regress"],
+      "agents": []
+    },
+    {
+      "file": ".claude/context/artifacts.md",
+      "title": "산출물 스키마 — measurements/ai-notes/regress 데이터 계약",
+      "skills": ["visual-check", "visual-regress", "visual-confidence", "visual-list", "visual-remove"],
+      "agents": []
+    },
+    {
+      "file": ".claude/context/glossary.md",
+      "title": "OS 공통 용어집",
+      "skills": ["visual-add", "visual-check", "visual-confidence", "visual-list", "visual-regress", "visual-remove"],
+      "agents": []
+    }
+  ]
+}
