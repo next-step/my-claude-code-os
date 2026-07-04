@@ -7,15 +7,18 @@
 //   - 글자가 이미지 위에 있으면 대비는 코드로 측정 불가 → AI 눈으로 넘긴다.
 //
 // 사용법: node scripts/capture-variants.mjs [target] [baseURL]
-//   target  기본값: card   (레지스트리 키 — /gallery?c=<target> 로 연다)
-//   baseURL 기본값: http://localhost:5173
+//   target  기본값: card   (레지스트리 키 — variantRoute 로 연다)
+//   baseURL 기본값: .claude/visual.config.json 의 baseUrl (없으면 http://localhost:5173)
+// 무대(URL) 종속은 config seam 으로 뺐다 — OS.md "이식성" 참조.
 // 산출물: screenshots/<target>/<id>.png, screenshots/<target>/measurements.json
 import { chromium } from 'playwright'
 import { mkdir, writeFile } from 'node:fs/promises'
+import { loadVisualConfig, variantUrl } from '../../.claude/scripts/visual-config.mjs'
 
+const cfg = await loadVisualConfig()
 const target = process.argv[2] || 'card'
-const baseURL = process.argv[3] || 'http://localhost:5173'
-const url = `${baseURL}/gallery?c=${target}`
+const baseURL = process.argv[3] || cfg.baseUrl
+const url = variantUrl(cfg, baseURL, target)
 const outDir = `screenshots/${target}`
 await mkdir(outDir, { recursive: true })
 
