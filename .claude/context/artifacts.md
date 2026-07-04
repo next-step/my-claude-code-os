@@ -25,9 +25,11 @@ screenshots/<target>/
 ## regress.json
 ```json
 { "target", "total", "changedCount",
-  "results": [ { "id", "changed", "dimensionMismatch", "diffPixels", "diffPercent", "diffImage" } ] }
+  "results": [ { "id", "changed", "dimensionMismatch", "diffPixels", "diffPercent", "diffImage",
+                 "newVariant?", "reason?" } ] }
 ```
 - `visual-regress` 스킬이 changed 항목에 `verdict`(same|expected|unexpected)·`note`를 **머지**해 다시 쓴다.
+- `newVariant: true` = baseline 이후 추가된 변형(비교 불가) → comparator 가 아니라 **visual-judge 절대 판정**으로 라우팅, verdict 대신 level 을 머지.
 - 노이즈 문턱(diffPercent) 미만은 changed=false — 안티앨리어싱 수준은 회귀 아님.
 
 ## 원칙

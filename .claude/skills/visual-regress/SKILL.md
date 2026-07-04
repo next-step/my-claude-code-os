@@ -71,6 +71,7 @@ cd demo-app && npm run regress -- <T>
 - **정답(expected)·픽셀 수치·다른 판정 결과는 넘기지 않는다** — comparator 가 블라인드로 두 그림만 비교한다.
 - comparator 가 두 줄(근거 + `same|expected|unexpected`)로 답하면, **마지막 줄 단어**를 verdict, 윗줄을 note 로 쓴다.
 - 크기 변경(`dimensionMismatch`)이라 diff 이미지가 없어도, before/after 두 장은 넘겨 판정시킨다.
+- **예외 — `newVariant: true`(baseline 이후 추가된 변형):** before 가 없어 비교 판정이 불가능하다. comparator 에 보내지 말고 **`visual-judge`(1장 절대 판정)** 에 보낸다. verdict 대신 judge 의 level(ok/warn/error)을 note 와 함께 머지하고, 보고에 "신규 변형이라 회귀가 아닌 절대 판정"임을 명시한다.
 
 > 참고: `visual-comparator` 는 `visual-judge` 의 짝(2장 비교 버전)이며, 앞으로 blindspot/figma 도 공유할 2번째 "공유 눈"이다.
 

@@ -55,11 +55,24 @@ function contrast(fg, bg, fgOpacity = 1) {
 
 const browser = await chromium.launch()
 const page = await browser.newPage({ viewport: { width: 900, height: 700 }, deviceScaleFactor: 1 })
-await page.goto(url, { waitUntil: 'networkidle' })
+try {
+  await page.goto(url, { waitUntil: 'networkidle', timeout: 15_000 })
+} catch (e) {
+  await browser.close()
+  console.error(`${url} 접속 실패 — dev 서버가 떠 있나? (npm run dev)\n원인: ${e.message}`)
+  process.exit(1)
+}
 
 const ids = await page.$$eval('[data-variant-id]', (els) =>
   els.map((e) => e.getAttribute('data-variant-id')),
 )
+if (ids.length === 0) {
+  await browser.close()
+  console.error(
+    `변형 0개: ${url} 에 [data-variant-id] 가 없다 — 대상 키 "${target}" 가 레지스트리에 등록됐는지 확인 (visual-list / visual-add).`,
+  )
+  process.exit(1)
+}
 
 const measurements = []
 for (const id of ids) {

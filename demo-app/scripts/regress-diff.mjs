@@ -33,9 +33,26 @@ const ids = readdirSync(baseDir)
   .filter((f) => f.endsWith('.png'))
   .map((f) => f.replace(/\.png$/, ''))
 
+// 신규 변형 사각지대 방지: baseline 이후 *추가된* 변형(after 에만 존재)도 잡는다.
+// 비교할 before 가 없으니 픽셀 diff 불가 — "신규"로 보고하고, 판정은 절대 판정(visual-judge)의 몫.
+const afterIds = readdirSync(dir)
+  .filter((f) => f.endsWith('.png'))
+  .map((f) => f.replace(/\.png$/, ''))
+const newIds = afterIds.filter((id) => !ids.includes(id))
+
 mkdirSync(diffDir, { recursive: true })
 
 const results = []
+for (const id of newIds) {
+  results.push({
+    id,
+    changed: true,
+    newVariant: true,
+    reason: '신규 변형 — baseline 없음(비교 불가). visual-judge 절대 판정 필요',
+    diffPercent: null,
+    diffImage: null,
+  })
+}
 for (const id of ids) {
   const beforePath = `${baseDir}/${id}.png`
   const afterPath = `${dir}/${id}.png`

@@ -19,15 +19,32 @@ case "$PID" in
   '' | *[!0-9]*) exit 0 ;;
 esac
 
+# PID 의 모든 후손을 깊이 우선(자식 먼저)으로 나열한다.
+# npm run dev 는 npm → node(vite) → esbuild 로 손자가 생기므로, 직속(-P)만 죽이면 orphan 이 남는다.
+descendants() {
+  local p kids
+  for p in "$@"; do
+    kids="$(pgrep -P "$p" 2>/dev/null || true)"
+    # shellcheck disable=SC2086
+    [ -n "$kids" ] && descendants $kids
+    echo "$p"
+  done
+}
+
 # 살아있고, 명령줄이 우리가 띄운 dev 서버(vite/npm/node)로 보일 때만 종료한다.
 # (마커가 남은 채 PID 가 재사용됐을 때 무관한 프로세스를 죽이지 않기 위한 안전 가드)
 if kill -0 "$PID" 2>/dev/null; then
   CMD="$(ps -p "$PID" -o command= 2>/dev/null || true)"
   case "$CMD" in
     *vite* | *npm* | *node*)
-      pkill -P "$PID" 2>/dev/null || true  # 자식(vite/esbuild) 먼저
-      kill "$PID" 2>/dev/null || true       # 그다음 부모(npm)
-      echo "시각 OS: 자동 기동했던 dev 서버(pid $PID) 정리함." >&2
+      ALL="$(descendants "$PID")"
+      # shellcheck disable=SC2086
+      kill $ALL 2>/dev/null || true         # 후손부터 TERM
+      sleep 0.3
+      for p in $ALL; do                      # 무시한 놈은 KILL 폴백
+        kill -0 "$p" 2>/dev/null && kill -9 "$p" 2>/dev/null || true
+      done
+      echo "시각 OS: 자동 기동했던 dev 서버(pid $PID + 후손) 정리함." >&2
       ;;
   esac
 fi

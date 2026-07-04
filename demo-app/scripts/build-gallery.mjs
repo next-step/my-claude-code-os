@@ -19,7 +19,13 @@ const shouldOpen = args.includes('--open')
 const target = args.find((a) => a !== '--open') || 'card'
 const dir = `screenshots/${target}`
 
-const measurements = JSON.parse(await readFile(`${dir}/measurements.json`, 'utf8'))
+let measurements
+try {
+  measurements = JSON.parse(await readFile(`${dir}/measurements.json`, 'utf8'))
+} catch {
+  console.error(`${dir}/measurements.json 없음/깨짐 — 먼저 촬영하라: npm run capture -- ${target}`)
+  process.exit(1)
+}
 let aiNotes = {}
 try {
   aiNotes = JSON.parse(await readFile(`${dir}/ai-notes.json`, 'utf8'))
