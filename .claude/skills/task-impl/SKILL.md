@@ -35,6 +35,8 @@ ticket-start 브리핑 텍스트를 붙여넣거나, 할 일을 직접 설명해
 
 입력을 확보한 뒤, `~/.claude/docs/project-domain-detection.md`를 Read 도구로 읽고 해당 절차에 따라 프로젝트 도메인을 파악한다. 생성된 한 줄 요약은 1단계 태스크 분해와 3단계 구현 시 컨텍스트로 활용한다.
 
+이어서 `~/.claude/docs/code-conventions.md`를 Read 도구로 읽고 해당 절차에 따라 코드 컨벤션을 파악한다. 파악된 컨벤션은 3단계 구현 시 코드 스타일 기준으로 활용한다.
+
 이어서 아래 파일들을 순서대로 확인해 **커밋 컨벤션**을 감지한다:
 
 ```
@@ -179,11 +181,11 @@ docs/commit-convention.md
 **1. 커밋 메시지 생성**
 
 0단계에서 감지된 컨벤션이 있으면 해당 규칙을 따른다.
-감지된 컨벤션이 없으면 [conventions.md](../../docs/conventions.md) "커밋 메시지" 섹션의 기본 규칙을 따른다.
+감지된 컨벤션이 없으면 [conventions.md](../../docs/commit-conventions.md) "커밋 메시지" 섹션의 기본 규칙을 따른다.
 
 **2. 보안 체크**
 
-[SECURITY-CHECKS.md](../../docs/SECURITY-CHECKS.md)를 따른다.
+커밋 전 민감 파일 포함 여부를 확인한다.
 
 ```bash
 git diff --cached --name-only | grep -E '\.env|secrets|credentials'

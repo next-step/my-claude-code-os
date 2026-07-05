@@ -28,7 +28,7 @@ git branch --show-current
 - 인자가 없는 경우: 현재 브랜치 그대로 진행
 
 확인된 브랜치명에서 커밋 메시지의 scope를 추출합니다 (규칙은
-[conventions.md](../../docs/conventions.md) "scope 결정 기준" 참고):
+[conventions.md](../../docs/commit-conventions.md) "scope 결정 기준" 참고):
 
 - 브랜치명에 `/`가 있으면 마지막 `/` 뒤 세그먼트를 scope로 사용
   (예: `feature/add-button` → `add-button`, `feature/team/add-button` → `add-button`)
@@ -58,7 +58,7 @@ diff 내용을 읽고 다음을 파악합니다:
 
 ## 3단계: 커밋 메시지 생성
 
-커밋 메시지 형식(타입 선택 기준, subject 작성법, 예시)은 [conventions.md](../../docs/conventions.md) "커밋 메시지" 섹션을 따릅니다. scope는 1단계에서 추출한 브랜치 기반 scope를 사용합니다.
+커밋 메시지 형식(타입 선택 기준, subject 작성법, 예시)은 [conventions.md](../../docs/commit-conventions.md) "커밋 메시지" 섹션을 따릅니다. scope는 1단계에서 추출한 브랜치 기반 scope를 사용합니다.
 
 ---
 
@@ -107,6 +107,5 @@ git status
 
 ## 주의사항
 
-- 커밋 실행 전 [SECURITY-CHECKS.md](../../docs/SECURITY-CHECKS.md)의 보안 체크를 따른다
 - 사용자의 명시적 승인 없이 자동으로 커밋하지 말 것
 - `--no-verify` 등 훅 우회 플래그는 사용자가 명시적으로 요청할 때만 사용
