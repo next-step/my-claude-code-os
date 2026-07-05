@@ -4,3 +4,6 @@ demo-app/screenshots/
 
 # 시각 검증 스킬이 자동 기동한 dev 서버의 소유권 마커(런타임 상태) — SessionEnd 훅이 정리한다.
 .claude/.visual-dev-server.pid
+
+# 남의 PR 리뷰를 모아 학습·triage 하는 개인 학습 로그 — 공유 대상 아님.
+feedback.md
