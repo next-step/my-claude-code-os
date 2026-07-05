@@ -14,3 +14,4 @@
 - [ ] (차단됨 — 구현/검증 스킬 신설 및 retrospect 고도화 후 진행) retrospect 스킬 전역화 (~/.claude로 복사) — [상세 계획](./plans/retrospect-skill-globalize.md)
 - [ ] (차단됨 — 구현/검증 스킬 신설 및 retrospect 고도화 후 진행) dev-workflow 전역 스킬 신설 (5단계 절차 설명) — [상세 계획](./plans/dev-workflow-skill-new.md)
 - [x] nextstep-check 스킬 신설 (미션 조건을 diff와 대조해 충족/미충족/판단보류 체크리스트로 피드백) — [상세 계획](./plans/nextstep-check-skill-new.md)
+- [x] nextstep-start 스킬 신설 (미션 최초 시작: fork→clone→최초 브랜치, gh 폴백·멱등 재실행 포함) — [상세 계획](./plans/nextstep-start-skill-new.md)
