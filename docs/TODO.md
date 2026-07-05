@@ -10,3 +10,6 @@
 - [x] interview 스킬 전역화 (~/.claude로 복사) — [상세 계획](./plans/interview-skill-globalize.md)
 - [x] plan 스킬에 완료 항목 자동 정리 로직 추가 — [상세 계획](./plans/plan-skill-auto-cleanup.md)
 - [x] 완료 항목 정리 트리거를 plan에서 retrospect로 이전 — [상세 계획](./plans/todo-cleanup-trigger-retrospect.md)
+- [ ] (차단됨 — 구현/검증 스킬 신설 및 retrospect 고도화 후 진행) plan 스킬 전역화 (~/.claude로 복사) — [상세 계획](./plans/plan-skill-globalize.md)
+- [ ] (차단됨 — 구현/검증 스킬 신설 및 retrospect 고도화 후 진행) retrospect 스킬 전역화 (~/.claude로 복사) — [상세 계획](./plans/retrospect-skill-globalize.md)
+- [ ] (차단됨 — 구현/검증 스킬 신설 및 retrospect 고도화 후 진행) dev-workflow 전역 스킬 신설 (5단계 절차 설명) — [상세 계획](./plans/dev-workflow-skill-new.md)
