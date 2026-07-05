@@ -4,7 +4,7 @@ description: 테스트 실행 루프 + 자동 수정 + 커밋 후, 최종 코드
 metadata:
   author: baeg-yunseo
   version: "1.0.0"
-  argument-hint: ""
+  argument-hint: "[로컬 dev 서버 URL, 생략 가능]"
 ---
 
 # Dev Test
@@ -35,73 +35,51 @@ git log main..HEAD --oneline
 
 ---
 
-## 1단계: 테스트 명령어 감지
-
-아래 순서로 탐색해 첫 번째 발견된 것을 테스트 명령어로 확정합니다:
-
-```bash
-# 1. package.json scripts.test 확인
-node -e "const p=require('./package.json'); process.exit(p.scripts?.test ? 0 : 1)" 2>/dev/null && echo "npm test"
-
-# 2. scripts.test:ci 확인 (watch 모드 없는 CI용)
-node -e "const p=require('./package.json'); process.exit(p.scripts?.['test:ci'] ? 0 : 1)" 2>/dev/null && echo "npm run test:ci"
-
-# 3. Makefile test 타깃 확인
-grep -q '^test:' Makefile 2>/dev/null && echo "make test"
-```
-
-모두 없으면 사용자에게 묻습니다:
-
-```
-테스트 명령어를 찾지 못했습니다.
-실행할 명령어를 입력하거나, 테스트를 건너뛰려면 '건너뛰기'라고 입력해 주세요.
-```
-
----
-
-## 2단계: 테스트 실행 루프
+## 1단계: 테스트 실행 루프
 
 최대 3회 반복합니다.
 
 ### 루프 본체
 
-**A. 유닛 테스트 (static-code-tester 에이전트):**
+**Playwright QA (playwright-qa-tester 에이전트에 위임):**
 
-- `subagent_type`: `"static-code-tester"`
-- 1단계에서 확정된 테스트 명령어를 에이전트에 전달해 실행
+1. **Dev 서버 확인/기동** (오케스트레이터가 직접 수행):
+   - 스킬 인자로 URL이 주어졌으면 그대로 `BASE_URL`로 확정하고 아래 포트 추측/서버 기동은 건너뜁니다
+   - 인자가 없으면:
+     - `localhost:3000`, `localhost:5173` 등 흔한 포트에 순서대로 접근 시도
+     - 응답 없으면 `npm run dev`를 백그라운드로 실행 후 응답 대기
+     - 접속 가능한 URL을 `BASE_URL`로 확정
 
-**B. Playwright QA:**
+2. **모드 결정** (오케스트레이터가 직접 수행):
+   - `docs/qa-checklist.md` 존재 여부 확인 (Read 도구)
+   - **있음** → `MODE: CHECKLIST`, `CHECKLIST_PATH: docs/qa-checklist.md`
+   - **없음** → 0단계 diff에 UI 파일 변경(`.tsx`, `.jsx`, `.vue`, `.css`, `.scss`)이 있는지 확인
+     (`git diff --name-only HEAD` 결과를 확장자로 필터링)
+     - 있으면 → `MODE: SMOKE`, `CHANGED_FILES`: 변경된 UI 파일 경로 목록
+     - 없으면 → **QA 건너뜀** (에이전트 호출 없이 QA 통과로 취급, 루프 분기로)
 
-먼저 `docs/qa-checklist.md` 존재 여부를 확인합니다 (Read 도구 시도).
+3. **에이전트 실행** (모드가 건너뜀이 아닌 경우):
+   - `subagent_type`: `"playwright-qa-tester"`
 
-**[`docs/qa-checklist.md` 있음]** — 체크리스트 기반 실행:
+   에이전트 프롬프트:
 
-1. 로컬 dev 서버(`localhost:3000` 또는 `localhost:5173` 등) 접근
-   - 서버가 실행 중이지 않으면 `npm run dev`를 백그라운드로 실행 후 응답 대기
-2. `docs/qa-checklist.md`의 시나리오를 순서대로 순회:
-   - URL로 내비게이션
-   - 전제조건 충족 가능 여부 판단 (불가 시 해당 시나리오 SKIP 표시)
-   - 스텝 실행 (클릭, 입력 등 Playwright MCP)
-   - 기대 결과와 비교 → Pass / Fail 판정
-3. 결과: "N/M 통과" 형식 요약 + 실패 항목 상세 내용
+   ```
+   BASE_URL: {1에서 확정된 URL}
+   MODE: {CHECKLIST 또는 SMOKE}
+   CHECKLIST_PATH: docs/qa-checklist.md   ← CHECKLIST 모드일 때만
+   CHANGED_FILES:                         ← SMOKE 모드일 때만
+   - {변경된 UI 파일 경로}
+   ```
 
-**[`docs/qa-checklist.md` 없음]** — diff 기반 스모크 테스트:
-
-diff에서 UI 컴포넌트 변경이 감지되면 (`.tsx`, `.jsx`, `.vue`, `.css`, `.scss` 파일 변경 시) 실행합니다.
-
-1. 로컬 dev 서버 접근 (위와 동일)
-2. diff에서 변경된 컴포넌트/페이지로 내비게이션
-3. 스크린샷 캡처 후 시각적 이상 여부 확인
-4. 핵심 인터랙션(클릭, 입력) 수행해 콘솔 에러 여부 확인
-5. 결과를 "이상 없음 / 에러 감지 (상세 내용)" 형식으로 보고
+   에이전트가 반환한 구조화 요약에서 `MODE`, `RESULT`, `PASS_COUNT`/`TOTAL_COUNT`(CHECKLIST 모드), `FAILURES`, `REPORT_FILE`을 추출합니다.
 
 ### 루프 분기
 
 ```
-유닛 테스트 통과 + QA 통과 (또는 QA skipped)
+QA 통과 (또는 QA skipped)
   → 루프 탈출, 3단계로
 
-유닛 테스트 실패 또는 QA 실패
+QA 실패
   + [AUTO-FIXABLE]:
       Claude가 직접 수정 시도
       → 보안 체크 후 커밋 (아래 커밋 규칙 적용)
@@ -121,7 +99,7 @@ diff에서 UI 컴포넌트 변경이 감지되면 (`.tsx`, `.jsx`, `.vue`, `.css
 
 ### 루프 내 커밋 규칙
 
-보안 체크 먼저 ([SECURITY-CHECKS.md](../../docs/SECURITY-CHECKS.md) 참고):
+보안 체크 먼저:
 
 ```bash
 git diff --cached --name-only | grep -E '\.env|secrets|credentials'
@@ -141,7 +119,7 @@ EOF
 
 ---
 
-## 3단계: 코드 리뷰 (단발)
+## 2단계: 코드 리뷰 (단발)
 
 테스트 통과 후 코드 리뷰를 한 번 실행합니다. 수정·커밋은 하지 않습니다.
 
@@ -173,14 +151,13 @@ EOF
 
 ---
 
-## 4단계: 요약 출력
+## 3단계: 요약 출력
 
 ```
 ╔══════════════════════════════════════╗
 ║        /dev-test 완료 요약           ║
 ╠══════════════════════════════════════╣
-║ 유닛 테스트:    ✅ 통과 (npm test)   ║
-║ QA 체크리스트: ✅ N/N 통과           ║
+║ QA:            ✅ N/N 통과           ║
 ║ 자동 수정 커밋: N회                  ║
 ║ 코드 리뷰:     ⚠️ CRITICAL N건      ║
 ╚══════════════════════════════════════╝
@@ -188,7 +165,9 @@ EOF
 
 각 항목은 상황에 따라 변경됩니다:
 
-- `⏭ 건너뜀` — 테스트 없음, UI 변경 없음 등
+- `⏭ 건너뜀` — 체크리스트 없음 + UI 변경 없음
+- `✅ N/N 통과` — CHECKLIST 모드 결과
+- `✅ 이상 없음` / `⚠️ 에러 감지 N건` — SMOKE 모드 결과
 - `✅ 이슈 없음` — 리뷰 이슈 없음
 - `⚠️ CRITICAL N건 / WARNING N건` — 이슈 발견 시
 
