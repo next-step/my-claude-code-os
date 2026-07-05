@@ -1,6 +1,6 @@
 ---
 topic: interview-skill-globalize
-status: 대기
+status: 완료
 source: docs/interviews/2026-07-05-interview-skill-globalize.md (Q1, Q2, Q3, Q5, Q6, Q7; Q4는 Q8로 대체되어 이미 반영됨)
 ---
 

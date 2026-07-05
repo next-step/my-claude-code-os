@@ -1,6 +1,6 @@
 ---
 topic: plan-skill-auto-cleanup
-status: 대기
+status: 완료
 source: docs/interviews/2026-07-05-todo-cleanup.md
 ---
 

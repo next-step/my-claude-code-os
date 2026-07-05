@@ -2,7 +2,7 @@
 date: 2026-07-05
 topic: interview 스킬을 ~/.claude로 전역화
 outcome: 확정
-artifact: (미구현)
+artifact: .claude/skills/interview/SKILL.md, ~/.claude/skills/interview/SKILL.md
 ---
 
 # 인터뷰: interview 스킬을 ~/.claude로 전역화

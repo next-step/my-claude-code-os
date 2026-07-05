@@ -2,7 +2,7 @@
 date: 2026-07-05
 topic: todo-cleanup
 outcome: 확정
-artifact: (미구현)
+artifact: .claude/skills/plan/SKILL.md (1단계)
 ---
 
 # 인터뷰: TODO.md 완료 항목 정리 주기
