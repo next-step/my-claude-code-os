@@ -1,9 +1,9 @@
 ---
-name: nextstep-next-step
-description: 넥스트스텝(NextStep) 미션이 merge된 뒤, next-step 저장소와 동기화(upstream rebase)하고 다음 단계 작업 브랜치를 만들어 준다. 끝난 브랜치 삭제, upstream remote 추가, fetch, rebase, 새 브랜치 생성, 충돌 해결까지 다룬다. 사용자가 "step2 미션 진행하려는데 브랜치 만들어줘", "다음 step 브랜치 만들어줘", "merge 됐는데 다음 단계 준비", "upstream 동기화", "nextstep-next-step" 등을 요청할 때 사용한다.
+name: nextstep-advance
+description: 넥스트스텝(NextStep) 미션이 merge된 뒤, next-step 저장소와 동기화(upstream rebase)하고 다음 단계 작업 브랜치를 만들어 준다. 끝난 브랜치 삭제, upstream remote 추가, fetch, rebase, 새 브랜치 생성, 충돌 해결까지 다룬다. 사용자가 "step2 미션 진행하려는데 브랜치 만들어줘", "다음 step 브랜치 만들어줘", "merge 됐는데 다음 단계 준비", "upstream 동기화", "nextstep-advance" 등을 요청할 때 사용한다.
 ---
 
-# nextstep-next-step — 다음 step 브랜치 준비
+# nextstep-advance — 다음 step 브랜치 준비
 
 미션이 merge된 뒤, next-step에 통합된 코드와 **동기화(upstream rebase)** 하고 **다음 단계 작업 브랜치**를 만든다.
 넥스트스텝 절차 중 가장 헷갈리는 구간이라, 빈칸을 직접 채워 안내하고 위험 명령은 확인 후 실행한다.
