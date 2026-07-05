@@ -2,7 +2,7 @@
 date: 2026-07-05
 topic: dev-workflow-redesign
 outcome: 확정
-artifact: (미구현)
+artifact: CLAUDE.md, docs/OS.md, docs/TODO.md, docs/plans/, .claude/skills/plan/, .claude/skills/portfolio-retrospect/, .claude/skills/retrospect/
 ---
 
 # 인터뷰: 개발 워크플로우 재설계 (인터뷰→플랜→구현→검증→회고)

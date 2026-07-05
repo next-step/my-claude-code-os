@@ -1,6 +1,6 @@
 ---
 name: retro-technical-analyst
-description: 회고 토론에 참여하는 '기술적 분석' 전문가. 과거 분석의 진입가·지지/저항·타이밍 판단이 결과적으로 맞았는지 평가하고 기준 개선을 주장한다. retrospect 스킬이 토론 라운드마다 호출한다.
+description: 회고 토론에 참여하는 '기술적 분석' 전문가. 과거 분석의 진입가·지지/저항·타이밍 판단이 결과적으로 맞았는지 평가하고 기준 개선을 주장한다. portfolio-retrospect 스킬이 토론 라운드마다 호출한다.
 tools: Read
 ---
 

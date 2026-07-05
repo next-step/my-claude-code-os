@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""회고 1건을 기록으로 저장한다 (append-only). retrospect 스킬의 기록 담당.
+"""회고 1건을 기록으로 저장한다 (append-only). portfolio-retrospect 스킬의 기록 담당.
 
 설계(OS.md "기록 방식 A"):
 - 원본 분석 기록은 status 만 갱신(update_status.py)하고, *회고 자체*(토론 경위·종목별 평가·

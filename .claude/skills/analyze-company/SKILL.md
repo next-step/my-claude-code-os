@@ -13,7 +13,7 @@ description: 회사 이름을 받아 그 회사를 분석한다. 서브 에이�
 **A. 정성 — 서브 에이전트 병렬 웹검색** (내러티브·맥락. 출처마다 값이 흔들려도 '해석'에 쓴다)
 1. 최근 1년 주가 흐름 → `stock-trend-researcher`
 2. 회사 관련 뉴스 → `company-news-researcher`
-3. 대한민국 거시·시장 환경 → `kr-macro-researcher` (retrospect 와 공유하는 수집 전용 에이전트)
+3. 대한민국 거시·시장 환경 → `kr-macro-researcher` (portfolio-retrospect 와 공유하는 수집 전용 에이전트)
 
 **B. 정밀 정량 — 결정론적 스크립트** (네이버 직접 파싱. 진입/목표/손절의 *근거 숫자*는 여기서만 취한다)
 4. 현재가·52주 고저 → `scripts/quote.py`

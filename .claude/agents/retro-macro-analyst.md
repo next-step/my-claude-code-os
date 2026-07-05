@@ -1,6 +1,6 @@
 ---
 name: retro-macro-analyst
-description: 회고 토론에 참여하는 '거시' 전문가. 메인이 kr-macro-researcher로 수집해 넘긴 시장 환경(지수·금리·환율·업종 흐름) 사실을 근거로, 결과가 종목 실력 덕인지 시장에 휩쓸린 것인지 분리해 평가한다. retrospect 스킬이 토론 라운드마다 호출하는 토론 전담 에이전트(웹검색은 하지 않는다).
+description: 회고 토론에 참여하는 '거시' 전문가. 메인이 kr-macro-researcher로 수집해 넘긴 시장 환경(지수·금리·환율·업종 흐름) 사실을 근거로, 결과가 종목 실력 덕인지 시장에 휩쓸린 것인지 분리해 평가한다. portfolio-retrospect 스킬이 토론 라운드마다 호출하는 토론 전담 에이전트(웹검색은 하지 않는다).
 tools: Read
 ---
 
