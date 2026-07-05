@@ -5,8 +5,6 @@ description: 그동안의 투자 추천·분석 기록(recommend-stocks/analyze-
 
 # portfolio-retrospect — 투자 회고 스킬
 
-> 2026-07-05 `retrospect`에서 개명됨(설계 근거: [docs/interviews/2026-07-05-dev-workflow-redesign.md](../../../docs/interviews/2026-07-05-dev-workflow-redesign.md) Q3) — 일반명 `retrospect`는 개발 워크플로우 자체를 되짚는 신규 스킬이 갖는다.
-
 OS 루프의 **피드백 단계**다. `recommend-stocks`(선정 기록)와 `analyze-company`(분석 기록)가
 쌓아둔 과거 예측을 **현재가와 대조**해 무엇이 맞고 틀렸는지 가리고, 다음 추천·분석에 쓸 기준을 개선한다.
 

@@ -141,7 +141,7 @@
 
 # 스킬 3: `portfolio-retrospect` (투자 회고)
 
-> 2026-07-05 `retrospect`에서 개명됨 — 일반명 `retrospect`는 개발 워크플로우 자체를 되짚는 별도 스킬이 갖는다(설계 근거: [docs/interviews/2026-07-05-dev-workflow-redesign.md](./interviews/2026-07-05-dev-workflow-redesign.md) Q3).
+> 2026-07-05 `retrospect`에서 개명됨 — 일반명 `retrospect`는 개발 워크플로우 자체를 되짚는 별도 스킬이 갖는다(설계 근거: [docs/interviews/2026-07-05-dev-workflow-redesign.md](https://github.com/parkchu/claude-utility-skills/blob/main/docs/interviews/2026-07-05-dev-workflow-redesign.md) Q3).
 
 **주 1회**, 사용자가 직접(수동) 돌려 그동안의 추천·분석이 실제로 어떻게 흘러갔는지 대조하고 기준을 개선한다. 루프의 "피드백" 단계. **구현 완료.**
 
@@ -246,4 +246,4 @@ C. [종합] update_status.py 로 원본 status 갱신 + save_retro.py 로 회고
 
 다음에 뭘 구현할지 순서가 있는 실행 큐는 **[docs/TODO.md](./TODO.md)**가, 항목별 상세 계획은 **`docs/plans/`**가 맡는다.
 
-> 설계 근거: [docs/interviews/2026-07-05-dev-workflow-redesign.md](./interviews/2026-07-05-dev-workflow-redesign.md)
+> 설계 근거: [docs/interviews/2026-07-05-dev-workflow-redesign.md](https://github.com/parkchu/claude-utility-skills/blob/main/docs/interviews/2026-07-05-dev-workflow-redesign.md)

@@ -1,17 +1,8 @@
 # TODO
 
 > 순서가 있는 "다음 구현 항목" 큐. 서사·설계 이유는 [docs/OS.md](./OS.md)에, 항목별 상세 계획은 `docs/plans/`에 있다.
-> 이 문서는 `plan` 스킬이 갱신한다. 설계 근거: [docs/interviews/2026-07-05-dev-workflow-redesign.md](./interviews/2026-07-05-dev-workflow-redesign.md) (Q11, Q12)
+> 이 문서는 `plan` 스킬이 갱신한다. 설계 근거: [claude-utility-skills 저장소의 2026-07-05-dev-workflow-redesign.md](https://github.com/parkchu/claude-utility-skills/blob/main/docs/interviews/2026-07-05-dev-workflow-redesign.md) (Q11, Q12)
+>
+> 2026-07-06: interview·plan·retrospect 스킬 관련 항목·계획·인터뷰는 [claude-utility-skills](https://github.com/parkchu/claude-utility-skills) 저장소로 이관했다(그쪽 `docs/TODO.md`에서 계속 추적).
 
 ## 큐
-
-- [x] CLAUDE.md·OS.md 문서 규칙 개정 — [상세 계획](./plans/docs-rule-revision.md)
-- [x] retrospect 스킬 분리 (portfolio-retrospect 개명 + 신규 retrospect 신설) — [상세 계획](./plans/retrospect-skill-split.md)
-- [x] interview 스킬 전역화 (~/.claude로 복사) — [상세 계획](./plans/interview-skill-globalize.md)
-- [x] plan 스킬에 완료 항목 자동 정리 로직 추가 — [상세 계획](./plans/plan-skill-auto-cleanup.md)
-- [x] 완료 항목 정리 트리거를 plan에서 retrospect로 이전 — [상세 계획](./plans/todo-cleanup-trigger-retrospect.md)
-- [ ] (차단됨 — 구현/검증 스킬 신설 및 retrospect 고도화 후 진행) plan 스킬 전역화 (~/.claude로 복사) — [상세 계획](./plans/plan-skill-globalize.md)
-- [ ] (차단됨 — 구현/검증 스킬 신설 및 retrospect 고도화 후 진행) retrospect 스킬 전역화 (~/.claude로 복사) — [상세 계획](./plans/retrospect-skill-globalize.md)
-- [ ] (차단됨 — 구현/검증 스킬 신설 및 retrospect 고도화 후 진행) dev-workflow 전역 스킬 신설 (5단계 절차 설명) — [상세 계획](./plans/dev-workflow-skill-new.md)
-- [x] nextstep-check 스킬 신설 (미션 조건을 diff와 대조해 충족/미충족/판단보류 체크리스트로 피드백) — [상세 계획](./plans/nextstep-check-skill-new.md)
-- [x] nextstep-start 스킬 신설 (미션 최초 시작: fork→clone→최초 브랜치, gh 폴백·멱등 재실행 포함) — [상세 계획](./plans/nextstep-start-skill-new.md)
