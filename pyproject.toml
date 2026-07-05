@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "signup-login-api"
+version = "0.1.0"
+description = "회원가입·로그인 최소 인증 API (FastAPI)"
+# Plan 확정: 런타임은 Python 3.12 (FastAPI 0.111 호환 버전)
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi==0.111.1",
+    "sqlalchemy>=2.0,<3.0",
+    "python-jose[cryptography]",
+    "uvicorn",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "httpx",
+]
+
+[tool.setuptools.packages.find]
+include = ["app*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+# 설치 없이도 app 패키지를 import 할 수 있도록 프로젝트 루트를 경로에 추가
+pythonpath = ["."]
