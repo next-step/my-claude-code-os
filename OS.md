@@ -19,9 +19,11 @@
 my-claude-code-os/
 ├── CLAUDE.md              # Claude 행동 규칙 (OS의 커널)
 ├── OS.md                  # 이 파일 — 전체 청사진
+├── conventions.md         # 커밋 메시지 등 재사용 규칙 — 스킬이 필요할 때 참고
 └── .claude/
     ├── settings.json      # 훅 설정 (이벤트 기반 자동 실행)
     ├── skills/            # 스킬 (재사용 가능한 작업 단위)
+    │   ├── interview/     # 모호함 구체화 인터뷰 (기획/기술 모드, 독립 실행)
     │   ├── ticket-start/  # 티켓 시작 워크플로
     │   ├── task-impl/     # 개발 단위 분해 + 구현 + 커밋 루프
     │   ├── dev-test/      # 테스트 루프 + 자동 수정 + 코드 리뷰
@@ -60,6 +62,34 @@ my-claude-code-os/
 
 ## 자동화 대상 워크플로
 
+### 0. 모호함 구체화 인터뷰 — `/interview`
+
+**문제:** 아이디어나 요구사항이 모호한 상태로 개발을 시작하면 중간에 재작업이 발생함. 파이프라인 자동 트리거가 아니라, 필요할 때 직접 불러 쓰는 독립 도구가 필요함
+
+**목표:** 주제 하나 주면 기획/기술 관점 질문으로 모호함을 구체화
+
+```
+input:  주제/아이디어 설명 (생략 시 docs/ticket-briefing.md 또는 직접 질문)
+          ↓
+        모드 선택 (기획만 | 기술만 | 둘 다)
+          ↓
+        용어 정의 (공통, 항상 실행)
+          ↓
+        [기획 모드] 목표 / 범위 / 정책·규칙 / UX 흐름 / 제약
+        [기술 모드] 인터페이스 / 재사용 / 동작 정의 / 소유권 / 제약 / 검증 방법
+          ↓
+        결정으로 변환 (공통) — 확정된 결정 / 미해결 질문 / 가정 / 다음 액션
+          ↓
+output: docs/interview-spec.md 저장
+        + 기획 위주면 /ticket-start, 구현 범위 명확하면 /task-impl로 안내
+```
+
+**구현 완료:**
+
+- [x] `interview` 스킬 구현 (독립 실행, 기획/기술 모드 분기 + 결정 변환 단계)
+
+---
+
 ### 1. 티켓 시작 워크플로 — `/ticket-start`
 
 **문제:** 티켓 받으면 기획서 읽고, 어디 고쳐야 하는지 파악하고, 사이드 이펙트 생각하고, Notion 상태 바꾸는 게 전부 수동
@@ -67,19 +97,24 @@ my-claude-code-os/
 **목표:** 기획서 소스 하나 주면 아래를 자동으로
 
 ```
-input:  Notion URL | Slack URL | 로컬 파일 경로 | 일반 HTTP URL
+input:  Notion URL | Slack URL | 파일 첨부 | 일반 HTTP URL
+          ↓
+        // TODO: 실행된 프로젝트가 어떤 도메인인지 파악
           ↓
         소스 감지 → 적절한 방법으로 기획서 읽기
         (Notion MCP | Slack MCP | Read 도구 | WebFetch)
           ↓
-        기획서 분석 → 수정 범위 정리
+        기획서 분석
+          ↓
+        // TODO: 충돌/미정의된 정책/동작 있는 경우 사용자에게 질문
+          ↓
+        사용자 응답을 통해 수정 범위 및 미정의된 정책 정리
           ↓
         코드베이스 스캔 → 영향받는 파일/컴포넌트 목록
           ↓
         사이드 이펙트 체크리스트 생성
           ↓
-output: Notion 티켓 상태 "진행중" 업데이트
-        + 작업 브리핑 출력 (수정 범위, 사이드 이펙트 후보)
+output: 결과 md 파일 및 작업 브리핑 출력 (수정 범위, 사이드 이펙트 후보)
 ```
 
 **구현 필요 사항:**
@@ -204,21 +239,22 @@ output: Slack 배포 완료 메시지 전송
 
 ## 구현 순서 (로드맵)
 
-| 단계     | 내용                                                                          | 상태    |
-| -------- | ----------------------------------------------------------------------------- | ------- |
-| Step 0   | 기본 인프라 (settings.json, auto-commit, skill-stats)                         | ✅ 완료 |
-| Step 1   | `/ticket-start` 스킬 구현                                                     | ✅ 완료 |
-| Step 1.5 | `/task-impl` 스킬 구현 (태스크 분해 + 구현 루프 + 단위 커밋)                 | ✅ 완료 |
-| Step 2   | `/dev-loop` 스킬 구현 (셀프 리뷰, 테스트, 커밋, PR 자동화)                   | ✅ 완료 |
-| Step 2.5 | `spec-analyzer` 에이전트 분리 + `ticket-start` v3.0 리팩토링                 | ✅ 완료 |
-| Step 2.6 | `/dev-loop` PR 템플릿 자동 감지 — 프로젝트 템플릿 우선 적용                  | ✅ 완료 |
+| 단계     | 내용                                                                                                            | 상태    |
+| -------- | --------------------------------------------------------------------------------------------------------------- | ------- |
+| Step 0   | 기본 인프라 (settings.json, auto-commit, skill-stats)                                                           | ✅ 완료 |
+| Step 0.5 | `/interview` 스킬 구현 (모호함 구체화, 기획/기술 모드 분기)                                                     | ✅ 완료 |
+| Step 1   | `/ticket-start` 스킬 구현                                                                                       | ✅ 완료 |
+| Step 1.5 | `/task-impl` 스킬 구현 (태스크 분해 + 구현 루프 + 단위 커밋)                                                    | ✅ 완료 |
+| Step 2   | `/dev-loop` 스킬 구현 (셀프 리뷰, 테스트, 커밋, PR 자동화)                                                      | ✅ 완료 |
+| Step 2.5 | `spec-analyzer` 에이전트 분리 + `ticket-start` v3.0 리팩토링                                                    | ✅ 완료 |
+| Step 2.6 | `/dev-loop` PR 템플릿 자동 감지 — 프로젝트 템플릿 우선 적용                                                     | ✅ 완료 |
 | Step 2.7 | `ticket-start` QA 체크리스트 생성 — 기획서 시나리오 → Playwright 실행 가능 포맷으로 `docs/qa-checklist.md` 저장 | ✅ 완료 |
-| Step 2.8 | `dev-loop` Playwright QA 실행 — `docs/qa-checklist.md` 기반 체크리스트 순회 + PR 본문 자동 반영 | ✅ 완료 |
-| Step 2.9 | `/dev-loop` 분리 — `/dev-test`(테스트+리뷰) + `/dev-ship`(리뷰루프+PR) + `/dev-loop`(오케스트레이터) | ✅ 완료 |
-| Step 3   | `/deploy-notify` 스킬 구현                                                    | 🔲 예정 |
-| Step 4   | 배포 명령 감지 훅 자동화                                                      | 🔲 예정 |
-| Step 5   | Memory 시스템 구축                                                            | 🔲 예정 |
-| Step 6   | CLAUDE.md 고도화 (페르소나, 금지사항 정교화)                                  | 🔲 예정 |
+| Step 2.8 | `dev-loop` Playwright QA 실행 — `docs/qa-checklist.md` 기반 체크리스트 순회 + PR 본문 자동 반영                 | ✅ 완료 |
+| Step 2.9 | `/dev-loop` 분리 — `/dev-test`(테스트+리뷰) + `/dev-ship`(리뷰루프+PR) + `/dev-loop`(오케스트레이터)            | ✅ 완료 |
+| Step 3   | `/deploy-notify` 스킬 구현                                                                                      | 🔲 예정 |
+| Step 4   | 배포 명령 감지 훅 자동화                                                                                        | 🔲 예정 |
+| Step 5   | Memory 시스템 구축                                                                                              | 🔲 예정 |
+| Step 6   | CLAUDE.md 고도화 (페르소나, 금지사항 정교화)                                                                    | 🔲 예정 |
 
 ---
 
