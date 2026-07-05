@@ -22,8 +22,8 @@ my-claude-code-os/
 └── .claude/
     ├── settings.json      # 훅 설정 (이벤트 기반 자동 실행)
     ├── docs/              # 공용 규칙 문서 (스킬이 필요할 때 참조)
-    │   ├── conventions.md               # 커밋 메시지 형식, scope 기준
-    │   ├── SECURITY-CHECKS.md           # 커밋 전 보안 체크 절차
+    │   ├── commit-conventions.md        # 커밋 메시지 형식, scope 기준
+    │   ├── code-conventions.md          # 코드 스타일, 네이밍, 패턴 규칙
     │   └── project-domain-detection.md  # 프로젝트 도메인 파악 절차
     ├── skills/            # 스킬 (재사용 가능한 작업 단위)
     │   ├── interview/     # 모호함 구체화 인터뷰 (기획/기술 모드, 독립 실행)
