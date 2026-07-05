@@ -58,11 +58,23 @@ upstream이 없으면 추가한다:
 git remote add upstream https://github.com/{owner}/{repo}.git
 ```
 
+이어서 origin(본인 fork)에 **본인 아이디 브랜치**가 있는지 확인한다. 이 브랜치가 이후 PR의 base이자 작업 브랜치의 시작점이다:
+```bash
+git fetch origin
+git branch -r | grep {본인_아이디}    # origin/{본인_아이디}가 보여야 함
+```
+- 없으면 원인은 둘 중 하나: (1) 미션 시작 버튼을 안 눌러 next-step에 브랜치 자체가 안 생김 → 0단계로 안내. (2) fork할 때 "default branch only"로 받아 브랜치가 복사 안 됨 → upstream에서 가져와 origin에 올린다:
+```bash
+git fetch upstream {본인_아이디}
+git push origin refs/remotes/upstream/{본인_아이디}:refs/heads/{본인_아이디}
+```
+
 ## 4단계 — 최초 작업 브랜치 생성
 
 관례적 기본값 **`step1`을 제안하고 확인**받은 뒤 생성한다(미션에 따라 다르면 사용자가 이름을 정정).
+시작점은 반드시 **본인 아이디 브랜치**다(PR base가 이 브랜치라서, 기본 브랜치에서 갈라지면 diff가 오염될 수 있다):
 ```bash
-git checkout -b step1
+git checkout -b step1 origin/{본인_아이디}
 ```
 
 ## 5단계 — 마무리 안내

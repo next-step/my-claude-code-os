@@ -19,6 +19,7 @@ git branch --show-current   # 작업 브랜치 (예: step1)
 git status                  # 커밋 안 된 변경이 있는지
 git log origin/{작업브랜치}..HEAD --oneline   # 아직 push 안 된 커밋 (있으면 push 필요)
 ```
+> 최초 push 전에는 `origin/{작업브랜치}` ref가 없어서 위 `git log`가 에러난다. 에러 = **아직 한 번도 push 안 함** = 전부 push 대상으로 해석하고 그대로 진행한다.
 여기서 추출할 값:
 - **본인_아이디**: `origin` URL `github.com/{아이디}/{repo}`에서. → PR의 **base 브랜치 이름**이자 head 소유자.
 - **저장소(repo)**: origin/upstream의 repo 이름.
