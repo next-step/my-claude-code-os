@@ -8,6 +8,7 @@ screenshots/<target>/
   measurements.json     코드 사실 측정 (capture-variants)
   ai-notes.json         AI 판정 기록 (visual-check 작성, visual-confidence 가 다수결로 level 갱신)
   confidence.json       반복 판정 안정성 결과 (visual-confidence 작성)
+  lens.json             관점별(레이아웃·색대비·타이포) 정밀 진단 결과 (visual-lens 작성)
   index.html            검증 갤러리 (build-gallery)
   baseline/             기준선 스냅샷 (snapshot-baseline; <id>.png + measurements.json)
   diff/<id>.png         바뀐 변형의 픽셀 diff (regress-diff)
@@ -21,6 +22,16 @@ screenshots/<target>/
 ```json
 { "<id>": { "level": "ok|warn|error", "note": "<visual-judge 한 줄 근거>" } }
 ```
+
+## lens.json — 변형 id → 관점별 판정 (visual-lens)
+```json
+{ "<id>": { "lenses": { "layout": {"level":"ok|warn|error","note":"<근거>"},
+                        "color":  {"level":"…","note":"…"},
+                        "typo":   {"level":"…","note":"…"} },
+            "overall": "ok|warn|error" } }
+```
+- `overall` = 세 렌즈 중 **최악**(error>warn>ok). 렌즈는 공유 `visual-judge` 를 각도만 좁혀 재사용한 결과다(블라인드·독립).
+- 색 렌즈는 대비·가독성까지만 — 고립·균일 절대 색차는 못 잡음(measurements.json 몫).
 
 ## regress.json
 ```json

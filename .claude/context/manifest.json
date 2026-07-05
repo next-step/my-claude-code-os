@@ -4,7 +4,7 @@
     {
       "file": ".claude/visual-rubric.md",
       "title": "시각 판정 공통어 (rubric) — 판정 헌법",
-      "skills": ["visual-check", "visual-regress", "visual-confidence"],
+      "skills": ["visual-check", "visual-regress", "visual-confidence", "visual-lens"],
       "agents": ["visual-judge", "visual-comparator"]
     },
     {
@@ -16,13 +16,13 @@
     {
       "file": ".claude/context/artifacts.md",
       "title": "산출물 스키마 — measurements/ai-notes/regress 데이터 계약",
-      "skills": ["visual-check", "visual-regress", "visual-confidence", "visual-list", "visual-remove"],
+      "skills": ["visual-check", "visual-regress", "visual-confidence", "visual-list", "visual-remove", "visual-lens"],
       "agents": []
     },
     {
       "file": ".claude/context/glossary.md",
       "title": "OS 공통 용어집",
-      "skills": ["visual-add", "visual-check", "visual-confidence", "visual-list", "visual-regress", "visual-remove"],
+      "skills": ["visual-add", "visual-check", "visual-confidence", "visual-list", "visual-regress", "visual-remove", "visual-lens"],
       "agents": []
     }
   ]
