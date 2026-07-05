@@ -58,6 +58,26 @@ cd demo-app && node -e "const m=require('./screenshots/<키>/measurements.json')
 { "<id>": { "n": 5, "votes": {"ok":5}, "majority": "ok", "agreement": 1.0, "flaky": false } }
 ```
 
+### 4-B. 정답 대비 정확도 채점 (PASS^N)
+
+**일치율(agreement)은 정확도가 아니다.** agreement 는 "N번이 서로 얼마나 일치하나"(자기일관성)일 뿐,
+*정답과 맞았나* 는 안 본다 — 그래서 **일치율 100%인데 확신에 차서 틀린 사각지대**
+(예: 고립 크림 `tone-c` 를 N번 모두 '정상'으로 오판)를 못 드러낸다. 이걸 숫자로 드러내려면
+votes 를 **정답(`expected`)에 대고 채점**해야 한다. 채점은 AI가 하지 않는다 — **코드가 잰다(사실).**
+
+```bash
+cd demo-app && npm run accuracy -- <키>
+```
+- confidence.json(votes) × measurements.json(expected) 를 조인해 `screenshots/<키>/accuracy.json` 을 쓴다.
+- 변형별 `correct`(다수결==정답)·`passN`(정답 표 비율)과 요약(다수결 정답률·표 단위 정답률·사각지대 목록)을 출력한다.
+- 채점 규칙은 갤러리(`build-gallery`)와 동일한 완전일치(`level === expected`).
+
+**마일스톤 기록·비교 (큰 수정 단위로):** 매번이 아니라 *한 덩어리 고칠 때마다* 정확도를 고정해두고 그 지점끼리 비교한다.
+```bash
+npm run accuracy -- <키> --save <라벨>   # 지금 정확도를 마일스톤으로 고정
+npm run accuracy -- <키> --vs   <라벨>   # 현재 vs 그 마일스톤 (변형별 개선/후퇴 델타)
+```
+
 ### 5. 다수결을 정식 판정으로 반영 (선택)
 `screenshots/<키>/ai-notes.json` 의 각 변형 `level` 을 **다수결 값**으로 갱신하고, `note` 끝에 안정성 한 줄을 덧붙인다 — 예: `… (안정성: 5/5 일치)`. 기존 설명 문장은 지우지 말 것.
 → 그 뒤 갤러리를 다시 빌드하면 채점이 다수결 기준으로 반영된다: `cd demo-app && npm run gallery -- <키>`
@@ -74,3 +94,4 @@ cd demo-app && node -e "const m=require('./screenshots/<키>/measurements.json')
 - **flaky 칸을 강조**한다 — 거기가 "AI가 흔들리는 판정"이라 신뢰도가 낮은 지점이다.
 - 사각지대(예: `tone-c`)가 **N번 모두 같은 오답**이면 "일관된 사각지대"로, 운이 아님을 명시한다.
 - 끝에 한 줄 요약: 평균 일치율, flaky 개수.
+- **정확도(4-B)를 함께 보고**한다 — `npm run accuracy` 출력의 다수결 정답률·사각지대 목록. 여기서 핵심은 **일치율↑인데 정확도↓인 칸**(안정적으로 틀림)을 짚는 것. flaky(흔들림)와 사각지대(안정적 오답)는 다른 문제다.

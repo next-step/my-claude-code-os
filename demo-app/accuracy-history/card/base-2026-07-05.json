@@ -1,0 +1,112 @@
+{
+  "summary": {
+    "total": 12,
+    "majorityCorrect": 8,
+    "majorityAccuracy": 66.7,
+    "voteAccuracy": 66.7,
+    "misses": [
+      "disabled",
+      "tone-c",
+      "tone-d",
+      "trap-oversized-title"
+    ]
+  },
+  "variants": {
+    "default": {
+      "expected": "ok",
+      "majority": "ok",
+      "correct": true,
+      "passN": 1,
+      "n": 3,
+      "votesForExpected": 3
+    },
+    "long-title": {
+      "expected": "ok",
+      "majority": "ok",
+      "correct": true,
+      "passN": 1,
+      "n": 3,
+      "votesForExpected": 3
+    },
+    "no-image": {
+      "expected": "ok",
+      "majority": "ok",
+      "correct": true,
+      "passN": 1,
+      "n": 3,
+      "votesForExpected": 3
+    },
+    "long-description": {
+      "expected": "error",
+      "majority": "error",
+      "correct": true,
+      "passN": 1,
+      "n": 3,
+      "votesForExpected": 3
+    },
+    "dark": {
+      "expected": "ok",
+      "majority": "ok",
+      "correct": true,
+      "passN": 1,
+      "n": 3,
+      "votesForExpected": 3
+    },
+    "disabled": {
+      "expected": "warn",
+      "majority": "ok",
+      "correct": false,
+      "passN": 0,
+      "n": 3,
+      "votesForExpected": 0
+    },
+    "trap-text-on-image": {
+      "expected": "error",
+      "majority": "error",
+      "correct": true,
+      "passN": 1,
+      "n": 3,
+      "votesForExpected": 3
+    },
+    "tone-a": {
+      "expected": "ok",
+      "majority": "ok",
+      "correct": true,
+      "passN": 1,
+      "n": 3,
+      "votesForExpected": 3
+    },
+    "tone-b": {
+      "expected": "warn",
+      "majority": "warn",
+      "correct": true,
+      "passN": 0.67,
+      "n": 3,
+      "votesForExpected": 2
+    },
+    "tone-c": {
+      "expected": "warn",
+      "majority": "ok",
+      "correct": false,
+      "passN": 0,
+      "n": 3,
+      "votesForExpected": 0
+    },
+    "tone-d": {
+      "expected": "ok",
+      "majority": "warn",
+      "correct": false,
+      "passN": 0,
+      "n": 3,
+      "votesForExpected": 0
+    },
+    "trap-oversized-title": {
+      "expected": "warn",
+      "majority": "error",
+      "correct": false,
+      "passN": 0.33,
+      "n": 3,
+      "votesForExpected": 1
+    }
+  }
+}

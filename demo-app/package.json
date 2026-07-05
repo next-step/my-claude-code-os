@@ -12,6 +12,7 @@
     "compare": "node scripts/compare.mjs",
     "capture": "node scripts/capture-variants.mjs",
     "gallery": "node scripts/build-gallery.mjs",
+    "accuracy": "node scripts/accuracy.mjs",
     "baseline": "node scripts/snapshot-baseline.mjs",
     "regress": "node scripts/regress-diff.mjs",
     "regress-gallery": "node scripts/build-regress-gallery.mjs"
