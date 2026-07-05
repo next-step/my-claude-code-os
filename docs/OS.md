@@ -155,7 +155,8 @@ B. [토론 루프] 전문가 4인 동적 토론 (최대 5R, 수렴하면 조기 
 C. [종합] update_status.py 로 원본 status 갱신 + save_retro.py 로 회고 리포트 + 튜닝안
 ```
 
-**거시 사실은 토론 전에 한 번만 수집한다(공유 에이전트).** 토론에 들어가기 전, 메인이 `kr-macro-researcher`(analyze-company 와 **공유**하는 수집 전용 에이전트)를 1회 호출해 *가장 이른 분석일~기준일* 구간의 시장 환경(코스피 변동·금리·환율·업종)을 확정하고, 그 **거시 사실판**을 4인에게 똑같이 공유한다. *왜:* 예전엔 거시 전문가가 라운드마다 직접 검색해 ① 중복이고 ② 4인이 서로 다른 시장 사실 위에서 다퉜다. `evaluate_records.py`가 종목 사실을 한 번 확정하듯 거시도 한 번 확정한다 — "사실은 수집, 해석은 토론"을 거시에 적용. 그래서 `retro-macro-analyst`는 웹검색을 떼고 **토론 전담(Read만)**으로 슬림화했다.
+**거시 사실은 토론 전에 한 번만 수집한다(공유 에이전트).** 메인이 `kr-macro-researcher`(analyze-company 와 **공유**하는 수집 전용 에이전트)를 1회 호출해 *가장 이른 분석일~기준일* 구간의 시장 환경(코스피 변동·금리·환율·업종)을 확정하고, 그 **거시 사실판**을 4인에게 똑같이 공유한다.
+*왜:* 예전엔 거시 전문가가 라운드마다 직접 검색해 중복이었고, 4인이 서로 다른 시장 사실 위에서 다퉜다. `evaluate_records.py`가 종목 사실을 한 번 확정하듯 거시도 한 번만 확정한다 — "사실은 수집, 해석은 토론"을 거시에도 적용. 그래서 `retro-macro-analyst`는 웹검색을 떼고 **토론 전담(Read만)**으로 슬림화했다.
 
 ## A. 사실 판정 (결정론적, `scripts/evaluate_records.py`)
 - `data/analyses/*.md` 전체를 읽어 각 종목 현재가(analyze-company `quote.py` **재사용** — 현재가 진실원천 한 곳)와 진입/목표/손절을 대조해 `status`(hit_target | stopped | watching | open)·실현수익률·경과일을 산출.
@@ -182,7 +183,8 @@ C. [종합] update_status.py 로 원본 status 갱신 + save_retro.py 로 회고
 - **(b) 회고 리포트** (`scripts/save_retro.py`): 토론 경위(rounds·converged·미해결 쟁점)·종목별 평가·튜닝안을 `data/retros/YYYY-MM-DD-retro.md` 에 append-only 저장.
 - **튜닝 반영은 사람 승인 후**: 도출된 튜닝안(예: 부채비율 컷 150%→130%)은 **제안까지**가 회고의 역할. 승인되면 그때 스크립트 상수와 이 문서를 함께 고친다. (가드레일 — 회고가 자기 판단으로 시스템을 바꾸지 않는다.)
 
-**기록 방식 결정 — "A: status만 제자리 갱신 + 별도 회고파일".** *왜:* OS.md엔 "원본 append-only(불변)"와 "회고가 status 갱신"이 함께 적혀 충돌했다. `status`는 애초에 `save_analysis.py`가 `open`으로 비워두고 회고가 채우라고 만든 칸이라, 그걸 채우는 건 '예측을 고치는 것'이 아니라 '평가를 덧붙이는 것'으로 본다. 진짜 박제 대상(진입/목표/손절·근거)은 불변. 더 엄격한 "원본 완전 불변(B)"은 추천표의 status가 영영 open으로 남아 탈락.
+**기록 방식 결정 — "A: status만 제자리 갱신 + 별도 회고파일".**
+*왜:* `status`는 애초에 `save_analysis.py`가 `open`으로 비워두고 회고가 채우라고 만든 칸이다. 그걸 채우는 건 '예측을 고치는 것'이 아니라 '평가를 덧붙이는 것'으로 본다 — 진짜 박제 대상(진입/목표/손절·근거)은 불변. 더 엄격한 "원본 완전 불변(B)"안은 추천표의 status가 영영 open으로 남아 탈락시켰다.
 
 ---
 
@@ -231,7 +233,12 @@ C. [종합] update_status.py 로 원본 status 갱신 + save_retro.py 로 회고
   - 이익안정성 배점(`score_stocks.py` earn_var 10점·CoV 캡 1.0): 단년 영업익 급락(빙그레 −32.7%)을 3년평균으로 희석 → 안정성 상위 통과. 'YoY 급락 페널티'/캡 완화 방향, 가중치는 결과 후.
   - 바스켓 분산: 저베타 방어 쏠림·동일 업종 중복 경고 노출(행동강제 임계는 결과 후).
 
-> *닫힌 질문(구현 완료):* 분석 기록 스키마·추천↔분석 연결(`save_analysis.py` ref) / 정밀 지지·저항 OHLCV 계산(`ohlcv.py`) / 컨센서스 정형화(`fundamentals.py`) / **투자 회고 스킬(`portfolio-retrospect`)**: 트리거=수동, 출력=리포트+`data/retros/`, status 전이=스크립트 결정론적 판정(터미널 sticky), 토론=동적 4인 루프(최대 5R 수렴), 기록=방식 A. / **첫 실데이터 회고 완료(2026-06-30)** — end-to-end 1회 검증됨. 그 회고가 도출한 '기록 검증성 보강'을 반영: `evaluate_records.py`가 `actual_return_pct`(성과 오독)를 **진입갭(구조)·체결가정수익·진입 체결여부·MFE/MAE**로 분리하고 standalone/바스켓을 **context별 분리 집계**, `save_analysis.py`가 `atr_pct` 스냅샷 박제, `save_run.py`가 **탈락 종목 당시가** 박제.
+> **닫힌 질문 (구현 완료):**
+> - 분석 기록 스키마·추천↔분석 연결(`save_analysis.py` ref)
+> - 정밀 지지·저항 OHLCV 계산(`ohlcv.py`)
+> - 컨센서스 정형화(`fundamentals.py`)
+> - **투자 회고 스킬(`portfolio-retrospect`)**: 트리거=수동, 출력=리포트+`data/retros/`, status 전이=스크립트 결정론적 판정(터미널 sticky), 토론=동적 4인 루프(최대 5R 수렴), 기록=방식 A
+> - **첫 실데이터 회고 완료(2026-06-30)** — end-to-end 1회 검증됨. 그 회고가 도출한 '기록 검증성 보강'을 반영: `evaluate_records.py`가 `actual_return_pct`(성과 오독)를 진입갭(구조)·체결가정수익·진입 체결여부·MFE/MAE로 분리하고 standalone/바스켓을 context별로 분리 집계, `save_analysis.py`가 `atr_pct` 스냅샷 박제, `save_run.py`가 탈락 종목 당시가 박제
 
 # 진행 로그
 
