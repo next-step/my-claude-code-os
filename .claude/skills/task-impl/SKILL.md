@@ -3,7 +3,7 @@ name: task-impl
 description: 기획서 브리핑(ticket-start 출력 또는 자유 형식 설명)을 받아 개발 단위(태스크)로 쪼개고, 태스크별 구현 → 사용자 확인 → 커밋 루프를 수행하는 스킬. "태스크 구현해줘", "개발 단위 쪼개줘", "/task-impl" 요청 시 사용. ticket-start와 dev-loop 사이의 실제 구현 단계를 담당.
 metadata:
   author: frontend-yoonseo
-  version: "1.0.0"
+  version: "1.1.0"
   argument-hint: "[ticket-start 브리핑 텍스트 | 작업 설명]"
 ---
 
@@ -13,6 +13,8 @@ ticket-start 브리핑을 받아 개발 단위(태스크)로 분해하고,
 태스크 하나씩 구현 → 확인 → 커밋을 반복해 작업을 완료한다.
 
 `/ticket-start` → **/task-impl** → `/dev-loop` 흐름의 중간 단계.
+
+**v1.1 변경:** 0단계에 프로젝트 도메인 파악 단계 추가, 공용 문서 참조 경로 수정.
 
 ---
 
@@ -31,7 +33,9 @@ ticket-start 브리핑을 받아 개발 단위(태스크)로 분해하고,
 ticket-start 브리핑 텍스트를 붙여넣거나, 할 일을 직접 설명해도 됩니다.
 ```
 
-입력을 확보한 뒤, 아래 파일들을 순서대로 확인해 **커밋 컨벤션**을 감지한다:
+입력을 확보한 뒤, `~/.claude/docs/project-domain-detection.md`를 Read 도구로 읽고 해당 절차에 따라 프로젝트 도메인을 파악한다. 생성된 한 줄 요약은 1단계 태스크 분해와 3단계 구현 시 컨텍스트로 활용한다.
+
+이어서 아래 파일들을 순서대로 확인해 **커밋 컨벤션**을 감지한다:
 
 ```
 commitlint.config.js / .commitlintrc / .commitlintrc.json
@@ -131,15 +135,18 @@ docs/commit-convention.md
 > **이전 태스크 완료 정보**: [의존 태스크 SHA 및 변경 요약 / 없으면 '없음']
 >
 > 규칙:
+>
 > - 불명확한 부분은 추측하지 말고 `[CLARIFICATION_NEEDED: 질문]` 형식으로 반환
 > - `.env` 등 민감 파일 감지 시 커밋 중단 후 `[SECURITY_ALERT: 파일명]` 반환
 > - 완료 후 마지막 줄에 `[SHA: abc1234]` 형식으로 커밋 SHA 출력
 
 **3. 실행 방식**:
+
 - 의존 = `-` 태스크들: 단일 메시지에 여러 Agent 호출로 병렬 실행
 - 의존 있는 태스크: 앞 태스크 완료 후 순차 실행
 
 **4. 반환값 처리**:
+
 - `[CLARIFICATION_NEEDED]` → 사용자에게 질문 후 해당 에이전트 재실행
 - `[SECURITY_ALERT]` → 경고 출력 후 전체 중단
 - `[SHA: ...]` → SHA 기록 후 다음 태스크로
@@ -172,22 +179,17 @@ docs/commit-convention.md
 **1. 커밋 메시지 생성**
 
 0단계에서 감지된 컨벤션이 있으면 해당 규칙을 따른다.
-감지된 컨벤션이 없으면 기본 규칙을 사용한다:
-
-| 항목    | 기본 규칙                                             |
-| ------- | ----------------------------------------------------- |
-| 포맷    | `<type>(<scope>): <subject>`                          |
-| 타입    | `feat` `fix` `docs` `style` `refactor` `test` `chore` |
-| 언어    | 한국어                                                |
-| subject | 50자 이내, 명령형, "무엇"이 아닌 "왜"                 |
+감지된 컨벤션이 없으면 [conventions.md](../../docs/conventions.md) "커밋 메시지" 섹션의 기본 규칙을 따른다.
 
 **2. 보안 체크**
+
+[SECURITY-CHECKS.md](../../docs/SECURITY-CHECKS.md)를 따른다.
 
 ```bash
 git diff --cached --name-only | grep -E '\.env|secrets|credentials'
 ```
 
-`.env` 등 민감 파일 감지 시 **반드시 경고** 후 중단.
+감지 시 **반드시 경고** 후 중단.
 
 **3. 커밋 실행**
 

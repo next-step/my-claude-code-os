@@ -1,6 +1,6 @@
 ---
 name: "spec-analyzer"
-description: "기획서 소스(Notion URL, Slack URL, 로컬 파일 경로, 일반 HTTP URL, 또는 텍스트 직접 입력)를 받아 요구사항·제약 조건·변경 범위 키워드를 추출하는 에이전트. ticket-start, sprint-planner 등 기획 분석이 필요한 스킬에서 재사용."
+description: "기획서 소스(Notion URL, Slack URL, 파일 첨부, 일반 HTTP URL, 또는 텍스트 직접 입력)를 받아 요구사항·제약 조건·변경 범위 키워드를 추출하는 에이전트. ticket-start, sprint-planner 등 기획 분석이 필요한 스킬에서 재사용."
 tools: Read, WebFetch, Bash, mcp__claude_ai_Notion__notion-fetch, mcp__claude_ai_Slack__slack_read_thread, mcp__claude_ai_Slack__slack_read_channel
 model: sonnet
 color: purple
@@ -21,7 +21,7 @@ color: purple
 지원 형식:
   - Notion 페이지 URL (notion.so 포함)
   - Slack 스레드/채널 URL (slack.com/archives 포함)
-  - 로컬 파일 경로 (/ 또는 ./ 시작, .md/.pdf/.txt/.html)
+  - 파일 첨부 (대화 컨텍스트에 파일 내용이 포함된 경우)
   - HTTP/HTTPS URL
   - 텍스트 직접 입력 (긴 문단 형식)
 ```
@@ -55,15 +55,14 @@ SOURCE_TYPE: `notion`으로 기록한다.
 
 SOURCE_TYPE: `slack`으로 기록한다.
 
-### 로컬 파일 경로
+### 파일 첨부
 
-패턴: `/` 또는 `./`로 시작, 또는 `.md` `.pdf` `.txt` `.html` 확장자 포함
+패턴: 위 URL 패턴에 해당하지 않으며, 파일 내용이 대화 컨텍스트에 직접 포함된 경우
 
-- `.md` `.txt`: `Read` 도구로 직접 읽기
-- `.html`: `file://` 접두사를 붙여 `WebFetch`로 읽기
-- `.pdf`: `Read` 도구로 읽기 (텍스트 추출이 불완전할 수 있음을 감안)
+- 첨부된 파일 내용은 이미 컨텍스트에 있으므로 별도 Read/WebFetch 없이 그대로 사용
+- HTML/Markdown/텍스트 등 형식 무관하게 본문 내용을 기획서로 간주
 
-SOURCE_TYPE: `file`로 기록한다.
+SOURCE_TYPE: `attachment`로 기록한다.
 
 ### 일반 HTTP/HTTPS URL
 
@@ -127,7 +126,7 @@ SOURCE_TYPE: `text`로 기록한다.
 
 ```
 SPEC_ANALYSIS:
-SOURCE_TYPE: [notion | slack | file | url | text]
+SOURCE_TYPE: [notion | slack | attachment | url | text]
 SOURCE: [소스 URL 또는 경로 또는 "직접 입력"]
 TITLE: [기획서 제목 또는 소스명]
 

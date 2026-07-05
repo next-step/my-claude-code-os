@@ -27,6 +27,13 @@ git branch --show-current
 - 인자로 브랜치명이 주어진 경우: `git checkout <브랜치명>` 으로 전환 후 진행
 - 인자가 없는 경우: 현재 브랜치 그대로 진행
 
+확인된 브랜치명에서 커밋 메시지의 scope를 추출합니다 (규칙은
+[conventions.md](../../docs/conventions.md) "scope 결정 기준" 참고):
+
+- 브랜치명에 `/`가 있으면 마지막 `/` 뒤 세그먼트를 scope로 사용
+  (예: `feature/add-button` → `add-button`, `feature/team/add-button` → `add-button`)
+- 브랜치명에 `/`가 없으면(`main`, `step1` 등) scope 없이 진행
+
 그 다음 변경사항을 파악합니다:
 
 ```bash
@@ -51,41 +58,7 @@ diff 내용을 읽고 다음을 파악합니다:
 
 ## 3단계: 커밋 메시지 생성
 
-[Conventional Commits](https://www.conventionalcommits.org/) 형식으로 작성합니다.
-
-```
-<type>(<scope>): <subject>
-
-<body>  ← 선택사항. 왜 변경했는지 설명할 때만 추가
-```
-
-### 타입 선택 기준
-
-| 타입 | 사용 상황 |
-|------|-----------|
-| `feat` | 새로운 기능 추가 |
-| `fix` | 버그 수정 |
-| `docs` | 문서(README, 주석 등) 변경 |
-| `style` | 기능 변화 없는 포맷 변경 (들여쓰기, 세미콜론 등) |
-| `refactor` | 기능 변화 없는 코드 구조 개선 |
-| `test` | 테스트 코드 추가 / 수정 |
-| `chore` | 빌드 설정, 패키지, 기타 유지보수 |
-
-### 좋은 subject 작성법
-
-- 50자 이내로 간결하게
-- 명령형 동사로 시작 — "추가", "수정", "제거", "개선" 등
-- "무엇을" 했는지보다 **"왜" 했는지**를 담을 것
-- 변경된 파일명 나열 금지 — 의도와 맥락을 담을 것
-- 항상 한국어로 작성
-
-### 예시
-
-변경사항: `Button.tsx`에 disabled 상태 추가, `Button.css`에 회색 스타일 추가
-
-```
-feat(Button): disabled 상태 및 스타일 추가
-```
+커밋 메시지 형식(타입 선택 기준, subject 작성법, 예시)은 [conventions.md](../../docs/conventions.md) "커밋 메시지" 섹션을 따릅니다. scope는 1단계에서 추출한 브랜치 기반 scope를 사용합니다.
 
 ---
 
@@ -96,7 +69,7 @@ feat(Button): disabled 상태 및 스타일 추가
 ```
 생성된 커밋 메시지:
 ──────────────────────────────────────
-feat: 사용자 로그인 기능 추가
+feat(login): 사용자 로그인 기능 추가
 
 JWT 기반 인증으로 보안을 강화하고
 세션 유지 기능을 구현했습니다.
@@ -134,6 +107,6 @@ git status
 
 ## 주의사항
 
-- `.env`, 비밀키, 개인정보가 포함된 파일이 감지되면 **반드시 경고**하고 사용자 확인 후 진행
+- 커밋 실행 전 [SECURITY-CHECKS.md](../../docs/SECURITY-CHECKS.md)의 보안 체크를 따른다
 - 사용자의 명시적 승인 없이 자동으로 커밋하지 말 것
 - `--no-verify` 등 훅 우회 플래그는 사용자가 명시적으로 요청할 때만 사용

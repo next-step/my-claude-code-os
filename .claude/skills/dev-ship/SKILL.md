@@ -94,7 +94,7 @@ WARNING만 있음:
 
 ### 루프 내 커밋 규칙
 
-보안 체크 먼저:
+보안 체크 먼저 ([SECURITY-CHECKS.md](../../docs/SECURITY-CHECKS.md) 참고):
 
 ```bash
 git diff --cached --name-only | grep -E '\.env|secrets|credentials'
