@@ -51,10 +51,9 @@
 - 게이트는 `/prd`·`/plan` 스킬 안에 이미 있으므로 **흐름의 독립 번호로 두지 않는다.**
 
 ### ③ 구현 — 테스트와 함께, 재활용 우선
-- 승인된 Plan을 따라 구현한다.
-- **단위 테스트 / 통합 테스트를 반드시 작성한다.** 테스트 없는 구현은 이 OS에서 "미완료"다.
-  - 기본 방침: **구현과 함께** 테스트를 작성한다(나란히). *(TDD로 바꾸고 싶으면 이 줄을 수정)*
-- **기존 코드 재활용을 우선**한다. 비슷한 기능·유틸이 이미 있으면 새로 만들지 말고 재사용/확장한다.
+- 승인된 Plan을 따라 구현한다. **구현과 함께** 테스트를 나란히 작성한다. *(TDD로 바꾸고 싶으면 이 줄을 수정)*
+- 실행 규칙(테스트 필수·재활용 우선·게이트 등)의 **단일 출처**는 [`.claude/context/flow-rules.md`](.claude/context/flow-rules.md) 다.
+  코드(`app/`)를 만지면 훅이 [`backend-conventions.md`](.claude/context/backend-conventions.md)를 **자동 주입**한다. (여기 청사진은 "왜", 카드는 "지금 지킬 것".)
 
 ### ④ 마무리 — PR → 리뷰 → merge
 - 구현·테스트가 끝나면 커밋(`/commit`)하고, 본인 브랜치에 푸시(`/push`) 후 **PR로 리뷰 요청**한다.
@@ -66,7 +65,8 @@
 
 ## 3. 설계 원칙 (Principles)
 
-새 작업을 할 때 이 원칙에 비춰 판단한다.
+새 작업을 할 때 이 원칙에 비춰 판단한다. (이 원칙 중 **실행 규칙**은 스킬·서브에이전트에 주입되는
+단일 출처 카드 [`.claude/context/flow-rules.md`](.claude/context/flow-rules.md)로도 관리된다 — 청사진=왜, 카드=지금 지킬 것.)
 
 1. **검토 후 구현.** 무엇을(PRD)·어떻게(Plan)를 정하고 사람이 승인하기 전에는 코드를 쓰지 않는다.
 2. **재활용 우선.** 새로 짜기 전에 기존 코드를 먼저 찾는다. 중복 구현을 만들지 않는다.
@@ -95,6 +95,8 @@
 | `/diagram` 스킬 | 검증된 다이어그램 생성 — **디자인 HTML → Chrome 스크린샷(PNG)** → 직접 보기→고치기 루프 | ✅ |
 | 사용 통계 훅 | 스킬 호출 자동 기록 | ✅ |
 | PR 템플릿 훅 | `gh pr create` 본문이 `.github/pull_request_template.md` 틀을 따르도록 **강제**(PreToolUse·Bash, 누락 시 차단) | ✅ |
+| 컨텍스트 카드 (`.claude/context/*.md`) | 여러 스킬·에이전트가 공유하는 규칙의 **단일 출처**. `flow-rules`(개발 흐름 공통규칙)·`backend-conventions`(코드) | ✅ |
+| 컨텍스트 주입 훅 | `app/`·`tests/` 편집 시 `backend-conventions`를 **자동 주입**(PreToolUse·Edit/Write, `additionalContext`, 세션당 1회) | ✅ |
 | `/impl` 스킬 | ③ 구현 — 빌드 **디스패처**: 구현 일꾼·`/verify`에 던지고 판정대로 분기(통과/재구현↺/설계문제→/plan↑) | ✅ |
 | `/verify` 스킬 | 검증 **일꾼**: 검사 실행+판정 산출. 강도 light(테스트만)/full(테스트+적대적). PR Checks·CI가 자랄 곳 | ✅ |
 | `reviewer` **공유 서브에이전트** | 독립 적대적 검토자. `/prd`(요구사항↔PRD)·`/verify`(기준↔코드)가 **함께 재활용**. `.claude/agents/reviewer.md` | ✅ |

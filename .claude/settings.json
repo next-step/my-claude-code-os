@@ -21,6 +21,16 @@
             "statusMessage": "PR 템플릿 강제 검사..."
           }
         ]
+      },
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/inject-context.sh\"",
+            "statusMessage": "컨텍스트 카드 주입 확인..."
+          }
+        ]
       }
     ],
     "UserPromptSubmit": [
