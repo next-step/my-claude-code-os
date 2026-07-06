@@ -6,3 +6,9 @@
 > 2026-07-06: interview·plan·retrospect 스킬 관련 항목·계획·인터뷰는 [claude-utility-skills](https://github.com/parkchu/claude-utility-skills) 저장소로 이관했다(그쪽 `docs/TODO.md`에서 계속 추적).
 
 ## 큐
+
+- [x] 컨텍스트 파일 6종 작성 — [상세 계획](./plans/context-files.md)
+- [ ] 주입 연결 + 정적 검증 스크립트 — [상세 계획](./plans/context-injection.md)
+- [ ] A/B 동작 비교 (주입 off vs on) — [상세 계획](./plans/context-ab-test.md)
+- [ ] 컨텍스트 체계 도식화 (HTML) — [상세 계획](./plans/context-map.md)
+- [ ] 정량 측정·최적화 비교 — [상세 계획](./plans/context-metrics.md)
