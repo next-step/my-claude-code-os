@@ -19,6 +19,8 @@
     --always-soft: rgba(88,166,255,.14);
     --ondemand: #f0a040;
     --ondemand-soft: rgba(240,160,64,.14);
+    --staged: #2dd4bf;
+    --staged-soft: rgba(45,212,191,.14);
     --living: #bc8cff;
     --living-soft: rgba(188,140,255,.14);
     --skill: #3fb950;
@@ -39,6 +41,8 @@
     --always-soft: rgba(9,105,218,.10);
     --ondemand: #bc670f;
     --ondemand-soft: rgba(188,103,15,.10);
+    --staged: #0a9b8a;
+    --staged-soft: rgba(10,155,138,.10);
     --living: #8250df;
     --living-soft: rgba(130,80,223,.10);
     --skill: #1a7f37;
@@ -162,6 +166,7 @@
   }
   .badge.always { background: var(--always-soft); color: var(--always); }
   .badge.ondemand { background: var(--ondemand-soft); color: var(--ondemand); }
+  .badge.staged { background: var(--staged-soft); color: var(--staged); }
   .badge.living { background: var(--living-soft); color: var(--living); }
   .badge.static { background: rgba(139,148,158,.12); color: var(--text-dim); }
   .badge.skill { background: rgba(63,185,80,.12); color: var(--skill); }
@@ -171,6 +176,7 @@
   /* 지식 카드 — 왼쪽 보더 색 = 주입 방식 */
   .card.k-always { border-left-color: var(--always); }
   .card.k-ondemand { border-left-color: var(--ondemand); }
+  .card.k-staged { border-left-color: var(--staged); }
   .card.k-living { border-left-color: var(--living); }
 
   /* 소비자 카드 — 왼쪽 보더 색 = 종류 */
@@ -211,6 +217,7 @@
   }
   .method-card.always .dot { background: var(--always); }
   .method-card.ondemand .dot { background: var(--ondemand); }
+  .method-card.staged .dot { background: var(--staged); }
   .method-card .m-sub {
     font-size: 11px;
     color: var(--text-dim);
@@ -252,6 +259,7 @@
   .legend .swatch { width: 14px; height: 3px; border-radius: 2px; }
   .legend .swatch.always { background: var(--always); }
   .legend .swatch.ondemand { background: var(--ondemand); }
+  .legend .swatch.staged { background: var(--staged); }
   .legend .swatch.skill { background: var(--skill); }
   .legend .swatch.agent { background: var(--agent); }
   .legend .swatch.living { background: var(--living); }
@@ -296,7 +304,7 @@
   </div>
   <div class="stats">
     <div class="stat"><b>6</b> 컨텍스트 파일</div>
-    <div class="stat"><b>2</b> 주입 방식</div>
+    <div class="stat"><b>3</b> 주입 방식</div>
     <div class="stat"><b>10</b> 소비자 (스킬 3 · 에이전트 7)</div>
     <div class="stat"><b id="edgeCount">18</b> 연결</div>
     <div class="stat">정적 검증 <code>scripts/check_context.py</code></div>
@@ -314,6 +322,8 @@
       <div id="k-static"></div>
       <div class="group-label">살아있는 누적</div>
       <div id="k-living"></div>
+      <div class="group-label">점진적 공개 (스킬 내부)</div>
+      <div id="k-refs"></div>
     </div>
 
     <!-- 2층: 주입 경로 -->
@@ -329,6 +339,12 @@
         <div class="m-sub">소비자 md Read 지시</div>
         <div class="m-body">소비자가 호출될 때만 로드. 4종.</div>
         <div class="m-trade"><b>고정비</b> 0 · <b>누락 위험</b> 있음 → 정적 검사로 보완</div>
+      </div>
+      <div class="method-card staged" data-method="staged">
+        <div class="m-title"><span class="dot"></span>특정 단계 로드</div>
+        <div class="m-sub">SKILL.md → references/ Read</div>
+        <div class="m-body">스킬 실행 중 특정 단계(출력·기록)에서만 로드. 점진적 공개.</div>
+        <div class="m-trade"><b>최적화</b> 본문 분할 · 본문 −2.6KB → references 7.2KB</div>
       </div>
     </div>
 
@@ -347,6 +363,7 @@
   <div class="legend">
     <div class="item"><span class="swatch always"></span> 항상 로드 (CLAUDE.md @임포트)</div>
     <div class="item"><span class="swatch ondemand"></span> 필요 시 로드 (Read 지시)</div>
+    <div class="item"><span class="swatch staged"></span> 특정 단계 로드 (references — 점진적 공개)</div>
     <div class="item"><span class="swatch skill"></span> 스킬 (절차)</div>
     <div class="item"><span class="swatch agent"></span> 에이전트 (역할)</div>
     <div class="item"><span class="swatch living"></span> 살아있는 누적 파일</div>
@@ -355,7 +372,7 @@
 </main>
 
 <footer>
-  <div>도식: <code>docs/context-map.html</code> · 설계 근거: <code>docs/interviews/2026-07-06-context-optimization.md</code> · 검증: <code>scripts/check_context.py</code> (20개 검사항목: 파일 6 + CLAUDE.md 임포트 2 + Read 지시 12)</div>
+  <div>도식: <code>docs/context-map.html</code> · 설계 근거: <code>docs/interviews/2026-07-06-context-optimization.md</code> · 검증: <code>scripts/check_context.py</code> (26개 검사항목: 파일 6 + CLAUDE.md 임포트 2 + Read 지시 12 + references 6) · 측정: <code>scripts/measure_context.py</code></div>
   <div class="note-box">
     <b>GitHub 인라인 렌더링 불가:</b> 이 파일은 자체 완결형 HTML이라 GitHub 미리보기에 보이지 않습니다. 브라우저로 직접 열어야 합니다 (외부 CDN·폰트 의존 없음).
   </div>
@@ -373,6 +390,15 @@
     { id: "record-conventions", file: "record-conventions.md", desc: "기록 스키마 규약", method: "ondemand", group: "static" },
     { id: "market-glossary", file: "market-glossary.md", desc: "용어·해석 기준", method: "ondemand", group: "static" },
     { id: "retro-lessons", file: "retro-lessons.md", desc: "회고 교훈 누적", method: "ondemand", group: "living" },
+  ];
+
+  /* 점진적 공개 references — 스킬 본문에서 분리한 출력 템플릿·스키마 상세.
+     지식(.claude/context)이 아니라 스킬 내부 자산이라 별도 모델.
+     각 스킬의 "출력/기록" 단계에서만 Read로 로드 (항상 로드 아님). */
+  const REFERENCES = [
+    { id: "ref-analyze", file: "analyze-company/references/output-template.md", desc: "출력 템플릿·기록 스키마", skill: "analyze-company" },
+    { id: "ref-recommend", file: "recommend-stocks/references/output-template.md", desc: "출력 템플릿·기록 스키마", skill: "recommend-stocks" },
+    { id: "ref-retro", file: "portfolio-retrospect/references/output-template.md", desc: "출력 템플릿·기록 스키마", skill: "portfolio-retrospect" },
   ];
 
   const CONSUMERS = [
@@ -406,6 +432,11 @@
     targets.forEach(t => EDGES.push({ from: k.id, to: t, method: k.method }));
   });
 
+  /* 엣지: references → 스킬 (특정 단계 로드 — 점진적 공개 최적화) */
+  REFERENCES.forEach(r => {
+    EDGES.push({ from: r.id, to: r.skill, method: "staged" });
+  });
+
   document.getElementById("edgeCount").textContent = EDGES.length;
 
   /* 카드별 연결 수 */
@@ -434,6 +465,17 @@
     (k.group === "living" ? livingWrap : staticWrap).appendChild(el);
   });
 
+  /* references 카드 렌더 (점진적 공개 — 특정 단계 로드) */
+  const refsWrap = document.getElementById("k-refs");
+  REFERENCES.forEach(r => {
+    const el = document.createElement("div");
+    el.className = "card k-staged";
+    el.dataset.kid = r.id;
+    el.dataset.method = "staged";
+    el.innerHTML = `<div class="name">${r.file}</div><div class="desc">${r.desc}</div><div class="badges"><span class="badge staged">특정 단계</span></div><div class="count">→1</div>`;
+    refsWrap.appendChild(el);
+  });
+
   function cCardClass(c) { return "card c-" + c.kind; }
   function cBadges(c) {
     const b = [`<span class="badge ${c.kind}">${c.kind === "skill" ? "스킬" : "에이전트"}</span>`];
@@ -458,7 +500,9 @@
 
   function colorOf(method) {
     const cs = getComputedStyle(document.documentElement);
-    return method === "always" ? cs.getPropertyValue("--always").trim() : cs.getPropertyValue("--ondemand").trim();
+    if (method === "always") return cs.getPropertyValue("--always").trim();
+    if (method === "staged") return cs.getPropertyValue("--staged").trim();
+    return cs.getPropertyValue("--ondemand").trim();
   }
 
   function drawLinks() {
@@ -512,6 +556,7 @@
     } else if (target.type === "method") {
       activeMethods.add(target.id);
       KNOWLEDGE.forEach(k => { if (k.method === target.id) activeFrom.add(k.id); });
+      if (target.id === "staged") REFERENCES.forEach(r => activeFrom.add(r.id));
       EDGES.forEach(e => { if (e.method === target.id) activeTo.add(e.to); });
     }
 

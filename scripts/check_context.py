@@ -43,10 +43,18 @@ CONSUMERS = {
     ".claude/agents/retro-fundamental-analyst.md": ["market-glossary.md"],
     ".claude/agents/retro-macro-analyst.md": ["market-glossary.md"],
     ".claude/agents/retro-skeptic.md": ["market-glossary.md"],
-    # record-conventions → 기록을 남기는 스킬 3종 / retro-lessons → 분석·추천 2종
+    # record-conventions → 기록 남기는 스킬 3종 / retro-lessons → 분석·추천 2종
     ".claude/skills/analyze-company/SKILL.md": ["record-conventions.md", "retro-lessons.md"],
     ".claude/skills/recommend-stocks/SKILL.md": ["record-conventions.md", "retro-lessons.md"],
     ".claude/skills/portfolio-retrospect/SKILL.md": ["record-conventions.md"],
+}
+
+# ④ 점진적 공개 references: SKILL.md → 자기 스킬 디렉토리의 references/ 파일
+# (최적화 — 본문의 긴 템플릿·스키마를 분리해 호출 시점에만 로드)
+REFERENCES = {
+    ".claude/skills/analyze-company/SKILL.md": ["analyze-company/references/output-template.md"],
+    ".claude/skills/recommend-stocks/SKILL.md": ["recommend-stocks/references/output-template.md"],
+    ".claude/skills/portfolio-retrospect/SKILL.md": ["portfolio-retrospect/references/output-template.md"],
 }
 
 
@@ -90,6 +98,22 @@ def main() -> int:
             ref = f"{CONTEXT_DIR}/{name}"
             check(ref in text, f"{consumer} → {ref}",
                   f"본문에 '{ref}' Read 지시가 없다")
+
+    print("④ 점진적 공개 (SKILL.md → references/ 파일 참조)")
+    for skill_md, wanted in REFERENCES.items():
+        skill_path = ROOT / skill_md
+        if not skill_path.is_file():
+            check(False, skill_md, "SKILL.md 파일이 없다")
+            continue
+        text = skill_path.read_text(encoding="utf-8")
+        for ref_rel in wanted:
+            # references 파일 존재
+            ref_path = ROOT / ".claude/skills" / ref_rel
+            check(ref_path.is_file(), f"{ref_rel} 존재", "references 파일이 없다")
+            # SKILL.md 본문이 references 경로를 참조
+            ref_token = f"references/{ref_rel.split('/')[-1]}"
+            check(ref_token in text, f"{skill_md} → {ref_token}",
+                  f"본문에 '{ref_token}' 참조가 없다")
 
     print()
     if failures:

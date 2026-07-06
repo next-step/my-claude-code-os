@@ -95,32 +95,16 @@ python3 .claude/skills/recommend-stocks/scripts/screen_kospi.py --json \
 
 ### 4단계 — 정렬 & 출력
 - **안정성 점수 내림차순**으로 정렬(상승률 아님). 동점이면 기대수익률로 보조 정렬.
-- 아래 형식으로 출력.
-
-```
-# 📈 종목 추천 (작성일: YYYY-MM-DD) — 안정성 우선
-
-| 순위 | 종목 | 안정성 | 진입가 | 목표(기대) | 손절가 | 한 줄 근거 |
-|------|------|--------|--------|-----------|--------|-----------|
-| 1 | ... | 84 | ... | ... (+8%) | ... | ... |
-
-## 필터 요약
-- 1차 통과 N개 → 2차 M개 → 정밀분석 상위 K개
-- 적용 기준: (시총/거래대금/PER/ROE 임계값)
-
-## ⚠️ 유의
-- 웹 데이터 기반 참고 자료이며 투자 권유가 아니다. 실제 매매·주문은 사람이 결정한다.
-```
+- **출력 형식(템플릿)은 이 단계에서 `references/output-template.md`를 Read로 읽어 확정**한다(점진적 공개 — 형식은 실행 시점에만 필요). 핵심 섹션: 추천 표(순위·종목·안정성·진입/목표/손절·근거)·필터 요약·유의.
 
 ### 5단계 — 회고용 기록 (구현됨, append-only)
 - 이번 실행의 **선정 결정**을 한 JSON으로 조립해 저장기에 넘긴다: 입력(필터 기준·단계별 개수·탈락 표본) + 출력(추천 종목과 각 종목의 **분석 기록 ref**).
+- **스키마 상세는 `references/output-template.md`에 있다** — 이 단계에서 해당 파일을 읽어 확정한다. 골격만 여기 둔다:
 ```
 echo '<조립한 JSON>' | python3 .claude/skills/recommend-stocks/scripts/save_run.py
 ```
-- 각 `picks[].analysis`에는 3단계에서 받은 분석 기록 ref를 넣는다. **진입/목표/손절은 여기 적지 않는다** — save_run.py가 ref의 분석 기록을 역참조해 본문 표에 끌어온다(진실원천 중복 방지).
-- `data/recommendations/YYYY-MM-DD-run.md`에 frontmatter(정량)+본문(근거)으로 저장. 같은 날 재실행 시 `-2`,`-3`… 으로 **과거 기록을 덮어쓰지 않는다.**
-- status는 추천 기록이 아니라 **각 분석 기록**에 산다(open→hit_target|stopped|watching). 회고 스킬이 분석 기록 쪽을 갱신.
-- JSON 스키마는 `scripts/save_run.py` 상단 docstring 참고.
+- 각 `picks[].analysis`에 분석 기록 ref를 넣고, **진입/목표/손절은 적지 않는다**(save_run.py가 ref 역참조).
+- `data/recommendations/YYYY-MM-DD-run.md`에 append-only 저장. 과거 기록을 덮어쓰지 않는다.
 
 ## 원칙
 - **출처 없는 수치는 싣지 않는다.** 못 구한 값은 "확인 불가"로 표기.

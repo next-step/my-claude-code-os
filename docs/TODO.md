@@ -11,4 +11,4 @@
 - [x] 주입 연결 + 정적 검증 스크립트 — [상세 계획](./plans/context-injection.md)
 - [x] A/B 동작 비교 (주입 off vs on) — [상세 계획](./plans/context-ab-test.md)
 - [x] 컨텍스트 체계 도식화 (HTML) — [상세 계획](./plans/context-map.md)
-- [ ] 정량 측정·최적화 비교 — [상세 계획](./plans/context-metrics.md)
+- [x] 정량 측정·최적화 비교 — [상세 계획](./plans/context-metrics.md)

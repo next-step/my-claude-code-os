@@ -84,48 +84,22 @@ Agent(kr-macro-researcher) ← "기간: <가장 이른 분석일> ~ <기준일(�
 > **사회자로서 네 자세:** 전문가 말을 그대로 받아쓰지 말고, 충돌을 **연결·중재**하라. 예: 기술적은 "진입 적중"이라는데 거시는 "그냥 장이 좋았다"면 → 회의론자에게 표본·베타 분리를 묻고, 셋의 말을 종합해 "실력인지 운인지" 결론을 내려라.
 
 ### 3단계 — 종합 & 기록 (방식 A)
-토론 결과를 사용자에게 보여주고, 두 가지를 기록한다.
+토론 결과를 사용자에게 보여주고, 두 가지를 기록한다. **출력 골격·저장 스키마 상세는 `references/output-template.md`에 있다** — 이 단계에서 해당 파일을 Read로 읽어 확정한다(점진적 공개). 골격만 여기 둔다:
 
 **(a) 원본 status 갱신** — 1단계에서 status 가 바뀐 종목만(`status_changes`):
 ```
 echo '{"updates":[{"file":"data/analyses/...","status":"hit_target"}, ...]}' | python3 .claude/skills/portfolio-retrospect/scripts/update_status.py
 ```
 - 원본 분석파일의 **frontmatter `status:` 줄만** 바뀐다. 진입/목표/손절·근거·본문은 **건드리지 않는다**(예측 박제).
-- 이로써 `recommend-stocks` 추천표가 분석 기록 status 를 역참조할 때 회고 결과가 자동 반영된다.
 
-**(b) 회고 리포트 저장** — 토론 경위·종목별 평가·튜닝안을 조립해 넘긴다(스키마는 `scripts/save_retro.py` 상단):
+**(b) 회고 리포트 저장** — 토론 경위·종목별 평가·튜닝안을 조립해 넘긴다(스키마는 references/output-template.md):
 ```
 echo '<조립한 JSON>' | python3 .claude/skills/portfolio-retrospect/scripts/save_retro.py
 ```
-- `data/retros/YYYY-MM-DD-retro.md` 로 append-only 저장(같은 날 재실행은 `-2`,`-3`…).
-- `rounds`·`converged`·`open_issues` 에 토론이 몇 라운드 돌았고 수렴했는지, 미해결 쟁점이 뭔지 정확히 담는다.
+- `data/retros/YYYY-MM-DD-retro.md` 로 append-only 저장. `rounds`·`converged`·`open_issues`를 정확히 담는다.
 
 ### 4단계 — 사용자에게 출력
-아래 골격으로 보여준다.
-```
-# 📒 회고 리포트  (기준일: YYYY-MM-DD)
-
-## 성적표 (사실)
-- 평가 N건: 목표달성 x · 손절 y · 관찰중 z · 평균 실현수익률 ±%
-- (종목별 status·실현수익률 표)
-
-## 전문가 토론 요약
-- 총 R라운드 (수렴 종료 / 5R 미합의)
-- 핵심 쟁점과 어떻게 결론났나 (실력 vs 운 등)
-
-## 합의된 결론
-- ...
-
-## 미해결 쟁점 (있으면 — 다음 회고로 이월)
-- ...
-
-## 튜닝 제안 (다음 추천/분석 반영 — ⚠️ 실제 수정은 사람 승인)
-- [대상 스크립트/문서] 무엇을 어떻게 — 왜
-
-## ⚠️ 유의
-- 회고는 과거 예측을 평가할 뿐, 원본 분석의 가격대·근거는 수정하지 않는다.
-- 튜닝안은 제안이며, 스크립트 상수/OS.md 의 실제 변경은 사람이 승인 후 반영한다.
-```
+**출력 골격(템플릿)은 이 단계에서 `references/output-template.md`를 Read로 읽어 확정**한다(점진적 공개 — 형식은 실행 시점에만 필요). 핵심 섹션: 성적표(사실)·전문가 토론 요약·합의된 결론·미해결 쟁점·튜닝 제안·유의.
 
 ### 5단계 — 튜닝 반영은 사람 승인 후
 도출된 튜닝안(예: "부채비율 컷 150%→130%")은 **제안까지**가 이 스킬의 역할이다.
