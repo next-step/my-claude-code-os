@@ -1,6 +1,6 @@
 ---
 topic: context-map
-status: 대기
+status: 완료
 source: docs/interviews/2026-07-06-context-optimization.md
 ---
 
