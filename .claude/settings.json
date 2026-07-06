@@ -29,6 +29,11 @@
             "type": "command",
             "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/inject-context.sh\"",
             "statusMessage": "컨텍스트 카드 주입 확인..."
+          },
+          {
+            "type": "command",
+            "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/inject-domain.sh\"",
+            "statusMessage": "도메인 문서 주입 확인..."
           }
         ]
       }

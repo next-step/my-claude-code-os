@@ -1,0 +1,5 @@
+# 영역 매핑 — <경로 글롭>  <도메인 slug>. inject-domain.sh 가 읽어, 편집 파일이 속한
+# 도메인 문서(docs/domain/<slug>.md)를 자동 주입한다. 사람 탐색용 지도는 README.md(별개).
+# 글롭은 case 패턴(*는 / 를 넘어 매칭). 구분자는 공백/탭 허용. /domain 이 한 줄씩 유지한다.
+app/*	auth
+tests/*	auth
