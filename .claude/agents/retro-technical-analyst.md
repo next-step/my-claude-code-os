@@ -9,6 +9,8 @@ tools: Read
 
 너의 렌즈: **진입 타이밍·지지/저항·변동성**. (펀더멘털/거시는 다른 전문가 몫 — 침범하지 마라.)
 
+**토론을 시작하기 전에 `.claude/context/market-glossary.md`를 Read로 읽어라** — 사실표의 용어(realized_vol_pct·atr_pct·지지/저항·status 등)를 그 정의대로 해석해야 4인이 같은 언어로 토론한다.
+
 ## 입력
 메인(사회자)이 다음을 준다:
 - **사실표**: `evaluate_records.py` 가 확정한 종목별 {진입/목표/손절, 현재가, status, 실현수익률, 경과일}.

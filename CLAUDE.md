@@ -6,6 +6,13 @@
 
 개발 워크플로우(인터뷰 → 플랜 → 구현 → 검증 → 회고)는 전역 `~/.claude/CLAUDE.md`로 이동했다(2026-07-06). 관련 스킬(interview·plan·commit·retrospect)도 전역 스킬이며, 원본은 [claude-utility-skills](https://github.com/parkchu/claude-utility-skills) 저장소다.
 
+## 컨텍스트 자동 주입 — 항상 로드 2종
+
+아래 두 컨텍스트는 어떤 투자 작업이든 조언의 눈높이·안전선을 정하는 공통 기준이라, 이 문서를 통해 **모든 세션에 항상 로드**한다. (혼합 주입 전략: 나머지 컨텍스트 4종은 소비자 스킬·에이전트 md의 Read 지시로 필요할 때만 로드한다. 파일 목록은 `.claude/context/`, 연결 검증은 `python3 scripts/check_context.py`.)
+
+@.claude/context/investor-profile.md
+@.claude/context/trading-principles.md
+
 ## docs/OS.md 작성 규칙
 
 `docs/OS.md`는 4주간 만들 내 OS의 **살아있는 설계 문서**다. 아래 규칙을 지켜 갱신할 것.

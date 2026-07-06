@@ -11,6 +11,14 @@ description: 코스피 전체에서 안정성 우선으로 소수 종목을 추�
 > ⚠️ 이 스킬은 **정보·조언 제공까지만** 한다. 실제 매매 주문은 사람 몫(OS 가드레일).
 > 투자 권유가 아니며, 모든 수치엔 출처/근거가 있어야 한다.
 
+## 시작 전 컨텍스트 (반드시 먼저 Read)
+
+추천을 시작하기 전에 아래 컨텍스트 파일을 Read로 읽어라:
+- `.claude/context/record-conventions.md` — 선정 기록(save_run.py)을 남길 때 따르는 공통 규약(append-only·파일명·역참조 규칙).
+- `.claude/context/retro-lessons.md` — 회고가 누적한 교훈. "당장 적용할 것"을 이번 추천에 반영한다(같은 실수 반복 방지).
+
+(투자 성향 `investor-profile.md`·매매 가드레일 `trading-principles.md`는 CLAUDE.md가 항상 로드하므로 다시 읽을 필요 없다.)
+
 ## 파이프라인
 
 ```

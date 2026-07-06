@@ -13,6 +13,12 @@ OS 루프의 **피드백 단계**다. `recommend-stocks`(선정 기록)와 `anal
 "왜 그랬나 / 기준을 어떻게 바꾸나"는 정답이 없는 *해석*이라 전문가들이 수렴할 때까지 토론한다.
 (OS 철학: 정성 해석=서브에이전트, 정밀 수치=결정론적 스크립트. analyze-company 와 동일한 분리.)
 
+## 시작 전 컨텍스트 (반드시 먼저 Read)
+
+회고를 시작하기 전에 `.claude/context/record-conventions.md`를 Read로 읽어라 — 기록 3종(분석·추천·회고)의 경로·스키마·불변 규칙(예측 박제, status만 갱신)을 따라 기록을 읽고 쓴다.
+
+(투자 성향 `investor-profile.md`·매매 가드레일 `trading-principles.md`는 CLAUDE.md가 항상 로드하므로 다시 읽을 필요 없다. `market-glossary.md`는 토론 전문가 4인이 각자 읽는다.)
+
 ```
 A. [스크립트] evaluate_records.py  → 종목별 status·실현수익률 사실 확정 (현재가는 quote.py 재사용)
    ↓
