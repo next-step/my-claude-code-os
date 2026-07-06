@@ -47,9 +47,10 @@
 
 ---
 
-## 인프라 관찰 (스킬 프롬프트 밖 — 사람 처리)
+## 인프라 관찰 → 오진 정정 (2026-07-06)
 
-- **`skill-usage.log` 부재 → 스킬 사용 로깅 훅 미활성.** 이번 회고의 "하드 신호(범주 근거)"가 비어, 살아있는 맥락만으로 진행했다. `/skill-stat`·향후 자동 `/retro`의 근거가 되므로, PreToolUse(matcher: `Skill`) 훅을 `/hooks`로 활성화해두면 다음 회고부터 범주별 하드 신호가 쌓인다. (스킬 수정이 아니라 훅/설정 사안 → `update-config`/`/hooks`.)
+- **[정정] 로깅 훅은 정상이었다.** 회고 당시 "`skill-usage.log` 부재 → 로깅 훅 미활성"이라 적었으나 **오진**이다. 훅(`settings.json`의 `PreToolUse:Skill` + `UserPromptSubmit`)은 활성이고 로그도 36줄 쌓여 있었다(오늘 `retro`·`commit`도 기록됨). 실제 원인은 **회고 진단 명령이 `$CLAUDE_PROJECT_DIR`를 참조**한 것 — 이 변수는 **훅 실행 시에만** 채워지고 **Bash 도구 셸에선 비어** 있어, 명령이 엉뚱한 경로(`/.claude/...`)를 봐 "없음"으로 오판했다.
+- **[반영] 실버그 수정 완료.** 같은 `$CLAUDE_PROJECT_DIR` 참조가 방금 만든 `/retro`(1단계 로그 명령)와 기존 `/skill-stat`에도 있어, 둘 다 **상대경로 `.claude/skill-usage.log`**로 고쳤다. 이제 회고가 범주별 하드 신호를 실제로 읽는다.
 
 ---
 
@@ -61,4 +62,5 @@
 - ✅ **P1** 반영 — `.claude/skills/plan/SKILL.md` 1단계에 벤더 디렉토리 제외 문구 추가.
 - ✅ **P2** 반영 — `.claude/skills/plan/SKILL.md` Plan 출력 형식에 "손댈 파일·구현 단계 단일 파일명 체계" 문구 추가.
 - ✅ **I1** 반영 — `.claude/skills/impl/SKILL.md` [준비]에 Plan 내부/현실 모순 점검 문구 추가.
-- ⏳ 이월 3건 + 인프라 관찰(로깅 훅 미활성)은 미처리.
+- ✅ **인프라 관찰 정정** — "로깅 훅 미활성"은 오진(원인은 `$CLAUDE_PROJECT_DIR` 미설정). `/retro`·`/skill-stat` 로그 경로를 상대경로로 수정 완료.
+- ⏳ 이월 3건은 미처리(다음 세션 재현 시 승격).

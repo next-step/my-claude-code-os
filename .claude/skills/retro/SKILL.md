@@ -46,8 +46,8 @@ allowed-tools:
 1. **살아있는 세션 맥락(주 신호)** — 이번 세션에서 실제로 있었던 마찰을 사실로 적는다.
 2. **`.claude/skill-usage.log`(하드 신호·범주 근거)** — 어떤 스킬이 몇 번 호출됐는지. (형식: `시각<TAB>스킬명`)
    ```bash
-   test -f "$CLAUDE_PROJECT_DIR/.claude/skill-usage.log" && \
-     tail -n 40 "$CLAUDE_PROJECT_DIR/.claude/skill-usage.log" | cut -f2 | sort | uniq -c | sort -rn
+   LOG=".claude/skill-usage.log"   # Bash 도구의 cwd = 프로젝트 루트. $CLAUDE_PROJECT_DIR는 훅에서만 채워지니 여기선 쓰지 말 것.
+   test -f "$LOG" && tail -n 40 "$LOG" | cut -f2 | sort | uniq -c | sort -rn
    ```
    (로그엔 session id가 없어 "이번 세션" 경계는 완벽하지 않다 — 맥락 지식으로 보정하고, 애매하면 그렇게 밝힌다.)
 

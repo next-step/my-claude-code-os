@@ -31,7 +31,7 @@ PreToolUse 훅이 `.claude/skill-usage.log` 에 기록한 스킬 호출 내역�
 ### 1단계: 로그 존재 확인
 
 ```bash
-test -f "$CLAUDE_PROJECT_DIR/.claude/skill-usage.log"
+test -f ".claude/skill-usage.log"
 ```
 
 파일이 없으면 "아직 기록된 스킬 호출이 없습니다. 스킬을 한 번 호출하면 기록이 시작됩니다."
@@ -42,7 +42,7 @@ test -f "$CLAUDE_PROJECT_DIR/.claude/skill-usage.log"
 아래 명령들로 핵심 수치를 모은다.
 
 ```bash
-LOG="$CLAUDE_PROJECT_DIR/.claude/skill-usage.log"
+LOG=".claude/skill-usage.log"
 
 # 총 호출 횟수
 wc -l < "$LOG"
@@ -89,4 +89,5 @@ tail -n 5 "$LOG"
 
 ## 참고
 - 로그 파일은 `.gitignore` 에 포함되어 커밋되지 않는 개인 사용 기록이다.
-- 기록은 `PreToolUse`(matcher: `Skill`) 훅이 담당한다. 통계가 비어 있으면 훅이 활성화됐는지(`/hooks`) 먼저 확인한다.
+- 기록은 `PreToolUse`(matcher: `Skill`) 훅과 `UserPromptSubmit` 훅이 담당한다. 통계가 비어 있으면 훅이 활성화됐는지(`/hooks`) 먼저 확인한다.
+- 로그 경로는 **상대경로**(`.claude/skill-usage.log`)로 읽는다 — Bash 도구의 cwd가 프로젝트 루트다. `$CLAUDE_PROJECT_DIR`는 **훅 실행 시에만** 채워지고 Bash 도구 셸에선 비어 있으니 쓰지 말 것(빈 경로로 오판함).
