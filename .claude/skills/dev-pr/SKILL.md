@@ -1,13 +1,13 @@
 ---
-name: dev-ship
-description: 코드 리뷰 루프 + 자동 수정 + 커밋 후 PR을 생성하는 스킬. 항상 새 리뷰로 시작해 CRITICAL 이슈가 없을 때까지 반복. "/dev-ship", "리뷰하고 PR 만들어줘", "배포 준비해줘" 요청 시 사용.
+name: dev-pr
+description: 코드 리뷰 루프 + 자동 수정 + 커밋 후 PR을 생성하는 스킬. 항상 새 리뷰로 시작해 CRITICAL 이슈가 없을 때까지 반복. "/dev-pr", "리뷰하고 PR 만들어줘", "배포 준비해줘" 요청 시 사용.
 metadata:
   author: baeg-yunseo
   version: "1.0.0"
   argument-hint: "[PR 제목]"
 ---
 
-# Dev Ship
+# Dev PR
 
 코드 리뷰를 통과시키는 것에 집중합니다.  
 항상 새 리뷰로 시작해 CRITICAL 이슈가 없을 때까지 수정·커밋 루프를 돌고, 통과 후 PR을 생성합니다.
@@ -29,7 +29,7 @@ git log main..HEAD --oneline
 
 **조기 종료 조건:**
 
-- 현재 브랜치가 `main` 또는 `master`이면 경고 후 중단: "보호 브랜치에서는 dev-ship을 실행할 수 없습니다. 기능 브랜치로 전환해 주세요."
+- 현재 브랜치가 `main` 또는 `master`이면 경고 후 중단: "보호 브랜치에서는 dev-pr을 실행할 수 없습니다. 기능 브랜치로 전환해 주세요."
 
 **이미 오픈된 PR 확인:**
 
@@ -75,7 +75,7 @@ CRITICAL + [AUTO-FIXABLE]:
 
 CRITICAL + [MANUAL]:
   이슈 목록 출력 후 중단
-  "수동으로 수정 후 /dev-ship을 다시 실행해 주세요."
+  "수동으로 수정 후 /dev-pr을 다시 실행해 주세요."
 
 WARNING만 있음:
   WARNING 목록 출력
@@ -89,7 +89,7 @@ WARNING만 있음:
 ```
 리뷰를 3회 시도했지만 CRITICAL 이슈가 남아 있습니다.
 [남은 이슈 목록]
-수동으로 수정 후 /dev-ship을 다시 실행해 주세요.
+수동으로 수정 후 /dev-pr을 다시 실행해 주세요.
 ```
 
 ### 루프 내 커밋 규칙
@@ -157,7 +157,7 @@ ls .github/pull_request_template.md 2>/dev/null \
 
 ---
 
-> 이 PR은 `/dev-ship` 스킬로 자동 생성되었습니다.
+> 이 PR은 `/dev-pr` 스킬로 자동 생성되었습니다.
 ```
 
 **사용자 확인 요청:**
@@ -196,7 +196,7 @@ gh pr create \
 
 ```
 ╔════════════════════════════════════╗
-║       /dev-ship 완료 요약          ║
+║        /dev-pr 완료 요약           ║
 ╠════════════════════════════════════╣
 ║ 코드 리뷰:     ✅ 클린 (N회 수정) ║
 ║ PR:            ✅ https://github…  ║

@@ -30,8 +30,8 @@ my-claude-code-os/
     │   ├── ticket-start/  # 티켓 시작 워크플로
     │   ├── task-impl/     # 개발 단위 분해 + 구현 + 커밋 루프
     │   ├── dev-test/      # 테스트 루프 + 자동 수정 + 코드 리뷰
-    │   ├── dev-ship/      # 리뷰 루프 + 자동 수정 + PR 생성
-    │   ├── dev-loop/      # dev-test → dev-ship 오케스트레이터
+    │   ├── dev-pr/      # 리뷰 루프 + 자동 수정 + PR 생성
+    │   ├── dev-loop/      # dev-test → dev-pr 오케스트레이터
     │   ├── deploy-notify/ # 배포 완료 알림
     │   ├── auto-commit/   # 커밋 자동화 (구현 완료)
     │   └── skill-stats/   # 스킬 사용 통계 (구현 완료)
@@ -169,7 +169,7 @@ output: 모든 태스크 커밋 완료
 
 ---
 
-### 2. 개발 루프 자동화 — `/dev-test` + `/dev-ship` + `/dev-loop`
+### 2. 개발 루프 자동화 — `/dev-test` + `/dev-pr` + `/dev-loop`
 
 **문제:** 개발 중 커밋, 셀프 리뷰, 테스트 실행, PR 생성까지 반복 작업이 많고 흐름이 자주 끊김
 
@@ -187,10 +187,10 @@ input:  /dev-test (개발 완료 후 호출)
         통과 후: code-reviewer 에이전트로 코드 리뷰 (단발, 수정 없음)
           ↓
 output: 테스트 결과 + 리뷰 이슈 목록 출력
-        "이슈를 수정하려면 /dev-ship을 실행하세요" 안내
+        "이슈를 수정하려면 /dev-pr을 실행하세요" 안내
 
-[Phase 2] /dev-ship
-input:  /dev-ship (리뷰 이슈 수정 후 호출)
+[Phase 2] /dev-pr
+input:  /dev-pr (리뷰 이슈 수정 후 호출)
           ↓
         code-reviewer 에이전트로 새 리뷰 (항상 fresh 실행)
           ↓
@@ -203,14 +203,14 @@ output: PR 생성 (브랜치 push + gh pr create)
         + 리뷰 결과 요약 출력
 
 [오케스트레이터] /dev-loop
-        /dev-test → 성공 시 → /dev-ship 순서 실행
+        /dev-test → 성공 시 → /dev-pr 순서 실행
 ```
 
 **구현 완료:**
 
 - [x] `/dev-test` 스킬 — 테스트 루프 + code-reviewer 단발 리뷰
-- [x] `/dev-ship` 스킬 — code-reviewer 루프 + PR 생성
-- [x] `/dev-loop` 오케스트레이터 — dev-test → dev-ship 순차 호출
+- [x] `/dev-pr` 스킬 — code-reviewer 루프 + PR 생성
+- [x] `/dev-loop` 오케스트레이터 — dev-test → dev-pr 순차 호출
 - [x] 테스트 실행 명령어 감지 로직 (package.json / Makefile 등)
 - [x] PR 템플릿 감지 및 적용 (프로젝트 템플릿 우선, 없으면 기본 템플릿 폴백)
 
@@ -255,7 +255,7 @@ output: Slack 배포 완료 메시지 전송
 | Step 2.6 | `/dev-loop` PR 템플릿 자동 감지 — 프로젝트 템플릿 우선 적용                                                     | ✅ 완료 |
 | Step 2.7 | `ticket-start` QA 체크리스트 생성 — 기획서 시나리오 → Playwright 실행 가능 포맷으로 `docs/qa-checklist.md` 저장 | ✅ 완료 |
 | Step 2.8 | `dev-loop` Playwright QA 실행 — `docs/qa-checklist.md` 기반 체크리스트 순회 + PR 본문 자동 반영                 | ✅ 완료 |
-| Step 2.9 | `/dev-loop` 분리 — `/dev-test`(테스트+리뷰) + `/dev-ship`(리뷰루프+PR) + `/dev-loop`(오케스트레이터)            | ✅ 완료 |
+| Step 2.9 | `/dev-loop` 분리 — `/dev-test`(테스트+리뷰) + `/dev-pr`(리뷰루프+PR) + `/dev-loop`(오케스트레이터)            | ✅ 완료 |
 | Step 3   | `/deploy-notify` 스킬 구현                                                                                      | 🔲 예정 |
 | Step 4   | 배포 명령 감지 훅 자동화                                                                                        | 🔲 예정 |
 | Step 5   | Memory 시스템 구축                                                                                              | 🔲 예정 |

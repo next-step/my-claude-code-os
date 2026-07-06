@@ -1,6 +1,6 @@
 ---
 name: dev-loop
-description: 개발 완료 후 /dev-test(테스트+리뷰)와 /dev-ship(리뷰루프+PR)을 순서대로 실행하는 오케스트레이터. "개발 완료", "PR 만들어줘", "리뷰하고 커밋해줘", "/dev-loop" 요청 시 반드시 사용. 단계별 실행은 /dev-test, /dev-ship을 직접 사용.
+description: 개발 완료 후 /dev-test(테스트+리뷰)와 /dev-pr(리뷰루프+PR)을 순서대로 실행하는 오케스트레이터. "개발 완료", "PR 만들어줘", "리뷰하고 커밋해줘", "/dev-loop" 요청 시 반드시 사용. 단계별 실행은 /dev-test, /dev-pr을 직접 사용.
 metadata:
   author: baeg-yunseo
   version: "2.0.0"
@@ -9,12 +9,12 @@ metadata:
 
 # Dev Loop
 
-`/dev-test`와 `/dev-ship`을 순서대로 실행하는 오케스트레이터입니다.
+`/dev-test`와 `/dev-pr`을 순서대로 실행하는 오케스트레이터입니다.
 
 - 테스트만 돌리고 결과를 확인하고 싶다면 `/dev-test`를 직접 사용하세요.
-- 리뷰 후 PR만 생성하고 싶다면 `/dev-ship`을 직접 사용하세요.
+- 리뷰 후 PR만 생성하고 싶다면 `/dev-pr`을 직접 사용하세요.
 
-인자로 PR 제목을 받으면 `/dev-ship` 호출 시 그대로 전달합니다.
+인자로 PR 제목을 받으면 `/dev-pr` 호출 시 그대로 전달합니다.
 
 ---
 
@@ -27,16 +27,16 @@ Skill 도구로 `/dev-test`를 실행합니다.
 
 ```
 /dev-test가 실패로 종료되었습니다.
-테스트 문제를 수정한 후 /dev-loop 또는 /dev-ship을 다시 실행해 주세요.
+테스트 문제를 수정한 후 /dev-loop 또는 /dev-pr을 다시 실행해 주세요.
 ```
 
 ---
 
-## 2단계: /dev-ship 실행
+## 2단계: /dev-pr 실행
 
-Skill 도구로 `/dev-ship`을 실행합니다.
+Skill 도구로 `/dev-pr`을 실행합니다.
 
-- 인자로 PR 제목이 주어진 경우 `/dev-ship "[PR 제목]"` 형식으로 전달합니다.
+- 인자로 PR 제목이 주어진 경우 `/dev-pr "[PR 제목]"` 형식으로 전달합니다.
 
 ---
 
@@ -53,7 +53,7 @@ Skill 도구로 `/dev-ship`을 실행합니다.
 ║   QA 체크리스트: ✅ N/N 통과             ║
 ║   자동 수정 커밋: N회                    ║
 ║   코드 리뷰:     ⚠️ CRITICAL N건 발견   ║
-║ [dev-ship]                               ║
+║ [dev-pr]                                 ║
 ║   코드 리뷰:     ✅ 클린 (N회 수정)     ║
 ║   PR:            ✅ https://github…      ║
 ╚══════════════════════════════════════════╝
@@ -63,5 +63,5 @@ Skill 도구로 `/dev-ship`을 실행합니다.
 
 ## 주의사항
 
-- 각 스킬의 주의사항(`/dev-test`, `/dev-ship` 참조)을 그대로 따릅니다
+- 각 스킬의 주의사항(`/dev-test`, `/dev-pr` 참조)을 그대로 따릅니다
 - `main`/`master` 브랜치에서는 두 스킬 모두 실행을 거부합니다
