@@ -2,7 +2,7 @@
 # PreToolUse(Edit|Write|MultiEdit) 훅: 편집 경로가 속한 서비스 도메인의 컨텍스트를 "계층형"으로 주입한다.
 #   - 도메인 목차(docs/domain/README.md)는 항상 얹는다(작으니 — 라우팅용).
 #   - 손댄 도메인 상세(docs/domain/<slug>.md)는: 작으면 전체, 크면 머리(요약)+"전체는 Read" 포인터.
-#     → 기본 도메인 감(感)은 늘 보장하고, 큰 문서만 잘라 컨텍스트를 아낀다.
+#     → 기본 도메인 감은 늘 보장하고, 큰 문서만 잘라 컨텍스트를 아낀다.
 # 경로→도메인 매핑은 docs/domain/_territory.tsv (<glob>  <slug>)에서 읽는다(데이터 주도). /domain 이 유지.
 # 컨벤션 카드 주입(inject-context.sh)의 형제. 세션당 도메인별 1회만 주입(dedup).
 #
