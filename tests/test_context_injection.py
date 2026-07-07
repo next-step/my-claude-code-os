@@ -13,6 +13,7 @@ from pathlib import Path
 PROJ = Path(__file__).resolve().parents[1]
 HOOK = PROJ / ".claude" / "hooks" / "inject-context.sh"
 CARD_MARKER = "백엔드 컨벤션"  # backend-conventions.md 제목에 있는 표식
+DOC_MARKER = "문서 작성 규칙"  # doc-conventions.md 제목에 있는 표식
 
 
 def run_hook(file_path: str, session_id: str) -> subprocess.CompletedProcess:
@@ -49,9 +50,18 @@ def test_injects_for_tests_path():
     assert CARD_MARKER in json.loads(res.stdout)["hookSpecificOutput"]["additionalContext"]
 
 
+def test_injects_doc_card_for_docs_path():
+    """docs/ 문서를 만지면 doc-conventions 카드가 주입된다(app/tests와 다른 카드)."""
+    res = run_hook(str(PROJ / "docs" / "prd" / "whatever.md"), "t-" + uuid.uuid4().hex)
+    assert res.returncode == 0
+    ctx = json.loads(res.stdout)["hookSpecificOutput"]["additionalContext"]
+    assert DOC_MARKER in ctx
+    assert CARD_MARKER not in ctx  # 백엔드 카드가 잘못 섞이지 않는다
+
+
 def test_no_inject_for_unrelated_path():
-    """app·tests 밖(docs 등)은 주입하지 않는다(침묵)."""
-    res = run_hook(str(PROJ / "docs" / "whatever.md"), "t-" + uuid.uuid4().hex)
+    """app·tests·docs 밖(저장소 루트 등)은 주입하지 않는다(침묵)."""
+    res = run_hook(str(PROJ / "OS.md"), "t-" + uuid.uuid4().hex)
     assert res.returncode == 0
     assert res.stdout.strip() == ""
 
@@ -63,3 +73,12 @@ def test_dedup_injects_once_per_session():
     assert first.stdout.strip() != ""  # 첫 편집: 주입
     second = run_hook(str(PROJ / "app" / "config.py"), sid)
     assert second.stdout.strip() == ""  # 같은 세션: 침묵
+
+
+def test_dedup_is_per_card_not_global():
+    """카드별 독립 dedup — 백엔드 카드를 한 번 주입해도 문서 카드는 여전히 주입된다."""
+    sid = "t-" + uuid.uuid4().hex
+    backend = run_hook(str(PROJ / "app" / "main.py"), sid)
+    assert CARD_MARKER in json.loads(backend.stdout)["hookSpecificOutput"]["additionalContext"]
+    docs = run_hook(str(PROJ / "docs" / "plan" / "x.md"), sid)  # 같은 세션, 다른 카드
+    assert DOC_MARKER in json.loads(docs.stdout)["hookSpecificOutput"]["additionalContext"]

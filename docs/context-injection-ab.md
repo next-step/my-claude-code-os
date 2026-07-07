@@ -49,5 +49,5 @@ if not self.security.verify(current_pw, user.password_hash):
 즉 카드가 없으면 프레임워크 기본값으로 흘러가고, 주입되면 프로젝트 컨벤션·도메인 규격을 지킨다. 이것이 훅으로 컨텍스트를 자동 주입하는 이유다.
 
 ## 관련
-- 주입이 **실제로 일어남**은 검증 테스트가 증명: `tests/test_context_injection.py`(backend-conventions 주입), `tests/test_domain_injection.py`(도메인 문서 계층형 주입) — 9케이스 통과. (DAY2 도전 1)
+- 주입이 **실제로 일어남**은 검증 테스트가 증명: `tests/test_context_injection.py`(경로별 카드 주입 — `app/`·`tests/`→backend-conventions, `docs/`→doc-conventions, 카드별 dedup), `tests/test_domain_injection.py`(도메인 문서 계층형 주입) — 11케이스 통과. (DAY2 도전 1)
 - 주입 체계 전체 그림: `docs/diagrams/context-system.png`.
