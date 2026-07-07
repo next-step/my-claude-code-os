@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><style>
+  :root{
+    --ink:#1f2937; --muted:#6b7280; --line:#e5e7eb; --bg:#fafafa;
+    --custom:#f5f3ff; --custom-b:#7c3aed;
+    --stage:#f0fdfa; --stage-b:#0d9488;
+    --hook:#fffbeb; --hook-b:#d97706;
+    --agent:#eff6ff; --agent-b:#2563eb;
+  }
+  *{box-sizing:border-box;}
+  body{font-family:-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;color:var(--ink);
+       background:#fff;margin:0;padding:30px 34px;width:1120px;}
+  h1{font-size:22px;margin:0 0 3px;}
+  .sub{color:var(--muted);font-size:12.5px;margin:0 0 16px;}
+
+  .flowband{background:#f8fafc;border:1px solid var(--line);border-radius:10px;padding:10px 14px;
+            font-size:12.5px;color:#334155;margin-bottom:18px;display:flex;align-items:center;gap:9px;flex-wrap:wrap;}
+  .flowband b{color:var(--ink);}
+  .flowband .s{color:#94a3b8;font-weight:800;font-size:15px;}
+  .flowband code{background:#fff;border:1px solid #cbd5e1;border-radius:4px;padding:1px 5px;font-size:11px;color:#334155;}
+
+  .pipe{display:flex;align-items:stretch;gap:10px;}
+  .col{flex:1;border:1px solid var(--line);border-radius:12px;background:var(--bg);padding:12px 13px;display:flex;flex-direction:column;gap:9px;}
+  .col-src{border-top:4px solid var(--custom-b);}
+  .col-hook{border-top:4px solid var(--hook-b);}
+  .col-cons{border-top:4px solid var(--agent-b);}
+  .colhead{font-weight:800;font-size:13.5px;margin-bottom:2px;}
+  .col-src .colhead{color:var(--custom-b);}
+  .col-hook .colhead{color:var(--hook-b);}
+  .col-cons .colhead{color:var(--agent-b);}
+
+  .group{border:1px dashed #d1d5db;border-radius:9px;padding:8px 8px 9px;}
+  .gtitle{font-size:10.5px;font-weight:800;color:var(--muted);margin-bottom:6px;letter-spacing:.2px;}
+
+  .card{border-radius:9px;padding:8px 11px;font-size:12px;border:1px solid;background:#fff;line-height:1.32;font-weight:700;margin-bottom:6px;}
+  .card:last-child{margin-bottom:0;}
+  .card .k{display:block;font-size:9.7px;font-weight:600;color:var(--muted);margin-top:2px;}
+  .c-custom{background:var(--custom);border-color:#ddd6fe;color:var(--custom-b);}
+  .c-stage{background:var(--stage);border-color:#99f6e4;color:var(--stage-b);}
+  .c-hook{background:var(--hook);border-color:#fde68a;color:var(--hook-b);}
+  .c-agent{background:var(--agent);border-color:#bfdbfe;color:var(--agent-b);}
+  .c-dedup{background:#fff;border-color:#e5e7eb;color:#374151;border-style:dashed;}
+
+  .bigarrow{display:flex;align-items:center;font-size:26px;color:#9ca3af;font-weight:800;}
+
+  .lift{font-size:9.5px;font-weight:800;color:var(--stage-b);background:#fff;border:1px solid #99f6e4;
+        border-radius:6px;padding:2px 6px;display:inline-block;margin-top:5px;}
+  .outcome{margin-top:auto;background:#ecfdf5;border:1px solid #a7f3d0;color:#059669;border-radius:9px;
+           padding:8px 11px;font-size:12px;font-weight:800;text-align:center;}
+
+  .principle{margin-top:16px;background:#f5f3ff;border:1px solid #ddd6fe;border-left:5px solid var(--custom-b);
+             border-radius:10px;padding:10px 14px;font-size:12px;line-height:1.5;color:#5b21b6;}
+  .principle b{color:#4c1d95;}
+  .principle code{background:#fff;border:1px solid #ddd6fe;border-radius:4px;padding:0 5px;font-size:10.5px;color:#6d28d9;}
+
+  .legend{margin-top:14px;border-top:1px solid var(--line);padding-top:11px;display:flex;gap:18px;flex-wrap:wrap;font-size:11.5px;color:var(--muted);}
+  .legend b{color:var(--ink);}
+  .sw{display:inline-block;width:11px;height:11px;border-radius:3px;border:1px solid;vertical-align:middle;margin-right:4px;}
+</style></head><body>
+
+  <h1>컨텍스트 체계 — 소스 → 주입 훅 → 소비자</h1>
+  <p class="sub">코드를 편집하면 <b>PreToolUse 훅</b>이 "무슨 파일을 만지는가"를 보고 알맞은 컨텍스트를 자동으로 끼워 넣는다. 스킬을 안 돌리고 맨손으로 고칠 때도 규칙·도메인 지식이 따라온다.</p>
+
+  <div class="flowband">
+    <b>흐름</b>
+    <code>코드 편집(Edit/Write)</code><span class="s">→</span>
+    <code>PreToolUse 훅 발화</code><span class="s">→</span>
+    <code>경로 매칭</code><span class="s">→</span>
+    <code>additionalContext 주입</code><span class="s">→</span>
+    <b>AI가 규칙·도메인 지식을 앎</b>
+  </div>
+
+  <div class="pipe">
+    <!-- ① 소스 -->
+    <div class="col col-src">
+      <div class="colhead">① 컨텍스트 소스</div>
+      <div class="group">
+        <div class="gtitle">컨텍스트 카드 · <code>.claude/context/</code></div>
+        <div class="card c-custom">flow-rules.md<span class="k">공유 개발 규칙(게이트·테스트·재활용) — 단일 출처</span></div>
+        <div class="card c-custom">backend-conventions.md<span class="k">백엔드 코드 컨벤션 — 레이어·에러 규격·언어</span></div>
+      </div>
+      <div class="group">
+        <div class="gtitle">도메인 지식 · <code>docs/domain/</code></div>
+        <div class="card c-stage">README.md — 목차<span class="k">라우팅表: 어느 상세를 읽을지</span></div>
+        <div class="card c-stage">&lt;slug&gt;.md — 상세 <span class="k">예: auth.md (정체·경계·관계)</span></div>
+        <div class="card c-stage">_territory.tsv<span class="k">경로 글롭 → 도메인 매핑</span></div>
+        <span class="lift">계층형: 목차 항상 · 상세는 작으면 전체 / 크면 요약+포인터</span>
+      </div>
+    </div>
+
+    <div class="bigarrow">→</div>
+
+    <!-- ② 훅 -->
+    <div class="col col-hook">
+      <div class="colhead">② 주입 훅 · PreToolUse <span style="font-weight:600;font-size:10.5px;color:#b45309;">(Edit·Write·MultiEdit)</span></div>
+      <div class="card c-hook">inject-context.sh<span class="k">app/* · tests/* 편집 → backend-conventions 주입</span></div>
+      <div class="card c-hook">inject-domain.sh<span class="k">편집 경로 → _territory.tsv로 도메인 찾아 → 계층형(목차+상세) 주입</span></div>
+      <div class="card c-dedup">세션당 1회 dedup<span class="k">같은 카드·도메인 재주입 안 함 = 컨텍스트 절약</span></div>
+    </div>
+
+    <div class="bigarrow">→</div>
+
+    <!-- ③ 소비자 -->
+    <div class="col col-cons">
+      <div class="colhead">③ 소비자</div>
+      <div class="card c-agent">메인 컨텍스트<span class="k">맨손 코드 편집 시 규칙·도메인 지식이 자동으로 붙음</span></div>
+      <div class="card c-agent">서브에이전트 / 스킬<span class="k">reviewer 등은 flow-rules를 <b>Read로 직접 참조</b> — 격리 컨텍스트라 훅이 자동 주입 안 됨</span></div>
+      <div class="outcome">→ 컨벤션 준수 · 정확한 설계</div>
+    </div>
+  </div>
+
+  <div class="principle">
+    <b>원칙</b> &nbsp;단일 출처(<code>flow-rules</code>) · 얇은 색인(도메인 <b>계층형</b>) · 세션당 1회 dedup(컨텍스트 절약) &nbsp;|&nbsp;
+    <b>검증 테스트</b> <code>test_context_injection</code> · <code>test_domain_injection</code> — 9케이스 통과 (주입이 실제로 일어남을 증명)
+  </div>
+
+  <div class="legend">
+    <span><span class="sw" style="background:var(--custom);border-color:#ddd6fe;"></span><b>컨텍스트 카드</b> 공유 규칙·컨벤션</span>
+    <span><span class="sw" style="background:var(--stage);border-color:#99f6e4;"></span><b>도메인 지식</b> 목차→상세(계층형)</span>
+    <span><span class="sw" style="background:var(--hook);border-color:#fde68a;"></span><b>주입 훅</b> PreToolUse</span>
+    <span><span class="sw" style="background:var(--agent);border-color:#bfdbfe;"></span><b>소비자</b> 메인·서브에이전트/스킬</span>
+  </div>
+
+</body></html>
