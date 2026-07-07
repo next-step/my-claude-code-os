@@ -1,0 +1,44 @@
+{
+  "eval": "context-injection A/B (visual-check bundle, 8247 chars)",
+  "method": "skill-creator executor+grader roles; blind comparator omitted (6/6 vs 0/6 is unambiguous)",
+  "conditions": {
+    "A_injected": {
+      "desc": "훅 주입 payload(실제 inject-context.py 출력)를 컨텍스트로 받음",
+      "expectations": [
+        {"q": "Q1 ai-notes.json 경로+스키마", "passed": true, "evidence": "screenshots/<target>/ai-notes.json + {id:{level,note}} 정확"},
+        {"q": "Q2 visual.config.json + baseUrl/variantRoute", "passed": true, "evidence": "파일명·두 키 정확"},
+        {"q": "Q3 data-variant-id + 첫 자식 루트", "passed": true, "evidence": ":scope > *:first-child 명시"},
+        {"q": "Q4 overall=세 렌즈 최악", "passed": true, "evidence": "error>warn>ok 최악값"},
+        {"q": "Q5 블라인드=expected+코드수치+타판정 미전달", "passed": true, "evidence": "3요소 모두 명시"},
+        {"q": "Q6 dev서버 소유권", "passed": true, "evidence": "UP 마커X / 자체기동 .visual-dev-server.pid"}
+      ],
+      "summary": {"passed": 6, "total": 6, "pass_rate": 1.0},
+      "metrics": {"tool_calls": 3, "tokens": 27676, "duration_s": 38}
+    },
+    "B_lookup": {
+      "desc": "주입 없음, 파일시스템 조회 허용(레포 직접 읽음)",
+      "summary": {"passed": 6, "total": 6, "pass_rate": 1.0},
+      "metrics": {"tool_calls": 9, "tokens": 37101, "duration_s": 83},
+      "note": "정답은 맞았으나 파일을 직접 뒤져서 회수 — 주입 대비 도구 3배·토큰 34%↑·시간 2.2배. 회수 성공은 '올바른 파일을 찾았다'는 우연에 의존(brittle)."
+    },
+    "B_nolookup": {
+      "desc": "주입 없음, 파일 조회 금지(순수 컨텍스트 지식만)",
+      "expectations": [
+        {"q": "Q1", "passed": false, "evidence": "모름 (환각 안 함)"},
+        {"q": "Q2", "passed": false, "evidence": "모름"},
+        {"q": "Q3", "passed": false, "evidence": "data-* 추측만, 미확정"},
+        {"q": "Q4", "passed": false, "evidence": "렌즈 이름만 사실, overall 계산식 모름"},
+        {"q": "Q5", "passed": false, "evidence": "취지만 추측 재구성, 코드수치 요소 누락, 정의 모름"},
+        {"q": "Q6", "passed": false, "evidence": "모름"}
+      ],
+      "summary": {"passed": 0, "total": 6, "pass_rate": 0.0},
+      "metrics": {"tool_calls": 0, "tokens": 18719, "duration_s": 37},
+      "note": "정답률 0. 단, 6개 중 4개를 '모름'으로 정직 처리하고 환각하지 않음 — 실패 방식이 안전."
+    }
+  },
+  "conclusion": {
+    "correctness_axis": "조회 불가 시 주입 6/6 vs 무주입 0/6 — 정답/오답을 가름 (homework §3 원래 주장 재현·정량화)",
+    "efficiency_axis": "조회 가능 시 정답은 동률(6/6)이나 주입이 도구 1/3·토큰 25%↓·시간 절반 — 주입의 가치가 correctness에서 efficiency·determinism으로 이동",
+    "takeaway": "주입 효과는 '실행자가 사실을 스스로 찾을 수 있느냐'에 반비례. 못 찾으면 정답을, 찾을 수 있으면 비용·결정성을 가른다."
+  }
+}

@@ -24,6 +24,12 @@
       "title": "OS 공통 용어집",
       "skills": ["visual-add", "visual-check", "visual-confidence", "visual-list", "visual-regress", "visual-remove", "visual-lens"],
       "agents": []
+    },
+    {
+      "file": ".claude/context/conventions.md",
+      "title": "작업 규약 — 커밋·브랜치·소통 (도메인 무관 범용)",
+      "skills": ["commit", "interview"],
+      "agents": []
     }
   ]
 }

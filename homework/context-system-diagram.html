@@ -1,0 +1,250 @@
+<title>컨텍스트 자동 주입 체계</title>
+<style>
+  :root {
+    --bg: #f6f8fa; --panel: #ffffff; --ink: #1a1f2b; --muted: #5b6472;
+    --line: #d9dee6; --line-soft: #e8ecf1;
+    --flow: #0e9c92;            /* 주입 흐름 (틸) */
+    --skill: #c2740a;          /* PreToolUse·Skill (앰버) */
+    --agent: #6d5bd0;          /* SubagentStart (바이올렛) */
+    --good: #2e9e5b;           /* 통과·보존 */
+    --chip: #eef1f5;
+    --mono: ui-monospace, "SF Mono", "SFMono-Regular", Menlo, Consolas, monospace;
+    --sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0e1217; --panel: #161b22; --ink: #e6e9ef; --muted: #98a2b3;
+      --line: #262d38; --line-soft: #1e242d;
+      --flow: #34cabb; --skill: #e0973a; --agent: #a091ef; --good: #46c07a;
+      --chip: #1c222b;
+    }
+  }
+  :root[data-theme="light"] {
+    --bg: #f6f8fa; --panel: #ffffff; --ink: #1a1f2b; --muted: #5b6472;
+    --line: #d9dee6; --line-soft: #e8ecf1; --flow: #0e9c92; --skill: #c2740a;
+    --agent: #6d5bd0; --good: #2e9e5b; --chip: #eef1f5;
+  }
+  :root[data-theme="dark"] {
+    --bg: #0e1217; --panel: #161b22; --ink: #e6e9ef; --muted: #98a2b3;
+    --line: #262d38; --line-soft: #1e242d; --flow: #34cabb; --skill: #e0973a;
+    --agent: #a091ef; --good: #46c07a; --chip: #1c222b;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font-family: var(--sans);
+    line-height: 1.5; -webkit-font-smoothing: antialiased;
+    padding: clamp(20px, 4vw, 52px);
+  }
+  .sheet { max-width: 1120px; margin: 0 auto; }
+
+  header { margin-bottom: 28px; }
+  .eyebrow {
+    font-size: 11px; letter-spacing: .16em; text-transform: uppercase;
+    color: var(--flow); font-weight: 650; margin: 0 0 8px;
+  }
+  h1 {
+    font-size: clamp(24px, 3.6vw, 34px); margin: 0; font-weight: 720;
+    letter-spacing: -.02em; text-wrap: balance;
+  }
+  .sub { color: var(--muted); margin: 10px 0 0; max-width: 62ch; font-size: 14.5px; }
+  .sub b { color: var(--ink); font-weight: 640; }
+
+  /* ── 파이프라인 ── */
+  .pipe {
+    display: grid; gap: 14px; margin-top: 30px;
+    grid-template-columns: repeat(4, 1fr);
+  }
+  @media (max-width: 900px) { .pipe { grid-template-columns: 1fr 1fr; } }
+  @media (max-width: 560px) { .pipe { grid-template-columns: 1fr; } }
+
+  .stage {
+    background: var(--panel); border: 1px solid var(--line);
+    border-radius: 12px; padding: 16px 16px 18px; position: relative;
+    display: flex; flex-direction: column; min-width: 0;
+  }
+  .stage > .cap {
+    display: flex; align-items: baseline; gap: 8px; margin-bottom: 12px;
+  }
+  .cap .n {
+    font-family: var(--mono); font-size: 11px; color: var(--muted);
+    font-variant-numeric: tabular-nums;
+  }
+  .cap .t { font-weight: 660; font-size: 14px; letter-spacing: -.01em; }
+  .cap .role { margin-left: auto; font-size: 10.5px; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; }
+
+  /* 스테이지 사이 흐름 화살표 */
+  .stage:not(:last-child)::after {
+    content: "→"; position: absolute; right: -12px; top: 50%;
+    transform: translate(50%, -50%); color: var(--flow);
+    font-size: 16px; font-weight: 700; z-index: 2;
+  }
+  @media (max-width: 900px) { .stage::after { display: none; } }
+
+  .file {
+    font-family: var(--mono); font-size: 12px; padding: 7px 9px;
+    border: 1px solid var(--line-soft); border-radius: 7px;
+    background: var(--bg); margin-bottom: 7px; display: block;
+    overflow-x: auto; white-space: nowrap;
+  }
+  .file .tag {
+    display: block; white-space: normal; font-family: var(--sans);
+    font-size: 10.5px; color: var(--muted); margin-top: 3px;
+  }
+  .file.accent { border-color: var(--flow); box-shadow: inset 3px 0 0 var(--flow); }
+
+  .note { font-size: 12px; color: var(--muted); margin: 4px 0 0; }
+
+  /* 훅 이벤트 두 갈래 */
+  .event { border-radius: 8px; padding: 10px 11px; margin-bottom: 9px; border: 1px solid var(--line-soft); }
+  .event.skill { box-shadow: inset 3px 0 0 var(--skill); }
+  .event.agent { box-shadow: inset 3px 0 0 var(--agent); }
+  .event .lbl { font-family: var(--mono); font-size: 11.5px; font-weight: 600; }
+  .event.skill .lbl { color: var(--skill); }
+  .event.agent .lbl { color: var(--agent); }
+  .event .to { font-size: 11.5px; color: var(--muted); margin-top: 3px; }
+  .event .to b { color: var(--ink); font-weight: 620; }
+
+  .target-group { margin-bottom: 11px; }
+  .target-group .gl {
+    font-size: 10.5px; text-transform: uppercase; letter-spacing: .08em;
+    margin: 0 0 6px; font-weight: 640;
+  }
+  .target-group.skill .gl { color: var(--skill); }
+  .target-group.agent .gl { color: var(--agent); }
+  .chips { display: flex; flex-wrap: wrap; gap: 5px; }
+  .chip {
+    font-family: var(--mono); font-size: 11px; padding: 3px 7px;
+    background: var(--chip); border-radius: 5px; color: var(--ink);
+  }
+
+  /* ── 하단 스트립: 3 인사이트 카드 ── */
+  .strip {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 16px;
+  }
+  @media (max-width: 780px) { .strip { grid-template-columns: 1fr; } }
+  .card {
+    background: var(--panel); border: 1px solid var(--line);
+    border-radius: 12px; padding: 15px 16px;
+  }
+  .card .h {
+    display: flex; align-items: center; gap: 8px; margin-bottom: 8px;
+    font-weight: 660; font-size: 13.5px;
+  }
+  .card .h .dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+  .metric { font-size: 26px; font-weight: 740; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+  .metric .u { font-size: 13px; color: var(--muted); font-weight: 500; margin-left: 2px; }
+  .card p { margin: 6px 0 0; font-size: 12.5px; color: var(--muted); }
+  .card p b { color: var(--ink); font-weight: 620; }
+  .bar { height: 6px; border-radius: 3px; background: var(--line-soft); margin: 10px 0 2px; overflow: hidden; }
+  .bar > i { display: block; height: 100%; background: var(--flow); border-radius: 3px; }
+
+  .legend {
+    display: flex; flex-wrap: wrap; gap: 16px; margin-top: 24px;
+    padding-top: 16px; border-top: 1px solid var(--line);
+    font-size: 12px; color: var(--muted);
+  }
+  .legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .legend i { width: 11px; height: 11px; border-radius: 3px; flex: none; }
+  .foot { margin-top: 14px; font-size: 11.5px; color: var(--muted); font-family: var(--mono); }
+</style>
+
+<div class="sheet">
+  <header>
+    <p class="eyebrow">내 클로드 OS · DAY 2 과제</p>
+    <h1>컨텍스트 자동 주입 체계</h1>
+    <p class="sub">
+      지식(<b>md</b>)과 배선(<b>누구에게</b>)을 분리한다. 스킬·서브에이전트가 뜨는 <b>바로 그 순간</b>,
+      훅이 매핑된 컨텍스트만 골라 주입한다 — CLAUDE.md처럼 매 턴 싣지 않고, "읽어라"처럼 안 읽힐 위험도 없이.
+    </p>
+  </header>
+
+  <div class="pipe">
+    <!-- 1. 지식 -->
+    <section class="stage">
+      <div class="cap"><span class="n">01</span><span class="t">지식</span><span class="role">context md ×5</span></div>
+      <code class="file accent">visual-rubric.md<span class="tag">판정 헌법 (정본) · §1–6-1</span></code>
+      <code class="file">context/stage.md<span class="tag">무대 계약</span></code>
+      <code class="file">context/artifacts.md<span class="tag">산출물 JSON 스키마</span></code>
+      <code class="file">context/glossary.md<span class="tag">공통 용어</span></code>
+      <code class="file accent">context/conventions.md<span class="tag">커밋·브랜치 규약 · 도메인 무관 ⭐신규</span></code>
+      <p class="note">rubric의 §7·유지보수 노트는 <code style="font-family:var(--mono);font-size:11px">rubric-appendix.md</code>로 분리 — 판정에 안 쓰여 주입 제외.</p>
+    </section>
+
+    <!-- 2. 배선 -->
+    <section class="stage">
+      <div class="cap"><span class="n">02</span><span class="t">배선</span><span class="role">manifest</span></div>
+      <code class="file">context/manifest.json</code>
+      <p class="note">
+        "어떤 <b style="color:var(--ink)">파일</b> → 어떤 <b style="color:var(--ink)">스킬·에이전트</b>"만 적는 표.
+        새 컨텍스트 추가 = md 작성 + <b style="color:var(--ink)">한 줄</b>.
+      </p>
+      <div class="bar" style="margin-top:14px"><i style="width:100%"></i></div>
+      <p class="note"><b style="color:var(--ink)">코드(훅)는 안 바뀐다.</b> 지식·배선만 자란다.</p>
+    </section>
+
+    <!-- 3. 훅 -->
+    <section class="stage">
+      <div class="cap"><span class="n">03</span><span class="t">훅</span><span class="role">inject-context.py</span></div>
+      <div class="event skill">
+        <div class="lbl">PreToolUse · Skill</div>
+        <div class="to">스킬 호출 순간 → <b>메인 대화</b>에 주입</div>
+      </div>
+      <div class="event agent">
+        <div class="lbl">SubagentStart</div>
+        <div class="to">에이전트 스폰 순간 → <b>그 에이전트 본체</b>에 주입</div>
+      </div>
+      <p class="note">이벤트를 가른 이유: PreToolUse의 컨텍스트는 호출자에게만 닿고 서브에이전트엔 안 닿는다.</p>
+    </section>
+
+    <!-- 4. 대상 -->
+    <section class="stage">
+      <div class="cap"><span class="n">04</span><span class="t">대상</span><span class="role">실행 주체</span></div>
+      <div class="target-group skill">
+        <p class="gl">스킬 (오케스트레이션)</p>
+        <div class="chips">
+          <span class="chip">commit</span><span class="chip">interview</span>
+          <span class="chip">visual-check</span><span class="chip">visual-regress</span>
+          <span class="chip">confidence</span><span class="chip">lens</span>
+          <span class="chip">list</span><span class="chip">remove</span><span class="chip">add</span>
+        </div>
+      </div>
+      <div class="target-group agent">
+        <p class="gl">서브에이전트 (판정 눈)</p>
+        <div class="chips">
+          <span class="chip">visual-judge</span><span class="chip">visual-comparator</span>
+        </div>
+      </div>
+      <p class="note">판정은 눈이 <b style="color:var(--ink)">위임받아</b> 하고, 스킬은 오케스트레이션만. 그래서 눈에 판정 헌법을 주입한다.</p>
+    </section>
+  </div>
+
+  <!-- 하단 인사이트 -->
+  <div class="strip">
+    <div class="card">
+      <div class="h"><span class="dot" style="background:var(--flow)"></span>최적화 · 정량</div>
+      <div class="metric">−7.7<span class="u">% 주입량</span></div>
+      <div class="bar"><i style="width:92.3%"></i></div>
+      <p>rubric을 <b>판정 본체 / 아키텍처 메타</b>로 갈라 후자를 주입 제외. 전 호출 <b>52,780→48,736자</b>. 판정 경계(66.7→75% 튜닝)는 무손상.</p>
+    </div>
+    <div class="card">
+      <div class="h"><span class="dot" style="background:var(--good)"></span>주입 검증 테스트</div>
+      <div class="metric">8<span class="u">/8 통과</span></div>
+      <p><b>무결성</b>(파일·이름 실존) + <b>동작</b>(매핑엔 주입 / 미매핑엔 무주입 / 깨진 입력에도 흐름 안 막음). 조용히 썩는 배선을 깨우는 방어막.</p>
+    </div>
+    <div class="card">
+      <div class="h"><span class="dot" style="background:var(--skill)"></span>A/B 교훈</div>
+      <div class="metric">유추 불가 ∝ 효과</div>
+      <p>상식 규약은 주입해도 <b>차이 미미</b>(모델이 이미 앎). 임의 스키마·경로는 주입 없으면 <b>추측·오답</b>. 그래서 "필요한 곳에만" 매핑.</p>
+    </div>
+  </div>
+
+  <div class="legend">
+    <span><i style="background:var(--flow)"></i>주입 흐름 · 최적화</span>
+    <span><i style="background:var(--skill)"></i>PreToolUse · Skill → 메인</span>
+    <span><i style="background:var(--agent)"></i>SubagentStart → 에이전트</span>
+    <span><i style="background:var(--good)"></i>보존 · 통과</span>
+  </div>
+  <p class="foot">.claude/context/ · manifest.json · hooks/inject-context.py — 지식과 배선의 분리</p>
+</div>
