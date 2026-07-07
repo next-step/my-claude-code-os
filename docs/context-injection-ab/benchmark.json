@@ -1,0 +1,601 @@
+{
+  "metadata": {
+    "skill_name": "context-injection",
+    "skill_path": "<path/to/skill>",
+    "executor_model": "<model-name>",
+    "analyzer_model": "<model-name>",
+    "timestamp": "2026-07-07T12:48:25Z",
+    "evals_run": [
+      0,
+      1,
+      2
+    ],
+    "runs_per_configuration": 3
+  },
+  "runs": [
+    {
+      "eval_id": 0,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 5,
+        "failed": 0,
+        "total": 5,
+        "time_seconds": 36.2,
+        "tokens": 20075,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "AppError(\ub610\ub294 \ud329\ud1a0\ub9ac *_error())\ub85c \uc2e4\ud328\ub97c \ud45c\ud604",
+          "passed": true,
+          "evidence": "ty), \uc2e4\ud328\ub294 `AppError`(\ud329\ud1a0\ub9ac), \uc751\ub2f5 \ubc14\ub514\ub294 `{ \"errorCode\", \"message\" }`, \ud55c\uad6d\uc5b4 docstring,"
+        },
+        {
+          "text": "\uc751\ub2f5 \ubc14\ub514\uac00 errorCode+message \ud615\uc2dd(detail \uc544\ub2d8)",
+          "passed": true,
+          "evidence": "\ub2f5 \ubc14\ub514\ub294 `{ \"errorCode\", \"message\" }`, \ud55c\uad6d\uc5b4 docstring, snake_case.  ## app/errors.p"
+        },
+        {
+          "text": "raw HTTPException\uc744 \uc2e4\ud328\uc758 1\ucc28 \uba54\ucee4\ub2c8\uc998\uc73c\ub85c \uc4f0\uc9c0 \uc54a\uc74c",
+          "passed": true,
+          "evidence": "raise HTTPException \uc5c6\uc74c"
+        },
+        {
+          "text": "controller/service/repository \ub808\uc774\uc5b4 \ubd84\ub9ac \ubc18\uc601",
+          "passed": true,
+          "evidence": "\ub808\uc774\uc5b4 \uc5b8\uae09: controller, service, repository"
+        },
+        {
+          "text": "\ud55c\uad6d\uc5b4 docstring/\uc8fc\uc11d \uc874\uc7ac",
+          "passed": true,
+          "evidence": "# \ube44\ubc00\ubc88\ud638 \ubcc0\uacbd \u2014 \uc2e4\ud328 \ucc98\ub9ac \uc2a4\ucf00\uce58  \ud604\uc7ac \ube44\ubc00\ubc88\ud638 \ubd88\uc77c\uce58\ub97c \uc911\uc2ec\uc73c\ub85c. \ucee8\ubca4\uc158 \uce74\ub4dc\uc5d0 \ub9de\ucda4: \ub808\uc774\uc5b4 \ubd84\ub9ac(controller\u2192service\u2192r"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 0,
+      "configuration": "with_skill",
+      "run_number": 2,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 5,
+        "failed": 0,
+        "total": 5,
+        "time_seconds": 28.2,
+        "tokens": 19904,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "AppError(\ub610\ub294 \ud329\ud1a0\ub9ac *_error())\ub85c \uc2e4\ud328\ub97c \ud45c\ud604",
+          "passed": true,
+          "evidence": "\ub294 \ub3c4\uba54\uc778 \uc608\uc678 `AppError` \ud329\ud1a0\ub9ac\ub85c \ub358\uc9c0\uace0, \uc751\ub2f5 \ubc14\ub514\ub294 `{ \"errorCode\", \"message\" }` \ub85c \uc815\uaddc\ud654\ud55c\ub2e4.  ##"
+        },
+        {
+          "text": "\uc751\ub2f5 \ubc14\ub514\uac00 errorCode+message \ud615\uc2dd(detail \uc544\ub2d8)",
+          "passed": true,
+          "evidence": "\ub2f5 \ubc14\ub514\ub294 `{ \"errorCode\", \"message\" }` \ub85c \uc815\uaddc\ud654\ud55c\ub2e4.  ## 1) errors.py \u2014 \uc2e4\ud328 \ud45c\ud604(\ud329\ud1a0\ub9ac + \ud578\ub4e4\ub7ec)"
+        },
+        {
+          "text": "raw HTTPException\uc744 \uc2e4\ud328\uc758 1\ucc28 \uba54\ucee4\ub2c8\uc998\uc73c\ub85c \uc4f0\uc9c0 \uc54a\uc74c",
+          "passed": true,
+          "evidence": "raise HTTPException \uc5c6\uc74c"
+        },
+        {
+          "text": "controller/service/repository \ub808\uc774\uc5b4 \ubd84\ub9ac \ubc18\uc601",
+          "passed": true,
+          "evidence": "\ub808\uc774\uc5b4 \uc5b8\uae09: controller, service, repository"
+        },
+        {
+          "text": "\ud55c\uad6d\uc5b4 docstring/\uc8fc\uc11d \uc874\uc7ac",
+          "passed": true,
+          "evidence": "# \ube44\ubc00\ubc88\ud638 \ubcc0\uacbd \u2014 \uc2e4\ud328 \ucc98\ub9ac \uc2a4\ucf00\uce58  \ud604\uc7ac \ube44\ubc00\ubc88\ud638\uac00 \ud2c0\ub838\uc744 \ub54c\ub97c \uc911\uc2ec\uc73c\ub85c. \ub808\uc774\uc5b4\ub294 \ucee8\ubca4\uc158 \uce74\ub4dc\ub300\ub85c `controller \u2192 service"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 1,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 5,
+        "failed": 0,
+        "total": 5,
+        "time_seconds": 29.4,
+        "tokens": 19965,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "AppError(\ub610\ub294 \ud329\ud1a0\ub9ac *_error())\ub85c \uc2e4\ud328\ub97c \ud45c\ud604",
+          "passed": true,
+          "evidence": "\ubc18\uc774\ubbc0\ub85c \uc5ec\uae30\uc11c `AppError`\ub97c \ub358\uc9c4\ub2e4. controller\ub294 HTTP \ubcc0\ud658\ub9cc, repository\ub294 DB \uc811\uadfc\ub9cc. - **\uc2e4\ud328 \ud45c\ud604*"
+        },
+        {
+          "text": "\uc751\ub2f5 \ubc14\ub514\uac00 errorCode+message \ud615\uc2dd(detail \uc544\ub2d8)",
+          "passed": true,
+          "evidence": "\ubc14\ub514**: `{ \"errorCode\": ..., \"message\": ... }` (errors \ud578\ub4e4\ub7ec\uac00 \ubcc0\ud658). - **\uc0c1\ud0dc\ucf54\ub4dc**: `409"
+        },
+        {
+          "text": "raw HTTPException\uc744 \uc2e4\ud328\uc758 1\ucc28 \uba54\ucee4\ub2c8\uc998\uc73c\ub85c \uc4f0\uc9c0 \uc54a\uc74c",
+          "passed": true,
+          "evidence": "raise HTTPException \uc5c6\uc74c"
+        },
+        {
+          "text": "controller/service/repository \ub808\uc774\uc5b4 \ubd84\ub9ac \ubc18\uc601",
+          "passed": true,
+          "evidence": "\ub808\uc774\uc5b4 \uc5b8\uae09: controller, service, repository"
+        },
+        {
+          "text": "\ud55c\uad6d\uc5b4 docstring/\uc8fc\uc11d \uc874\uc7ac",
+          "passed": true,
+          "evidence": "# \ud68c\uc6d0\uac00\uc785 \uc544\uc774\ub514 \uc911\ubcf5 \uc2e4\ud328 \ucc98\ub9ac (\uc2a4\ucf00\uce58)  - **\uc5b8\uc5b4/\uc2a4\ud0dd**: Python (FastAPI + Pydantic + SQLAlchemy) - **"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 1,
+      "configuration": "with_skill",
+      "run_number": 2,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 5,
+        "failed": 0,
+        "total": 5,
+        "time_seconds": 30.3,
+        "tokens": 19871,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "AppError(\ub610\ub294 \ud329\ud1a0\ub9ac *_error())\ub85c \uc2e4\ud328\ub97c \ud45c\ud604",
+          "passed": true,
+          "evidence": ": \ub3c4\uba54\uc778 \uc608\uc678 `AppError` \u2014 \ud329\ud1a0\ub9ac `duplicate_username_error()` - **\uc751\ub2f5 \ubc14\ub514**: `{ \"errorC"
+        },
+        {
+          "text": "\uc751\ub2f5 \ubc14\ub514\uac00 errorCode+message \ud615\uc2dd(detail \uc544\ub2d8)",
+          "passed": true,
+          "evidence": "\ubc14\ub514**: `{ \"errorCode\": ..., \"message\": ... }` (errors \ud578\ub4e4\ub7ec\uac00 \ubcc0\ud658) - **\uc0c1\ud0dc\ucf54\ub4dc**: `409"
+        },
+        {
+          "text": "raw HTTPException\uc744 \uc2e4\ud328\uc758 1\ucc28 \uba54\ucee4\ub2c8\uc998\uc73c\ub85c \uc4f0\uc9c0 \uc54a\uc74c",
+          "passed": true,
+          "evidence": "raise HTTPException \uc5c6\uc74c"
+        },
+        {
+          "text": "controller/service/repository \ub808\uc774\uc5b4 \ubd84\ub9ac \ubc18\uc601",
+          "passed": true,
+          "evidence": "\ub808\uc774\uc5b4 \uc5b8\uae09: controller, service, repository"
+        },
+        {
+          "text": "\ud55c\uad6d\uc5b4 docstring/\uc8fc\uc11d \uc874\uc7ac",
+          "passed": true,
+          "evidence": "# \ud68c\uc6d0\uac00\uc785 \uc544\uc774\ub514 \uc911\ubcf5 \uc2e4\ud328 \ucc98\ub9ac \uc2a4\ucf00\uce58  - **\uc5b8\uc5b4/\uc2a4\ud0dd**: Python (FastAPI + Pydantic + SQLAlchemy) - **"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 2,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 6,
+        "failed": 0,
+        "total": 6,
+        "time_seconds": 28.7,
+        "tokens": 19789,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "AppError(\ub610\ub294 \ud329\ud1a0\ub9ac *_error())\ub85c \uc2e4\ud328\ub97c \ud45c\ud604",
+          "passed": true,
+          "evidence": "\ub294 \ub3c4\uba54\uc778 \uc608\uc678 `AppError`\ub85c \ub358\uc9c0\uace0 `app/errors.py` \ud578\ub4e4\ub7ec\uac00 `{ \"errorCode\", \"message\" }` \ubc14\ub514\ub85c"
+        },
+        {
+          "text": "\uc751\ub2f5 \ubc14\ub514\uac00 errorCode+message \ud615\uc2dd(detail \uc544\ub2d8)",
+          "passed": true,
+          "evidence": "\ud578\ub4e4\ub7ec\uac00 `{ \"errorCode\", \"message\" }` \ubc14\ub514\ub85c \uc815\uaddc\ud654\ud55c\ub2e4.  ## \ubcf4\uc548 \uad00\uc810 \ud575\uc2ec  - **\uc544\uc774\ub514 \uc5c6\uc74c == \ube44\ubc00\ubc88\ud638"
+        },
+        {
+          "text": "raw HTTPException\uc744 \uc2e4\ud328\uc758 1\ucc28 \uba54\ucee4\ub2c8\uc998\uc73c\ub85c \uc4f0\uc9c0 \uc54a\uc74c",
+          "passed": true,
+          "evidence": "raise HTTPException \uc5c6\uc74c"
+        },
+        {
+          "text": "controller/service/repository \ub808\uc774\uc5b4 \ubd84\ub9ac \ubc18\uc601",
+          "passed": true,
+          "evidence": "\ub808\uc774\uc5b4 \uc5b8\uae09: controller, service, repository"
+        },
+        {
+          "text": "\ud55c\uad6d\uc5b4 docstring/\uc8fc\uc11d \uc874\uc7ac",
+          "passed": true,
+          "evidence": "# \ub85c\uadf8\uc778 \uc2e4\ud328 \ucc98\ub9ac \uc2a4\ucf00\uce58 (Python)  \ub808\uc774\uc5b4: `controller \u2192 service \u2192 repository \u2192 security`, \uc2e4\ud328\ub294 \ub3c4"
+        },
+        {
+          "text": "\ubcf4\uc548: \uc544\uc774\ub514\uc5c6\uc74c\u00b7\ube44\ubc88\ubd88\uc77c\uce58\ub97c \uad6c\ubd84\uc54a\uace0 \ub3d9\uc77c \uc2e4\ud328(INVALID_CREDENTIALS\ub958)",
+          "passed": true,
+          "evidence": "\uc77c\uce58**: \uc6d0\uc778\uc744 \uad6c\ubd84\ud558\uc9c0 \uc54a\uace0 **\ub3d9\uc77c\ud558\uac8c** `INVALID_CREDENTIALS(401)`.   \u2192 \uacc4\uc815 \uc874\uc7ac \uc5ec\ubd80(user"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 2,
+      "configuration": "with_skill",
+      "run_number": 2,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 6,
+        "failed": 0,
+        "total": 6,
+        "time_seconds": 32.9,
+        "tokens": 19985,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "AppError(\ub610\ub294 \ud329\ud1a0\ub9ac *_error())\ub85c \uc2e4\ud328\ub97c \ud45c\ud604",
+          "passed": true,
+          "evidence": "\uc900\uc218: \uc2e4\ud328\ub294 `AppError`\ub85c, \uc751\ub2f5 \ubc14\ub514\ub294 `{errorCode, message}`, \ubcf4\uc548\uc0c1 \"\uc544\uc774\ub514 \uc5c6\uc74c\"\uacfc \"\ube44\ubc00\ubc88\ud638 \ubd88\uc77c\uce58\"\ub97c"
+        },
+        {
+          "text": "\uc751\ub2f5 \ubc14\ub514\uac00 errorCode+message \ud615\uc2dd(detail \uc544\ub2d8)",
+          "passed": true,
+          "evidence": "\uc751\ub2f5 \ubc14\ub514\ub294 `{errorCode, message}`, \ubcf4\uc548\uc0c1 \"\uc544\uc774\ub514 \uc5c6\uc74c\"\uacfc \"\ube44\ubc00\ubc88\ud638 \ubd88\uc77c\uce58\"\ub97c **\ub3d9\uc77c\ud558\uac8c** `INVALID_CRE"
+        },
+        {
+          "text": "raw HTTPException\uc744 \uc2e4\ud328\uc758 1\ucc28 \uba54\ucee4\ub2c8\uc998\uc73c\ub85c \uc4f0\uc9c0 \uc54a\uc74c",
+          "passed": true,
+          "evidence": "raise HTTPException \uc5c6\uc74c"
+        },
+        {
+          "text": "controller/service/repository \ub808\uc774\uc5b4 \ubd84\ub9ac \ubc18\uc601",
+          "passed": true,
+          "evidence": "\ub808\uc774\uc5b4 \uc5b8\uae09: controller, service, repository"
+        },
+        {
+          "text": "\ud55c\uad6d\uc5b4 docstring/\uc8fc\uc11d \uc874\uc7ac",
+          "passed": true,
+          "evidence": "# \ub85c\uadf8\uc778 \uc2e4\ud328 \ucc98\ub9ac \uc2a4\ucf00\uce58 (FastAPI \u00b7 \ub808\uc774\uc5b4 \ubd84\ub9ac)  \ucee8\ubca4\uc158 \uc900\uc218: \uc2e4\ud328\ub294 `AppError`\ub85c, \uc751\ub2f5 \ubc14\ub514\ub294 `{errorCode, message}`"
+        },
+        {
+          "text": "\ubcf4\uc548: \uc544\uc774\ub514\uc5c6\uc74c\u00b7\ube44\ubc88\ubd88\uc77c\uce58\ub97c \uad6c\ubd84\uc54a\uace0 \ub3d9\uc77c \uc2e4\ud328(INVALID_CREDENTIALS\ub958)",
+          "passed": true,
+          "evidence": "\ud638 \ubd88\uc77c\uce58\"\ub97c **\ub3d9\uc77c\ud558\uac8c** `INVALID_CREDENTIALS(401)`.  ```python # app/errors.py \u2014"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 0,
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.2,
+        "passed": 1,
+        "failed": 4,
+        "total": 5,
+        "time_seconds": 22.5,
+        "tokens": 18078,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "AppError(\ub610\ub294 \ud329\ud1a0\ub9ac *_error())\ub85c \uc2e4\ud328\ub97c \ud45c\ud604",
+          "passed": false,
+          "evidence": "AppError/\ud329\ud1a0\ub9ac \ubbf8\ubc1c\uacac"
+        },
+        {
+          "text": "\uc751\ub2f5 \ubc14\ub514\uac00 errorCode+message \ud615\uc2dd(detail \uc544\ub2d8)",
+          "passed": false,
+          "evidence": "errorCode \ubbf8\ubc1c\uacac(FastAPI \uae30\ubcf8 detail \ucd94\uc815)"
+        },
+        {
+          "text": "raw HTTPException\uc744 \uc2e4\ud328\uc758 1\ucc28 \uba54\ucee4\ub2c8\uc998\uc73c\ub85c \uc4f0\uc9c0 \uc54a\uc74c",
+          "passed": false,
+          "evidence": "raise HTTPException \uc0ac\uc6a9: \ud604         raise HTTPException(             status_code=status.HTTP_400_BAD_REQUEST,"
+        },
+        {
+          "text": "controller/service/repository \ub808\uc774\uc5b4 \ubd84\ub9ac \ubc18\uc601",
+          "passed": false,
+          "evidence": "\ub808\uc774\uc5b4 \uc5b8\uae09: service"
+        },
+        {
+          "text": "\ud55c\uad6d\uc5b4 docstring/\uc8fc\uc11d \uc874\uc7ac",
+          "passed": true,
+          "evidence": "# \ube44\ubc00\ubc88\ud638 \ubcc0\uacbd \u2014 \uc2e4\ud328 \ucc98\ub9ac \uc2a4\ucf00\uce58 (\ud604\uc7ac \ube44\ubc00\ubc88\ud638 \ubd88\uc77c\uce58 \uc911\uc2ec)  - **\ub808\uc774\uc5b4**: \uc11c\ube44\uc2a4 \ub808\uc774\uc5b4\uc5d0\uc11c \ub3c4\uba54\uc778 \uc608\uc678(`InvalidCurrentPasswor"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 0,
+      "configuration": "without_skill",
+      "run_number": 2,
+      "result": {
+        "pass_rate": 0.2,
+        "passed": 1,
+        "failed": 4,
+        "total": 5,
+        "time_seconds": 27.0,
+        "tokens": 18450,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "AppError(\ub610\ub294 \ud329\ud1a0\ub9ac *_error())\ub85c \uc2e4\ud328\ub97c \ud45c\ud604",
+          "passed": false,
+          "evidence": "AppError/\ud329\ud1a0\ub9ac \ubbf8\ubc1c\uacac"
+        },
+        {
+          "text": "\uc751\ub2f5 \ubc14\ub514\uac00 errorCode+message \ud615\uc2dd(detail \uc544\ub2d8)",
+          "passed": false,
+          "evidence": "errorCode \ubbf8\ubc1c\uacac(FastAPI \uae30\ubcf8 detail \ucd94\uc815)"
+        },
+        {
+          "text": "raw HTTPException\uc744 \uc2e4\ud328\uc758 1\ucc28 \uba54\ucee4\ub2c8\uc998\uc73c\ub85c \uc4f0\uc9c0 \uc54a\uc74c",
+          "passed": false,
+          "evidence": "raise HTTPException \uc0ac\uc6a9: .         raise HTTPException(             status_code=status.HTTP_400_BAD_REQUEST,"
+        },
+        {
+          "text": "controller/service/repository \ub808\uc774\uc5b4 \ubd84\ub9ac \ubc18\uc601",
+          "passed": false,
+          "evidence": "\ub808\uc774\uc5b4 \uc5b8\uae09: service"
+        },
+        {
+          "text": "\ud55c\uad6d\uc5b4 docstring/\uc8fc\uc11d \uc874\uc7ac",
+          "passed": true,
+          "evidence": "# \ube44\ubc00\ubc88\ud638 \ubcc0\uacbd \u2014 \uc2e4\ud328 \ucc98\ub9ac \uc2a4\ucf00\uce58 (\ud604\uc7ac \ube44\ubc00\ubc88\ud638 \ubd88\uc77c\uce58 \uc911\uc2ec)  **\uc124\uacc4 \uc694\uc57d** - **\ub808\uc774\uc5b4 \uad6c\ubd84**: \uc2e4\ud328\ub294 *\uc11c\ube44\uc2a4 \ub808\uc774\uc5b4*\uc5d0\uc11c \ub3c4\uba54\uc778 \uc608\uc678\ub85c \ud45c\ud604"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 1,
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.2,
+        "passed": 1,
+        "failed": 4,
+        "total": 5,
+        "time_seconds": 23.5,
+        "tokens": 18256,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "AppError(\ub610\ub294 \ud329\ud1a0\ub9ac *_error())\ub85c \uc2e4\ud328\ub97c \ud45c\ud604",
+          "passed": false,
+          "evidence": "AppError/\ud329\ud1a0\ub9ac \ubbf8\ubc1c\uacac"
+        },
+        {
+          "text": "\uc751\ub2f5 \ubc14\ub514\uac00 errorCode+message \ud615\uc2dd(detail \uc544\ub2d8)",
+          "passed": false,
+          "evidence": "errorCode \ubbf8\ubc1c\uacac(FastAPI \uae30\ubcf8 detail \ucd94\uc815)"
+        },
+        {
+          "text": "raw HTTPException\uc744 \uc2e4\ud328\uc758 1\ucc28 \uba54\ucee4\ub2c8\uc998\uc73c\ub85c \uc4f0\uc9c0 \uc54a\uc74c",
+          "passed": false,
+          "evidence": "raise HTTPException \uc0ac\uc6a9: \ub514         raise HTTPException(             status_code=status.HTTP_409_CONFLICT,"
+        },
+        {
+          "text": "controller/service/repository \ub808\uc774\uc5b4 \ubd84\ub9ac \ubc18\uc601",
+          "passed": false,
+          "evidence": "\ub808\uc774\uc5b4 \uc5b8\uae09: \uc5c6\uc74c"
+        },
+        {
+          "text": "\ud55c\uad6d\uc5b4 docstring/\uc8fc\uc11d \uc874\uc7ac",
+          "passed": true,
+          "evidence": "# \ud68c\uc6d0\uac00\uc785 \uc544\uc774\ub514 \uc911\ubcf5 \uc2e4\ud328 \ucc98\ub9ac (\uc2a4\ucf00\uce58)  - **\uc5b8\uc5b4/\uc2a4\ud0dd**: Python 3, FastAPI + SQLAlchemy + Pydantic - *"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 1,
+      "configuration": "without_skill",
+      "run_number": 2,
+      "result": {
+        "pass_rate": 0.2,
+        "passed": 1,
+        "failed": 4,
+        "total": 5,
+        "time_seconds": 25.0,
+        "tokens": 18208,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "AppError(\ub610\ub294 \ud329\ud1a0\ub9ac *_error())\ub85c \uc2e4\ud328\ub97c \ud45c\ud604",
+          "passed": false,
+          "evidence": "AppError/\ud329\ud1a0\ub9ac \ubbf8\ubc1c\uacac"
+        },
+        {
+          "text": "\uc751\ub2f5 \ubc14\ub514\uac00 errorCode+message \ud615\uc2dd(detail \uc544\ub2d8)",
+          "passed": false,
+          "evidence": "errorCode \ubbf8\ubc1c\uacac(FastAPI \uae30\ubcf8 detail \ucd94\uc815)"
+        },
+        {
+          "text": "raw HTTPException\uc744 \uc2e4\ud328\uc758 1\ucc28 \uba54\ucee4\ub2c8\uc998\uc73c\ub85c \uc4f0\uc9c0 \uc54a\uc74c",
+          "passed": false,
+          "evidence": "raise HTTPException \uc0ac\uc6a9: \ub514         raise HTTPException(             status_code=status.HTTP_409_CONFLICT,"
+        },
+        {
+          "text": "controller/service/repository \ub808\uc774\uc5b4 \ubd84\ub9ac \ubc18\uc601",
+          "passed": false,
+          "evidence": "\ub808\uc774\uc5b4 \uc5b8\uae09: service"
+        },
+        {
+          "text": "\ud55c\uad6d\uc5b4 docstring/\uc8fc\uc11d \uc874\uc7ac",
+          "passed": true,
+          "evidence": "# \ud68c\uc6d0\uac00\uc785 \uc544\uc774\ub514 \uc911\ubcf5 \uc2e4\ud328 \ucc98\ub9ac \uc2a4\ucf00\uce58 (FastAPI)  - **\uc5b8\uc5b4/\ud504\ub808\uc784\uc6cc\ud06c**: Python 3.11 / FastAPI + SQLAlchemy + Py"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 2,
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.3333,
+        "passed": 2,
+        "failed": 4,
+        "total": 6,
+        "time_seconds": 28.8,
+        "tokens": 18300,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "AppError(\ub610\ub294 \ud329\ud1a0\ub9ac *_error())\ub85c \uc2e4\ud328\ub97c \ud45c\ud604",
+          "passed": false,
+          "evidence": "AppError/\ud329\ud1a0\ub9ac \ubbf8\ubc1c\uacac"
+        },
+        {
+          "text": "\uc751\ub2f5 \ubc14\ub514\uac00 errorCode+message \ud615\uc2dd(detail \uc544\ub2d8)",
+          "passed": false,
+          "evidence": "errorCode \ubbf8\ubc1c\uacac(FastAPI \uae30\ubcf8 detail \ucd94\uc815)"
+        },
+        {
+          "text": "raw HTTPException\uc744 \uc2e4\ud328\uc758 1\ucc28 \uba54\ucee4\ub2c8\uc998\uc73c\ub85c \uc4f0\uc9c0 \uc54a\uc74c",
+          "passed": false,
+          "evidence": "raise HTTPException \uc0ac\uc6a9: )         raise HTTPException(             status_code=status.HTTP_401_UNAUTHORIZED,"
+        },
+        {
+          "text": "controller/service/repository \ub808\uc774\uc5b4 \ubd84\ub9ac \ubc18\uc601",
+          "passed": false,
+          "evidence": "\ub808\uc774\uc5b4 \uc5b8\uae09: service"
+        },
+        {
+          "text": "\ud55c\uad6d\uc5b4 docstring/\uc8fc\uc11d \uc874\uc7ac",
+          "passed": true,
+          "evidence": "# \ub85c\uadf8\uc778 \uc2e4\ud328 \ucc98\ub9ac \uc2a4\ucf00\uce58 (FastAPI)  \ub808\uc774\uc5b4: \ub77c\uc6b0\ud130(HTTP) \u2192 \uc11c\ube44\uc2a4(\uc778\uc99d \ub85c\uc9c1) \u2192 \ub9ac\ud3ec\uc9c0\ud1a0\ub9ac(DB \uc870\ud68c). \uc2e4\ud328 \ud45c\ud604: \ub3c4\uba54\uc778 \uc608\uc678("
+        },
+        {
+          "text": "\ubcf4\uc548: \uc544\uc774\ub514\uc5c6\uc74c\u00b7\ube44\ubc88\ubd88\uc77c\uce58\ub97c \uad6c\ubd84\uc54a\uace0 \ub3d9\uc77c \uc2e4\ud328(INVALID_CREDENTIALS\ub958)",
+          "passed": true,
+          "evidence": "\ube44\ubc00\ubc88\ud638 \ud2c0\ub9bc\uc744 \uad6c\ubd84\ud558\uc9c0 \uc54a\ub294\ub2e4**(\uc0ac\uc6a9\uc790 \uc5f4\uac70 \ubc29\uc9c0), \ud0c0\uc774\ubc0d \uacf5\uaca9 \ubc29\uc9c0\ub97c \uc704\ud574 \uc720\uc800\uac00 \uc5c6\uc5b4\ub3c4 \ub354\ubbf8 \ud574\uc2dc\ub85c \uac80\uc99d\uc744 \uc218\ud589\ud55c\ub2e4."
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 2,
+      "configuration": "without_skill",
+      "run_number": 2,
+      "result": {
+        "pass_rate": 0.3333,
+        "passed": 2,
+        "failed": 4,
+        "total": 6,
+        "time_seconds": 28.2,
+        "tokens": 18187,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "AppError(\ub610\ub294 \ud329\ud1a0\ub9ac *_error())\ub85c \uc2e4\ud328\ub97c \ud45c\ud604",
+          "passed": false,
+          "evidence": "AppError/\ud329\ud1a0\ub9ac \ubbf8\ubc1c\uacac"
+        },
+        {
+          "text": "\uc751\ub2f5 \ubc14\ub514\uac00 errorCode+message \ud615\uc2dd(detail \uc544\ub2d8)",
+          "passed": false,
+          "evidence": "errorCode \ubbf8\ubc1c\uacac(FastAPI \uae30\ubcf8 detail \ucd94\uc815)"
+        },
+        {
+          "text": "raw HTTPException\uc744 \uc2e4\ud328\uc758 1\ucc28 \uba54\ucee4\ub2c8\uc998\uc73c\ub85c \uc4f0\uc9c0 \uc54a\uc74c",
+          "passed": false,
+          "evidence": "raise HTTPException \uc0ac\uc6a9: \ub2e8         raise HTTPException(             status_code=status.HTTP_401_UNAUTHORIZED,"
+        },
+        {
+          "text": "controller/service/repository \ub808\uc774\uc5b4 \ubd84\ub9ac \ubc18\uc601",
+          "passed": false,
+          "evidence": "\ub808\uc774\uc5b4 \uc5b8\uae09: service"
+        },
+        {
+          "text": "\ud55c\uad6d\uc5b4 docstring/\uc8fc\uc11d \uc874\uc7ac",
+          "passed": true,
+          "evidence": "# \ub85c\uadf8\uc778 \uc2e4\ud328 \ucc98\ub9ac \uc2a4\ucf00\uce58 (FastAPI)  \ub808\uc774\uc5b4: `router \u2192 service \u2192 \uc608\uc678 \u2192 \ud578\ub4e4\ub7ec`. \ud575\uc2ec \ubcf4\uc548 \uc6d0\uce59\uc740 **\"\uc544\uc774\ub514 \uc5c6\uc74c\"\uacfc"
+        },
+        {
+          "text": "\ubcf4\uc548: \uc544\uc774\ub514\uc5c6\uc74c\u00b7\ube44\ubc88\ubd88\uc77c\uce58\ub97c \uad6c\ubd84\uc54a\uace0 \ub3d9\uc77c \uc2e4\ud328(INVALID_CREDENTIALS\ub958)",
+          "passed": true,
+          "evidence": "\uba54\uc2dc\uc9c0 (\uc6d0\uc778\uc744 \uad6c\ubd84\ud558\uc9c0 \uc54a\uc74c) _INVALID_CREDENTIALS = \"\uc544\uc774\ub514 \ub610\ub294 \ube44\ubc00\ubc88\ud638\uac00 \uc62c\ubc14\ub974\uc9c0 \uc54a\uc2b5\ub2c8\ub2e4.\"   cl"
+        }
+      ],
+      "notes": []
+    }
+  ],
+  "run_summary": {
+    "with_skill": {
+      "pass_rate": {
+        "mean": 1.0,
+        "stddev": 0.0,
+        "min": 1.0,
+        "max": 1.0
+      },
+      "time_seconds": {
+        "mean": 30.95,
+        "stddev": 3.0599,
+        "min": 28.2,
+        "max": 36.2
+      },
+      "tokens": {
+        "mean": 19931.5,
+        "stddev": 99.297,
+        "min": 19789,
+        "max": 20075
+      }
+    },
+    "without_skill": {
+      "pass_rate": {
+        "mean": 0.2444,
+        "stddev": 0.0688,
+        "min": 0.2,
+        "max": 0.3333
+      },
+      "time_seconds": {
+        "mean": 25.8333,
+        "stddev": 2.5696,
+        "min": 22.5,
+        "max": 28.8
+      },
+      "tokens": {
+        "mean": 18246.5,
+        "stddev": 124.7233,
+        "min": 18078,
+        "max": 18450
+      }
+    },
+    "delta": {
+      "pass_rate": "+0.76",
+      "time_seconds": "+5.1",
+      "tokens": "+1685"
+    }
+  },
+  "notes": []
+}

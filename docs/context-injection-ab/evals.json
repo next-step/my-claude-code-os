@@ -1,0 +1,43 @@
+{
+  "skill_name": "context-injection (backend-conventions.md)",
+  "note": "A/B: with_skill = 카드 주입 ON, without_skill = 주입 OFF. 두 config 모두 기존 소스(app/·tests/)는 안 읽는 격리 조건. 유일한 변인은 카드.",
+  "evals": [
+    {
+      "id": 0,
+      "name": "password-change-failure",
+      "prompt": "이 FastAPI 백엔드(아이디/비밀번호 인증)에 '비밀번호 변경' 기능의 실패 처리를 코드로 스케치하라. 현재 비밀번호가 틀렸을 때를 중심으로: 어느 레이어에서 처리하는지, 실패를 어떻게 표현하는지, HTTP 응답 바디 형식과 상태코드, 언어를 구체 코드로 보여라.",
+      "expectations": [
+        "AppError(또는 팩토리 *_error()) 로 실패를 표현한다",
+        "응답 바디가 errorCode + message 형식이다(FastAPI 기본 detail 아님)",
+        "raw HTTPException 을 실패의 1차 메커니즘으로 쓰지 않는다",
+        "controller/service/repository 레이어 분리를 반영한다",
+        "한국어 docstring/주석이 있다"
+      ]
+    },
+    {
+      "id": 1,
+      "name": "signup-duplicate-failure",
+      "prompt": "이 백엔드에 회원가입 시 아이디 중복을 막는 실패 처리를 코드로 스케치하라. 어느 레이어에서 판정하는지, 실패 표현, 응답 바디 형식, 상태코드를 명시하라.",
+      "expectations": [
+        "AppError(또는 팩토리 *_error()) 로 실패를 표현한다",
+        "응답 바디가 errorCode + message 형식이다(FastAPI 기본 detail 아님)",
+        "raw HTTPException 을 실패의 1차 메커니즘으로 쓰지 않는다",
+        "controller/service/repository 레이어 분리를 반영한다",
+        "한국어 docstring/주석이 있다"
+      ]
+    },
+    {
+      "id": 2,
+      "name": "login-invalid-failure",
+      "prompt": "이 백엔드의 로그인에서 아이디가 없거나 비밀번호가 틀린 경우의 실패 처리를 코드로 스케치하라. 보안 관점에서 실패를 어떻게 다뤄야 하는지 포함하라.",
+      "expectations": [
+        "AppError(또는 팩토리 *_error()) 로 실패를 표현한다",
+        "응답 바디가 errorCode + message 형식이다(FastAPI 기본 detail 아님)",
+        "raw HTTPException 을 실패의 1차 메커니즘으로 쓰지 않는다",
+        "controller/service/repository 레이어 분리를 반영한다",
+        "한국어 docstring/주석이 있다",
+        "보안: 아이디 없음과 비밀번호 불일치를 구분하지 않고 동일 실패로 처리한다(INVALID_CREDENTIALS 류)"
+      ]
+    }
+  ]
+}
