@@ -35,6 +35,12 @@
   .card{border-radius:9px;padding:8px 11px;font-size:12px;border:1px solid;background:#fff;line-height:1.32;font-weight:700;margin-bottom:6px;}
   .card:last-child{margin-bottom:0;}
   .card .k{display:block;font-size:9.7px;font-weight:600;color:var(--muted);margin-top:2px;}
+  .uses{display:block;font-size:9.3px;font-weight:700;color:#475569;margin-top:6px;padding-top:5px;
+        border-top:1px dashed rgba(100,116,139,.35);line-height:1.4;}
+  .uses b{color:#334155;font-weight:800;}
+  .uses .uh{color:var(--hook-b);font-weight:800;}
+  .uses .us{color:var(--agent-b);font-weight:800;}
+  .uses .un{color:#9ca3af;font-weight:700;}
   .c-custom{background:var(--custom);border-color:#ddd6fe;color:var(--custom-b);}
   .c-stage{background:var(--stage);border-color:#99f6e4;color:var(--stage-b);}
   .c-hook{background:var(--hook);border-color:#fde68a;color:var(--hook-b);}
@@ -59,7 +65,7 @@
 </style></head><body>
 
   <h1>컨텍스트 체계 — 소스 → 주입 훅 → 소비자</h1>
-  <p class="sub">코드를 편집하면 <b>PreToolUse 훅</b>이 "무슨 파일을 만지는가"를 보고 알맞은 컨텍스트를 자동으로 끼워 넣는다. 스킬을 안 돌리고 맨손으로 고칠 때도 규칙·도메인 지식이 따라온다.</p>
+  <p class="sub">코드를 편집하면 <b>PreToolUse 훅</b>이 "무슨 파일을 만지는가"를 보고 알맞은 컨텍스트를 자동으로 끼워 넣는다. 스킬을 안 돌리고 맨손으로 고칠 때도 규칙·도메인 지식이 따라온다. <b>각 소스 카드 아래에 그 카드를 쓰는 🪝 훅 · 🧩 스킬</b>을 표시했다(같은 카드가 훅 자동주입과 스킬 Read 두 경로로 쓰이기도 한다).</p>
 
   <div class="flowband">
     <b>흐름</b>
@@ -76,9 +82,12 @@
       <div class="colhead">① 컨텍스트 소스</div>
       <div class="group">
         <div class="gtitle">컨텍스트 카드 · <code>.claude/context/</code></div>
-        <div class="card c-custom">flow-rules.md<span class="k">공유 개발 규칙(게이트·테스트·재활용) — 단일 출처</span></div>
-        <div class="card c-custom">backend-conventions.md<span class="k">백엔드 코드 컨벤션 — 레이어·에러 규격·언어</span></div>
-        <div class="card c-custom">doc-conventions.md<span class="k">문서 작성 규칙 — docs/ 틀·[[링크]]·한국어 톤</span></div>
+        <div class="card c-custom">flow-rules.md<span class="k">공유 개발 규칙(게이트·테스트·재활용) — 단일 출처</span>
+          <span class="uses">🪝 <span class="un">훅 자동주입 없음</span> · 🧩 <span class="us">/impl · /quick · reviewer</span> <b>(Read 참조)</b></span></div>
+        <div class="card c-custom">backend-conventions.md<span class="k">백엔드 코드 컨벤션 — 레이어·에러 규격·언어</span>
+          <span class="uses">🪝 <span class="uh">inject-context.sh</span> (app·tests) · 🧩 <span class="us">/impl · reviewer</span> (Read)</span></div>
+        <div class="card c-custom">doc-conventions.md<span class="k">문서 작성 규칙 — docs/ 틀·[[링크]]·한국어 톤</span>
+          <span class="uses">🪝 <span class="uh">inject-context.sh</span> (docs) · 🧩 <span class="un">훅 주입만</span></span></div>
       </div>
       <div class="group">
         <div class="gtitle">도메인 지식 · <code>docs/domain/</code></div>
@@ -86,6 +95,7 @@
         <div class="card c-stage">&lt;slug&gt;.md — 상세 <span class="k">예: auth.md (정체·경계·관계)</span></div>
         <div class="card c-stage">_territory.tsv<span class="k">경로 글롭 → 도메인 매핑</span></div>
         <span class="lift">계층형: 목차 항상 · 상세는 작으면 전체 / 크면 요약+포인터</span>
+        <span class="uses">🪝 <span class="uh">inject-domain.sh</span> · 🧩 <span class="us">/prd · /plan</span> (컨텍스트로 먹임) · <span class="us">/domain</span> (작성·유지)</span>
       </div>
     </div>
 
@@ -120,6 +130,7 @@
     <span><span class="sw" style="background:var(--stage);border-color:#99f6e4;"></span><b>도메인 지식</b> 목차→상세(계층형)</span>
     <span><span class="sw" style="background:var(--hook);border-color:#fde68a;"></span><b>주입 훅</b> PreToolUse</span>
     <span><span class="sw" style="background:var(--agent);border-color:#bfdbfe;"></span><b>소비자</b> 메인·서브에이전트/스킬</span>
+    <span style="margin-left:auto;">🪝 = 이 카드를 주입하는 <b>훅</b> · 🧩 = 이 카드를 쓰는 <b>스킬</b></span>
   </div>
 
 </body></html>
