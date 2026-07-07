@@ -1,0 +1,173 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><style>
+  :root{
+    --ink:#1f2937;--muted:#6b7280;--line:#e5e7eb;--bg:#fafafa;
+    --flow:#f0fdfa;--flow-b:#0d9488;      /* 흐름 스킬 teal */
+    --sup:#f5f3ff;--sup-b:#7c3aed;        /* 받침·메타 스킬 purple */
+    --agent:#eff6ff;--agent-b:#2563eb;    /* 서브에이전트 blue */
+    --hook:#fffbeb;--hook-b:#d97706;      /* 훅 amber */
+    --ctx:#ecfdf5;--ctx-b:#059669;        /* 컨텍스트·지식 green */
+    --gate:#fef9c3;--gate-b:#ca8a04;      /* 게이트 */
+    --human:#fdf2f8;--human-b:#db2777;
+  }
+  *{box-sizing:border-box;}
+  body{font-family:-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;color:var(--ink);background:#fff;margin:0;padding:26px 30px;width:1260px;}
+  h1{font-size:22px;margin:0 0 2px;}
+  .sub{color:var(--muted);font-size:12px;margin:0 0 16px;}
+  .entry{display:flex;align-items:center;gap:10px;margin-bottom:8px;}
+  .pill{border-radius:999px;padding:7px 13px;font-size:12px;font-weight:700;border:1px solid;}
+  .pill.human{background:var(--human);border-color:#f9a8d4;color:var(--human-b);}
+  .pill.rule{background:var(--gate);border-color:#fde047;color:var(--gate-b);}
+  .pill.launch{background:var(--sup);border-color:#ddd6fe;color:var(--sup-b);}
+  .ar{color:#9ca3af;font-weight:800;font-size:17px;}
+  .downnote{color:var(--muted);font-size:11px;font-weight:700;margin:2px 0 8px 6px;}
+
+  .spine{display:flex;align-items:stretch;gap:8px;margin-bottom:16px;}
+  .stage{border:1px solid var(--line);border-top:4px solid var(--flow-b);border-radius:12px;background:var(--bg);padding:10px 12px;display:flex;flex-direction:column;}
+  .stage .h{font-weight:800;font-size:12.5px;color:var(--flow-b);margin-bottom:8px;}
+  .s-req{flex:0 0 205px;} .s-plan{flex:0 0 150px;} .s-impl{flex:1 1 auto;} .s-fin{flex:0 0 150px;}
+  .skill{border-radius:9px;padding:6px 10px;font-size:12px;font-weight:700;border:1px solid;background:#fff;line-height:1.25;margin-bottom:5px;}
+  .skill .k{display:block;font-size:9px;font-weight:600;color:var(--muted);margin-top:1px;}
+  .k-flow{background:var(--flow);border-color:#99f6e4;color:var(--flow-b);}
+  .k-sup{background:var(--sup);border-color:#ddd6fe;color:var(--sup-b);}
+  .k-agent{background:var(--agent);border-color:#bfdbfe;color:var(--agent-b);}
+  .gate{background:var(--gate);border:1px dashed #fde047;border-radius:8px;padding:4px 8px;font-size:10px;font-weight:800;color:var(--gate-b);text-align:center;margin-top:auto;}
+  .inl{display:flex;align-items:center;gap:5px;}
+  .tiny{font-size:15px;color:#9ca3af;font-weight:800;}
+
+  .zones{display:flex;gap:12px;}
+  .zone{flex:1;border:1px solid var(--line);border-radius:12px;padding:11px 13px;background:var(--bg);}
+  .zone.z-sup{border-top:4px solid var(--sup-b);}
+  .zone.z-hook{border-top:4px solid var(--hook-b);}
+  .zone.z-ctx{border-top:4px solid var(--ctx-b);}
+  .zone .zh{font-weight:800;font-size:12.5px;margin-bottom:8px;}
+  .z-sup .zh{color:var(--sup-b);} .z-hook .zh{color:var(--hook-b);} .z-ctx .zh{color:var(--ctx-b);}
+  .item{border-radius:8px;padding:6px 9px;font-size:11.5px;border:1px solid;background:#fff;line-height:1.3;margin-bottom:6px;font-weight:700;}
+  .item .k{display:block;font-size:9px;font-weight:600;color:var(--muted);margin-top:1px;}
+  .i-hook{background:var(--hook);border-color:#fde68a;color:var(--hook-b);}
+  .i-ctx{background:var(--ctx);border-color:#a7f3d0;color:var(--ctx-b);}
+  .rel{font-size:10.5px;color:var(--muted);font-weight:700;margin:1px 0 7px 3px;}
+  .rel b{color:#374151;}
+  .reviewer{margin-top:7px;background:var(--agent);border:1px solid #bfdbfe;border-radius:8px;padding:6px 9px;font-size:11px;font-weight:700;color:var(--agent-b);}
+  .reviewer .k{display:block;font-size:9px;font-weight:600;color:var(--muted);margin-top:1px;}
+
+  .legend{margin-top:15px;border-top:1px solid var(--line);padding-top:11px;display:flex;gap:15px;flex-wrap:wrap;font-size:11px;color:var(--muted);}
+  .legend b{color:var(--ink);}
+  .sw{display:inline-block;width:11px;height:11px;border-radius:3px;border:1px solid;vertical-align:middle;margin-right:4px;}
+  code{background:#f1f5f9;border-radius:3px;padding:0 3px;font-size:10px;}
+  text{fill:#1f2937;} .st{font-size:11px;font-weight:800;} .ss{font-size:8.5px;font-weight:700;fill:#6b7280;} .slab{font-size:9.5px;font-weight:800;}
+</style></head><body>
+  <h1>개발 OS — 스킬 · 컨텍스트 전체 지도</h1>
+  <p class="sub">기능 하나가 흐르는 길(①→④, 위) + 받침·메타 스킬 · 자동 훅 · 컨텍스트/지식(아래). 색 = 종류(범례 참조).</p>
+
+  <div class="entry">
+    <span class="pill human">사용자 요청</span><span class="ar">+</span>
+    <span class="pill rule">CLAUDE.md 규칙 (상시 강제)</span><span class="ar">→</span>
+    <span class="pill launch">/feature — 흐름 런처 (지금 어디? 다음 스킬 실행)</span>
+  </div>
+  <div class="downnote">↓ 아래 흐름을 상태에 맞게 실행·안내</div>
+
+  <!-- ===== MAIN FLOW SPINE ===== -->
+  <div class="spine">
+    <div class="stage s-req">
+      <div class="h">① 요구사항</div>
+      <div class="inl"><span class="skill k-flow">/interview<span class="k">질문으로 요구사항 캐기</span></span><span class="tiny">→</span><span class="skill k-flow">/prd<span class="k">PRD 정제</span></span></div>
+      <div class="gate">확정 게이트 · 사람 검토</div>
+    </div>
+    <div class="stage s-plan">
+      <div class="h">② 설계</div>
+      <div class="skill k-flow">/plan<span class="k">재활용 조사 → 설계</span></div>
+      <div class="gate">승인 게이트 · 통과 전 구현 금지</div>
+    </div>
+
+    <!-- ③ 구현 — SVG (루프백 + 판정 fan-out) -->
+    <div class="stage s-impl">
+      <div class="h">③ 구현 &nbsp;<span style="font-weight:600;font-size:10px;color:var(--muted)">— 디스패처 + 판정 루프</span></div>
+      <svg viewBox="0 0 560 176" style="width:100%;height:auto;">
+        <defs>
+          <marker id="a" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#64748b"/></marker>
+          <marker id="al" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#2563eb"/></marker>
+          <marker id="ao" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#c2410c"/></marker>
+        </defs>
+        <!-- /quick 저위험 트랙 -->
+        <rect x="6" y="6" width="120" height="30" rx="7" fill="var(--sup)" stroke="#ddd6fe"/>
+        <text class="st" x="66" y="19" text-anchor="middle" fill="#7c3aed">/quick</text>
+        <text class="ss" x="66" y="30" text-anchor="middle">저위험 트랙</text>
+        <!-- /impl -->
+        <rect x="6" y="66" width="130" height="42" rx="8" fill="var(--flow)" stroke="#99f6e4"/>
+        <text class="st" x="71" y="83" text-anchor="middle" fill="#0d9488">/impl</text>
+        <text class="ss" x="71" y="97" text-anchor="middle">디스패처(구현)</text>
+        <!-- /verify -->
+        <rect x="210" y="66" width="130" height="42" rx="8" fill="var(--flow)" stroke="#99f6e4"/>
+        <text class="st" x="275" y="83" text-anchor="middle" fill="#0d9488">/verify</text>
+        <text class="ss" x="275" y="97" text-anchor="middle">판정(light/full)</text>
+        <!-- reviewer -->
+        <rect x="210" y="132" width="150" height="34" rx="8" fill="var(--agent)" stroke="#bfdbfe"/>
+        <text class="st" x="285" y="146" text-anchor="middle" fill="#2563eb">reviewer</text>
+        <text class="ss" x="285" y="158" text-anchor="middle">공유 적대 검토(서브에이전트)</text>
+        <!-- arrows -->
+        <path d="M136,87 L206,87" stroke="#64748b" stroke-width="1.7" fill="none" marker-end="url(#a)"/>
+        <path d="M126,26 C170,26 180,60 240,64" stroke="#2563eb" stroke-width="1.5" fill="none" marker-end="url(#al)"/>
+        <text class="slab" x="150" y="46" fill="#2563eb">light</text>
+        <path d="M275,108 L275,128" stroke="#64748b" stroke-width="1.7" fill="none" marker-end="url(#a)"/>
+        <!-- 통과 → ④ -->
+        <path d="M340,80 L470,80" stroke="#059669" stroke-width="1.8" fill="none" marker-end="url(#a)"/>
+        <text class="slab" x="378" y="74" fill="#059669">통과 → ④</text>
+        <!-- 구현결함 루프백 -->
+        <path d="M250,108 C210,140 90,140 71,110" stroke="#2563eb" stroke-width="1.6" fill="none" stroke-dasharray="5,3" marker-end="url(#al)"/>
+        <text class="slab" x="120" y="132" fill="#2563eb">구현결함 ↺ 재구현</text>
+        <!-- 설계문제 → ② (에스컬레이션: 왼쪽 ②로 되돌아감) -->
+        <path d="M212,74 C150,52 80,50 12,54" stroke="#c2410c" stroke-width="1.7" fill="none" marker-end="url(#ao)"/>
+        <text class="slab" x="10" y="68" fill="#c2410c">설계문제 ↑ ② 설계로</text>
+      </svg>
+    </div>
+
+    <div class="stage s-fin">
+      <div class="h">④ 마무리</div>
+      <div class="skill k-flow">/commit<span class="k">의미 단위 커밋</span></div>
+      <div class="skill k-flow">/push<span class="k">원격 반영(확인 후)</span></div>
+      <div class="skill k-flow">/pr<span class="k">PR 생성</span></div>
+    </div>
+  </div>
+
+  <!-- ===== SUPPORT ZONES ===== -->
+  <div class="zones">
+    <div class="zone z-sup">
+      <div class="zh">받침 · 메타 스킬</div>
+      <div class="skill k-sup">/retro<span class="k">세션 회고(파일 없이 직접 보고)</span></div>
+      <div class="rel">└ 렌즈A → <b>/quick</b>으로 스킬 개선 반영 · 렌즈B → <b>/domain</b> 재실행 권장(도메인 변경점)</div>
+      <div class="skill k-sup">/domain<span class="k">도메인 지식 문서화 → /prd·/plan에 컨텍스트로 먹임</span></div>
+      <div class="inl" style="gap:6px;margin-top:2px">
+        <span class="skill k-sup" style="margin:0">/diagram<span class="k">검증된 도식</span></span>
+        <span class="skill k-sup" style="margin:0">/skill-stat<span class="k">호출 통계</span></span>
+      </div>
+      <div class="reviewer">reviewer — 공유 적대 검토 서브에이전트<span class="k">/prd · /verify · /retro 가 함께 사용 · flow-rules를 Read로 참조</span></div>
+    </div>
+
+    <div class="zone z-hook">
+      <div class="zh">자동 훅 (사람 개입 없이)</div>
+      <div class="item i-hook">inject-context.sh<span class="k">코드 편집(Edit/Write) → 컨텍스트 카드 주입</span></div>
+      <div class="item i-hook">inject-domain.sh<span class="k">코드 편집 → 도메인 문서(계층형) 주입</span></div>
+      <div class="item i-hook">enforce-pr-template.sh<span class="k">/pr 시 PR 템플릿 강제(차단형)</span></div>
+      <div class="item i-hook">사용통계 훅<span class="k">스킬 호출 → skill-usage.log 기록 → /skill-stat이 읽음</span></div>
+      <div class="item i-hook">retro-reminder.sh<span class="k">세션 종료(SessionEnd) → /retro 리마인드(알림)</span></div>
+    </div>
+
+    <div class="zone z-ctx">
+      <div class="zh">컨텍스트 · 지식 소스</div>
+      <div class="rel" style="margin-top:0"><b>↑ 훅이 주입 / 스킬·에이전트가 Read</b></div>
+      <div class="item i-ctx">컨텍스트 카드 · <code>.claude/context/</code><span class="k">flow-rules(공유 개발 규칙 단일 출처) · backend-conventions(코드 컨벤션)</span></div>
+      <div class="item i-ctx">도메인 지식 · <code>docs/domain/</code><span class="k">README 목차 → &lt;slug&gt; 상세(계층형) · _territory.tsv(경로→도메인)</span></div>
+      <div class="rel">→ <b>/prd·/plan</b>을 더 정확하게, 코드 편집 시 <b>스킬·에이전트</b>에 규칙·도메인 지식 자동 공급</div>
+    </div>
+  </div>
+
+  <div class="legend">
+    <span><span class="sw" style="background:var(--flow);border-color:#99f6e4"></span><b>흐름 스킬</b> ①→④</span>
+    <span><span class="sw" style="background:var(--sup);border-color:#ddd6fe"></span><b>받침·메타 스킬</b></span>
+    <span><span class="sw" style="background:var(--agent);border-color:#bfdbfe"></span><b>서브에이전트</b> reviewer</span>
+    <span><span class="sw" style="background:var(--hook);border-color:#fde68a"></span><b>자동 훅</b></span>
+    <span><span class="sw" style="background:var(--ctx);border-color:#a7f3d0"></span><b>컨텍스트·지식</b></span>
+    <span><span class="sw" style="background:var(--gate);border-color:#fde047"></span><b>게이트</b> 사람 검토</span>
+    <span style="color:#2563eb">┈ 루프백(재구현)</span><span style="color:#c2410c">↑ 에스컬레이션</span>
+  </div>
+</body></html>
