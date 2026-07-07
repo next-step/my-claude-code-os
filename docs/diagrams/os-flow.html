@@ -65,6 +65,19 @@
   .hookband{margin-top:13px;background:var(--hook);border:1px solid #fde68a;border-left:5px solid var(--hook-b);
             border-radius:10px;padding:9px 13px;font-size:11.5px;line-height:1.45;color:#92400e;}
   code{background:#fff7e6;border:1px solid #fcd34d;border-radius:4px;padding:0 4px;font-size:10.5px;color:#92400e;}
+  .ctxband{margin-top:13px;background:#ecfdf5;border:1px solid #a7f3d0;border-left:5px solid #059669;
+           border-radius:10px;padding:11px 14px;}
+  .cbhead{font-weight:800;font-size:13px;color:#047857;margin-bottom:10px;}
+  .cbrow{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-bottom:8px;font-size:11.5px;}
+  .cbrow:last-child{margin-bottom:0;}
+  .cbcard{background:#fff;border:1px solid #6ee7b7;border-radius:8px;padding:5px 10px;font-weight:800;color:#047857;line-height:1.2;}
+  .cbcard .k{display:block;font-size:9px;font-weight:600;color:var(--muted);margin-top:1px;}
+  .cbar{color:#10b981;font-weight:800;font-size:15px;}
+  .cbuse{background:var(--agent);border:1px solid #bfdbfe;border-radius:7px;padding:3px 8px;font-weight:700;color:var(--agent-b);}
+  .cbvia{font-size:10px;font-weight:800;padding:3px 8px;border-radius:6px;}
+  .via-read{background:var(--custom);border:1px solid #ddd6fe;color:var(--custom-b);}
+  .via-hook{background:var(--hook);border:1px solid #fde68a;color:var(--hook-b);}
+  .cbwhy{color:var(--muted);font-weight:600;font-size:10.5px;}
 </style>
 </head>
 <body>
@@ -223,6 +236,44 @@
   </div>
 
   <div class="hookband">🪝 <b>사용 통계 훅 — PostToolUse (기록형)</b> · ①~④ <b>모든 스킬 호출</b>이 끝날 때마다 자동으로 <code>.claude/skill-usage.log</code>에 기록 — 흐름 전 구간 상시 작동(관측·자기개선용, 흐름을 막지 않음)</div>
+
+  <div class="ctxband">
+    <div class="cbhead">🔌 컨텍스트 공급 — 규칙·지식을 <u>한 곳에 두고 여러 스킬이 공용</u>으로 쓴다 (단일 출처 → drift 방지) &nbsp;·&nbsp; 공급 경로 2가지: <span style="color:var(--custom-b)">Read 참조</span>(스킬이 SKILL.md에서 직접 가리킴) &nbsp;·&nbsp; <span style="color:var(--hook-b)">훅 자동주입</span>(편집 경로가 트리거)</div>
+
+    <div class="cbrow">
+      <span class="cbcard">flow-rules.md<span class="k">공유 개발 규칙 · 게이트·테스트필수·재활용</span></span>
+      <span class="cbar">→</span>
+      <span class="cbuse">/impl</span><span class="cbuse">/quick</span><span class="cbuse">reviewer (/verify·/prd)</span>
+      <span class="cbvia via-read">Read 참조</span>
+      <span class="cbwhy">— 격리 컨텍스트라 스킬·에이전트가 직접 읽음</span>
+    </div>
+
+    <div class="cbrow">
+      <span class="cbcard">backend-conventions.md<span class="k">코드 컨벤션 · 레이어·에러 규격</span></span>
+      <span class="cbar">→</span>
+      <span class="cbuse">③ /impl</span><span class="cbuse">reviewer</span>
+      <span class="cbvia via-read">Read 참조</span>
+      <span class="cbwhy">+ <code>app/</code>·<code>tests/</code> 편집 시</span>
+      <span class="cbvia via-hook">훅 자동주입</span>
+      <span class="cbwhy">— 두 경로로 공급</span>
+    </div>
+
+    <div class="cbrow">
+      <span class="cbcard">doc-conventions.md<span class="k">문서 작성 규칙 · docs/ 틀·[[링크]]</span></span>
+      <span class="cbar">→</span>
+      <span class="cbuse">① /prd 문서</span><span class="cbuse">② /plan 문서</span>
+      <span class="cbwhy"><code>docs/</code> 편집 시</span>
+      <span class="cbvia via-hook">훅 자동주입</span>
+    </div>
+
+    <div class="cbrow">
+      <span class="cbcard">도메인 지식 · docs/domain/<span class="k">계층형 · 목차+상세(/domain이 유지)</span></span>
+      <span class="cbar">→</span>
+      <span class="cbuse">① /prd</span><span class="cbuse">② /plan</span><span class="cbuse">코드 편집</span>
+      <span class="cbwhy">요구·설계 정확도↑ ·</span>
+      <span class="cbvia via-hook">훅 자동주입</span>
+    </div>
+  </div>
 
   <div class="legend">
     <span><span class="sw" style="background:var(--agent);border-color:#bfdbfe"></span><b>서브에이전트(빌트인)</b> general-purpose·Explore·Plan</span>

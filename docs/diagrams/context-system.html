@@ -78,10 +78,11 @@
         <div class="gtitle">컨텍스트 카드 · <code>.claude/context/</code></div>
         <div class="card c-custom">flow-rules.md<span class="k">공유 개발 규칙(게이트·테스트·재활용) — 단일 출처</span></div>
         <div class="card c-custom">backend-conventions.md<span class="k">백엔드 코드 컨벤션 — 레이어·에러 규격·언어</span></div>
+        <div class="card c-custom">doc-conventions.md<span class="k">문서 작성 규칙 — docs/ 틀·[[링크]]·한국어 톤</span></div>
       </div>
       <div class="group">
         <div class="gtitle">도메인 지식 · <code>docs/domain/</code></div>
-        <div class="card c-stage">README.md — 목차<span class="k">라우팅表: 어느 상세를 읽을지</span></div>
+        <div class="card c-stage">README.md — 목차<span class="k">라우팅표: 어느 상세를 읽을지</span></div>
         <div class="card c-stage">&lt;slug&gt;.md — 상세 <span class="k">예: auth.md (정체·경계·관계)</span></div>
         <div class="card c-stage">_territory.tsv<span class="k">경로 글롭 → 도메인 매핑</span></div>
         <span class="lift">계층형: 목차 항상 · 상세는 작으면 전체 / 크면 요약+포인터</span>
@@ -93,7 +94,7 @@
     <!-- ② 훅 -->
     <div class="col col-hook">
       <div class="colhead">② 주입 훅 · PreToolUse <span style="font-weight:600;font-size:10.5px;color:#b45309;">(Edit·Write·MultiEdit)</span></div>
-      <div class="card c-hook">inject-context.sh<span class="k">app/* · tests/* 편집 → backend-conventions 주입</span></div>
+      <div class="card c-hook">inject-context.sh<span class="k">app/* · tests/* → backend-conventions · docs/* → doc-conventions 주입</span></div>
       <div class="card c-hook">inject-domain.sh<span class="k">편집 경로 → _territory.tsv로 도메인 찾아 → 계층형(목차+상세) 주입</span></div>
       <div class="card c-dedup">세션당 1회 dedup<span class="k">같은 카드·도메인 재주입 안 함 = 컨텍스트 절약</span></div>
     </div>
@@ -111,7 +112,7 @@
 
   <div class="principle">
     <b>원칙</b> &nbsp;단일 출처(<code>flow-rules</code>) · 얇은 색인(도메인 <b>계층형</b>) · 세션당 1회 dedup(컨텍스트 절약) &nbsp;|&nbsp;
-    <b>검증 테스트</b> <code>test_context_injection</code> · <code>test_domain_injection</code> — 9케이스 통과 (주입이 실제로 일어남을 증명)
+    <b>검증 테스트</b> <code>test_context_injection</code> · <code>test_domain_injection</code> — 11케이스 통과 (주입이 실제로 일어남을 증명)
   </div>
 
   <div class="legend">

@@ -1,0 +1,205 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><title>개발 OS — 스킬 카탈로그</title><style>
+  :root{
+    --ink:#1f2937; --muted:#6b7280; --line:#e5e7eb; --bg:#fafafa;
+    --flow:#f0fdfa; --flow-b:#0d9488;      /* 흐름 스킬 teal */
+    --quick:#fff7ed; --quick-b:#c2410c;    /* 빠른 트랙 orange */
+    --know:#ecfdf5; --know-b:#059669;      /* 지식·문서 green */
+    --meta:#f5f3ff; --meta-b:#7c3aed;      /* 메타·관측 purple */
+    --launch:#eef2ff; --launch-b:#4f46e5;  /* 런처 indigo */
+    --gate:#fef9c3; --gate-b:#ca8a04;
+  }
+  *{box-sizing:border-box;}
+  body{font-family:-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;color:var(--ink);
+       background:#fff;margin:0;padding:28px 32px;width:1240px;}
+  h1{font-size:23px;margin:0 0 3px;}
+  .sub{color:var(--muted);font-size:12.5px;margin:0 0 20px;}
+  .sub b{color:#374151;}
+
+  /* 공통 스킬 카드 */
+  .skill{border-radius:10px;border:1px solid;background:#fff;padding:8px 11px;line-height:1.28;}
+  .skill .n{font-weight:800;font-size:13px;}
+  .skill .d{font-size:11px;color:#374151;font-weight:500;margin-top:2px;display:block;}
+  .skill .t{font-size:9.5px;color:var(--muted);font-weight:600;margin-top:3px;display:block;}
+  .skill .t b{color:#6b7280;}
+
+  /* ===== 흐름 밴드 ===== */
+  .flowhead{display:flex;align-items:center;gap:8px;margin:0 0 9px;}
+  .flowhead .badge{background:var(--flow);border:1px solid #99f6e4;color:var(--flow-b);font-weight:800;
+        font-size:13px;border-radius:8px;padding:5px 11px;}
+  .flowhead .hint{color:var(--muted);font-size:11.5px;font-weight:600;}
+  .launcher{display:flex;align-items:center;gap:10px;margin-bottom:11px;}
+  .launcher .skill{border-color:#c7d2fe;background:var(--launch);flex:0 0 340px;}
+  .launcher .skill .n{color:var(--launch-b);}
+  .launcher .down{color:var(--muted);font-size:11.5px;font-weight:700;}
+  .launcher .dar{color:#818cf8;font-size:20px;font-weight:800;}
+
+  .spine{display:flex;align-items:stretch;gap:9px;}
+  .stage{border:1px solid var(--line);border-top:4px solid var(--flow-b);border-radius:12px;
+         background:var(--bg);padding:11px 12px;display:flex;flex-direction:column;gap:7px;}
+  .stage .sh{font-weight:800;font-size:12.5px;color:var(--flow-b);}
+  .stage .sh span{font-weight:600;font-size:10px;color:var(--muted);display:block;margin-top:1px;}
+  .s1{flex:1 1 0;} .s2{flex:0 0 210px;} .s3{flex:1 1 0;} .s4{flex:1.15 1 0;}
+  .stage .skill{border-color:#99f6e4;background:var(--flow);}
+  .stage .skill .n{color:var(--flow-b);}
+  .gate{background:var(--gate);border:1px dashed #fde047;border-radius:8px;padding:4px 8px;
+        font-size:10px;font-weight:800;color:var(--gate-b);text-align:center;margin-top:auto;}
+  .barrow{display:flex;align-items:center;color:#5eead4;font-size:22px;font-weight:800;}
+
+  /* ===== 받침 zone ===== */
+  .zones{display:flex;gap:12px;margin-top:20px;}
+  .zone{flex:1;border:1px solid var(--line);border-radius:12px;padding:12px 14px;background:var(--bg);
+        display:flex;flex-direction:column;gap:8px;}
+  .zone .zh{font-weight:800;font-size:13px;margin-bottom:1px;}
+  .z-quick{border-top:4px solid var(--quick-b);} .z-quick .zh{color:var(--quick-b);}
+  .z-quick .skill{border-color:#fed7aa;background:var(--quick);} .z-quick .skill .n{color:var(--quick-b);}
+  .z-know{border-top:4px solid var(--know-b);} .z-know .zh{color:var(--know-b);}
+  .z-know .skill{border-color:#a7f3d0;background:var(--know);} .z-know .skill .n{color:var(--know-b);}
+  .z-meta{border-top:4px solid var(--meta-b);} .z-meta .zh{color:var(--meta-b);}
+  .z-meta .skill{border-color:#ddd6fe;background:var(--meta);} .z-meta .skill .n{color:var(--meta-b);}
+  .zone .zsub{font-size:10.5px;color:var(--muted);font-weight:600;margin:-3px 0 2px;}
+
+  .legend{margin-top:20px;border-top:1px solid var(--line);padding-top:13px;display:flex;gap:18px;
+          flex-wrap:wrap;font-size:11.5px;color:var(--muted);align-items:center;}
+  .legend b{color:var(--ink);}
+  .sw{display:inline-block;width:12px;height:12px;border-radius:3px;border:1px solid;vertical-align:middle;margin-right:5px;}
+  .legend .note{margin-left:auto;font-size:11px;}
+  code{background:#f1f5f9;border-radius:3px;padding:0 4px;font-size:10.5px;}
+</style></head><body>
+  <h1>개발 OS — 스킬 카탈로그</h1>
+  <p class="sub">우리 OS의 스킬 <b>14개</b>가 각각 뭘 하는지 한눈에. 위 = <b>기능 개발 흐름</b>(순서대로 ①→④, 게이트는 사람 검토) · 아래 = 목적별 <b>받침 스킬</b>. 색 = 종류(범례).</p>
+
+  <!-- ===== 흐름 스킬 ===== -->
+  <div class="flowhead">
+    <span class="badge">기능 개발 흐름 · 흐름 스킬</span>
+    <span class="hint">기능 하나가 요청 → 요구사항 → 설계 → 구현 → 마무리로 흐른다. 사람 검토 게이트를 통과해야 다음으로.</span>
+  </div>
+
+  <div class="launcher">
+    <div class="skill">
+      <span class="n">/feature <span style="font-weight:600;font-size:10px;color:var(--muted)">— 흐름 런처</span></span>
+      <span class="d">지금 어디까지 했는지 스캔해 흐름 지도를 보여주고, 상태에 맞는 다음 스킬을 실행한다. 직접 일하지 않는 안내자.</span>
+      <span class="t"><b>언제:</b> "기능 만들자" · "어디까지 했지" · "/feature"</span>
+    </div>
+    <span class="dar">→</span>
+    <span class="down">아래 흐름을 상태에 맞게 실행·라우팅</span>
+  </div>
+
+  <div class="spine">
+    <div class="stage s1">
+      <div class="sh">① 요구사항<span>무엇을 만들지 확정</span></div>
+      <div class="skill">
+        <span class="n">/interview</span>
+        <span class="d">질문으로 요구사항을 캐낸다(한 번에 하나씩·냉정하게 압박). requirements.md 채움.</span>
+        <span class="t"><b>언제:</b> "요구사항 캐줘"</span>
+      </div>
+      <div class="skill">
+        <span class="n">/prd</span>
+        <span class="d">요구사항 → PRD 작성 후 reviewer로 검토·수정 루프를 돌려 확정.</span>
+        <span class="t"><b>언제:</b> "PRD 만들자"</span>
+      </div>
+      <div class="gate">확정 게이트 · 사람 검토</div>
+    </div>
+
+    <div class="barrow">→</div>
+
+    <div class="stage s2">
+      <div class="sh">② 설계<span>어떻게 만들지 계획</span></div>
+      <div class="skill">
+        <span class="n">/plan</span>
+        <span class="d">확정 PRD로 구현 Plan 설계. 재활용할 기존 코드부터 조사(1차 스캔 → 갭만 병렬 탐색) 후 손댈 파일·단계·테스트 전략을 짠다.</span>
+        <span class="t"><b>언제:</b> "설계하자" · "Plan 짜자"</span>
+      </div>
+      <div class="gate">승인 게이트 · 통과 전 구현 금지</div>
+    </div>
+
+    <div class="barrow">→</div>
+
+    <div class="stage s3">
+      <div class="sh">③ 구현<span>만들고 검증</span></div>
+      <div class="skill">
+        <span class="n">/impl <span style="font-weight:600;font-size:10px;color:var(--muted)">— 디스패처</span></span>
+        <span class="d">승인된 Plan대로 구현. 변경 크기에 맞춰 방식(인라인·새 에이전트·resume)을 고르고, /verify 판정대로 루프를 돈다.</span>
+        <span class="t"><b>언제:</b> "구현해줘"</span>
+      </div>
+      <div class="skill">
+        <span class="n">/verify</span>
+        <span class="d">구현이 기준(Plan·수용기준·테스트)을 충족하는지 검증해 판정. light(테스트만)·full(+reviewer 적대 대조).</span>
+        <span class="t"><b>언제:</b> "검증해줘" · /impl이 매 라운드 호출</span>
+      </div>
+    </div>
+
+    <div class="barrow">→</div>
+
+    <div class="stage s4">
+      <div class="sh">④ 마무리<span>기록·공개 (사람이 확인)</span></div>
+      <div class="skill">
+        <span class="n">/commit</span>
+        <span class="d">변경사항을 의미 있는 단위로 로컬 커밋.</span>
+        <span class="t"><b>언제:</b> "커밋해줘"</span>
+      </div>
+      <div class="skill">
+        <span class="n">/push</span>
+        <span class="d">로컬 커밋을 원격(GitHub)에 푸시. 되돌리기 어려운 일이라 확인 후.</span>
+        <span class="t"><b>언제:</b> "푸시해줘"</span>
+      </div>
+      <div class="skill">
+        <span class="n">/pr</span>
+        <span class="d">커밋들을 분석해 PR 제목·본문을 LLM이 종합 → 템플릿 틀 확인 → gh로 PR 오픈.</span>
+        <span class="t"><b>언제:</b> "PR 올려줘"</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== 받침 스킬 ===== -->
+  <div class="zones">
+    <div class="zone z-quick">
+      <div class="zh">빠른 트랙</div>
+      <div class="zsub">흐름(요구·PRD·Plan)을 건너뛰는 저위험 경로</div>
+      <div class="skill">
+        <span class="n">/quick</span>
+        <span class="d">작고 저위험한 변경을 종류 안 가리고 가볍게 처리 — 버그·QA·작은 스펙 변경. "빠른 이해 → 위험 감별 → 변경 → 테스트 → /verify light". 커지면 /plan·/feature로 승격.</span>
+        <span class="t"><b>언제:</b> "가볍게 고쳐줘" · "간단한 수정이야"</span>
+      </div>
+    </div>
+
+    <div class="zone z-know">
+      <div class="zh">지식 · 문서</div>
+      <div class="zsub">흐름을 더 정확하게 만드는 컨텍스트·산출물</div>
+      <div class="skill">
+        <span class="n">/domain</span>
+        <span class="d">서비스 도메인 하나를 분석해 "정체·경계·관계"만 담은 문서(docs/domain/)를 만든다. 문서끼리 [[링크]]로 도메인 지도를 쌓음.</span>
+        <span class="t"><b>언제:</b> "도메인 정리해줘"</span>
+      </div>
+      <div class="skill">
+        <span class="n">/diagram</span>
+        <span class="d">디자인된 HTML로 도식을 만들고 헤드리스 Chrome으로 스크린샷 → 직접 보고 검증하는 루프로 예쁜 PNG를 낸다. (이 카탈로그도 /diagram 산출물)</span>
+        <span class="t"><b>언제:</b> "도식 그려줘" · "다이어그램"</span>
+      </div>
+    </div>
+
+    <div class="zone z-meta">
+      <div class="zh">메타 · 관측 (자기개선)</div>
+      <div class="zsub">OS 자신을 돌아보고 측정</div>
+      <div class="skill">
+        <span class="n">/retro</span>
+        <span class="d">방금 세션을 두 렌즈로 회고 — (A) 스킬 프롬프트 개선점 (B) 손댄 도메인 문서 변경점 → 사용자에게 직접 보고(파일 안 만듦, 사람 검토 게이트).</span>
+        <span class="t"><b>언제:</b> "회고" · 세션 마칠 때</span>
+      </div>
+      <div class="skill">
+        <span class="n">/skill-stat</span>
+        <span class="d">스킬 호출 기록(skill-usage.log)을 집계해 어떤 스킬을 많이 썼는지 통계로 보여준다.</span>
+        <span class="t"><b>언제:</b> "스킬 통계"</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="legend">
+    <span><span class="sw" style="background:var(--flow);border-color:#99f6e4"></span><b>흐름 스킬</b> 기능 개발 ①→④</span>
+    <span><span class="sw" style="background:var(--launch);border-color:#c7d2fe"></span><b>흐름 런처</b> /feature</span>
+    <span><span class="sw" style="background:var(--quick);border-color:#fed7aa"></span><b>빠른 트랙</b> /quick</span>
+    <span><span class="sw" style="background:var(--know);border-color:#a7f3d0"></span><b>지식·문서</b></span>
+    <span><span class="sw" style="background:var(--meta);border-color:#ddd6fe"></span><b>메타·관측</b></span>
+    <span><span class="sw" style="background:var(--gate);border-color:#fde047"></span><b>게이트</b> 사람 검토</span>
+    <span class="note">reviewer(공유 서브에이전트)는 /prd·/verify·/retro가 함께 사용 · 자동 훅·컨텍스트 체계는 <code>os-flow</code>·<code>context-system</code> 도식 참조</span>
+  </div>
+</body></html>
