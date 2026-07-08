@@ -1,0 +1,73 @@
+{
+  "condition": "B_lookup",
+  "expectations": [
+    {
+      "text": "E1: Q1 answer states ai-notes.json path as screenshots/<target>/ai-notes.json AND schema {<id>:{level: ok|warn|error, note}} correctly.",
+      "passed": true,
+      "evidence": "Answer (outB Q1): path 'demo-app/screenshots/<T>/ai-notes.json' and schema '{ \"<id>\": { \"level\": \"ok|warn|error\", \"note\": \"<visual-judge 근거>\" } }'. Verified against real .claude/skills/visual-check/SKILL.md line 57: 'screenshots/<T>/ai-notes.json 에 { \"<id>\": { \"level\": \"ok|warn|error\", \"note\": \"<visual-judge 근거>\" } } 로 모아 적는다.' Path and schema match exactly; the 'demo-app/' prefix is correct (capture runs in demo-app, outDir=screenshots/<target>). Also correctly explains level=last-line word / note=근거 (SKILL line 54). RETRIEVAL: answer cites 'SKILL.md 3절' — obtained by directly reading the repo file (brittle retrieval), not pre-known.",
+      "verdict": "CONFIRMED"
+    },
+    {
+      "text": "E2: Q2 answer names the config file .claude/visual.config.json AND identifies both keys baseUrl and variantRoute correctly.",
+      "passed": true,
+      "evidence": "Answer (outB Q2): file '.claude/visual.config.json (레포 루트 기준)', keys 'baseUrl' (dev 서버 주소, 기본 http://localhost:5173) and 'variantRoute' (변형 고립 렌더 경로, {target} 토큰, 기본 /gallery?c={target}). Verified against real .claude/visual.config.json (keys baseUrl, variantRoute only) and .claude/scripts/visual-config.mjs DEFAULTS (lines 18-23, same two keys and defaults). Answer's added claim 'stage-dependent values are exactly these two, rest are script constants' is also confirmed by visual-config.mjs comment lines 4-6 and visual.config.json $comment. RETRIEVAL: answer cites the config file and 'visual-config.mjs DEFAULTS' — obtained by direct file read.",
+      "verdict": "CONFIRMED"
+    },
+    {
+      "text": "E3: Q3 answer identifies DOM attribute data-variant-id AND component root = wrapper's first child (:scope > *:first-child).",
+      "passed": true,
+      "evidence": "Answer (outB Q3): attribute 'data-variant-id' via page.$$eval('[data-variant-id]', ...) + getAttribute('data-variant-id'); root = wrapper.locator(':scope > *:first-child') (태그 무관). Verified against real demo-app/scripts/capture-variants.mjs lines 66-67 ($$eval('[data-variant-id]', ... getAttribute('data-variant-id'))) and lines 79-80 (wrapper = page.locator([data-variant-id=...]); comp = wrapper.locator(':scope > *:first-child') // 컴포넌트 루트 (태그 무관)). Cited line range '66~81행' is accurate. RETRIEVAL: obtained by direct file read of the script.",
+      "verdict": "CONFIRMED"
+    },
+    {
+      "text": "E4: Q4 answer states overall = worst of the three lenses (layout/color/typo), priority error > warn > ok.",
+      "passed": true,
+      "evidence": "Answer (outB Q4): 'the 3 lens levels (layout/color/typo), take the worst as overall. Priority error > warn > ok (worst lens promoted).' Verified against real .claude/skills/visual-lens/SKILL.md line 64: '한 변형의 3개 렌즈 레벨 중 가장 나쁜 것(error > warn > ok)을 그 변형의 overall 로 한다.' and section header line 63 '최악 렌즈가 종합 판정'. Exact match. RETRIEVAL: cites 'visual-lens SKILL.md 4절' — direct file read.",
+      "verdict": "CONFIRMED"
+    },
+    {
+      "text": "E5: Q5 answer lists all three things NOT passed to the judge: expected(정답), code measurements(수치), other judgments(타 판정).",
+      "passed": true,
+      "evidence": "Answer (outB Q5): visual-judge is given only the screenshot path; NOT passed: 1) 정답(expected), 2) 코드 수치(measurements), 3) 다른 판정 결과 / 다른 렌즈 결과. Verified against real visual-check/SKILL.md lines 53-54 ('각 호출에 스샷 경로만 넘긴다 ... 정답(expected)·코드 수치·다른 결과는 넘기지 않는다 — 블라인드 판정') and visual-lens/SKILL.md line 52 ('정답·다른 렌즈 결과는 절대 넘기지 않는다') and line 18. All three items present and correct. RETRIEVAL: cites 'visual-check SKILL 2절, visual-judge, visual-lens 3절' — direct file read.",
+      "verdict": "CONFIRMED"
+    },
+    {
+      "text": "E6: Q6 answer states: server already UP = leave no marker / don't touch; self-started = write .visual-dev-server.pid marker, SessionEnd cleans only that marker.",
+      "passed": true,
+      "evidence": "Answer (outB Q6): UP = user's server, use as-is and leave NO PID marker (SessionEnd hook won't touch someone else's server); self-started (DOWN) = launch via 'cd demo-app && npm run dev', write PID to .claude/.visual-dev-server.pid, session-end hook cleans ONLY the process that marker points to. Verified against real visual-check/SKILL.md section 0-B (lines 36-41: UP → 마커 남기지 않는다; DOWN → echo $! > .claude/.visual-dev-server.pid) and .claude/hooks/stop-dev-server.sh (lines 3-8, 11-15: reads MARKER .claude/.visual-dev-server.pid, if absent exit 0 / don't touch, if present kill only that PID+descendants and rm marker; explicitly does NOT port-kill). Exact match including marker filename. RETRIEVAL: cites 'visual-check SKILL.md 0-B절' — direct file read.",
+      "verdict": "CONFIRMED"
+    }
+  ],
+  "summary": {
+    "passed": 6,
+    "failed": 0,
+    "total": 6,
+    "pass_rate": 1.0
+  },
+  "claims": [
+    {
+      "claim": "Every answer in condition B was obtained by directly reading repository files, evidenced by precise source citations on each answer (e.g. 'capture-variants.mjs 66~81행', 'visual-config.mjs DEFAULTS', 'visual-check SKILL.md 0-B절').",
+      "verified": true,
+      "evidence": "Each Q1-Q6 answer ends with a (출처: ...) line naming specific files, sections, and even line numbers. This is the signature of just-in-time filesystem retrieval, not internalized/injected knowledge. All citations were checked and are accurate."
+    },
+    {
+      "claim": "The answers are not merely correct but faithful to the exact wording of the source (schema strings, :scope selector, marker filename, error>warn>ok ordering all reproduced verbatim).",
+      "verified": true,
+      "evidence": "Q1 schema, Q3 ':scope > *:first-child', Q6 '.claude/.visual-dev-server.pid', Q4 'error > warn > ok' all match the repo files character-for-character, consistent with copy-from-file rather than paraphrase-from-memory."
+    },
+    {
+      "claim": "Condition B added a genuinely-correct precision the injected phrasing may lack: Q1 prepends 'demo-app/' to the path.",
+      "verified": true,
+      "evidence": "capture-variants.mjs runs with cwd=demo-app and writes outDir='screenshots/<target>', so the repo-relative path is indeed demo-app/screenshots/<target>/ai-notes.json. The added prefix is correct, not an error."
+    }
+  ],
+  "eval_feedback": {
+    "suggestions": [
+      "The whole point of the A/B (injection vs lookup) is to compare cost/reliability, but these 6 expectations only test factual correctness — which condition B can trivially achieve by opening files. A PASS here proves the repo is readable, not that the executor internalized anything. Add a meta-expectation that scores the RETRIEVAL PATH (how many files had to be opened, whether an answer was reachable without a lookup) so the grade actually discriminates B from A.",
+      "E1 does not pin down whether the 'demo-app/' prefix is required or forbidden, so a grader must decide leniency on its own. Specify the canonical path form (repo-relative vs demo-app-relative) so PASS/FAIL is deterministic.",
+      "None of the expectations probe the two nuances that most reveal true understanding: (a) level = the LAST word of visual-judge's reply / note = the line above it (Q1), and (b) WHY the marker scheme exists — SessionEnd never port-kills, only the owned PID+descendants (Q6). Add these as sub-assertions; they separate a memorized string from a grasp of the mechanism.",
+      "Q5's expectation lists three items but the source distinguishes 'other judgments' vs 'other lens results' across two skill files. Clarify whether naming just '타 판정' suffices or both facets are required, to avoid inconsistent grading between conditions A and B."
+    ],
+    "overall": "The expectations are accurate and all six PASS against the real repo with verbatim-faithful evidence — but as an A/B instrument they are too easy for the lookup arm. They measure 'is the fact correct' when the experiment needs 'what did it cost to be correct and would it be right WITHOUT the file open.' Correctness is fully verified; discriminative power between conditions is the gap."
+  }
+}

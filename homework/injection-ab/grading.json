@@ -1,44 +1,40 @@
 {
-  "eval": "context-injection A/B (visual-check bundle, 8247 chars)",
-  "method": "skill-creator executor+grader roles; blind comparator omitted (6/6 vs 0/6 is unambiguous)",
+  "eval": "context-injection A/B (visual-check probe, 6 project-fact questions)",
+  "method": "skill-creator 공식 플러그인의 실제 grader 에이전트(agents/grader.md 지침 그대로)를 캡처된 두 transcript에 구동. grader가 답을 문항별로 실제 repo 파일과 대조 검증. (이전 버전은 grader 역할을 손으로 흉내낸 수기 채점이었음 → 이번에 플러그인을 실제로 돌려 대체.)",
+  "grader_runs": {
+    "A_injected": "grading_A_real.json (skill-creator grader, 6/6 CONFIRMED vs repo)",
+    "B_lookup": "grading_B_lookup_real.json (skill-creator grader, 6/6 CONFIRMED vs repo)"
+  },
   "conditions": {
     "A_injected": {
       "desc": "훅 주입 payload(실제 inject-context.py 출력)를 컨텍스트로 받음",
-      "expectations": [
-        {"q": "Q1 ai-notes.json 경로+스키마", "passed": true, "evidence": "screenshots/<target>/ai-notes.json + {id:{level,note}} 정확"},
-        {"q": "Q2 visual.config.json + baseUrl/variantRoute", "passed": true, "evidence": "파일명·두 키 정확"},
-        {"q": "Q3 data-variant-id + 첫 자식 루트", "passed": true, "evidence": ":scope > *:first-child 명시"},
-        {"q": "Q4 overall=세 렌즈 최악", "passed": true, "evidence": "error>warn>ok 최악값"},
-        {"q": "Q5 블라인드=expected+코드수치+타판정 미전달", "passed": true, "evidence": "3요소 모두 명시"},
-        {"q": "Q6 dev서버 소유권", "passed": true, "evidence": "UP 마커X / 자체기동 .visual-dev-server.pid"}
-      ],
+      "graded_by": "skill-creator grader agent — 6문항 전부 repo 파일과 대조해 CONFIRMED",
       "summary": {"passed": 6, "total": 6, "pass_rate": 1.0},
       "metrics": {"tool_calls": 3, "tokens": 27676, "duration_s": 38}
     },
     "B_lookup": {
       "desc": "주입 없음, 파일시스템 조회 허용(레포 직접 읽음)",
+      "graded_by": "skill-creator grader agent — 6문항 전부 CONFIRMED, 단 매 답이 '(출처: 파일 N행)' 인용을 달고 있어 just-in-time 파일 조회로 회수했음이 드러남",
       "summary": {"passed": 6, "total": 6, "pass_rate": 1.0},
       "metrics": {"tool_calls": 9, "tokens": 37101, "duration_s": 83},
-      "note": "정답은 맞았으나 파일을 직접 뒤져서 회수 — 주입 대비 도구 3배·토큰 34%↑·시간 2.2배. 회수 성공은 '올바른 파일을 찾았다'는 우연에 의존(brittle)."
+      "note": "정답은 맞았으나 파일을 직접 뒤져 회수 — 주입 대비 도구 3배·토큰 34%↑·시간 2.2배. 회수 성공은 '올바른 파일을 찾았다'는 우연에 의존(brittle)."
     },
     "B_nolookup": {
       "desc": "주입 없음, 파일 조회 금지(순수 컨텍스트 지식만)",
-      "expectations": [
-        {"q": "Q1", "passed": false, "evidence": "모름 (환각 안 함)"},
-        {"q": "Q2", "passed": false, "evidence": "모름"},
-        {"q": "Q3", "passed": false, "evidence": "data-* 추측만, 미확정"},
-        {"q": "Q4", "passed": false, "evidence": "렌즈 이름만 사실, overall 계산식 모름"},
-        {"q": "Q5", "passed": false, "evidence": "취지만 추측 재구성, 코드수치 요소 누락, 정의 모름"},
-        {"q": "Q6", "passed": false, "evidence": "모름"}
-      ],
+      "graded_by": "수기 채점 — 이 조건은 transcript를 별도로 남기지 않아 실제 grader를 못 돌렸음(정직 표기). 결과는 A/B_lookup 실행 당시 기록.",
       "summary": {"passed": 0, "total": 6, "pass_rate": 0.0},
-      "metrics": {"tool_calls": 0, "tokens": 18719, "duration_s": 37},
-      "note": "정답률 0. 단, 6개 중 4개를 '모름'으로 정직 처리하고 환각하지 않음 — 실패 방식이 안전."
+      "note": "정답률 0. 단, 6개 중 4개를 '모름'으로 정직 처리하고 환각하지 않음 — 실패 방식이 안전. (transcript 미보존은 방법론적 흠으로 §3 부록에 명시.)"
     }
   },
+  "grader_critique": {
+    "$comment": "실제 grader가 손채점판이 못 잡은 결함을 지적함 — 플러그인을 실제로 돌린 값어치. A/B_lookup 두 grader가 독립적으로 같은 지적을 냄.",
+    "finding": "E1~E6은 전부 '주입 자료에 있는 사실(A는 회상으로) 또는 repo에서 읽을 수 있는 사실(B는 조회로)'이라, PASS가 '주입 컨텍스트가 있었다/repo가 읽힌다'만 증명할 뿐 '이해가 늘었다'를 변별하지 못함.",
+    "recommended_fix": "① 주입 자료에 없는 사실 1개 이상을 문항에 넣어 A의 회상과 진짜 지식을 분리, ② 회수 경로(연 파일 수·조회 없이 답 가능 여부)를 점수화하는 meta-expectation 추가, ③ 자신있게 틀리거나(환각) 검증불가한 답에 감점하는 calibration 문항 추가.",
+    "status": "차기 반복 과제로 남김 (이번 제출엔 미반영, 정직 표기)"
+  },
   "conclusion": {
-    "correctness_axis": "조회 불가 시 주입 6/6 vs 무주입 0/6 — 정답/오답을 가름 (homework §3 원래 주장 재현·정량화)",
-    "efficiency_axis": "조회 가능 시 정답은 동률(6/6)이나 주입이 도구 1/3·토큰 25%↓·시간 절반 — 주입의 가치가 correctness에서 efficiency·determinism으로 이동",
+    "correctness_axis": "조회 불가 시 주입 6/6 vs 무주입 0/6 — 정답/오답을 가름 (단, 이 축의 변별력은 위 grader_critique의 한계를 안고 있음)",
+    "efficiency_axis": "조회 가능 시 정답은 동률(6/6, 실제 grader 확인)이나 주입이 도구 1/3·토큰 25%↓·시간 절반 — 주입의 가치가 correctness에서 efficiency·determinism으로 이동",
     "takeaway": "주입 효과는 '실행자가 사실을 스스로 찾을 수 있느냐'에 반비례. 못 찾으면 정답을, 찾을 수 있으면 비용·결정성을 가른다."
   }
 }

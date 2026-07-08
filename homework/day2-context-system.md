@@ -12,7 +12,7 @@
 | # | 완료 조건 | 상태 | 산출물 |
 |---|---|---|---|
 | 필수1 | 컨텍스트 md 3개+ + 자동 주입 | ✅ (기존 4개 → **5개**로 강화) | `.claude/context/*.md` + `.claude/visual-rubric.md`, 배선 `manifest.json` + `hooks/inject-context.py` |
-| 필수2 | 주입 A/B 동작 비교 | ✅ | 본문 §3 (지정 도구 `/skill-creator` 활성화·사용, 3조건 정량 A/B) |
+| 필수2 | 주입 A/B 동작 비교 | ✅ | 본문 §3 — `/skill-creator` 플러그인의 **실제 grader 에이전트 구동**으로 3조건 정량 A/B 재채점(A 6/6·B조회 6/6 repo 대조 CONFIRMED, `grading_*_real.json`) |
 | 필수3 | 컨텍스트 체계 도식화 | ✅ | `homework/context-system-diagram.html` (1P) |
 | 도전1 | 주입 검증 테스트 | ✅ | `.claude/context/test_inject_context.py` (8 tests) |
 | 도전2 | 최적화 + 정량 비교 | ✅ | 본문 §4 (-7.7%) |
@@ -41,7 +41,7 @@
 
 ## 3. 주입 A/B 동작 비교 (필수2)
 
-**도구 확정:** 과제 원문의 `/skill-creator`는 실재하는 **Anthropic 공식 플러그인**(`skill-creator@claude-plugins-official`)이었다. `settings.json`의 `enabledPlugins`에 등록해 활성화하고, 이 플러그인의 **executor + grader** 방법론(`agents/grader.md`·`comparator.md`)을 그대로 적용해 A/B를 측정했다. (블라인드 comparator는 6/6 vs 0/6로 승자가 자명해 생략.)
+**도구 확정 + 실제 실행:** 과제 원문의 `/skill-creator`는 실재하는 **Anthropic 공식 플러그인**(`skill-creator@claude-plugins-official`, `~/.claude/settings.json`의 `enabledPlugins`에 활성)이다. **초판은 이 플러그인의 grader 역할 정의(md)만 손으로 흉내 내 수기 채점했는데(= 방법론 차용, 플러그인 미실행), 이번에 플러그인의 실제 grader 에이전트(`agents/grader.md` 지침 그대로)를 캡처된 두 transcript에 구동해 재채점했다.** grader는 6문항을 하나씩 **실제 repo 파일과 대조**(SKILL.md·`capture-variants.mjs`·`visual.config.json`·`stop-dev-server.sh`)해 검증했다 — A 6/6·B(조회허용) 6/6 모두 CONFIRMED. 산출물: `injection-ab/grading_A_real.json`·`grading_B_lookup_real.json`. (블라인드 comparator는 6/6 vs 0/6로 승자가 자명해 생략.)
 
 **방법:** 대상 스킬 = `visual-check`. 이 스킬 호출 시 훅이 실제로 주입하는 payload(8,247자, `inject-context.py` 실제 출력)를 뽑아 **A 조건의 컨텍스트로 그대로** 사용했다. 그다음 *주입 안에만 있고 유추 불가능한 프로젝트 사실 6개*(ai-notes 경로·스키마, config seam 파일·키, DOM 식별 속성, lens overall 계산, 블라인드 정의, dev 서버 소유권)를 물어, **3개 독립 서브에이전트**로 답을 받아 정답 근거와 채점했다.
 
@@ -67,6 +67,16 @@
 > - **효율·결정성 축 (실행자가 찾을 수 있을 때):** 정답은 동률이나 주입이 **도구 1/3·토큰 25%↓·시간 절반**, 그리고 결정적(무주입은 "맞는 파일 찾기" 운에 의존). 여기선 주입의 가치가 correctness가 아니라 **비용·재현성**으로 이동한다.
 >
 > 그래서 manifest는 "필요한 곳에만" 매핑한다 — 유추/조회로 공짜로 얻는 지식에까지 다 주입하면 소음이자 비용이다. (이 원칙이 §4 최적화의 근거다.)
+
+### grader가 새로 잡은 것 — 플러그인을 실제로 돌린 값어치
+
+수기 채점은 "6/6이면 통과"에서 멈췄다. 플러그인의 실제 grader는 (Step 6 "eval 자체를 비평하라" 규약대로) **손채점판이 못 본 결함을 지적**했고, A·B 두 grader가 **독립적으로 같은 지적**을 냈다:
+
+> **E1~E6이 A/B를 변별하지 못한다.** 문항이 전부 "주입 자료에 있는 사실(A는 회상으로)이거나 repo에서 읽히는 사실(B는 조회로)"이라, PASS가 *주입 컨텍스트가 있었다 / repo가 읽힌다*만 증명할 뿐 **"이해가 늘었다"를 못 가른다.** 즉 정확성 축(§3)의 변별력은 이 한계를 안고 있다.
+>
+> grader 권고: ① 주입 자료에 **없는** 사실 1개+를 넣어 회상과 진짜 지식을 분리, ② 회수 경로(연 파일 수·조회 없이 답 가능한가)를 점수화하는 meta-expectation, ③ 자신있게 틀리거나 검증불가한 답에 감점하는 calibration 문항. → **차기 반복 과제로 남긴다(이번 미반영, 정직 표기).** 전문: `grading.json`의 `grader_critique`.
+
+이게 필수2를 "방법론 차용"이 아니라 "**플러그인 실제 실행**"으로 올린 실익이다 — 채점 결과(6/6)는 재현됐지만, 그 위에 **eval 설계의 사각지대**가 하나 더 드러났다.
 
 > **부록 — B(조회 허용)의 방법론적 함정, 정직하게:** 첫 실행에서 B 서브에이전트가 파일시스템을 읽어 정답을 맞혀 A/B가 주입 효과를 격리하지 못했다. 이 confound를 덮지 않고 **B를 조회 금지 조건으로 한 번 더 돌려** 정확성 축을 분리했다. "무주입=파일 못 봄"이 아니라 "무주입=컨텍스트 창에 없음(조회는 가능)"이 실제 훅-off의 모습이라는 점까지 드러난 게 오히려 소득.
 
@@ -105,6 +115,6 @@ Ran 8 tests in 0.104s — OK
 
 ## 6. 궁금한 점 (리뷰어에게)
 
-1. ~~"/skill-creator" 문구를 A/B로 해석했는데(§3), 강사가 의도한 특정 내부 도구가 따로 있나요?~~ → **해결.** `/skill-creator`는 Anthropic 공식 플러그인(`skill-creator@claude-plugins-official`)으로 실재했다. 활성화해 그 executor+grader 방법론으로 §3의 3조건 정량 A/B를 실측함. **다만 이 플러그인의 native eval은 "스킬 트리거(설명이 스킬을 발동시키나)" eval이라, 필수2가 요구하는 "주입 O/X 출력 차이" A/B와는 다른 측정이다** — 그래서 native eval을 그대로 쓰지 않고 executor+grader 역할만 차용했다. 이 미스매치가 의도된 것인지(트리거 eval을 원하셨는지) 확인 부탁드립니다.
+1. ~~"/skill-creator" 문구를 A/B로 해석했는데(§3), 강사가 의도한 특정 내부 도구가 따로 있나요?~~ → **해결·실행 완료.** `/skill-creator`는 Anthropic 공식 플러그인(`skill-creator@claude-plugins-official`)으로 실재했고, **이번에 그 실제 grader 에이전트를 두 transcript에 구동해** §3 A/B를 재채점했다(6/6·6/6, repo 대조 CONFIRMED). **남은 확인 하나:** 이 플러그인의 *native* eval(`run_eval.py`)은 "스킬 트리거(설명이 스킬을 발동시키나)" eval이라 필수2의 "주입 O/X 출력 차이"와는 다른 측정이다. 그래서 native 트리거 eval이 아니라 **grader(출력 채점) 경로**를 썼는데, 의도하신 게 트리거 eval이었는지 / 출력 A/B가 맞는지 확인 부탁드립니다.
 2. §4의 "더 큰 레버"(스킬에서 판정 레벨 정의 제거)를 적용할 가치가 있을까요? 판정 품질 재측정 비용 대비.
 3. 컨텍스트 3분류(팀/도메인/전문성) 모델 대신 **파일↔대상 매핑(manifest)** 모델을 썼는데, 이 일반화가 현업 규모에서도 유지될까요?

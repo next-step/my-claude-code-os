@@ -1,0 +1,76 @@
+{
+  "condition": "A_injected",
+  "expectations": [
+    {
+      "text": "E1: Q1 answer states ai-notes.json path as screenshots/<target>/ai-notes.json AND schema {<id>:{level: ok|warn|error, note}} correctly.",
+      "passed": true,
+      "evidence": "Transcript Q1: path `demo-app/screenshots/<target>/ai-notes.json` and schema `{ \"<id>\": { \"level\": \"ok|warn|error\", \"note\": \"<visual-judge 한 줄 근거>\" } }`. Verified against .claude/skills/visual-check/SKILL.md line 57: `screenshots/<T>/ai-notes.json` 에 `{ \"<id>\": { \"level\": \"ok|warn|error\", \"note\": \"<visual-judge 근거>\" } }` 로 모아 적는다. The `demo-app/` prefix is correct (SKILL.md line 52 uses `demo-app/screenshots/<T>/...` from repo root). Path and schema both exact."
+    },
+    {
+      "text": "E2: Q2 answer names the config file .claude/visual.config.json AND identifies both keys baseUrl and variantRoute correctly.",
+      "passed": true,
+      "evidence": "Transcript Q2: file `.claude/visual.config.json`, keys `baseUrl` (dev 서버 주소) and `variantRoute` (변형 고립 렌더 경로, {target} 치환). Verified against .claude/visual.config.json which contains exactly `\"baseUrl\": \"http://localhost:5173\"` and `\"variantRoute\": \"/gallery?c={target}\"`, and .claude/scripts/visual-config.mjs DEFAULTS/loader. Values quoted by transcript (localhost:5173, /gallery?c={target}) are also correct, as is the 'no config → defaults' claim (DEFAULTS in visual-config.mjs)."
+    },
+    {
+      "text": "E3: Q3 answer identifies DOM attribute data-variant-id AND component root = wrapper's first child (:scope > *:first-child).",
+      "passed": true,
+      "evidence": "Transcript Q3: 식별 속성 `data-variant-id=\"<id>\"`, 컴포넌트 루트 = 래퍼의 첫 자식 (`:scope > *:first-child`). Verified against demo-app/scripts/capture-variants.mjs line 66 `page.$$eval('[data-variant-id]', ...)`, line 79 `page.locator([data-variant-id=\"${id}\"])`, line 80 `wrapper.locator(':scope > *:first-child') // 컴포넌트 루트`. The bonus claims (label = 직속 <span>, data-expected = 채점용 정답, blind to judge) are also confirmed by lines 83-84."
+    },
+    {
+      "text": "E4: Q4 answer states overall = worst of the three lenses (layout/color/typo), priority error > warn > ok.",
+      "passed": true,
+      "evidence": "Transcript Q4: overall = 세 렌즈(layout·color·typo) 중 최악값 (error > warn > ok). Verified against .claude/skills/visual-lens/SKILL.md line 64: '한 변형의 3개 렌즈 레벨 중 가장 나쁜 것(error > warn > ok)을 그 변형의 overall 로 한다.' Exact match, including the reuse-of-shared-visual-judge/blind claim (line 52)."
+    },
+    {
+      "text": "E5: Q5 answer lists all three things NOT passed to the judge: expected(정답), code measurements(수치), other judgments(타 판정).",
+      "passed": true,
+      "evidence": "Transcript Q5: 판정 에이전트에게 넘기지 않는 것 = 정답(expected), 코드 수치(측정값), 다른(타) 판정 결과. Verified against .claude/skills/visual-check/SKILL.md line 53: '정답(expected)·코드 수치·다른 결과는 넘기지 않는다 — 블라인드 판정.' and visual-lens line 52 '정답·다른 렌즈 결과는 절대 넘기지 않는다.' All three items present and correct."
+    },
+    {
+      "text": "E6: Q6 answer states: server already UP = leave no marker / don't touch; self-started = write .visual-dev-server.pid marker, SessionEnd cleans only that marker.",
+      "passed": true,
+      "evidence": "Transcript Q6: UP = 그대로 쓰고 마커를 남기지 않는다; 직접 띄우면 PID를 `.claude/.visual-dev-server.pid`에 남기고 SessionEnd 훅이 이 마커만 정리. Verified against visual-check SKILL.md lines 36-40 and .claude/hooks/stop-dev-server.sh (MARKER=.claude/.visual-dev-server.pid; '마커 없음 → 사용자가 직접 띄운 서버다 → 아무것도 안 한다'; kills only marked PID + descendants). settings.json registers this as the SessionEnd hook. Marker path and both branches exact."
+    }
+  ],
+  "summary": {
+    "passed": 6,
+    "failed": 0,
+    "total": 6,
+    "pass_rate": 1.0
+  },
+  "claims": [
+    {
+      "claim": "visual-check writes ai-notes.json, and visual-confidence updates level to the majority value (Q1 extra).",
+      "passed": true,
+      "evidence": "visual-check SKILL.md line 57 confirms visual-check writes ai-notes.json. visual-confidence SKILL.md line 82 confirms it updates each variant's `level` to the majority value (다수결 값으로 갱신). Accurate, though visual-confidence step is labeled '선택'(optional) in the skill — transcript states it flatly without the optional caveat (minor)."
+    },
+    {
+      "claim": "The config loader visual-config.mjs searches upward from cwd; missing config falls back to demo-app defaults (Q2 extra).",
+      "passed": true,
+      "evidence": "visual-config.mjs findConfig() walks parent dirs from cwd (stops at .git boundary); loadVisualConfig returns {...DEFAULTS} when no config found, DEFAULTS = demo-app values. Both claims correct."
+    },
+    {
+      "claim": "Wrapper's direct <span> is the label; data-expected=ok|warn|error is grading truth, blind to the judge (Q3 extra).",
+      "passed": true,
+      "evidence": "capture-variants.mjs line 83 reads `:scope > span` as label, line 84 reads `data-expected`. blind-to-judge is enforced by visual-check SKILL.md line 53. Correct."
+    },
+    {
+      "claim": "Lenses reuse the shared visual-judge (narrowed angle, not a new agent), judging blind and independent (Q4 extra).",
+      "passed": true,
+      "evidence": "visual-lens SKILL.md line 19 ('공유 visual-judge 를 렌즈 지시와 함께 재사용') and line 52 ('독립·블라인드'). Correct."
+    },
+    {
+      "claim": "SessionEnd hook does not blanket-kill by port; it only terminates the marked PID and its descendants, then removes the marker (Q6 supporting).",
+      "passed": true,
+      "evidence": "stop-dev-server.sh: no marker => exit 0 (do nothing); with marker, kills PID + descendants only after verifying cmdline matches vite/npm/node, then rm marker. Transcript's 'SessionEnd 훅이 이 마커만 정리' is consistent with this. Correct."
+    }
+  ],
+  "eval_feedback": {
+    "suggestions": [
+      "For an injection A/B test, most expectations (E1, E5, E6 especially) quote text that lives verbatim in the injected visual-check SKILL.md / rubric. A PASS therefore mostly proves the injected context was present and recalled, not that the model gained repo understanding. Add at least one expectation targeting a fact NOT in the injected material (e.g., that the config loader stops at the .git boundary, or that measurements.json flags overflow only) so the A vs B contrast is discriminating.",
+      "E1 does not pin the path root. `screenshots/<target>/ai-notes.json` is relative to the demo-app cwd; the transcript prefixes `demo-app/`. The expectation should state which root is authoritative so a bare `screenshots/...` answer and a `demo-app/screenshots/...` answer are graded consistently.",
+      "The questions.txt instructs the executor to flag uncertainty ('모름/추측'). No expectation rewards calibration/honesty. Consider an expectation that penalizes confidently-stated wrong or unverifiable claims, since that behavior is exactly what the injection is meant to reduce."
+    ],
+    "overall": "The six expectations are precise, atomic, and each maps to a checkable repo fact; grading was unambiguous and all six passed against ground truth with no imprecision. The main weakness is not the answers but the eval design: it does not isolate 'injected recall' from 'genuine knowledge', which is the whole point of an injected-vs-baseline comparison."
+  }
+}
