@@ -12,9 +12,9 @@ description: Airflow 3.2.2 로컬 테스트 환경(venv)을 구축·검증·유�
 
 ## 환경 정보
 
-- 운영 Airflow 레포: `/Users/yepark/Project/77-draft/airflow-v3/` (버전 기준: `Dockerfile`)
+- 운영 Airflow 레포: `prod-airflow/` (운영 레포로 향하는 심링크 — 실제 절대경로는 `setup.sh`의 `PROD_AIRFLOW_REPO` 한 곳에만 있고, 심링크는 `.gitignore`로 커밋 제외)
 - venv: `airflow-os/.venv` / AIRFLOW_HOME: `airflow-os/.airflow` (SQLite, 운영 DB에 붙지 않음)
-- DAG 소스: 운영 Airflow 레포의 `dags/`를 경로로 참조 (복사하지 않음)
+- DAG 소스: `prod-airflow/dags/`를 경로로 참조 (심링크라 항상 운영 실시간, 복사하지 않음)
 
 ## 구축 / 재구축
 

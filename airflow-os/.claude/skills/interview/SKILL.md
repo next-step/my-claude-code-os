@@ -43,7 +43,7 @@ description: Airflow(Python)로 데이터 파이프라인/DAG를 새로 만들�
 
 사용자에게 던지기 전에 답이 이미 있는지 본다. 사용자의 시간을 아끼는 게 예의다.
 
-- 기존 유사 DAG, 공용 오퍼레이터/헬퍼, connection·variable을 읽는다. **이 OS의 실제 DAG 소스는 운영 레포 `/Users/yepark/Project/77-draft/airflow-v3/dags`** 이므로 로컬뿐 아니라 거기도 함께 본다
+- 기존 유사 DAG, 공용 오퍼레이터/헬퍼, connection·variable을 읽는다. **이 OS의 실제 DAG 소스는 운영 레포 심링크 `prod-airflow/dags`** 이므로 로컬뿐 아니라 거기도 함께 본다
 - 프로젝트 CLAUDE.md, DAG 네이밍·폴더 규칙을 확인한다
 - 필요하면 `Explore` / `general-purpose` 서브에이전트로 병렬 조사
 

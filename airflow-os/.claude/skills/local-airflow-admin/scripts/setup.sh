@@ -5,9 +5,13 @@ set -euo pipefail
 
 cd "$(dirname "$0")/../../../.."  # airflow-os 루트로 이동
 
+PROD_AIRFLOW_REPO=/Users/yepark/Project/77-draft/airflow-v3  # 운영 레포 실제 위치 — 이동 시 이 줄만 수정 (유일한 절대경로 지점)
 AIRFLOW_VERSION=3.2.2
 PYTHON_VERSION=3.12
 CONSTRAINT_URL="https://raw.githubusercontent.com/apache/airflow/constraints-${AIRFLOW_VERSION}/constraints-${PYTHON_VERSION}.txt"
+
+echo "── 운영 레포 심링크 (prod-airflow → 운영 레포, .gitignore로 커밋 제외)"
+ln -sfn "$PROD_AIRFLOW_REPO" prod-airflow
 
 echo "── 1. venv 생성 (.venv, python ${PYTHON_VERSION})"
 uv venv .venv --python ${PYTHON_VERSION}

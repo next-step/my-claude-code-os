@@ -1,4 +1,5 @@
 .venv/
 .airflow/
 __pycache__/
+prod-airflow
 .claude/scheduled_tasks.lock

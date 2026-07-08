@@ -11,7 +11,7 @@ TARGET="$1"
 
 cd "$(dirname "$0")/../../../.."  # airflow-os 루트로 이동
 
-AIRFLOW_REPO=/Users/yepark/Project/77-draft/airflow-v3  # 운영 Airflow 레포
+AIRFLOW_REPO="$PWD/prod-airflow"  # 운영 레포 심링크 (setup.sh가 생성, .gitignore로 커밋 제외)
 
 export AIRFLOW_HOME="$PWD/.airflow"
 export AIRFLOW__CORE__LOAD_EXAMPLES=false
