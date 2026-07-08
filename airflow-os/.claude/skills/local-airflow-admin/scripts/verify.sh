@@ -23,7 +23,7 @@ source .claude/skills/local-airflow-admin/local_variables.env
 
 .venv/bin/python - "$TARGET" <<'EOF'
 import sys
-from airflow.models.dagbag import DagBag
+from airflow.dag_processing.dagbag import DagBag
 
 dag_folder = sys.argv[1]
 db = DagBag(dag_folder=dag_folder, include_examples=False)
