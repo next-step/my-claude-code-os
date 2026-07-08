@@ -35,7 +35,9 @@ my-claude-code-os/
    ├─ agents/                    # ── 서브에이전트 정의 (each *.md) ──
    │  ├─ code-analyzer.md        #   ① 코드베이스 파악 (읽기 전용)
    │  ├─ code-writer.md          #   ② 분석·개발·테스트 (쓰기)
-   │  ├─ code-reviewer.md        #   ③ 리뷰·판정 (읽기 전용)
+   │  ├─ review-correctness.md   #   ③ 리뷰 렌즈: 정확성·안정성 (읽기 전용, 병렬)
+   │  ├─ review-tests.md         #   ③ 리뷰 렌즈: 테스트 (읽기 전용, 병렬)
+   │  ├─ code-reviewer.md        #   ③ 단일 리뷰·판정 (quick-review 전용, 읽기 전용)
    │  └─ doc-writer.md           #   ④ 문서화 (문서만 쓰기)
    ├─ skills/                    # ── 스킬 정의 (each <이름>/SKILL.md) ──
    │  ├─ feature-dev/            #   기능 개발 풀 파이프라인
@@ -60,10 +62,14 @@ my-claude-code-os/
 |----------|:----:|------|-------------|:--------:|
 | **code-analyzer** | ① | 관련 파일·관습·진입점을 지도로 정리 | Read, Grep, Glob, Bash | ✗ (읽기 전용) |
 | **code-writer** | ② | 요구 분석 → 테스트 작성 → 구현(TDD) | Read, Grep, Glob, **Write, Edit**, Bash | ✓ |
-| **code-reviewer** | ③ | 리뷰 후 **통과/수정필요** 판정 | Read, Grep, Glob, Bash | ✗ (지적만) |
+| **review-correctness** | ③ | 리뷰 렌즈 **정확성·안정성** → 판정 (feature-dev, 병렬) | Read, Grep, Glob, Bash | ✗ (지적만) |
+| **review-tests** | ③ | 리뷰 렌즈 **테스트 커버리지·green** → 판정 (feature-dev, 병렬) | Read, Grep, Glob, Bash | ✗ (지적만) |
+| **code-reviewer** | ③ | 단일 리뷰 후 **통과/수정필요** 판정 (quick-review 전용) | Read, Grep, Glob, Bash | ✗ (지적만) |
 | **doc-writer** | ④ | 변경 내용을 문서로 기록 | Read, Grep, Glob, **Write, Edit** | 문서만 |
 
-> 💡 **최소 권한 원칙**: 필요한 도구만 준다. 읽기 전용 에이전트(analyzer·reviewer)는 Write/Edit이 없고, doc-writer는 코드 실행이 필요 없어 Bash도 없다.
+> 💡 **최소 권한 원칙**: 필요한 도구만 준다. 읽기 전용 리뷰어들(analyzer·review-*·code-reviewer)은 Write/Edit이 없고, doc-writer는 코드 실행이 필요 없어 Bash도 없다.
+>
+> 💡 **③단계 리뷰의 두 갈래**: 무거운 `feature-dev`는 관점을 나눈 `review-correctness`·`review-tests`를 **병렬로** 돌려 깊게 검증하고, 가벼운 `quick-review`는 단일 `code-reviewer`로 빠르게 본다. 자세한 설계 근거는 [subagent-specialization.md](.claude/guidelines/subagent-specialization.md) 참고.
 
 ---
 
@@ -73,8 +79,8 @@ my-claude-code-os/
 
 | 스킬 | 유형 | 트리거(예) | 사용하는 에이전트 |
 |------|------|-----------|-------------------|
-| **feature-dev** | 오케스트레이터 | "~기능 만들어줘/구현해줘" | analyzer → writer → reviewer ⇄ writer → doc-writer |
-| **quick-review** | 오케스트레이터 | "리뷰해줘/봐줘" | analyzer → reviewer |
+| **feature-dev** | 오케스트레이터 | "~기능 만들어줘/구현해줘" | analyzer → writer → [review-correctness ∥ review-tests] ⇄ writer → doc-writer |
+| **quick-review** | 오케스트레이터 | "리뷰해줘/봐줘" | analyzer → code-reviewer |
 | **git-commit** | 실행형 | "커밋해줘/푸시해줘" | (없음 — 직접 git 수행) |
 | **skill-stat** | 실행형 | "스킬 통계 보여줘" | (없음 — 로그 집계) |
 
@@ -87,21 +93,22 @@ my-claude-code-os/
 ```
    사용자: "○○ 기능 만들어줘"
         │
-        ▼
- ① code-analyzer ──▶ ② code-writer ──▶ ③ code-reviewer ──┐
-   (어디를·어떻게)     (테스트+구현)        (판정)          │
-                            ▲                              │
-                            │        판정=수정필요          │
-                            └──────────────────────────────┘
+        ▼                                  ┌─ review-correctness ─┐ (정확성·안정성)
+ ① code-analyzer ──▶ ② code-writer ──▶ ③ ─┤  (병렬 리뷰)          ├─┐
+   (어디를·어떻게)     (테스트+구현)         └─ review-tests ───────┘ │ (테스트)
+                            ▲                                        │
+                            │        판정=수정필요(🔴 하나라도)        │
+                            └────────────────────────────────────────┘
                                      (최대 3회 반복)
-                                          │ 판정=통과
+                                          │ 둘 다 판정=통과
                                           ▼
                                     ④ doc-writer ──▶ 최종 보고
                                       (문서화)
 ```
 
-- **③ 검증 루프**가 이 파이프라인의 심장이다. reviewer가 🔴(Blocking)을 하나라도 찾으면 **수정필요** → 그 지적을 writer에게 되돌려 고치고 → 다시 리뷰. **판정이 "통과"가 되거나 3회에 도달하면** 종료한다(무한 루프 방지).
-- reviewer는 **직접 고치지 않는다.** 수정은 항상 writer가 한다.
+- **③ 검증 루프**가 이 파이프라인의 심장이다. 두 리뷰어(`review-correctness`·`review-tests`)를 **병렬로** 돌려 각자의 렌즈로 검증한다. **둘 중 하나라도** 🔴(Blocking)을 찾으면 **수정필요** → 두 리뷰어의 지적을 합쳐 writer에게 되돌려 고치고 → 다시 리뷰. **둘 다 "통과"가 되거나 3회에 도달하면** 종료한다(무한 루프 방지).
+- 두 판정의 취합(🔴 하나라도 → 수정필요)은 **스킬이 직접** 한다 — 관점이 2개라 별도 취합 에이전트는 두지 않았다.
+- 리뷰어는 **직접 고치지 않는다.** 수정은 항상 writer가 한다.
 
 ### 5-2. quick-review — 가벼운 리뷰 (2단계, 읽기 전용)
 
@@ -114,18 +121,21 @@ my-claude-code-os/
 ```
 
 - 새로 만들지 않고 **읽고 판정만** 한다. 코드를 수정하지 않아 빠르고 안전하다.
+- 가벼운 흐름이라 **단일 `code-reviewer`**를 쓴다(feature-dev의 관점 병렬 팬아웃은 이 스킬엔 과하다).
 
 ### 5-3. 공유 에이전트 (재활용)
 
 ```
-                 feature-dev     quick-review
- code-analyzer        ✓              ✓        ◀── 공유
- code-reviewer        ✓              ✓        ◀── 공유
- code-writer          ✓              ✗
- doc-writer           ✓              ✗
+                    feature-dev     quick-review
+ code-analyzer           ✓              ✓        ◀── 공유
+ code-writer             ✓              ✗
+ review-correctness      ✓              ✗        ◀── 관점 병렬(feature-dev 전용)
+ review-tests            ✓              ✗        ◀── 관점 병렬(feature-dev 전용)
+ code-reviewer           ✗              ✓        ◀── 단일 리뷰(quick-review 전용)
+ doc-writer              ✓              ✗
 ```
 
-`code-analyzer`와 `code-reviewer`는 **두 스킬이 함께 재활용**한다. "코드를 파악하는 전문가", "코드를 판정하는 전문가"를 한 번 정의해 두고 여러 워크플로우에서 돌려 쓰는 것이 이 구조의 핵심 이점이다.
+`code-analyzer`는 **두 스킬이 함께 재활용**한다("코드를 파악하는 전문가"를 한 번 정의해 여러 워크플로우에서 돌려 씀). 리뷰는 무게에 따라 갈라진다 — 무거운 개발은 관점을 나눈 `review-*` 병렬, 가벼운 리뷰는 단일 `code-reviewer`. 같은 "판정" 역할이라도 상황에 맞는 깊이를 고르는 것이 세분화의 이점이다.
 
 ---
 
