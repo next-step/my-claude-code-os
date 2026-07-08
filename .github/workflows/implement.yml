@@ -1,0 +1,44 @@
+name: implement
+
+# approved 된 PR 을 claude-code-action 으로 구현한다.
+# dispatch.yml 이 approved 라벨 전이 시 트리거한다.
+
+on:
+  workflow_dispatch:
+    inputs:
+      pr:
+        description: '구현할 PR 번호'
+        required: true
+
+permissions:
+  contents: write
+  pull-requests: write
+  id-token: write
+
+jobs:
+  implement:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Mark implementing
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const pr = Number('${{ github.event.inputs.pr }}');
+            await github.rest.issues.addLabels({
+              owner: context.repo.owner, repo: context.repo.repo,
+              issue_number: pr, labels: ['implementing'],
+            });
+
+      - name: Run Claude Code
+        uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          # spec.md 계약대로 TDD 구현
+          prompt: |
+            implement-from-spec 스킬을 사용해 이 브랜치의 spec.md 를 구현하라.
+            spec 범위 밖 변경은 금지. 테스트 우선으로 작성하고 커버리지 80%+ 를 목표로 한다.
+          claude_args: "--max-turns 50"

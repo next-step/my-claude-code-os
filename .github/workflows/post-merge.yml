@@ -1,0 +1,32 @@
+name: post-merge
+
+# 머지 후 context-refresh 를 실행한다. 문서 갱신은 별도 PR 로 제안한다.
+
+on:
+  pull_request:
+    types: [closed]
+
+permissions:
+  contents: write
+  pull-requests: write
+  id-token: write
+
+jobs:
+  refresh:
+    # 실제로 머지된 경우에만 (그냥 close 는 제외)
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run context-refresh
+        uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          prompt: |
+            context-refresh 스킬을 사용해 방금 머지된 변경과 OS.md / CLAUDE.md 문서 간
+            드리프트를 동기화하라. 드리프트가 없으면 아무것도 하지 마라.
+            갱신이 필요하면 머지 브랜치가 아니라 별도 PR(docs/context-refresh-*) 로 제안하라.
+          claude_args: "--max-turns 30"
