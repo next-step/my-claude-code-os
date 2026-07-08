@@ -35,7 +35,7 @@ description: airflow-os 작업의 회고를 airflow-os/retros/에 기록하는 �
 
 ## 파일 위치 / 네이밍
 - 폴더: `airflow-os/retros/`
-- task: `retros/<YYYY-MM-DD>-<dag_id 또는 주제>.md`
+- task: `retros/<YYYY-MM-DD>-<dag_id>.md`
 - os-improvement: `retros/<YYYY-MM-DD>-os-<주제>.md`
 
 ## 템플릿
@@ -44,7 +44,8 @@ description: airflow-os 작업의 회고를 airflow-os/retros/에 기록하는 �
 ---
 type: task | os-improvement
 date: <YYYY-MM-DD>
-subject: <dag_id 또는 개선 주제>
+subject: <한 줄 제목>
+dag_id: <대상 DAG id — type이 task일 때만. os-improvement면 이 줄 생략>
 ---
 
 ## 무엇을
