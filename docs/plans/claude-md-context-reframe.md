@@ -1,6 +1,6 @@
 ---
 topic: claude-md-context-reframe
-status: 대기
+status: 진행중
 source: docs/interviews/2026-07-08-os-docs-overhaul.md (Q5·Q8·Q13·Q14·Q15)
 ---
 
