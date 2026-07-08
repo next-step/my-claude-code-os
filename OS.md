@@ -34,7 +34,8 @@ my-claude-code-os/
    ├─ settings.json              # 훅 등록 등 프로젝트 설정
    ├─ agents/                    # ── 서브에이전트 정의 (each *.md) ──
    │  ├─ code-analyzer.md        #   ① 코드베이스 파악 (읽기 전용)
-   │  ├─ code-writer.md          #   ② 분석·개발·테스트 (쓰기)
+   │  ├─ test-writer.md          #   ②a 요구 분석 + red 테스트 작성 (쓰기)
+   │  ├─ impl-writer.md          #   ②b red 테스트를 green으로 구현 (쓰기)
    │  ├─ review-correctness.md   #   ③ 리뷰 렌즈: 정확성·안정성 (읽기 전용, 병렬)
    │  ├─ review-tests.md         #   ③ 리뷰 렌즈: 테스트 (읽기 전용, 병렬)
    │  ├─ code-reviewer.md        #   ③ 단일 리뷰·판정 (quick-review 전용, 읽기 전용)
@@ -54,20 +55,23 @@ my-claude-code-os/
 
 ---
 
-## 3. 서브에이전트 (4개)
+## 3. 서브에이전트 (7개)
 
 각 에이전트는 `.md` 파일 하나이고, 상단 frontmatter에 `name`·`description`·`tools`(권한)를 둔다.
 
 | 에이전트 | 단계 | 역할 | 권한(tools) | 코드 수정 |
 |----------|:----:|------|-------------|:--------:|
 | **code-analyzer** | ① | 관련 파일·관습·진입점을 지도로 정리 | Read, Grep, Glob, Bash | ✗ (읽기 전용) |
-| **code-writer** | ② | 요구 분석 → 테스트 작성 → 구현(TDD) | Read, Grep, Glob, **Write, Edit**, Bash | ✓ |
+| **test-writer** | ②a | 요구 분석 → 수용 기준 → **실패하는(red) 테스트** 작성 | Read, Grep, Glob, **Write, Edit**, Bash | 테스트만 |
+| **impl-writer** | ②b | red 테스트를 **green**으로 만드는 최소 구현 (테스트는 못 고침) | Read, Grep, Glob, **Write, Edit**, Bash | 구현만 |
 | **review-correctness** | ③ | 리뷰 렌즈 **정확성·안정성** → 판정 (feature-dev, 병렬) | Read, Grep, Glob, Bash | ✗ (지적만) |
 | **review-tests** | ③ | 리뷰 렌즈 **테스트 커버리지·green** → 판정 (feature-dev, 병렬) | Read, Grep, Glob, Bash | ✗ (지적만) |
 | **code-reviewer** | ③ | 단일 리뷰 후 **통과/수정필요** 판정 (quick-review 전용) | Read, Grep, Glob, Bash | ✗ (지적만) |
 | **doc-writer** | ④ | 변경 내용을 문서로 기록 | Read, Grep, Glob, **Write, Edit** | 문서만 |
 
-> 💡 **최소 권한 원칙**: 필요한 도구만 준다. 읽기 전용 리뷰어들(analyzer·review-*·code-reviewer)은 Write/Edit이 없고, doc-writer는 코드 실행이 필요 없어 Bash도 없다.
+> 💡 **최소 권한 원칙**: 필요한 도구만 준다. 읽기 전용(analyzer·review-*·code-reviewer)은 Write/Edit이 없고, doc-writer는 코드 실행이 필요 없어 Bash도 없다.
+>
+> 💡 **②단계 TDD 분리**: `test-writer`가 "무엇이 맞는가"(red 테스트=명세)를, `impl-writer`가 "어떻게 충족하는가"(green 구현)를 소유한다. impl-writer는 **남이 쓴 테스트를 통과시켜야** 하므로 자기 테스트를 무력화할 수 없다. 단, 도구 권한으로 경로를 막지는 못하므로 스킬이 `git diff`로 테스트 미변경을 사후 검증한다.
 >
 > 💡 **③단계 리뷰의 두 갈래**: 무거운 `feature-dev`는 관점을 나눈 `review-correctness`·`review-tests`를 **병렬로** 돌려 깊게 검증하고, 가벼운 `quick-review`는 단일 `code-reviewer`로 빠르게 본다. 자세한 설계 근거는 [subagent-specialization.md](.claude/guidelines/subagent-specialization.md) 참고.
 
@@ -79,7 +83,7 @@ my-claude-code-os/
 
 | 스킬 | 유형 | 트리거(예) | 사용하는 에이전트 |
 |------|------|-----------|-------------------|
-| **feature-dev** | 오케스트레이터 | "~기능 만들어줘/구현해줘" | analyzer → writer → [review-correctness ∥ review-tests] ⇄ writer → doc-writer |
+| **feature-dev** | 오케스트레이터 | "~기능 만들어줘/구현해줘" | analyzer → test-writer → impl-writer → [review-correctness ∥ review-tests] ⇄ (라우팅) → doc-writer |
 | **quick-review** | 오케스트레이터 | "리뷰해줘/봐줘" | analyzer → code-reviewer |
 | **git-commit** | 실행형 | "커밋해줘/푸시해줘" | (없음 — 직접 git 수행) |
 | **skill-stat** | 실행형 | "스킬 통계 보여줘" | (없음 — 로그 집계) |
@@ -93,22 +97,22 @@ my-claude-code-os/
 ```
    사용자: "○○ 기능 만들어줘"
         │
-        ▼                                  ┌─ review-correctness ─┐ (정확성·안정성)
- ① code-analyzer ──▶ ② code-writer ──▶ ③ ─┤  (병렬 리뷰)          ├─┐
-   (어디를·어떻게)     (테스트+구현)         └─ review-tests ───────┘ │ (테스트)
-                            ▲                                        │
-                            │        판정=수정필요(🔴 하나라도)        │
-                            └────────────────────────────────────────┘
-                                     (최대 3회 반복)
+        ▼                                                   ┌─ review-correctness ─┐ (정확성·안정성)
+ ① analyzer ─▶ ②a test-writer ─▶ ②b impl-writer ─▶ ③ ─────┤  (병렬 리뷰)          ├─┐
+   (어디를)      (red 테스트=스펙)   (green 구현)             └─ review-tests ───────┘ │ (테스트)
+                     ▲                  ▲                                             │
+   테스트 🔴 ────────┘   정확성 🔴 ──────┘         판정=수정필요(🔴 하나라도)            │
+   (test-writer 보강      (impl-writer 수정)  ◀───────────────────────────────────────┘
+    →impl이 green)                                (최대 3회 반복)
                                           │ 둘 다 판정=통과
                                           ▼
                                     ④ doc-writer ──▶ 최종 보고
                                       (문서화)
 ```
 
-- **③ 검증 루프**가 이 파이프라인의 심장이다. 두 리뷰어(`review-correctness`·`review-tests`)를 **병렬로** 돌려 각자의 렌즈로 검증한다. **둘 중 하나라도** 🔴(Blocking)을 찾으면 **수정필요** → 두 리뷰어의 지적을 합쳐 writer에게 되돌려 고치고 → 다시 리뷰. **둘 다 "통과"가 되거나 3회에 도달하면** 종료한다(무한 루프 방지).
-- 두 판정의 취합(🔴 하나라도 → 수정필요)은 **스킬이 직접** 한다 — 관점이 2개라 별도 취합 에이전트는 두지 않았다.
-- 리뷰어는 **직접 고치지 않는다.** 수정은 항상 writer가 한다.
+- **② 개발이 TDD 분리**다. `test-writer`가 red 테스트(=명세)를 쓰고, `impl-writer`가 그걸 green으로 만든다. impl-writer는 **테스트를 못 고친다**(남이 쓴 명세를 통과시켜야 함) — 스킬이 `git diff`로 사후 검증한다.
+- **③ 검증 루프**가 심장이다. 두 리뷰어를 **병렬로** 돌리고, 지적을 **작성자별로 라우팅**한다 — 정확성 🔴 → impl-writer, 테스트 🔴 → test-writer(보강)→impl-writer(green). **둘 다 "통과"거나 3회 도달 시** 종료한다.
+- 리뷰어는 **직접 고치지 않는다.** 수정은 항상 test-writer/impl-writer가 한다.
 
 ### 5-2. quick-review — 가벼운 리뷰 (2단계, 읽기 전용)
 
@@ -128,7 +132,8 @@ my-claude-code-os/
 ```
                     feature-dev     quick-review
  code-analyzer           ✓              ✓        ◀── 공유
- code-writer             ✓              ✗
+ test-writer             ✓              ✗        ◀── TDD 분리(feature-dev 전용)
+ impl-writer             ✓              ✗        ◀── TDD 분리(feature-dev 전용)
  review-correctness      ✓              ✗        ◀── 관점 병렬(feature-dev 전용)
  review-tests            ✓              ✗        ◀── 관점 병렬(feature-dev 전용)
  code-reviewer           ✗              ✓        ◀── 단일 리뷰(quick-review 전용)
@@ -187,7 +192,7 @@ python3 -m unittest discover tests        # 테스트 16개 실행
 | 파일 | 무엇 | 만든 방법 |
 |------|------|-----------|
 | `scripts/skill_stats.py` | 스킬 사용 로그 통계 유틸(`--top N` 옵션 포함) | **feature-dev 파이프라인**으로 개발 |
-| `tests/test_skill_stats.py` | 위 유틸의 unittest 16개 (전부 green) | 같은 파이프라인의 code-writer가 작성 |
+| `tests/test_skill_stats.py` | 위 유틸의 unittest 16개 (전부 green) | 같은 파이프라인의 개발 단계(현재는 test-writer→impl-writer)가 작성 |
 
 이 산출물 자체가 "OS 전체 사이클이 실제로 한 바퀴 돈다"는 증거다. feature-dev를 2회(초기 구현 + `--top N` 추가) 구동했고, 매번 4단계 + 검증 루프를 완주했다.
 

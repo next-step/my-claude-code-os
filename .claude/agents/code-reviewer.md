@@ -1,6 +1,6 @@
 ---
 name: code-reviewer
-description: 변경된 코드를 리뷰해 버그·정확성 문제·관습 위반·개선점을 찾고, 통과/수정필요 판정을 내린다. 검증 루프의 심판 역할로, code-writer의 구현이 끝난 뒤 호출한다. feature-dev와 quick-review 두 스킬이 공유한다. 읽기 전용이며 코드를 직접 수정하지 않고 지적과 판정만 한다.
+description: 변경된 코드를 한 명이 정확성·관습·테스트를 아울러 리뷰하고 통과/수정필요 판정을 내리는 단일 리뷰어. 가벼운 quick-review 스킬 전용이다(무거운 feature-dev는 review-correctness·review-tests를 병렬로 씀). 읽기 전용이며 코드를 직접 수정하지 않고 지적과 판정만 한다.
 tools: Read, Grep, Glob, Bash
 ---
 

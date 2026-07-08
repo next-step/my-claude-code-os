@@ -6,6 +6,9 @@
 
 > 이 문서는 [OS.md](../../OS.md)의 4개 에이전트 구조를 전제로 한다. 먼저 그 개요를 읽으면 이해가 빠르다.
 
+
+
+
 ---
 
 ## 0. 세분화 판단 기준 — 언제 쪼개고, 언제 멈추나
@@ -39,33 +42,50 @@
 스스로 짠 테스트는 자기도 모르게 구현에 맞춰 느슨해지고, 최악의 경우
 "테스트를 통과시키려고 테스트를 무력화"하는 유혹이 생긴다(원칙으로 금지하지만 **구조적으로는 막지 못한다**).
 
-### 1-2. 설계
+### 1-2. 핵심 아이디어 — "무엇을(스펙)" vs "어떻게(구현)"
 
-`code-writer`를 **테스트 담당**과 **구현 담당**으로 나눈다.
+TDD의 본질은 **테스트가 곧 명세(spec)**라는 것이다. 이걸 조직도로 옮기면 분리 지점이 자연히 나온다.
+
+| 에이전트 | 소유하는 질문 | 하는 일 | 권한(tools) | 쓰는 파일 |
+|----------|--------------|---------|-------------|-----------|
+| **test-writer** | **"무엇이 맞는가"**(스펙) | 요구 분석 → 수용 기준 도출 → **실패하는(red) 테스트** 작성. `testing.md` 지침(정상/빈입력/경계0/음수/형식오류/타입방어/tie-break) 전담 | Read, Grep, Glob, **Write, Edit**, Bash | 테스트 파일 |
+| **impl-writer** | **"어떻게 충족하는가"**(구현) | red 테스트를 받아 **green으로 만드는 최소 구현**만 | Read, Grep, Glob, **Write, Edit**, Bash | 구현 파일 |
+
+> 💡 예전 `code-writer`의 "분석" 단계를 어디 둘지 고민할 필요가 없다. **테스트를 쓰려면 요구를 이해해야 하니 분석은 자연히 test-writer 몫**이고, impl-writer는 "테스트라는 완성된 명세"를 받아 구현만 한다. red→green이 곧 자기 실력의 증거다.
+
+### 1-3. 설계 다이어그램
 
 ```
- code-analyzer → test-writer → impl-writer ⇄ code-reviewer(검증 루프) → doc-writer
-                     │              ▲
-              (실패하는 red 테스트)   │  impl-writer는 테스트를 못 고침
-                     └──────────────┘  (도구 권한 + 규칙으로 이중 금지)
+ code-analyzer → test-writer → impl-writer → ③ [review-correctness ∥ review-tests] → doc-writer
+                  (red 테스트)   (green 구현)         │
+                     ▲              ▲                 │ 수정필요 시 지적을 라우팅
+                     │              └─ 정확성 🔴 ──────┤ (구현 문제)
+                     └─ 테스트 🔴 ──────────────────────┘ (테스트 문제)
+                        (테스트 보강→다시 red→impl이 green)
 ```
 
-| 에이전트 | 역할 | 권한(tools) | 쓰기 범위 |
-|----------|------|-------------|-----------|
-| **test-writer** | 수용 기준 → **실패하는 테스트만** 작성. `guidelines/testing.md` 지침(정상/빈입력/경계0/음수/형식오류/타입방어/tie-break)을 전담 | Read, Grep, Glob, **Write, Edit**, Bash | **테스트 파일만** |
-| **impl-writer** | 그 테스트를 **green으로 만드는 최소 구현**만. 테스트 파일은 읽기만 | Read, Grep, Glob, **Write, Edit**, Bash | **구현 파일만** |
+### 1-4. impl-writer가 테스트를 못 고치게 하는 법 (교정)
 
-### 1-3. 핵심 규칙 (프롬프트에 못 박을 것)
+> ⚠️ **초안 교정**: "도구 권한으로 막는다"는 **틀렸다**. Claude Code의 `tools:` frontmatter는 *어떤 도구*(Write/Edit 등)만 정하고 *어떤 경로*에 쓸지는 제한하지 못한다. impl-writer도 Write/Edit가 필요하므로 도구 수준 차단은 불가능하다.
 
-- **impl-writer는 테스트 파일을 수정하지 않는다.** red→green이 자기 실력의 증거다.
-- impl-writer가 "테스트가 틀린 것 같다"고 판단하면 **직접 고치지 말고 오케스트레이터에 반려** → test-writer가 재판단.
-  (writer/reviewer 분리와 **똑같은 철학**: 만든 주체와 고치는 주체를 섞지 않는다.)
-- 검증 루프에서 reviewer의 🔴 지적이 **구현 문제**면 impl-writer, **테스트 누락/오류**면 test-writer에게 되돌린다.
+실제 강제는 **규칙 + 사후 검증**으로 이중화한다.
 
-### 1-4. 트레이드오프
+1. **규칙(프롬프트)** — impl-writer 지침에 "테스트 파일은 절대 수정하지 않는다"를 명시.
+2. **오케스트레이터 검증(backstop)** — impl-writer 실행 후 스킬이 `git diff --name-only`로 **테스트 파일이 바뀌었는지 확인**. 바뀌었으면 위반이니 되돌리고 재실행하거나 사용자에게 보고.
 
-- 단계가 1개 늘고, red 테스트를 프롬프트로 impl-writer에 넘겨야 한다.
-- 작은 변경엔 과하다 → **feature-dev(큰 기능)에만 적용**, quick-review류엔 미적용 권장.
+### 1-5. 핵심 규칙 & 검증 루프 라우팅
+
+- **impl-writer는 테스트 파일을 수정하지 않는다.** red→green이 증거다.
+- impl-writer가 "테스트가 틀린 것 같다"고 판단하면 **직접 고치지 말고 오케스트레이터에 반려** → test-writer가 재판단. (writer/reviewer 분리와 **똑같은 철학**: 만든 주체와 고치는 주체를 섞지 않는다.)
+- ③ 검증 루프에서 지적을 **누구에게 보낼지 갈라준다**:
+  - **review-correctness 🔴 (로직 버그)** → impl-writer가 구현 수정.
+  - **review-tests 🔴 (빠진/약한 테스트)** → test-writer가 테스트 보강(다시 red) → **뒤이어 impl-writer가 green**.
+
+### 1-6. 트레이드오프 & code-writer 처리
+
+- 단계 +1, 라우팅 로직 추가, red 테스트를 프롬프트로 넘기는 인계 비용. 작은 프로젝트엔 다소 과하나, **"자기 테스트를 자기가 무력화" 못 하게 구조로 막는 독립성**이 이득.
+- `code-writer`는 **은퇴(삭제)**한다. feature-dev가 test/impl로 쪼개지면 어떤 스킬도 code-writer를 부르지 않으므로(quick-review는 원래 writer 없음) 남기면 고아가 된다.
+- **feature-dev(큰 기능)에만 적용**, quick-review류엔 미적용.
 
 ---
 
@@ -145,13 +165,14 @@
 
 ## 4. 구현 시 체크리스트 (승인 후)
 
-### 방향 A
-- [ ] `.claude/agents/test-writer.md` 생성 (Write 범위: 테스트 파일)
-- [ ] `.claude/agents/impl-writer.md` 생성 (테스트 파일 수정 금지 규칙 명시)
-- [ ] `code-writer.md` 처리: 폐기 또는 "작은 변경용"으로 잔존시킬지 결정
-- [ ] `feature-dev/SKILL.md` ②단계를 test-writer → impl-writer 2스텝으로 개편
-- [ ] 반려 경로(impl→test-writer, reviewer 지적 라우팅) 명문화
-- [ ] OS.md의 에이전트 표·다이어그램 갱신
+### 방향 A  ✅ 구현 완료 (2026-07-08)
+- [x] `.claude/agents/test-writer.md` 생성 (요구 분석 + red 테스트 전담)
+- [x] `.claude/agents/impl-writer.md` 생성 (테스트 파일 수정 금지 규칙 명시)
+- [x] `code-writer.md` **은퇴(삭제)** — 완전 교체
+- [x] `feature-dev/SKILL.md` ②단계를 test-writer → impl-writer 2스텝으로 개편
+- [x] impl-writer 실행 후 `git diff --name-only`로 테스트 파일 미변경 검증(backstop) 명문화
+- [x] 반려 경로(impl→test-writer)·③단계 지적 라우팅(정확성→impl / 테스트→test-writer→impl) 명문화
+- [x] OS.md의 에이전트 표·다이어그램 갱신
 
 ### 방향 B  ✅ 구현 완료 (2026-07-08)
 - [x] `.claude/agents/review-correctness.md` 생성 (정확성+안정성 렌즈)
