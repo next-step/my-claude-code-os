@@ -29,7 +29,7 @@ my-claude-code-os/
 ├─ scripts/
 │  └─ skill_stats.py             # 산출물: 스킬 사용 로그 통계 유틸
 ├─ tests/
-│  └─ test_skill_stats.py        # 산출물: 위 유틸의 unittest (16개)
+│  └─ test_skill_stats.py        # 산출물: 위 유틸의 unittest (24개)
 └─ .claude/
    ├─ settings.json              # 훅 등록 등 프로젝트 설정
    ├─ agents/                    # ── 서브에이전트 정의 (each *.md) ──
@@ -163,7 +163,7 @@ my-claude-code-os/
 ```bash
 python3 scripts/skill_stats.py            # 스킬 사용 통계 (전체)
 python3 scripts/skill_stats.py --top 2    # 상위 2개만
-python3 -m unittest discover tests        # 테스트 16개 실행
+python3 -m unittest discover tests        # 테스트 24개 실행
 ```
 
 ---
@@ -191,10 +191,29 @@ python3 -m unittest discover tests        # 테스트 16개 실행
 
 | 파일 | 무엇 | 만든 방법 |
 |------|------|-----------|
-| `scripts/skill_stats.py` | 스킬 사용 로그 통계 유틸(`--top N` 옵션 포함) | **feature-dev 파이프라인**으로 개발 |
-| `tests/test_skill_stats.py` | 위 유틸의 unittest 16개 (전부 green) | 같은 파이프라인의 개발 단계(현재는 test-writer→impl-writer)가 작성 |
+| `scripts/skill_stats.py` | 스킬 사용 로그 통계 유틸(`--top N` CLI 옵션 + 순수 함수 `count_skills`·`count_by_weekday`·`top_skills`) | **feature-dev 파이프라인**으로 개발 |
+| `tests/test_skill_stats.py` | 위 유틸의 unittest 24개 (전부 green) | 같은 파이프라인의 개발 단계(현재는 test-writer→impl-writer)가 작성 |
 
-이 산출물 자체가 "OS 전체 사이클이 실제로 한 바퀴 돈다"는 증거다. feature-dev를 2회(초기 구현 + `--top N` 추가) 구동했고, 매번 4단계 + 검증 루프를 완주했다.
+이 산출물 자체가 "OS 전체 사이클이 실제로 한 바퀴 돈다"는 증거다. feature-dev를 여러 번(초기 구현 → `--top N` → 요일별 집계) 구동했고, 매번 4단계 + 검증 루프를 완주했다.
+
+### 8-1. `count_by_weekday` — 요일별 호출 집계 (순수 함수)
+
+로그의 시각에서 **요일을 파생**해 요일별 호출 횟수를 세는 순수 함수다. 반환은 `{요일한글: 횟수}` dict이며, 키 순서는 등장/횟수 순이 아니라 **월→화→수→목→금→토→일 고정 순서**(등장한 요일만 포함)다. 무시 규칙은 `count_skills`와 같고(빈 줄·탭 없는 줄·스킬이름 빈 줄), 여기에 **날짜 파싱 불가 줄**도 추가로 건너뛴다.
+
+```python
+from skill_stats import count_by_weekday
+
+lines = [
+    "2026-06-25 20:34:11\tgit-commit",   # 목
+    "2026-06-25 09:00:00\tfeature-dev",  # 목
+    "2026-07-02 08:43:54\tquick-review", # 목
+]
+count_by_weekday(lines)   # {"목": 3}
+```
+
+> 💡 **왜 CLI에 노출하지 않았나?** 이번엔 순수 함수와 모듈 상수(`WEEKDAYS_KO`)만 추가하고 `--by-weekday` 같은 CLI 옵션은 넣지 않았다(YAGNI). 실제 요구가 생기기 전에 인터페이스부터 늘리면 유지할 표면적만 커진다. 지금은 다른 코드가 `import`해 쓰거나 테스트로 검증하는 형태로만 존재한다.
+>
+> 💡 **왜 키 순서를 고정하나?** 요약 리포트에서 요일 축은 항상 같은 순서로 읽혀야 사람이 비교하기 쉽다. 그래서 등장 순서(dict 삽입 순)에 맡기지 않고 `WEEKDAYS_KO` 기준으로 재조립한다.
 
 ---
 

@@ -11,6 +11,11 @@ import argparse
 import os
 import sys
 from collections import Counter
+from datetime import datetime
+
+# 요일 인덱스(datetime.weekday(): 월=0 … 일=6) → 한글 요일.
+# 결과 dict의 키 순서를 이 고정 순서로 맞추는 기준으로도 쓴다.
+WEEKDAYS_KO = ["월", "화", "수", "목", "금", "토", "일"]
 
 # 기본 로그 경로 (저장소 루트 기준)
 DEFAULT_LOG_PATH = os.path.join(
@@ -45,6 +50,43 @@ def count_skills(lines):
             continue
         counter[skill] += 1
     return dict(counter)
+
+
+def count_by_weekday(lines):
+    """문자열 줄들의 iterable을 받아 {요일한글: 횟수} dict를 반환한다.
+
+    요일 정보는 로그에 없으므로 시각의 날짜 부분에서 파생한다.
+    무시 규칙은 count_skills와 같되(빈 줄/탭 없는 줄/스킬이름 빈 줄),
+    날짜 부분이 파싱 불가능한 줄도 추가로 무시한다. 요일을 파생할 수
+    없는 줄을 집계에 넣으면 결과가 오염되기 때문이다.
+
+    반환 dict의 키 순서는 등장/횟수 순이 아니라 월→화→수→목→금→토→일
+    고정 순서다(등장한 요일만 포함). 요약 리포트에서 요일 축이 항상
+    같은 순서로 읽히도록 하기 위함이다.
+    """
+    counter = Counter()
+    for line in lines:
+        # 무시 규칙은 count_skills와 동일하게 유지한다.
+        line = line.rstrip("\n")
+        if not line.strip():
+            continue
+        if "\t" not in line:
+            continue
+        fields = line.split("\t")
+        skill = fields[1].strip()
+        if not skill:
+            continue
+        # 첫 필드 "YYYY-MM-DD HH:MM:SS"에서 날짜 앞부분만 떼어 파싱한다.
+        # 파싱 실패(날짜 아님/존재하지 않는 월·일)는 예외 대신 건너뛴다.
+        date_part = fields[0].split(" ")[0]
+        try:
+            weekday_idx = datetime.strptime(date_part, "%Y-%m-%d").weekday()
+        except ValueError:
+            continue
+        counter[WEEKDAYS_KO[weekday_idx]] += 1
+
+    # 고정 요일 순서로 재조립한다. 등장한 요일만 담되 순서는 항상 동일.
+    return {요일: counter[요일] for 요일 in WEEKDAYS_KO if 요일 in counter}
 
 
 def top_skills(counts, n=None):

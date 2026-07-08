@@ -9,7 +9,7 @@ sys.path.insert(
     os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "scripts"),
 )
 
-from skill_stats import count_skills, top_skills  # noqa: E402
+from skill_stats import count_skills, count_by_weekday, top_skills  # noqa: E402
 
 
 class TestCountSkills(unittest.TestCase):
@@ -120,6 +120,100 @@ class TestTopSkills(unittest.TestCase):
         # bool은 int의 하위 타입이지만 개수 의미가 아니므로 거부한다
         with self.assertRaises(TypeError):
             top_skills(self.SAMPLE, True)
+
+
+class TestCountByWeekday(unittest.TestCase):
+    """count_by_weekday: 로그 줄들을 날짜에서 파생한 요일별로 집계한다.
+
+    요일 정보는 로그에 없으므로 시각의 날짜 부분에서 파생해야 한다.
+    기대 요일은 파이썬 datetime으로 검산한 값이다:
+      2026-06-29=월, 2026-06-30=화, 2026-07-01=수, 2026-06-25=목,
+      2026-07-03=금, 2026-07-04=토, 2026-07-05=일.
+    """
+
+    def test_기본_요일별_집계(self):
+        # 정상: 각 줄의 날짜를 요일로 변환해 요일별 횟수가 정확해야 한다
+        lines = [
+            "2026-06-29 09:00:00\tgit-commit",   # 월
+            "2026-06-30 09:00:00\tgit-commit",   # 화
+            "2026-07-01 09:00:00\tgit-commit",   # 수
+            "2026-06-25 20:34:11\tdeep-research",  # 목
+            "2026-07-03 09:00:00\tgit-commit",   # 금
+            "2026-07-04 09:00:00\tgit-commit",   # 토
+            "2026-07-05 09:00:00\tgit-commit",   # 일
+        ]
+        self.assertEqual(
+            count_by_weekday(lines),
+            {"월": 1, "화": 1, "수": 1, "목": 1, "금": 1, "토": 1, "일": 1},
+        )
+
+    def test_같은_요일_여러_날짜에_걸쳐_누적(self):
+        # 경계/집계 정확성: 서로 다른 날짜라도 같은 요일이면 누적돼야 한다.
+        # 2026-06-25 / 07-02 / 07-09 는 모두 목요일이다.
+        lines = [
+            "2026-06-25 20:34:11\tgit-commit",
+            "2026-07-02 08:43:54\tfeature-dev",
+            "2026-07-09 12:00:00\tdeep-research",
+        ]
+        self.assertEqual(count_by_weekday(lines), {"목": 3})
+
+    def test_빈_로그(self):
+        # 빈 입력: 빈 리스트는 빈 dict를 반환해야 한다
+        self.assertEqual(count_by_weekday([]), {})
+
+    def test_빈_줄과_공백과_trailing_개행_무시(self):
+        # count_skills와 동일하게 빈 줄/공백 줄/개행으로 생긴 빈 문자열을 무시한다
+        lines = [
+            "",
+            "   ",
+            "\n",
+            "2026-06-25 20:34:11\tgit-commit\n",  # 목
+        ]
+        self.assertEqual(count_by_weekday(lines), {"목": 1})
+
+    def test_탭_없는_형식깨진_줄_무시(self):
+        # 형식오류: 탭 구분자가 없는 줄은 count_skills와 동일하게 무시한다
+        lines = [
+            "형식이 깨진 줄 탭 없음",
+            "2026-06-25 20:34:11 git-commit",  # 공백 구분(탭 아님) → 무시
+            "2026-06-25 20:34:11\tgit-commit",  # 목
+        ]
+        self.assertEqual(count_by_weekday(lines), {"목": 1})
+
+    def test_날짜_파싱_불가능한_줄_무시(self):
+        # 형식오류: 날짜 부분이 파싱 불가능하면 무시한다.
+        # 요일을 파생할 수 없는 줄을 집계에 넣으면 결과가 오염되기 때문이다.
+        lines = [
+            "not-a-date\tgit-commit",             # 날짜 아님
+            "2026-13-40 00:00:00\tgit-commit",    # 존재하지 않는 월/일
+            "2026-06-25 20:34:11\tgit-commit",    # 목 (유일하게 유효)
+        ]
+        self.assertEqual(count_by_weekday(lines), {"목": 1})
+
+    def test_스킬이름_빈_줄_무시(self):
+        # 형식오류: 스킬이름 필드가 비었으면 count_skills와 동일하게 무시한다
+        lines = [
+            "2026-06-25 20:34:11\t",       # 스킬이름 없음
+            "2026-06-25 20:34:11\t   ",    # 공백뿐 → 빈 이름 취급
+            "2026-06-25 20:34:11\tgit-commit",  # 목
+        ]
+        self.assertEqual(count_by_weekday(lines), {"목": 1})
+
+    def test_요일_고정순서로_반환_횟수순_아님(self):
+        # 정렬(tie-break): 결과 dict의 키는 등장/횟수 순이 아니라
+        # 월→화→수→목→금→토→일 고정 순서로 나와야 한다.
+        # 입력은 일→목→월 순으로 섞어 넣고, 목이 최다여도 순서는 요일 고정이다.
+        lines = [
+            "2026-07-05 09:00:00\tskill-a",   # 일 (입력상 가장 먼저)
+            "2026-06-25 09:00:00\tskill-b",   # 목
+            "2026-06-25 10:00:00\tskill-b",   # 목 (최다)
+            "2026-06-29 09:00:00\tskill-c",   # 월
+        ]
+        result = count_by_weekday(lines)
+        # 값 검증
+        self.assertEqual(result, {"월": 1, "목": 2, "일": 1})
+        # 키 순서가 요일 고정 순서인지 검증 (횟수순이면 목이 먼저 왔을 것)
+        self.assertEqual(list(result.keys()), ["월", "목", "일"])
 
 
 if __name__ == "__main__":
