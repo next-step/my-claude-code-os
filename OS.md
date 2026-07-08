@@ -200,6 +200,7 @@
 ```
 - 수집은 API 서버와 **분리**된 모듈. 사용자 요청은 항상 DB만 읽음(빠르고 안정적).
 - 새 소스 추가 = 어댑터 1개 추가. 폴백 전략(API→크롤링→URL)을 어댑터 내부에서 흡수.
+- 수집 파이프라인 세부 계약(어댑터 시그니처·Normalizer·dedupKey·수집 스위치)은 **12.8 참조**.
 
 ### 12.3 데이터 스키마 (저장 — Prisma 개념)
 
@@ -279,3 +280,36 @@ type JobDTO = Job & {
   - **A-3 회사 식별 힌트 보존**: M1 수집 시 회사 식별 가능한 원본 필드(사업자번호·법인명 원문 등이 사람인 응답에 있으면)를 버리지 말고 raw로라도 보존한다(M2 DART 공시 연결 대비).
 - **frontend**: 온보딩 → 피드(카드·필터·마감임박순·북마크 토글·상태 뱃지) → 상세(요건+리서치 진입점 placeholder+원문 폴백) → 저장(상태 관리) → 빈/로딩/에러+폴백 UX.
 - **순서**: ①기획 계약 확정(본 장) → ②backend 타입+Mock 공개 → ③frontend·backend 병렬 → ④Mock→실 API 교체로 통합. **M1 완료 기준 = "온보딩→피드→북마크"가 끝까지 도는 것.**
+
+### 12.8 수집 파이프라인 계약 (M1 실수집 선작업 — 승인 대기 중 fixture 기반)
+
+> 사람인 API 승인 대기(⛔)와 무관하게 진행 가능한 선작업의 계약. **백엔드 전담**(프론트 영향 없음 —
+> `src/types/contract.ts` 변경 불필요, `JobDTO`/API 8종 그대로). 승인 후에는 환경변수 하나로 실수집 전환.
+
+**(1) SourceAdapter 인터페이스 — 기존 확정(코드가 원본)**
+- 단일 출처: `src/lib/collect/source-adapter.ts` 의 `SourceAdapter`(`source: string` + `fetchRaw(params?): Promise<RawJob[]>`)와 `RawJob`. 이 파일이 수집 계층 타입의 원본이며 12.2 B-1(소스 비종속)을 따른다.
+- `SaraminAdapter`는 **fetch 함수를 주입받는다**: `new SaraminAdapter({ accessKey, fetchFn = globalThis.fetch })`. fixture 테스트는 가짜 fetchFn 주입으로 **실 파싱 코드를 그대로** 태운다.
+- 사람인 job-search 응답 → RawJob 매핑: `id→sourceJobId`, `url→url`, `position.title→title`, `company.detail.name→companyName`, `position."job-code".code→jobRoleCode`, `position.location.code→locationCode`, `position."experience-level".code→experienceRaw`, `position."job-type".name→employmentType`, `expiration-date→deadline`, `posting-date→postedAt`, **원본 job 객체 전체→raw**(A-3). 필드명·구조는 승인 후 실응답으로 최종 검증.
+- **[유보 — 다음 소스 추가 시 개정 검토]** 현재 Normalizer 의 name 기반 라벨 매핑은 `raw.position.*.name` 을 직접 참조한다(사람인 단일 소스라 허용). 소스가 늘어나면 raw 구조가 소스마다 달라지므로, **두 번째 소스 어댑터 추가 시점**에 RawJob 에 `jobRoleName`/`locationName` 정규 필드 승격을 검토한다(M3 소스 확장의 선행 과제).
+- 요청 규약: `job_mid_cd=2`(IT개발·데이터) 고정, `count=110`, `start` 페이지 순회. 쿼터(하루 500콜) 보호를 위해 M1 수집은 **1회 실행당 최대 5콜** 상한.
+
+**(2) Normalizer 입출력 (신규 확정)**
+- 파일: `src/lib/collect/normalizer.ts` (신규).
+- 시그니처: `normalizeRawJob(raw: RawJob): JobUpsertInput`
+  - `JobUpsertInput` = 계약 `Job`에서 `id`·`collectedAt`·`companyId` 제외 + `rawData: string | null`(raw 를 JSON.stringify). 날짜는 ISO 문자열이며 upsert 직전에 Date 변환(수집 진입점 책임).
+- **라벨 매핑은 코드표가 아니라 응답의 name 필드 기반**(M1 결정): 사람인 응답의 `job-code.name`·`location.name` 문자열을 키워드 테이블로 `DEV_ROLE_OPTIONS.value`(7종)·`LOCATION_OPTIONS.value` 라벨에 매핑. 매핑 실패 시 null(전체 코드표 유지 부담 제거, code 원문은 raw에 보존). `contract.ts`의 `DevRoleOption.code`는 계속 placeholder 유지.
+- experienceRaw 매핑: 사람인 experience-level code `0(무관)→ANY`, `1(신입)→NEW`, `2(경력)→EXPERIENCED`, `3(신입/경력)→ANY`. 해석 실패 → `ANY` + PARTIAL.
+- **dataQuality 판정**: 다음 중 하나라도 해당하면 `PARTIAL` — title 누락(→ `"(제목 미확인 공고)"` 대체 저장), companyName 누락(→ `"(회사 미확인)"`), jobRole null, location null, experienceRaw 해석 실패. **deadline null(상시채용)과 description null(사람인 API 특성)은 PARTIAL 사유가 아님.**
+
+**(3) dedupKey 계산 규칙 (신규 확정 — 12.3 "회사+직무+지역" 구체화)**
+- `dedupKey = normCompany + "|" + (jobRole ?? "") + "|" + (location ?? "")`
+- `normCompany` = companyName 에서 `"(주)"`, `"㈜"`, `"주식회사"` 제거 → 모든 공백 제거 → 소문자화.
+- unique 아님(12.3). 헬퍼 `computeDedupKey(companyName, jobRole, location)` 를 normalizer 에서 export.
+
+**(4) 수집 소스 스위치 — 환경변수 (신규 확정)**
+- `COLLECT_SOURCE` = `mock`(기본) | `saramin-fixture` | `saramin`. `scripts/collect.ts` 가 이 값으로 어댑터를 선택.
+  - `saramin-fixture`: SaraminAdapter 에 로컬 fixture 를 반환하는 가짜 fetchFn 주입 → **실 파싱·정규화·upsert 경로 전체를 승인 전에 검증**.
+  - `saramin`: 실 API 호출. `SARAMIN_ACCESS_KEY` 필수(없으면 즉시 명확한 에러로 종료, 조용한 폴백 금지).
+- fixture 위치: `src/lib/collect/fixtures/saramin-job-search.json` — 사람인 job-search 응답 형태(`{ jobs: { count, start, total, job: [...] } }`), 개발직군 5~10건 + **필드 누락 PARTIAL 케이스 최소 2건** 포함.
+- 수집 진입점 파이프라인(고정): `adapter.fetchRaw()` → `normalizeRawJob()` → `prisma.job.upsert({ where: { source_sourceJobId } })`(idempotent) → 수집 요약 로그(총·FULL·PARTIAL 건수). **고정 규약은 mock 에도 동일 적용**(mock 만 upsert 생략 금지 — 경로 분기는 실전환 시 검증 공백을 만든다).
+- **mock 데이터 정합 규약**: MockAdapter 데이터는 seed 행과 upsert 키(`source, sourceJobId`)가 겹칠 수 있으므로, normalize 시 **FULL 판정이 가능한 힌트(name·description 등)를 포함**해야 한다 — 기본 `npm run collect` 가 seed 된 FULL 행을 PARTIAL 로 강등시키지 않기 위함.

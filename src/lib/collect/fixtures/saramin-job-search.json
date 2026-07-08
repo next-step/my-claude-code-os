@@ -1,0 +1,263 @@
+{
+  "_comment": "사람인 공개 job-search API 응답 fixture (OS.md 12.8). COLLECT_SOURCE=saramin-fixture 에서 가짜 fetchFn 이 이 파일을 반환 → 실 파싱·정규화·upsert 경로를 승인 전에 검증. FULL 5건(상시채용 1건 포함) + PARTIAL 4건(location 누락 / experience 해석 실패 / 회사명 누락 / jobRole 매핑 실패). 필드명·구조는 승인 후 실응답으로 최종 검증(12.8).",
+  "jobs": {
+    "count": 9,
+    "start": 0,
+    "total": "9",
+    "job": [
+      {
+        "url": "https://www.saramin.co.kr/zf_user/jobs/relay/view?rec_idx=48210001",
+        "active": 1,
+        "company": {
+          "detail": {
+            "href": "https://www.saramin.co.kr/zf_user/company-info/view?csn=fixture-0001",
+            "name": "(주)코드너리"
+          }
+        },
+        "position": {
+          "title": "백엔드 개발자 (Node.js) 신입 채용",
+          "industry": { "code": "301", "name": "솔루션·SI·ERP·CRM" },
+          "location": { "code": "101010", "name": "서울 > 강남구" },
+          "job-type": { "code": "1", "name": "정규직" },
+          "job-mid-code": { "code": "2", "name": "IT개발·데이터" },
+          "job-code": { "code": "2001", "name": "웹개발, 백엔드/서버개발" },
+          "experience-level": { "code": 1, "min": 0, "max": 0, "name": "신입" },
+          "required-education-level": { "code": "0", "name": "학력무관" }
+        },
+        "keyword": "Node.js, TypeScript, AWS",
+        "salary": { "code": "99", "name": "면접후 결정" },
+        "id": "48210001",
+        "posting-timestamp": "1782633600",
+        "posting-date": "2026-06-28T10:00:00+0900",
+        "expiration-timestamp": "1785513599",
+        "expiration-date": "2026-07-31T23:59:59+0900",
+        "close-type": { "code": "1", "name": "접수마감일" }
+      },
+      {
+        "url": "https://www.saramin.co.kr/zf_user/jobs/relay/view?rec_idx=48210002",
+        "active": 1,
+        "company": {
+          "detail": {
+            "href": "https://www.saramin.co.kr/zf_user/company-info/view?csn=fixture-0002",
+            "name": "넥스트웨이브 주식회사"
+          }
+        },
+        "position": {
+          "title": "프론트엔드 개발자 (React/Next.js) 경력",
+          "industry": { "code": "302", "name": "웹에이전시" },
+          "location": { "code": "102040", "name": "경기 > 성남시 분당구" },
+          "job-type": { "code": "1", "name": "정규직" },
+          "job-mid-code": { "code": "2", "name": "IT개발·데이터" },
+          "job-code": { "code": "2002", "name": "프론트엔드, 웹개발" },
+          "experience-level": { "code": 2, "min": 3, "max": 7, "name": "경력 3~7년" },
+          "required-education-level": { "code": "8", "name": "대학교졸업(4년)" }
+        },
+        "keyword": "React, Next.js, TypeScript",
+        "salary": { "code": "16", "name": "5,000~6,000만원" },
+        "id": "48210002",
+        "posting-timestamp": "1782720000",
+        "posting-date": "2026-06-29T09:30:00+0900",
+        "expiration-timestamp": "1786722299",
+        "expiration-date": "2026-08-14T23:59:59+0900",
+        "close-type": { "code": "1", "name": "접수마감일" }
+      },
+      {
+        "url": "https://www.saramin.co.kr/zf_user/jobs/relay/view?rec_idx=48210003",
+        "active": 1,
+        "company": {
+          "detail": {
+            "href": "https://www.saramin.co.kr/zf_user/company-info/view?csn=fixture-0003",
+            "name": "㈜데이터포레스트"
+          }
+        },
+        "position": {
+          "title": "데이터 엔지니어 / ML 엔지니어 모집",
+          "industry": { "code": "305", "name": "빅데이터·AI" },
+          "location": { "code": "101070", "name": "서울 > 마포구" },
+          "job-type": { "code": "2", "name": "계약직" },
+          "job-mid-code": { "code": "2", "name": "IT개발·데이터" },
+          "job-code": { "code": "2003", "name": "데이터엔지니어, 머신러닝·AI" },
+          "experience-level": { "code": 0, "min": 0, "max": 0, "name": "경력무관" },
+          "required-education-level": { "code": "0", "name": "학력무관" }
+        },
+        "keyword": "Python, Spark, Airflow",
+        "salary": { "code": "99", "name": "면접후 결정" },
+        "id": "48210003",
+        "posting-timestamp": "1782547200",
+        "posting-date": "2026-06-27T14:00:00+0900",
+        "expiration-timestamp": "1784563199",
+        "expiration-date": "2026-07-20T23:59:59+0900",
+        "close-type": { "code": "1", "name": "접수마감일" }
+      },
+      {
+        "url": "https://www.saramin.co.kr/zf_user/jobs/relay/view?rec_idx=48210004",
+        "active": 1,
+        "company": {
+          "detail": {
+            "href": "https://www.saramin.co.kr/zf_user/company-info/view?csn=fixture-0004",
+            "name": "클라우드브릿지(주)"
+          }
+        },
+        "position": {
+          "title": "DevOps 엔지니어 (신입/경력)",
+          "industry": { "code": "304", "name": "클라우드·호스팅" },
+          "location": { "code": "108030", "name": "인천 > 연수구" },
+          "job-type": { "code": "1", "name": "정규직" },
+          "job-mid-code": { "code": "2", "name": "IT개발·데이터" },
+          "job-code": { "code": "2004", "name": "데브옵스, 클라우드·인프라" },
+          "experience-level": { "code": 3, "min": 0, "max": 5, "name": "신입/경력" },
+          "required-education-level": { "code": "0", "name": "학력무관" }
+        },
+        "keyword": "Kubernetes, Terraform, AWS",
+        "salary": { "code": "99", "name": "면접후 결정" },
+        "id": "48210004",
+        "posting-timestamp": "1782806400",
+        "posting-date": "2026-06-30T11:00:00+0900",
+        "expiration-timestamp": "1788191999",
+        "expiration-date": "2026-08-31T23:59:59+0900",
+        "close-type": { "code": "1", "name": "접수마감일" }
+      },
+      {
+        "_case": "FULL — 상시채용: expiration-date 없음(close-type 채용시) → deadline null 이지만 PARTIAL 아님(12.8)",
+        "url": "https://www.saramin.co.kr/zf_user/jobs/relay/view?rec_idx=48210005",
+        "active": 1,
+        "company": {
+          "detail": {
+            "href": "https://www.saramin.co.kr/zf_user/company-info/view?csn=fixture-0005",
+            "name": "(주)앱스퀘어"
+          }
+        },
+        "position": {
+          "title": "iOS 앱 개발자 상시 채용",
+          "industry": { "code": "303", "name": "모바일 앱" },
+          "location": { "code": "101120", "name": "서울 > 서초구" },
+          "job-type": { "code": "1", "name": "정규직" },
+          "job-mid-code": { "code": "2", "name": "IT개발·데이터" },
+          "job-code": { "code": "2005", "name": "iOS, 앱개발" },
+          "experience-level": { "code": 1, "min": 0, "max": 0, "name": "신입" },
+          "required-education-level": { "code": "0", "name": "학력무관" }
+        },
+        "keyword": "Swift, SwiftUI",
+        "salary": { "code": "99", "name": "면접후 결정" },
+        "id": "48210005",
+        "posting-timestamp": "1782460800",
+        "posting-date": "2026-06-26T09:00:00+0900",
+        "close-type": { "code": "3", "name": "채용시" }
+      },
+      {
+        "_case": "PARTIAL — position.location 자체 누락 → location null",
+        "url": "https://www.saramin.co.kr/zf_user/jobs/relay/view?rec_idx=48210006",
+        "active": 1,
+        "company": {
+          "detail": {
+            "href": "https://www.saramin.co.kr/zf_user/company-info/view?csn=fixture-0006",
+            "name": "(주)글로벌테크"
+          }
+        },
+        "position": {
+          "title": "풀스택 개발자 채용",
+          "industry": { "code": "301", "name": "솔루션·SI·ERP·CRM" },
+          "job-type": { "code": "1", "name": "정규직" },
+          "job-mid-code": { "code": "2", "name": "IT개발·데이터" },
+          "job-code": { "code": "2006", "name": "풀스택, 웹개발" },
+          "experience-level": { "code": 2, "min": 2, "max": 5, "name": "경력 2~5년" },
+          "required-education-level": { "code": "0", "name": "학력무관" }
+        },
+        "keyword": "React, NestJS",
+        "salary": { "code": "99", "name": "면접후 결정" },
+        "id": "48210006",
+        "posting-timestamp": "1782633600",
+        "posting-date": "2026-06-28T16:00:00+0900",
+        "expiration-timestamp": "1785513599",
+        "expiration-date": "2026-08-10T23:59:59+0900",
+        "close-type": { "code": "1", "name": "접수마감일" }
+      },
+      {
+        "_case": "PARTIAL — experience-level code 99(미지) → 해석 실패 → ANY + PARTIAL",
+        "url": "https://www.saramin.co.kr/zf_user/jobs/relay/view?rec_idx=48210007",
+        "active": 1,
+        "company": {
+          "detail": {
+            "href": "https://www.saramin.co.kr/zf_user/company-info/view?csn=fixture-0007",
+            "name": "스타트라인"
+          }
+        },
+        "position": {
+          "title": "서버 개발자 채용 (Go)",
+          "industry": { "code": "306", "name": "게임" },
+          "location": { "code": "106010", "name": "부산 > 해운대구" },
+          "job-type": { "code": "1", "name": "정규직" },
+          "job-mid-code": { "code": "2", "name": "IT개발·데이터" },
+          "job-code": { "code": "2001", "name": "백엔드/서버개발" },
+          "experience-level": { "code": 99, "min": 0, "max": 0, "name": "기타" },
+          "required-education-level": { "code": "0", "name": "학력무관" }
+        },
+        "keyword": "Go, Redis",
+        "salary": { "code": "99", "name": "면접후 결정" },
+        "id": "48210007",
+        "posting-timestamp": "1782720000",
+        "posting-date": "2026-06-29T13:00:00+0900",
+        "expiration-timestamp": "1786031999",
+        "expiration-date": "2026-08-05T23:59:59+0900",
+        "close-type": { "code": "1", "name": "접수마감일" }
+      },
+      {
+        "_case": "PARTIAL — company.detail.name 누락 → companyName placeholder 대체",
+        "url": "https://www.saramin.co.kr/zf_user/jobs/relay/view?rec_idx=48210008",
+        "active": 1,
+        "company": {
+          "detail": {
+            "href": "https://www.saramin.co.kr/zf_user/company-info/view?csn=fixture-0008"
+          }
+        },
+        "position": {
+          "title": "백엔드 엔지니어 (Java/Spring)",
+          "industry": { "code": "301", "name": "솔루션·SI·ERP·CRM" },
+          "location": { "code": "101210", "name": "서울 > 송파구" },
+          "job-type": { "code": "1", "name": "정규직" },
+          "job-mid-code": { "code": "2", "name": "IT개발·데이터" },
+          "job-code": { "code": "2001", "name": "백엔드/서버개발" },
+          "experience-level": { "code": 2, "min": 1, "max": 3, "name": "경력 1~3년" },
+          "required-education-level": { "code": "8", "name": "대학교졸업(4년)" }
+        },
+        "keyword": "Java, Spring Boot, JPA",
+        "salary": { "code": "99", "name": "면접후 결정" },
+        "id": "48210008",
+        "posting-timestamp": "1782547200",
+        "posting-date": "2026-06-27T10:30:00+0900",
+        "expiration-timestamp": "1786722299",
+        "expiration-date": "2026-08-14T23:59:59+0900",
+        "close-type": { "code": "1", "name": "접수마감일" }
+      },
+      {
+        "_case": "PARTIAL — job-code.name 'QA·테스터' 는 개발직군 7종 키워드에 미매핑 → jobRole null",
+        "url": "https://www.saramin.co.kr/zf_user/jobs/relay/view?rec_idx=48210009",
+        "active": 1,
+        "company": {
+          "detail": {
+            "href": "https://www.saramin.co.kr/zf_user/company-info/view?csn=fixture-0009",
+            "name": "(주)퀄리티랩"
+          }
+        },
+        "position": {
+          "title": "QA 엔지니어 채용",
+          "industry": { "code": "301", "name": "솔루션·SI·ERP·CRM" },
+          "location": { "code": "105010", "name": "대전 > 유성구" },
+          "job-type": { "code": "1", "name": "정규직" },
+          "job-mid-code": { "code": "2", "name": "IT개발·데이터" },
+          "job-code": { "code": "2010", "name": "QA·테스터" },
+          "experience-level": { "code": 0, "min": 0, "max": 0, "name": "경력무관" },
+          "required-education-level": { "code": "0", "name": "학력무관" }
+        },
+        "keyword": "QA, 테스트자동화",
+        "salary": { "code": "99", "name": "면접후 결정" },
+        "id": "48210009",
+        "posting-timestamp": "1782806400",
+        "posting-date": "2026-06-30T15:00:00+0900",
+        "expiration-timestamp": "1785599999",
+        "expiration-date": "2026-08-01T23:59:59+0900",
+        "close-type": { "code": "1", "name": "접수마감일" }
+      }
+    ]
+  }
+}

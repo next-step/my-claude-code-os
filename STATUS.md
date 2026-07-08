@@ -6,9 +6,9 @@
 >
 > 갱신 규칙: 완료→✅로 옮기고, 새로 막히면 ⛔에 추가, "다음 할 일"을 항상 1~3개 유지.
 
-- **최종 갱신**: 2026-07-02
+- **최종 갱신**: 2026-07-05 (수집 파이프라인 구현 완료 — fixture 기준 end-to-end 검증됨)
 - **현재 마일스톤**: **M1 — 공고 모아보기 MVP** (직무 범위: 개발직군 한정)
-- **한 줄 요약**: Mock 데이터 기준 4화면(온보딩→피드→상세→저장)이 끝까지 동작. **남은 건 실 수집(SaraminAdapter) 연동뿐**이며, 사람인 API 승인 대기로 블로킹.
+- **한 줄 요약**: 수집 파이프라인(SaraminAdapter→Normalizer→upsert)이 fixture 로 end-to-end 검증 완료. **남은 건 사람인 API 승인 후 `COLLECT_SOURCE=saramin` 전환뿐.**
 
 ---
 
@@ -22,12 +22,11 @@
 - API 엔드포인트 8종 (GET /api/jobs … DELETE /api/bookmarks/:id)
 - 컨텍스트 보강: CLAUDE.md 항상-참인 사실 주입
 - **피드 정렬·필터 UX 개선** (orchestrate 시연) — `sort=recent` 정렬·집계 규약 구현(`totalCount` 부분집합 버그 수정), 필터↔URL 동기화(새로고침·공유 복원), 적용된 필터 칩·"필터 전체 해제". 계약 모호점을 OS.md 12.6/6장에 명문화(DECISIONS.md 자동 기록)
+- **수집 파이프라인 구현 (OS.md 12.8)** — fixture(`saramin-job-search.json`, FULL 5+PARTIAL 4) → `SaraminAdapter`(fetchFn 주입, 실행당 최대 5콜) → `Normalizer`(name 키워드 라벨 매핑·dedupKey·dataQuality) → `scripts/collect.ts`(`COLLECT_SOURCE` 스위치, idempotent upsert). `saramin-fixture` 모드로 수집→upsert→`GET /api/jobs` 노출까지 검증(재실행 시 신규 0 확인)
 
 ## 🚧 진행 중 · 남은 것 (M1)
 
-- **실 SaraminAdapter** (공개 API 연동) — 현재 `MockAdapter`만 존재
-- **Normalizer 실구현** — 코드→라벨 매핑(개발직군 job_cd 한정) + `dedupKey` 계산
-- **Mock → 실 API 교체 통합** — 위 둘이 끝나면 읽기 경로를 실 수집 데이터로 전환
+- **Mock → 실 API 교체 통합** — 사람인 승인 후 `COLLECT_SOURCE=saramin` + `SARAMIN_ACCESS_KEY` 로 전환, 실응답 필드명·구조 최종 검증(12.8)
 
 ## ⛔ 블로킹 · 대기
 
@@ -36,9 +35,9 @@
 
 ## ▶️ 다음 할 일 (우선순위)
 
-1. 사람인 API 승인 상태 확인 → 승인 시 `SaraminAdapter` 실구현 (승인 전이면 어댑터 인터페이스/파싱만 선작업)
-2. `Normalizer`(코드→라벨 + dedupKey) 구현
-3. Mock→실 수집 교체 후 **M1 완료 기준 검증**: "온보딩→피드→북마크"가 실 데이터로 끝까지 도는가
+1. 사람인 API 승인 확인 → `SARAMIN_ACCESS_KEY` 설정 → `COLLECT_SOURCE=saramin npm run collect` 로 실수집, 실응답 필드명·구조를 fixture 가정과 대조(12.8 "승인 후 최종 검증")
+2. 실 데이터 유입 후 name 키워드 매핑 커버리지 점검(매핑 실패→PARTIAL 비율이 높으면 키워드 테이블 보강)
+3. **M1 완료 기준 검증**: "온보딩→피드→북마크"가 실 데이터로 끝까지 도는가
 
 ## 관련 문서
 

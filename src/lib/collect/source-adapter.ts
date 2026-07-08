@@ -80,10 +80,20 @@ export class MockAdapter implements SourceAdapter {
         employmentType: "정규직",
         deadline: "2026-07-05",
         postedAt: "2026-06-20",
-        // 사람인 API 는 본문 미제공이 일반적 → description 없음(Normalizer 가 그대로 null)
+        // [주의] 이 mock 은 seed 데이터(SR-1001)와 같은 upsert 키를 가리킨다.
+        //   collect(mock) 재실행이 seed 행을 훼손하지 않도록 seed 와 동일 description 유지.
+        //   (실 사람인 API 는 본문 미제공 → 실 어댑터에서는 description 없음)
+        description:
+          "Node.js/TypeScript 기반 결제 백엔드 API 개발. REST/gRPC, PostgreSQL, 대용량 트래픽 경험 우대.",
         raw: {
           // [A-3] 회사 식별 힌트가 응답에 있으면 여기에 원문 보존
           company: { name: "토스뱅크", corp_no: null, biz_no: null },
+          // Normalizer 의 name 기반 라벨 매핑(12.8)이 mock 에서도 동작하도록
+          // 사람인 응답과 같은 위치(position.*.name)에 name 힌트를 담는다.
+          position: {
+            "job-code": { code: "TBD-be", name: "웹개발, 백엔드/서버개발" },
+            location: { code: "101000", name: "서울 > 전체" },
+          },
           _note: "실 연동 시 사람인 응답 원본을 그대로 담는다",
         },
       },
