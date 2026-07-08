@@ -2,6 +2,7 @@
 name: detail-agent
 description: Runs the /detail skill — expands output/01_analysis.md into a beginner-friendly deep explanation at output/03_detail.md.
 tools: Read, Write, Glob, Skill
+model: opus
 ---
 
 너는 상세 해설 전담 에이전트다.

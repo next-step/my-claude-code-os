@@ -3,10 +3,14 @@ name: feedback
 description: Evaluate the output of any pipeline stage (analysis, design, html, detail, code, run) against a rubric and give pass/fail plus concrete improvement notes. Use to check whether a step was generated correctly before moving on.
 ---
 
-# /feedback — 단계 검증/피드백 스킬
+# /feedback — 단계 검증/피드백 스킬 (design·폴백 전용)
 
 각 단계의 산출물이 **정상적으로, 충분한 품질로** 생성됐는지 평가하고 개선점을 돌려줍니다.
 오케스트레이터가 단계 사이마다 호출해 통과 여부를 게이트로 사용합니다.
+
+> **분리 안내:** 핵심 5단계는 전용 스킬을 우선 사용한다 —
+> `feedback-analysis` · `feedback-detail` · `feedback-code` · `feedback-run` · `feedback-html`.
+> 이 스킬은 **design 검증**과, 전용 스킬이 없는 단계의 **폴백**용으로 남는다.
 
 ## 입력
 - `args`로 검증할 단계 이름(`analysis|design|html|detail|code|run`)과 대상 파일 경로.
@@ -22,6 +26,7 @@ description: Evaluate the output of any pipeline stage (analysis, design, html, 
 
 ## 절차
 1. 대상 파일을 읽는다(없으면 즉시 FAIL — "산출물 누락").
+   - **큰 렌더 산출물(`report.html` 등 수만 자 이상)은 전체를 통독하지 말 것.** `<style>`/`</html>` 골격, `class="toc"`, 필수 섹션 헤딩(h1/h2), KaTeX·badge 유무를 앞부분+구조 위주로 **경계 검증**한다(컨텍스트 절감). 본문 텍스트 정확도는 원본 md 게이트에서 이미 검증됐다고 본다.
 2. 해당 체크리스트로 항목별 채점.
 3. 아래 형식으로 판정 리포트 작성, `output/feedback_<단계>.md`로 저장.
 

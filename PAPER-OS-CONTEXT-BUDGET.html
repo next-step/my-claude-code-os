@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PAPER-OS 컨텍스트 예산</title>
+<style>
+  :root{
+    --bg:#ffffff; --panel:#f7f8fa; --panel2:#eef1f5; --ink:#14181f; --muted:#5c6673;
+    --line:#e2e6ec; --accent:#2f6bff; --accent2:#7c3aed;
+    --bar:#c8d3e6; --hot:#ff5a5f; --warn:#f5a623; --good:#16a34a;
+    --shadow:0 1px 2px rgba(20,24,31,.05),0 8px 24px rgba(20,24,31,.06);
+  }
+  @media (prefers-color-scheme:dark){
+    :root{
+      --bg:#0e1116; --panel:#161b22; --panel2:#1c232c; --ink:#e7ecf3; --muted:#9aa6b3;
+      --line:#2a323d; --accent:#5b8cff; --accent2:#a78bfa;
+      --bar:#33415a; --hot:#ff6b70; --warn:#f7b34d; --good:#3ec07a;
+      --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 28px rgba(0,0,0,.45);
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#0e1116; --panel:#161b22; --panel2:#1c232c; --ink:#e7ecf3; --muted:#9aa6b3;
+    --line:#2a323d; --accent:#5b8cff; --accent2:#a78bfa; --bar:#33415a;
+    --hot:#ff6b70; --warn:#f7b34d; --good:#3ec07a;
+  }
+  :root[data-theme="light"]{
+    --bg:#ffffff; --panel:#f7f8fa; --panel2:#eef1f5; --ink:#14181f; --muted:#5c6673;
+    --line:#e2e6ec; --accent:#2f6bff; --accent2:#7c3aed; --bar:#c8d3e6;
+    --hot:#ff5a5f; --warn:#f5a623; --good:#16a34a;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Malgun Gothic","Apple SD Gothic Neo",system-ui,sans-serif;
+    line-height:1.6;-webkit-font-smoothing:antialiased;font-feature-settings:"tnum" 1,"lnum" 1;}
+  .wrap{max-width:1080px;margin:0 auto;padding:40px 22px 80px}
+  .num{font-variant-numeric:tabular-nums}
+  h1{font-size:2rem;line-height:1.2;margin:0 0 6px;letter-spacing:-.02em}
+  h2{font-size:1.28rem;margin:0 0 4px;letter-spacing:-.01em}
+  .sub{color:var(--muted);font-size:.95rem;margin:0}
+  header .meta{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px}
+  .chip{display:inline-flex;align-items:center;gap:6px;background:var(--panel);border:1px solid var(--line);
+    border-radius:999px;padding:5px 12px;font-size:.82rem;color:var(--muted)}
+  .chip b{color:var(--ink)}
+  section{margin-top:44px}
+  .sechead{display:flex;align-items:baseline;gap:12px;margin-bottom:18px;
+    border-bottom:1px solid var(--line);padding-bottom:10px}
+  .secno{font-size:.8rem;font-weight:700;color:var(--accent);letter-spacing:.08em}
+
+  /* KPI row */
+  .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+  .kpi{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 18px;box-shadow:var(--shadow)}
+  .kpi .k{font-size:.78rem;color:var(--muted);margin-bottom:6px}
+  .kpi .v{font-size:1.7rem;font-weight:750;letter-spacing:-.02em;line-height:1}
+  .kpi .v small{font-size:.9rem;font-weight:600;color:var(--muted)}
+  .kpi.hot .v{color:var(--hot)} .kpi.good .v{color:var(--good)}
+
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:22px;box-shadow:var(--shadow)}
+
+  /* formula */
+  .formula{font-family:"SFMono-Regular",Consolas,"Liberation Mono",monospace;font-size:.9rem;
+    background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:16px 18px;overflow-x:auto}
+  .formula .fixed{color:var(--muted)}
+  .formula .var{color:var(--accent);font-weight:700}
+  .legend{display:flex;flex-wrap:wrap;gap:16px;margin-top:14px;font-size:.85rem;color:var(--muted)}
+  .legend .sw{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+
+  /* bar chart */
+  .chart{display:flex;flex-direction:column;gap:9px}
+  .row{display:grid;grid-template-columns:170px 1fr 92px;align-items:center;gap:12px}
+  .row .lbl{font-size:.85rem;color:var(--muted);text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .row .lbl b{color:var(--ink);font-weight:600}
+  .track{background:var(--panel2);border-radius:8px;height:22px;position:relative;overflow:hidden}
+  .fill{height:100%;border-radius:8px;background:var(--bar);transition:width .4s}
+  .fill.hot{background:linear-gradient(90deg,var(--hot),#ff8a5c)}
+  .fill.warn{background:linear-gradient(90deg,var(--warn),#ffca6b)}
+  .fill.cool{background:linear-gradient(90deg,var(--accent),var(--accent2))}
+  .val{font-size:.85rem;text-align:right;font-variant-numeric:tabular-nums;color:var(--ink)}
+  .val.mut{color:var(--muted)}
+
+  /* two-hub flow */
+  .flow{display:grid;grid-template-columns:1fr;gap:14px}
+  .hub{border:1px solid var(--line);border-radius:14px;padding:16px 18px;background:var(--panel)}
+  .hub .top{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
+  .hub .name{font-weight:700;font-family:"SFMono-Regular",Consolas,monospace}
+  .hub .size{font-size:.82rem;color:var(--muted)}
+  .arrows{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+  .dest{font-size:.8rem;background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:5px 10px}
+  .dest.emph{border-color:var(--hot);color:var(--hot);font-weight:600}
+  .total-pill{font-size:.82rem;font-weight:700;color:var(--hot);white-space:nowrap}
+
+  /* opt cards */
+  .opts{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+  .opt{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:20px;box-shadow:var(--shadow);
+    display:flex;flex-direction:column;gap:10px}
+  .opt .tag{font-size:.74rem;font-weight:700;color:var(--accent);letter-spacing:.06em}
+  .opt h3{margin:0;font-size:1.02rem;letter-spacing:-.01em}
+  .opt p{margin:0;font-size:.86rem;color:var(--muted)}
+  .opt p b{color:var(--ink)}
+  .opt .delta{margin-top:auto;font-size:1.02rem;font-weight:750;color:var(--good)}
+  .opt .delta small{display:block;font-size:.78rem;color:var(--muted);font-weight:500;margin-top:2px}
+
+  /* before/after grouped */
+  .ba{display:flex;flex-direction:column;gap:14px}
+  .barow{display:grid;grid-template-columns:150px 1fr;gap:12px;align-items:center}
+  .barow .lbl{font-size:.85rem;color:var(--ink);font-weight:600;text-align:right}
+  .pair{display:flex;flex-direction:column;gap:5px}
+  .bseg{display:grid;grid-template-columns:1fr 78px;gap:8px;align-items:center}
+  .bseg .t{background:var(--panel2);border-radius:6px;height:16px;overflow:hidden}
+  .bseg .t i{display:block;height:100%;border-radius:6px}
+  .bseg.b i{background:var(--bar)}
+  .bseg.a i{background:linear-gradient(90deg,var(--good),#5ad19a)}
+  .bseg .n{font-size:.78rem;text-align:right;font-variant-numeric:tabular-nums}
+  .bseg .n.b{color:var(--muted)} .bseg .n.a{color:var(--good);font-weight:600}
+
+  table{border-collapse:collapse;width:100%;font-size:.85rem}
+  .tblwrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px}
+  th,td{padding:9px 12px;text-align:right;border-bottom:1px solid var(--line);white-space:nowrap}
+  th:first-child,td:first-child{text-align:left}
+  th{background:var(--panel2);color:var(--muted);font-weight:600;font-size:.78rem}
+  tr:last-child td{border-bottom:none}
+  .tot td{font-weight:750;background:var(--panel)}
+  .note{font-size:.85rem;color:var(--muted);margin-top:14px;padding-left:14px;border-left:3px solid var(--line)}
+
+  .toggle{position:fixed;top:16px;right:16px;background:var(--panel);border:1px solid var(--line);
+    color:var(--ink);border-radius:999px;padding:7px 14px;font-size:.8rem;cursor:pointer;box-shadow:var(--shadow)}
+  @media(max-width:760px){
+    .kpis{grid-template-columns:repeat(2,1fr)}
+    .opts{grid-template-columns:1fr}
+    .row{grid-template-columns:120px 1fr 78px}
+    .row .lbl{font-size:.78rem}
+    .barow{grid-template-columns:1fr}
+    .barow .lbl{text-align:left}
+    h1{font-size:1.6rem}
+  }
+</style>
+</head>
+<body>
+<button class="toggle" id="tg">◐ 테마</button>
+<div class="wrap">
+
+  <header>
+    <h1>PAPER-OS 컨텍스트 예산</h1>
+    <p class="sub">파이프라인 각 단계가 컨텍스트에 싣는 양을 측정하고, 좁은 인터페이스·밀도화·경계검증으로 절반으로 줄인 기록.</p>
+    <div class="meta">
+      <span class="chip">측정 기준일 <b>2026-07-02</b></span>
+      <span class="chip">표본 <b>joyaivl_2606.14777</b></span>
+      <span class="chip">단위 <b>문자 수(chars)</b> · 토큰 ≈ chars/2.5</span>
+    </div>
+  </header>
+
+  <!-- HEADLINE KPIs -->
+  <section>
+    <div class="kpis">
+      <div class="kpi hot"><div class="k">Before · 실행 1회</div><div class="v num">398,269 <small>chars</small></div></div>
+      <div class="kpi good"><div class="k">After · 실행 1회</div><div class="v num">187,461 <small>chars</small></div></div>
+      <div class="kpi good"><div class="k">절감</div><div class="v num">−53%</div></div>
+      <div class="kpi"><div class="k">토큰 추정</div><div class="v num">159k <small>→ ~75k</small></div></div>
+    </div>
+  </section>
+
+  <!-- 1. 측정 모델 -->
+  <section>
+    <div class="sechead"><span class="secno">01</span><div><h2>측정 모델</h2><p class="sub">한 단계의 컨텍스트는 무엇으로 채워지나</p></div></div>
+    <div class="card">
+      <div class="formula">
+단계 컨텍스트 = <span class="fixed">[고정 오버헤드]</span> + <span class="var">[SKILL.md]</span> + <span class="var">[입력 파일들]</span> + <span class="var">[워크플로 프롬프트]</span>
+      </div>
+      <div class="legend">
+        <span><span class="sw" style="background:var(--muted)"></span>고정 오버헤드 — 시스템+툴 스키마, 프레임워크 상수 (최적화 제외)</span>
+        <span><span class="sw" style="background:var(--accent)"></span>통제 가능한 변수 — 에이전트가 <b>Read</b>로 끌어오는 파일의 합 (측정·최적화 대상)</span>
+      </div>
+      <p class="note">외부 로드(Triage의 WebFetch, Code의 레포 clone)는 논문/레포마다 달라 통제 불가 → <span class="num">+web</span>/<span class="num">+repo</span>로 별도 표기.</p>
+
+      <h2 style="margin-top:26px;font-size:1rem">측정 원자료 — 파일별 크기 (chars)</h2>
+      <div class="chart" style="margin-top:14px">
+        <div class="row"><span class="lbl"><b>report.html</b> 산출물</span><div class="track"><div class="fill hot" style="width:100%"></div></div><span class="val num">69,037</span></div>
+        <div class="row"><span class="lbl"><b>04_code.md</b> 산출물</span><div class="track"><div class="fill hot" style="width:71.8%"></div></div><span class="val num">49,537</span></div>
+        <div class="row"><span class="lbl"><b>03_detail.md</b> 산출물</span><div class="track"><div class="fill hot" style="width:71.7%"></div></div><span class="val num">49,480</span></div>
+        <div class="row"><span class="lbl"><b>01_analysis.md</b> 산출물</span><div class="track"><div class="fill" style="width:12.2%"></div></div><span class="val num">8,452</span></div>
+        <div class="row"><span class="lbl"><b>05_run.md</b> 산출물</span><div class="track"><div class="fill" style="width:8.2%"></div></div><span class="val num">5,662</span></div>
+        <div class="row"><span class="lbl"><b>00_intent.md</b> 산출물</span><div class="track"><div class="fill" style="width:3.8%"></div></div><span class="val num">2,612</span></div>
+        <div class="row"><span class="lbl"><b>design.css</b> 산출물</span><div class="track"><div class="fill" style="width:2.6%"></div></div><span class="val num">1,790</span></div>
+        <div class="row"><span class="lbl">code-run <span style="opacity:.6">SKILL</span></span><div class="track"><div class="fill cool" style="width:7.1%"></div></div><span class="val mut num">4,911</span></div>
+        <div class="row"><span class="lbl">mydesign <span style="opacity:.6">SKILL</span></span><div class="track"><div class="fill cool" style="width:4.5%"></div></div><span class="val mut num">3,100</span></div>
+        <div class="row"><span class="lbl">feedback <span style="opacity:.6">SKILL</span></span><div class="track"><div class="fill cool" style="width:3.2%"></div></div><span class="val mut num">2,239</span></div>
+        <div class="row"><span class="lbl">analyzer <span style="opacity:.6">SKILL</span></span><div class="track"><div class="fill cool" style="width:3.2%"></div></div><span class="val mut num">2,182</span></div>
+        <div class="row"><span class="lbl">code <span style="opacity:.6">SKILL</span></span><div class="track"><div class="fill cool" style="width:3.1%"></div></div><span class="val mut num">2,145</span></div>
+        <div class="row"><span class="lbl">html <span style="opacity:.6">SKILL</span></span><div class="track"><div class="fill cool" style="width:2.8%"></div></div><span class="val mut num">1,945</span></div>
+        <div class="row"><span class="lbl">detail <span style="opacity:.6">SKILL</span></span><div class="track"><div class="fill cool" style="width:2.7%"></div></div><span class="val mut num">1,863</span></div>
+      </div>
+      <div class="legend" style="margin-top:16px">
+        <span><span class="sw" style="background:var(--hot)"></span>허브 산출물 (49k~69k · 병목)</span>
+        <span><span class="sw" style="background:var(--bar)"></span>일반 산출물</span>
+        <span><span class="sw" style="background:var(--accent)"></span>절차 파일(SKILL) — 모두 5k 이하</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2. 기준선 -->
+  <section>
+    <div class="sechead"><span class="secno">02</span><div><h2>기준선 (Baseline)</h2><p class="sub">단계별 실제 로딩량 — Gate:*는 각 단계 뒤 feedback 게이트</p></div></div>
+    <div class="card">
+      <div class="chart">
+        <div class="row"><span class="lbl">1 · Triage</span><div class="track"><div class="fill" style="width:0.3%"></div></div><span class="val num">~0 +web</span></div>
+        <div class="row"><span class="lbl">2 · Analyze</span><div class="track"><div class="fill" style="width:4.2%"></div></div><span class="val num">4,794</span></div>
+        <div class="row"><span class="lbl">3 · Gate: analysis</span><div class="track"><div class="fill" style="width:9.4%"></div></div><span class="val num">10,691</span></div>
+        <div class="row"><span class="lbl">4 · Detail</span><div class="track"><div class="fill" style="width:11.4%"></div></div><span class="val num">12,927</span></div>
+        <div class="row"><span class="lbl">5 · Gate: detail</span><div class="track"><div class="fill warn" style="width:45.4%"></div></div><span class="val num">51,719</span></div>
+        <div class="row"><span class="lbl">6 · Code</span><div class="track"><div class="fill" style="width:11.6%"></div></div><span class="val num">13,209</span></div>
+        <div class="row"><span class="lbl">7 · Gate: code</span><div class="track"><div class="fill warn" style="width:45.5%"></div></div><span class="val num">51,776</span></div>
+        <div class="row"><span class="lbl">8 · Run</span><div class="track"><div class="fill warn" style="width:50.1%"></div></div><span class="val num">57,060</span></div>
+        <div class="row"><span class="lbl">9 · Gate: run</span><div class="track"><div class="fill" style="width:6.9%"></div></div><span class="val num">7,901</span></div>
+        <div class="row"><span class="lbl">10 · Design</span><div class="track"><div class="fill" style="width:2.7%"></div></div><span class="val num">3,100</span></div>
+        <div class="row"><span class="lbl">11 · Render</span><div class="track"><div class="fill hot" style="width:100%"></div></div><span class="val num">113,816</span></div>
+        <div class="row"><span class="lbl">12 · Gate: html</span><div class="track"><div class="fill hot" style="width:62.6%"></div></div><span class="val num">71,276</span></div>
+      </div>
+    </div>
+
+    <h2 style="margin:30px 0 14px;font-size:1.05rem">병목 진단 — 두 허브 문서의 반복 로딩</h2>
+    <div class="flow">
+      <div class="hub">
+        <div class="top">
+          <span><span class="name">04_code.md</span> <span class="size">· 49,537 chars</span></span>
+          <span class="total-pill">총 148,611 로딩</span>
+        </div>
+        <div class="arrows">
+          <span class="dest">Gate:code</span>
+          <span class="dest emph">Run (전체 삼킴)</span>
+          <span class="dest">Render</span>
+          <span class="dest" style="border-style:dashed">× 3회 재로딩</span>
+        </div>
+      </div>
+      <div class="hub">
+        <div class="top">
+          <span><span class="name">03_detail.md</span> <span class="size">· 49,480 chars</span></span>
+          <span class="total-pill">총 98,960 로딩</span>
+        </div>
+        <div class="arrows">
+          <span class="dest">Gate:detail</span>
+          <span class="dest">Render</span>
+          <span class="dest" style="border-style:dashed">× 2회 재로딩</span>
+        </div>
+      </div>
+      <div class="hub">
+        <div class="top">
+          <span><span class="name">report.html</span> <span class="size">· 69,037 chars</span></span>
+          <span class="total-pill">총 69,037 로딩</span>
+        </div>
+        <div class="arrows">
+          <span class="dest emph">Gate:html (69k 통독)</span>
+          <span class="dest" style="border-style:dashed">본문은 이미 md에서 검증됨</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. 최적화 -->
+  <section>
+    <div class="sechead"><span class="secno">03</span><div><h2>최적화</h2><p class="sub">좁은 인터페이스 · 허브 밀도화 · 게이트 경계검증</p></div></div>
+    <div class="opts">
+      <div class="opt">
+        <span class="tag">OPT-1 · 좁은 인터페이스</span>
+        <h3>Run 축소 → <code>04_runcard.md</code></h3>
+        <p>Run엔 <b>레포 URL·진입점·의존성</b>만 필요한데 49k 매핑 전체를 읽었다. code 스킬이 실행 사실만 추린 소형 카드(≤1,800자)를 별도 발행, Run은 이 카드를 우선 로딩.</p>
+        <div class="delta">57,060 → 9,323<small>−47,737 chars</small></div>
+      </div>
+      <div class="opt">
+        <span class="tag">OPT-2 · 허브 밀도화</span>
+        <h3>detail·code 분량 예산</h3>
+        <p>두 문서가 각 ~49k라 게이트·Render에서 비용을 곱으로 키운다. <b>~24,000자 이내</b> 예산 명시 — 필수 골격(4단 구조·매핑표)은 유지, 반복·코드 붙여넣기 금지.</p>
+        <div class="delta">−25,480 · −25,537<small>Render에서 −51,017 추가</small></div>
+      </div>
+      <div class="opt">
+        <span class="tag">OPT-3 · 경계 검증</span>
+        <h3>Render 게이트 통독 금지</h3>
+        <p>report.html(69k) 통독은 낭비 — 본문 정확도는 원본 md 게이트에서 확인됨. feedback 스킬에 <b>골격·TOC·필수 헤딩·KaTeX만</b> 경계 검증하는 규칙 추가.</p>
+        <div class="delta">71,276 → ~10,239<small>−61,037 chars</small></div>
+      </div>
+    </div>
+    <p class="note">손대지 않은 것 — <b>00_intent 5회 재로딩</b>(13,060): 서브에이전트 간 캐시 불가라 아키텍처를 안 바꾸면 못 줄임. <b>고정 오버헤드·외부 로드</b>: 통제 불가 → 대상 외.</p>
+  </section>
+
+  <!-- 4. 결과 -->
+  <section>
+    <div class="sechead"><span class="secno">04</span><div><h2>결과 — 전후 비교</h2><p class="sub">Before(실측) → After(예상치) · 막대 위=Before, 아래=After</p></div></div>
+    <div class="card">
+      <div class="ba">
+        <div class="barow">
+          <span class="lbl">Run</span>
+          <div class="pair">
+            <div class="bseg b"><div class="t"><i style="width:50.1%"></i></div><span class="n b num">57,060</span></div>
+            <div class="bseg a"><div class="t"><i style="width:8.2%"></i></div><span class="n a num">9,323</span></div>
+          </div>
+        </div>
+        <div class="barow">
+          <span class="lbl">Gate: detail</span>
+          <div class="pair">
+            <div class="bseg b"><div class="t"><i style="width:45.4%"></i></div><span class="n b num">51,719</span></div>
+            <div class="bseg a"><div class="t"><i style="width:23.1%"></i></div><span class="n a num">26,239</span></div>
+          </div>
+        </div>
+        <div class="barow">
+          <span class="lbl">Gate: code</span>
+          <div class="pair">
+            <div class="bseg b"><div class="t"><i style="width:45.5%"></i></div><span class="n b num">51,776</span></div>
+            <div class="bseg a"><div class="t"><i style="width:23.1%"></i></div><span class="n a num">26,239</span></div>
+          </div>
+        </div>
+        <div class="barow">
+          <span class="lbl">Render</span>
+          <div class="pair">
+            <div class="bseg b"><div class="t"><i style="width:100%"></i></div><span class="n b num">113,816</span></div>
+            <div class="bseg a"><div class="t"><i style="width:55.2%"></i></div><span class="n a num">62,799</span></div>
+          </div>
+        </div>
+        <div class="barow">
+          <span class="lbl">Gate: html</span>
+          <div class="pair">
+            <div class="bseg b"><div class="t"><i style="width:62.6%"></i></div><span class="n b num">71,276</span></div>
+            <div class="bseg a"><div class="t"><i style="width:9%"></i></div><span class="n a num">10,239</span></div>
+          </div>
+        </div>
+        <div class="barow">
+          <span class="lbl" style="color:var(--muted)">나머지 7단계</span>
+          <div class="pair">
+            <div class="bseg b"><div class="t"><i style="width:37.4%"></i></div><span class="n b num">42,622</span></div>
+            <div class="bseg a"><div class="t"><i style="width:37.4%;background:var(--bar)"></i></div><span class="n num" style="color:var(--muted)">42,622</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="tblwrap" style="margin-top:24px">
+        <table>
+          <thead><tr><th>단계</th><th>Before</th><th>After</th><th>Δ</th></tr></thead>
+          <tbody>
+            <tr><td>Run</td><td class="num">57,060</td><td class="num">9,323</td><td class="num" style="color:var(--good)">−47,737</td></tr>
+            <tr><td>Gate: detail</td><td class="num">51,719</td><td class="num">26,239</td><td class="num" style="color:var(--good)">−25,480</td></tr>
+            <tr><td>Gate: code</td><td class="num">51,776</td><td class="num">26,239</td><td class="num" style="color:var(--good)">−25,537</td></tr>
+            <tr><td>Render</td><td class="num">113,816</td><td class="num">62,799</td><td class="num" style="color:var(--good)">−51,017</td></tr>
+            <tr><td>Gate: html</td><td class="num">71,276</td><td class="num">10,239</td><td class="num" style="color:var(--good)">−61,037</td></tr>
+            <tr><td style="color:var(--muted)">나머지 7단계</td><td class="num">42,622</td><td class="num">42,622</td><td class="num" style="color:var(--muted)">0</td></tr>
+            <tr class="tot"><td>합계</td><td class="num">398,269</td><td class="num">187,461</td><td class="num" style="color:var(--good)">−210,808 (−53%)</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="note"><b>수치의 성격</b> — Before는 현재 파일 실측(정확). After는 새 예산/인터페이스로부터의 예상치로, 파이프라인을 재실행해 더 작은 산출물이 생성되면 실측으로 확정된다. OPT-1·OPT-3은 구조 변경이라 거의 그대로 실현, OPT-2는 "24k 목표"를 얼마나 지키느냐에 따라 소폭 달라진다.</p>
+    </div>
+  </section>
+
+  <!-- 5. 유지보수 -->
+  <section>
+    <div class="sechead"><span class="secno">05</span><div><h2>유지보수 메모</h2></div></div>
+    <div class="card">
+      <ul style="margin:0;padding-left:20px;font-size:.92rem">
+        <li>새 단계를 추가하면 §2에 그 단계가 <b>Read하는 파일과 합</b>을 한 줄 추가한다.</li>
+        <li>"큰 산출물을 뒷단이 통째로 다시 읽는" 패턴이 보이면 → <b>좁은 인터페이스 파일</b>(runcard류)로 끊는다.</li>
+        <li>스킬에 분량 예산을 둘 땐 <b>무엇을 줄이고 무엇은 반드시 남기는지</b>를 함께 적어 품질 저하를 막는다.</li>
+      </ul>
+    </div>
+  </section>
+
+</div>
+<script>
+  var r=document.documentElement, b=document.getElementById('tg');
+  b.addEventListener('click',function(){
+    var cur=r.getAttribute('data-theme');
+    if(!cur){cur=matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light';}
+    r.setAttribute('data-theme', cur==='dark'?'light':'dark');
+  });
+</script>
+</body>
+</html>

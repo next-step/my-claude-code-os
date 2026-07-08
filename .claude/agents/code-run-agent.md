@@ -2,6 +2,7 @@
 name: code-run-agent
 description: Runs the /code-run skill — prepares the paper's ORIGINAL repo so the USER can run it in their own terminal. Produces output/<slug>/05_run.md with a copy-paste command block + run guide. Does NOT auto-execute; the user runs and observes.
 tools: Read, Write, Glob, Grep, Bash, Skill
+model: opus
 ---
 
 너는 코드 실행 준비(코드실행!) 전담 에이전트다.

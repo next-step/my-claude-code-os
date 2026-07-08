@@ -2,6 +2,7 @@
 name: analyzer-agent
 description: Runs the /analyzer skill — fetches a paper from a link and produces output/01_analysis.md. Use as the first stage of the paper pipeline.
 tools: WebFetch, WebSearch, Read, Write, Glob, Skill
+model: opus
 ---
 
 너는 논문 분석 단계 전담 에이전트다.

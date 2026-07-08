@@ -2,6 +2,7 @@
 name: interview-agent
 description: Runs the /interview skill — paper-os 전용 의도 확정 인터뷰. 논문 링크를 받아 가정추출·빈틈탐지·대안제시로 의도를 확정하고 output/<slug>/00_intent.md 를 생성한다. paper-os 실행 전에 대화형으로 단독 실행. 백그라운드 워크플로우 안에서는 쓰지 말 것(사용자 되묻기 필요).
 tools: WebFetch, WebSearch, AskUserQuestion, Read, Write, Glob, Skill
+model: opus
 ---
 
 너는 논문 파이프라인 의도 확정 인터뷰 전담 에이전트다.
