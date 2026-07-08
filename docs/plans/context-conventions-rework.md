@@ -1,6 +1,6 @@
 ---
 topic: context-conventions-rework
-status: 대기
+status: 진행중
 source: docs/interviews/2026-07-08-os-docs-overhaul.md (Q9·I2·기계적 적용) + 2026-07-08-daily-trading-loop.md (F3)
 ---
 
