@@ -27,6 +27,23 @@ const LINK = typeof args === 'string' ? args : (isObj && args.link)
 const MAX_PARALLEL = (isObj && args.maxParallel) || 5
 if (!LINK) throw new Error('paper-os: no paper link provided in args (pass a URL string, or { link, root?, maxParallel? })')
 
+// ── per-stage model / reasoning-effort policy ───────────────────────────────
+// 모든 단계는 Opus로 돌고, 단계가 요구하는 사고량에 따라 reasoning effort만 차등한다.
+// 재튜닝은 여기 한 곳만 고치면 된다 — 아래 모든 agent() 호출이 M(stage)로 이 값을 끌어 쓴다.
+// 대화형 .claude/agents/*.md 프론트매터에도 model:opus를 맞춰두었으나, effort 차등은
+// 워크플로 런타임 전용이라(agent 프론트매터엔 effort 필드가 없음) 실질 적용은 여기서 일어난다.
+const POLICY = {
+  triage:  { model: 'opus', effort: 'medium' },
+  analyze: { model: 'opus', effort: 'high'   },
+  detail:  { model: 'opus', effort: 'medium' },
+  code:    { model: 'opus', effort: 'high'   },
+  run:     { model: 'opus', effort: 'high'   },
+  design:  { model: 'opus', effort: 'medium' },
+  render:  { model: 'opus', effort: 'low'    },
+  gate:    { model: 'opus', effort: 'medium' },
+}
+const M = (k) => POLICY[k] || {}
+
 // Per-paper output dir. Assigned after Triage produces a filesystem-safe slug.
 // Every stage writes under OUTDIR so each paper gets its own self-contained folder.
 let OUTDIR = `${ROOT}/output/_pending`
@@ -58,18 +75,24 @@ const PLAN_SCHEMA = {
 }
 
 // ── helper: run a stage, gate it, retry once on FAIL ────────────────────────
+// Each gated stage has its own per-stage feedback skill: feedback-<stageName>
+// (feedback-analysis / feedback-detail / feedback-code / feedback-run / feedback-html).
+// Falls back to the generic `feedback` skill only for stages without a dedicated one.
 async function gated(stageName, file, runStage) {
+  const FB = ['analysis', 'detail', 'code', 'run', 'html'].includes(stageName)
+    ? SK('feedback-' + stageName)
+    : SK('feedback')
   let out = await runStage()
   let gate = await agent(
-    `${ROOT} 작업 디렉토리에서, ${SK('feedback')} 파일을 Read로 읽고 그 체크리스트에 따라 '${stageName}' 단계 산출물 ${file} 을 검증하라. ${OUTDIR}/feedback_${stageName}.md 로 저장하고 구조화 결과(verdict/score/must_fix/path)를 반환.`,
-    { phase: 'Gate:' + stageName, schema: GATE_SCHEMA, label: `gate:${stageName}` }
+    `${ROOT} 작업 디렉토리에서, ${FB} 파일을 Read로 읽고 그 체크리스트에 따라 '${stageName}' 단계 산출물 ${file} 을 검증하라. ${OUTDIR}/feedback_${stageName}.md 로 저장하고 구조화 결과(verdict/score/must_fix/path)를 반환.`,
+    { phase: 'Gate:' + stageName, schema: GATE_SCHEMA, label: `gate:${stageName}`, ...M('gate') }
   )
   if (gate && gate.verdict === 'FAIL') {
     log(`[${stageName}] FAIL (${gate.score}/10) → 재시도: ${gate.must_fix.join('; ')}`)
     out = await runStage(gate.must_fix)
     gate = await agent(
-      `${ROOT} 에서 ${SK('feedback')} 를 읽고 '${stageName}' 재검증: ${file}. 직전 지적사항: ${gate.must_fix.join('; ')}. 구조화 결과 반환.`,
-      { phase: 'Gate:' + stageName, schema: GATE_SCHEMA, label: `gate:${stageName}:retry` }
+      `${ROOT} 에서 ${FB} 를 읽고 '${stageName}' 재검증: ${file}. 직전 지적사항: ${gate.must_fix.join('; ')}. 구조화 결과 반환.`,
+      { phase: 'Gate:' + stageName, schema: GATE_SCHEMA, label: `gate:${stageName}:retry`, ...M('gate') }
     )
   }
   return { out, gate }
@@ -88,7 +111,7 @@ detail은 'concepts'(개념 그룹 라벨 배열)로, code는 'modules'(모듈 �
 'slug'은 이 논문의 폴더명으로 쓸 파일시스템 안전 문자열(영문소문자/숫자/._-만, 예: liveedit_2606.26740)로 지어라.
 단, output/ 아래에 이 논문의 00_intent.md 가 이미 있으면(Glob으로 확인) 그 폴더명을 slug으로 그대로 재사용하라(/interview가 만든 의도 파일과 폴더를 일치시키기 위함).
 동시성 상한 ${MAX_PARALLEL}을 넘기지 말 것. 근거를 rationale에 적어라.`,
-  { phase: 'Triage', schema: PLAN_SCHEMA, label: 'triage' }
+  { phase: 'Triage', schema: PLAN_SCHEMA, label: 'triage', ...M('triage') }
 )
 const nDetail = Math.max(1, Math.min(plan.detail_agents || 1, MAX_PARALLEL))
 const nCode = Math.max(1, Math.min(plan.code_agents || 1, MAX_PARALLEL))
@@ -110,7 +133,7 @@ const analysis = await gated('analysis', P('01_analysis.md'), (fixes) =>
     `작업 디렉토리 ${ROOT}. ${SK('analyzer')} 를 Read로 읽고 그 절차를 정확히 따라, 이 논문을 분석해 ${P('01_analysis.md')} 를 Write로 생성하라(상위 폴더 없으면 생성): ${LINK}` +
       (fixes ? `\n이전 피드백 반영: ${fixes.join('; ')}` : '') +
       `\n끝나면 파일 경로 + 제목 + 한 줄 요약 + 공식 코드 저장소 링크(있으면)를 반환.` + INTENT,
-    { phase: 'Analyze', label: 'analyzer' }
+    { phase: 'Analyze', label: 'analyzer', ...M('analyze') }
   )
 )
 
@@ -122,14 +145,14 @@ if (conceptLabels.length <= 1) {
   detailRun = (fixes) => agent(
     `${ROOT} 에서 ${SK('detail')} 를 읽고 그 절차대로 ${P('01_analysis.md')} 를 풀어 ${P('03_detail.md')} 를 생성하라.` +
       (fixes ? `\n이전 피드백: ${fixes.join('; ')}` : '') + INTENT,
-    { phase: 'Detail', label: 'detail' })
+    { phase: 'Detail', label: 'detail', ...M('detail') })
 } else {
   detailRun = async () => {
     await parallel(conceptLabels.map((c, i) => () =>
       agent(`${ROOT} 에서 ${SK('detail')} 의 방식대로 '${c}' 개념만 상세 해설하여 ${P(`03_detail_part${i}.md`)} 로 저장.`,
-        { phase: 'Detail', label: `detail:${c}` })))
+        { phase: 'Detail', label: `detail:${c}`, ...M('detail') })))
     return agent(`${OUTDIR}/03_detail_part*.md 들을 Read로 모두 읽어 하나로 병합·정리해 ${P('03_detail.md')} 생성(중복 제거, 목차 추가). 병합 후 03_detail_part*.md 중간 파일은 삭제하라.`,
-      { phase: 'Detail', label: 'detail:merge' })
+      { phase: 'Detail', label: 'detail:merge', ...M('detail') })
   }
 }
 const detail = await gated('detail', P('03_detail.md'), detailRun)
@@ -142,14 +165,14 @@ if (moduleLabels.length <= 1) {
   codeRun = (fixes) => agent(
     `${ROOT} 에서 ${SK('code')} 를 읽고 그 절차대로 구현 저장소를 찾아 분석하고 ${P('04_code.md')} 를 생성하라. 논문 분석은 ${P('01_analysis.md')} 참고.` +
       (fixes ? `\n이전 피드백: ${fixes.join('; ')}` : '') + INTENT,
-    { phase: 'Code', label: 'code' })
+    { phase: 'Code', label: 'code', ...M('code') })
 } else {
   codeRun = async () => {
     await parallel(moduleLabels.map((m, i) => () =>
       agent(`${ROOT} 에서 ${SK('code')} 방식대로 구현 저장소에서 '${m}' 모듈/하위시스템만 분석하여 ${P(`04_code_part${i}.md`)} 저장. 단서는 ${P('01_analysis.md')}.`,
-        { phase: 'Code', label: `code:${m}` })))
+        { phase: 'Code', label: `code:${m}`, ...M('code') })))
     return agent(`${OUTDIR}/04_code_part*.md 들을 Read로 읽어 병합해 ${P('04_code.md')} 생성(논문↔코드 매핑 표 통합). 병합 후 04_code_part*.md 중간 파일은 삭제하라.`,
-      { phase: 'Code', label: 'code:merge' })
+      { phase: 'Code', label: 'code:merge', ...M('code') })
   }
 }
 const code = await gated('code', P('04_code.md'), codeRun)
@@ -157,22 +180,22 @@ const code = await gated('code', P('04_code.md'), codeRun)
 // ── Phase 5: Run ────────────────────────────────────────────────────────────
 phase('Run')
 const run = await gated('run', P('05_run.md'), (fixes) =>
-  agent(`${ROOT} 에서 ${SK('code-run')} 를 읽고 그 절차대로 ${P('05_run.md')} 를 생성하라. 기본은 원본 레포를 사용자가 자기 터미널에서 돌릴 복붙 명령 블록+가이드이며, 클로드가 직접 실행하지 않는다(스킬 규칙 준수). 근거는 ${P('04_code.md')}.` +
+  agent(`${ROOT} 에서 ${SK('code-run')} 를 읽고 그 절차대로 ${P('05_run.md')} 를 생성하라. 기본은 원본 레포를 사용자가 자기 터미널에서 돌릴 복붙 명령 블록+가이드이며, 클로드가 직접 실행하지 않는다(스킬 규칙 준수). 근거는 소형 실행 카드 ${P('04_runcard.md')} 를 우선 읽어라(없을 때만 ${P('04_code.md')} 전체로 폴백 — 컨텍스트 절감).` +
     (fixes ? `\n이전 피드백: ${fixes.join('; ')}` : '') + INTENT,
-    { phase: 'Run', label: 'code-run' }))
+    { phase: 'Run', label: 'code-run', ...M('run') }))
 
 // ── Phase 6: Design ─────────────────────────────────────────────────────────
 phase('Design')
 const design = await agent(
   `${ROOT} 에서 ${SK('mydesign')} 를 읽고 그 절차대로 ${P('design.css')} 를 생성(순백·고대비·720px 규약).`,
-  { phase: 'Design', label: 'mydesign' })
+  { phase: 'Design', label: 'mydesign', ...M('design') })
 
 // ── Phase 7: Render ─────────────────────────────────────────────────────────
 phase('Render')
 const html = await gated('html', P('report.html'), (fixes) =>
   agent(`${ROOT} 에서 ${SK('html')} 를 읽고 그 절차대로 ${P('01_analysis.md')}, ${P('03_detail.md')}, ${P('04_code.md')} 와 ${P('design.css')} 를 합쳐 자급식(인라인 CSS) ${P('report.html')} 생성.` +
     (fixes ? `\n이전 피드백: ${fixes.join('; ')}` : '') + INTENT,
-    { phase: 'Render', label: 'html' }))
+    { phase: 'Render', label: 'html', ...M('render') }))
 
 // ── Summary ─────────────────────────────────────────────────────────────────
 const rel = (f) => `output/${SLUG}/${f}`

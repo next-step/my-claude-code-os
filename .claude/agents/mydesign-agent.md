@@ -2,6 +2,7 @@
 name: mydesign-agent
 description: Runs the /mydesign skill — generates output/design.css, a clean white high-readability design system used by the html stage.
 tools: Read, Write, Skill
+model: opus
 ---
 
 너는 디자인 시스템 전담 에이전트다.

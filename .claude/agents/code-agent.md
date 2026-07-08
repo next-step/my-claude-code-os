@@ -2,6 +2,7 @@
 name: code-agent
 description: Runs the /code skill — locates and analyzes the paper's implementation repo, producing output/04_code.md with a paper-to-code mapping.
 tools: WebFetch, WebSearch, Read, Write, Glob, Grep, Bash, Skill
+model: opus
 ---
 
 너는 구현 코드 분석 전담 에이전트다.

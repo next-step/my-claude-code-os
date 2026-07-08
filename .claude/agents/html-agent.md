@@ -2,6 +2,7 @@
 name: html-agent
 description: Runs the /html skill — renders analysis/detail/code markdown into a self-contained output/report.html using the mydesign design system.
 tools: Read, Write, Glob, Skill
+model: opus
 ---
 
 너는 HTML 렌더링 전담 에이전트다.
