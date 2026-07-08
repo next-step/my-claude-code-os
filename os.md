@@ -61,7 +61,8 @@
 | subagent | 루프단계 | 컨텍스트 | 도구 | 모델 | 출력 |
 |----------|---------|---------|------|------|------|
 | `market-scanner` | ② 수집 | 격리(웹 무거움) | Read, WebSearch, WebFetch | sonnet | 시장 스냅샷+출처 |
-| `portfolio-analyst` | ② 판단 | 격리 | Read, Write, Edit | opus | 데일리 리포트 저장 |
+| `data-reviewer` | ② 검증 | 격리(웹) | Read, WebSearch, WebFetch | sonnet | 교차검증 판정(PASS/WARN/FAIL) |
+| `portfolio-analyst` | ② 판단 | 격리 | Read, Write, Edit, Bash | opus | 데일리 리포트 저장 |
 | `monthly-reviewer` | ④ 복기 | 격리 | Read, Edit, Write | sonnet | 월간 리뷰 append |
 | (메인) | 오케스트레이션 | — | Task | — | 호출·취합·요약 |
 
@@ -76,16 +77,18 @@
 
 ```
 [병렬] market-scanner(macro)   ┐
-[병렬] market-scanner(tickers) ┘─→ [메인 취합] ─→ [순차] portfolio-analyst ─→ 저장
+[병렬] market-scanner(tickers) ┘─→ [메인 취합] ─→ [순차] data-reviewer 검증 ─→ [순차] portfolio-analyst ─→ 저장
 ```
 
 1. **대상 파악(메인)**: holdings·watchlist에서 오늘 조회 종목만 추림. 메인 컨텍스트는 가볍게.
 2. **수집(병렬 fan-out)**: `market-scanner`를 scope=macro / scope=tickers로 **동시 호출**. 독립 작업이라 병렬. 종목 많으면 더 쪼갬.
 3. **취합(메인)**: 스냅샷·출처 합본.
-4. **판단(순차)**: `portfolio-analyst`에 취합본 전달 → profile/holdings/principles 읽어 개인화 → `04_daily/YYYY-MM-DD.md` 저장 + 3줄 요약. scanner 결과 의존이라 병렬 불가.
-5. **마무리(메인)**: 요약 전달·리포트 present.
+4. **검증(순차)**: `data-reviewer`가 핵심 지표를 독립 출처로 교차 확인 → PASS/WARN/FAIL 판정. 반영(수치 교정·미확인 표기)은 메인이 한다.
+5. **판단(순차)**: `portfolio-analyst`에 검증 반영된 취합본 전달 → profile/holdings/principles 읽어 개인화 → `04_daily/YYYY-MM-DD.md` 저장 + 3줄 요약. 산술 계산은 LLM이 아닌 `scripts/return-calculator.py`(결정적)가 수행.
+6. **마무리(메인)**: 요약 전달·리포트 present.
 
-> **병렬 원칙**: 의존성 없는 작업(데이터 수집)만 병렬. 의존 작업(판단)은 순차.
+> **병렬 원칙**: 의존성 없는 작업(데이터 수집)만 병렬. 의존 작업(검증→판단)은 순차.
+> **결정적 영역 원칙**: 답이 하나로 정해지는 계산(수익률·세후 손익·한도 잔여)은 LLM에 맡기지 않고 스크립트로 뺀다. LLM은 해석·조언만.
 
 ---
 
