@@ -1,6 +1,7 @@
 # 데일리 조언 생성 프롬프트
 
 > 매일 AI에게 이 프롬프트로 데일리 리포트를 요청한다. (스케줄러로 자동화 가능)
+> **스코프**: 단타(위성) + 시황 전용. 적립식(DCA)은 다루지 않는다 — 매수는 자동이체, 리밸런싱은 분기 점검 → [[dca-playbook]].
 
 ---
 
@@ -12,18 +13,17 @@
 [순서]
 1. 먼저 아래 파일들을 읽어 내 상황을 파악해:
    - 01_profile/investor-profile.md (내 투자 성향·약점)
-   - 02_portfolio/holdings.md (보유 종목·평단·손절목표가)
+   - 02_portfolio/holdings.md (단타 보유 종목·평단·손절목표가 — 적립식 보유는 제외)
    - 02_portfolio/watchlist.md (관심 종목·감시 가격)
    - 00_principles/investment-principles.md (지켜야 할 규칙)
    - 05_reference/investing-knowledge.md (시장 데이터 해석 프레임)
-   - 05_reference/dca-playbook.md (적립식 실행 절차·리밸런싱·하락장 대응)
 
 2. 05_reference/data-sources.md의 신뢰 사이트를 웹 조회해 다음을 수집:
    - 미국: S&P500/나스닥/VIX/10년물 금리 (전일 마감)
    - 한국: 코스피/코스닥 (전일 마감), 외국인·기관 수급
    - USD/KRW 환율
    - 오늘/이번주 주요 경제 이벤트(FOMC·CPI 등)
-   - 내 보유·관심 종목의 어제 움직임과 주요 뉴스·실적
+   - 내 단타 보유·관심 종목의 어제 움직임과 주요 뉴스·실적
 
 3. 04_daily/_template.md 양식으로 리포트를 작성하고
    04_daily/YYYY-MM-DD.md 로 저장해.
@@ -46,4 +46,4 @@
 
 한국 장전(08:00 전) + 미국 장 마감 직후(아침) 둘 다 보고 싶으면 2개로 분리.
 
-관련: [[data-sources]] · [[holdings]] · [[investor-profile]]
+관련: [[data-sources]] · [[holdings]] · [[investor-profile]] · [[dca-playbook]]
