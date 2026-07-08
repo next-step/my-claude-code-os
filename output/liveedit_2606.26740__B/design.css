@@ -1,0 +1,29 @@
+:root{
+  --bg:#FFFFFF; --surface:#F7F8FA; --border:#E5E7EB;
+  --text:#1A1A1A; --muted:#5B6470; --accent:#2563EB; --accent-soft:#EFF4FF;
+  --radius:14px; --maxw:760px;
+  --font: -apple-system,"Segoe UI",Roboto,"Noto Sans KR",sans-serif;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:var(--font);
+  font-size:17px;line-height:1.75;-webkit-font-smoothing:antialiased}
+.wrap{max-width:var(--maxw);margin:0 auto;padding:56px 24px 96px}
+h1{font-size:2rem;line-height:1.25;margin:0 0 .3em;letter-spacing:-.02em}
+h2{font-size:1.4rem;margin:2.2em 0 .6em;padding-bottom:.3em;border-bottom:2px solid var(--accent-soft)}
+h3{font-size:1.1rem;margin:1.6em 0 .4em;color:var(--accent)}
+p,li{color:var(--text)}
+.muted{color:var(--muted)}
+.card{background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius);padding:20px 24px;margin:18px 0}
+.badge{display:inline-block;background:var(--accent-soft);color:var(--accent);
+  font-size:.8rem;font-weight:600;padding:3px 10px;border-radius:999px;margin:2px}
+code,pre{font-family:"SF Mono",Consolas,monospace;font-size:.92em}
+pre{background:#0F172A;color:#E2E8F0;padding:18px;border-radius:10px;overflow:auto;line-height:1.5}
+:not(pre)>code{background:var(--accent-soft);color:var(--accent);padding:1px 6px;border-radius:6px}
+blockquote{margin:16px 0;padding:8px 18px;border-left:4px solid var(--accent);
+  background:var(--accent-soft);color:#1e3a8a;border-radius:0 8px 8px 0}
+table{width:100%;border-collapse:collapse;margin:16px 0}
+th,td{border:1px solid var(--border);padding:10px 12px;text-align:left}
+th{background:var(--surface)}
+a{color:var(--accent);text-decoration:none}a:hover{text-decoration:underline}
+.toc{font-size:.95rem}.toc a{color:var(--muted)}

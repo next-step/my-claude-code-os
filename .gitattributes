@@ -1,0 +1,14 @@
+# Line-ending policy for the Claude OS tree.
+#
+# The Workflow permission dialog rejects CR (0x0d) as a hidden control character,
+# so workflow/skill files must never carry CRLF on checkout. core.autocrlf=true
+# would otherwise convert them to CRLF on Windows and break `Workflow` launches.
+# Force LF for the whole .claude tree (and JS sources) regardless of platform.
+
+.claude/**      text eol=lf
+*.js            text eol=lf
+*.mjs           text eol=lf
+*.json          text eol=lf
+
+# Generated report/design assets: keep LF too for consistency.
+*.css           text eol=lf

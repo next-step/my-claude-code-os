@@ -17,15 +17,31 @@ export const meta = {
 // ── config ──────────────────────────────────────────────────────────────────
 // PORTABLE: ROOT defaults to '.' (the session working directory) so the OS runs
 // on any PC / any clone path. Override via args object { link, root, maxParallel }.
-const isObj = typeof args === 'object' && args !== null
-const ROOT = (isObj && args.root) || '.'
+// Some launch paths deliver `args` as a JSON string instead of a parsed object
+// (observed with scriptPath invocation in this environment). Normalize so an
+// object-shaped string ('{...}') becomes a real object; a bare URL string stays a string.
+let ARGS = args
+if (typeof ARGS === 'string') {
+  const t = ARGS.trim()
+  if (t.startsWith('{') || t.startsWith('[')) { try { ARGS = JSON.parse(t) } catch (_) {} }
+}
+const isObj = typeof ARGS === 'object' && ARGS !== null
+const ROOT = (isObj && ARGS.root) || '.'
 const SK = (n) => `${ROOT}/.claude/skills/${n}/SKILL.md`
 // Custom .claude/agents/* are NOT resolvable inside the workflow runtime, so each
 // stage runs on the default workflow agent and is told to READ its SKILL.md.
 
-const LINK = typeof args === 'string' ? args : (isObj && args.link)
-const MAX_PARALLEL = (isObj && args.maxParallel) || 5
+const LINK = typeof ARGS === 'string' ? ARGS : (isObj && ARGS.link)
+const MAX_PARALLEL = (isObj && ARGS.maxParallel) || 5
 if (!LINK) throw new Error('paper-os: no paper link provided in args (pass a URL string, or { link, root?, maxParallel? })')
+
+// ── A/B knobs (used by /ab-test) ────────────────────────────────────────────
+// context: path (relative to ROOT) of a background-knowledge file to inject into
+//   every content stage — e.g. 'CONTEXT.md'. Null = don't inject (baseline arm).
+// tag: arm label appended to the output folder so A/B runs don't clobber
+//   (output/<slug>__A vs output/<slug>__B). Null = plain output/<slug>.
+const CTX_FILE = (isObj && ARGS.context) || null
+const TAG = (isObj && ARGS.tag) ? String(ARGS.tag).replace(/[^a-zA-Z0-9._-]/g, '_').slice(0, 24) : null
 
 // ── per-stage model / reasoning-effort policy ───────────────────────────────
 // 모든 단계는 Opus로 돌고, 단계가 요구하는 사고량에 따라 reasoning effort만 차등한다.
@@ -116,15 +132,21 @@ detail은 'concepts'(개념 그룹 라벨 배열)로, code는 'modules'(모듈 �
 const nDetail = Math.max(1, Math.min(plan.detail_agents || 1, MAX_PARALLEL))
 const nCode = Math.max(1, Math.min(plan.code_agents || 1, MAX_PARALLEL))
 const SLUG = String(plan.slug || 'paper').replace(/[^a-zA-Z0-9._-]/g, '_').slice(0, 60) || 'paper'
-OUTDIR = `${ROOT}/output/${SLUG}`
-log(`복잡도=${plan.complexity} · detail×${nDetail} · code×${nCode} · 폴더=output/${SLUG} — ${plan.rationale}`)
+const FOLDER = `${SLUG}${TAG ? '__' + TAG : ''}`  // A/B arm gets its own folder
+OUTDIR = `${ROOT}/output/${FOLDER}`
+log(`복잡도=${plan.complexity} · detail×${nDetail} · code×${nCode} · 폴더=output/${FOLDER} — ${plan.rationale}`)
 
 // ── Phase: Intent — honor the /interview spec if one exists ─────────────────
 // The /interview skill (run interactively BEFORE this workflow) writes
 // output/<slug>/00_intent.md. Stages read it and let it override skill defaults.
 phase('Intent')
-const INTENT = `\n\n[의도 우선] 시작 전 ${P('00_intent.md')} 파일이 있으면 Read로 먼저 읽고, 거기 적힌 대상/실행위치/실행주체/성공기준·해당 단계 지침을 스킬 기본값보다 우선 적용하라. 없으면 스킬 기본값대로 진행.`
-log(`의도 파일(있으면 적용): output/${SLUG}/00_intent.md`)
+// CTX: A/B background-knowledge preamble. Only present when args.context is set
+// (Arm A of an /ab-test run). Appended to every content-stage prompt via INTENT.
+const CTX = CTX_FILE
+  ? `\n\n[배경지식] 시작 전 ${ROOT}/${CTX_FILE} 파일이 있으면 Read로 읽어 이 프로젝트의 의도·이력·규약을 배경지식으로 참고하라(현재 논문 산출물 생성이 최우선이며, 배경지식은 보조적 참고용일 뿐 그대로 베끼지 말 것).`
+  : ''
+const INTENT = `\n\n[의도 우선] 시작 전 ${P('00_intent.md')} 파일이 있으면 Read로 먼저 읽고, 거기 적힌 대상/실행위치/실행주체/성공기준·해당 단계 지침을 스킬 기본값보다 우선 적용하라. 없으면 스킬 기본값대로 진행.` + CTX
+log(`의도 파일(있으면 적용): output/${FOLDER}/00_intent.md${CTX_FILE ? ` · 배경지식 주입: ${CTX_FILE}` : ''}`)
 
 // ── Phase 2: Analyze (single, gated) ────────────────────────────────────────
 phase('Analyze')
@@ -171,7 +193,9 @@ if (moduleLabels.length <= 1) {
     await parallel(moduleLabels.map((m, i) => () =>
       agent(`${ROOT} 에서 ${SK('code')} 방식대로 구현 저장소에서 '${m}' 모듈/하위시스템만 분석하여 ${P(`04_code_part${i}.md`)} 저장. 단서는 ${P('01_analysis.md')}.`,
         { phase: 'Code', label: `code:${m}`, ...M('code') })))
-    return agent(`${OUTDIR}/04_code_part*.md 들을 Read로 읽어 병합해 ${P('04_code.md')} 생성(논문↔코드 매핑 표 통합). 병합 후 04_code_part*.md 중간 파일은 삭제하라.`,
+    return agent(`${OUTDIR}/04_code_part*.md 들을 Read로 읽어 병합해 ${P('04_code.md')} 생성(논문↔코드 매핑 표 통합). ` +
+      `또한 ${SK('code')} 의 '실행 카드 스키마'를 따라 실행 사실만 추린 소형 ${P('04_runcard.md')}(≤ ~1,800자)를 반드시 함께 발행하라(단일 코드 에이전트 경로와 동일하게 — code-run 다운스트림이 이 카드만 읽음). ` +
+      `병합 후 04_code_part*.md 중간 파일은 삭제하라. 끝나면 ${P('04_code.md')} 와 ${P('04_runcard.md')} 경로를 보고.`,
       { phase: 'Code', label: 'code:merge', ...M('code') })
   }
 }
@@ -198,11 +222,13 @@ const html = await gated('html', P('report.html'), (fixes) =>
     { phase: 'Render', label: 'html', ...M('render') }))
 
 // ── Summary ─────────────────────────────────────────────────────────────────
-const rel = (f) => `output/${SLUG}/${f}`
+const rel = (f) => `output/${FOLDER}/${f}`
 return {
   link: LINK,
   slug: SLUG,
-  folder: `output/${SLUG}/`,
+  tag: TAG,
+  context: CTX_FILE,
+  folder: `output/${FOLDER}/`,
   plan: { complexity: plan.complexity, detail_agents: nDetail, code_agents: nCode, rationale: plan.rationale },
   gates: {
     analysis: analysis.gate && analysis.gate.verdict,

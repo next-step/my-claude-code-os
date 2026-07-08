@@ -1,0 +1,872 @@
+<!doctype html><html lang="ko"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>LiveEdit — Towards Real-Time Diffusion-Based Streaming Video Editing</title>
+<style>
+:root{
+  --bg:#FFFFFF; --surface:#F7F8FA; --border:#E5E7EB;
+  --text:#1A1A1A; --muted:#5B6470; --accent:#2563EB; --accent-soft:#EFF4FF;
+  --radius:14px; --maxw:760px;
+  --font: -apple-system,"Segoe UI",Roboto,"Noto Sans KR",sans-serif;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:var(--font);
+  font-size:17px;line-height:1.75;-webkit-font-smoothing:antialiased}
+.wrap{max-width:var(--maxw);margin:0 auto;padding:56px 24px 96px}
+h1{font-size:2rem;line-height:1.25;margin:0 0 .3em;letter-spacing:-.02em}
+h2{font-size:1.4rem;margin:2.2em 0 .6em;padding-bottom:.3em;border-bottom:2px solid var(--accent-soft)}
+h3{font-size:1.1rem;margin:1.6em 0 .4em;color:var(--accent)}
+h4{font-size:1rem;margin:1.3em 0 .3em;color:var(--text)}
+p,li{color:var(--text)}
+.muted{color:var(--muted)}
+.card{background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius);padding:20px 24px;margin:18px 0}
+.badge{display:inline-block;background:var(--accent-soft);color:var(--accent);
+  font-size:.8rem;font-weight:600;padding:3px 10px;border-radius:999px;margin:2px}
+code,pre{font-family:"SF Mono",Consolas,monospace;font-size:.92em}
+pre{background:#0F172A;color:#E2E8F0;padding:18px;border-radius:10px;overflow:auto;line-height:1.5}
+:not(pre)>code{background:var(--accent-soft);color:var(--accent);padding:1px 6px;border-radius:6px}
+blockquote{margin:16px 0;padding:8px 18px;border-left:4px solid var(--accent);
+  background:var(--accent-soft);color:#1e3a8a;border-radius:0 8px 8px 0}
+.table-scroll{overflow-x:auto;margin:16px 0}
+table{width:100%;border-collapse:collapse;margin:0}
+th,td{border:1px solid var(--border);padding:10px 12px;text-align:left;vertical-align:top}
+th{background:var(--surface)}
+a{color:var(--accent);text-decoration:none}a:hover{text-decoration:underline}
+.toc{font-size:.95rem}.toc a{color:var(--muted)}
+.toc ul{margin:.3em 0}
+.toc>ul{padding-left:1.1em}
+.toc ul ul{padding-left:1.2em;font-size:.92em}
+.part{margin-top:2.6em;font-size:.85rem;font-weight:700;letter-spacing:.08em;
+  text-transform:uppercase;color:var(--accent)}
+</style>
+</head><body><div class="wrap">
+
+<h1>LiveEdit — Towards Real-Time Diffusion-Based Streaming Video Editing</h1>
+<p class="muted">Xinyu Wang, Chongbo Zhao, Fangneng Zhan, Yue Ma · ECCV 2026 (accepted) · 2026 (arXiv 제출 2026-06-25) · <a href="https://arxiv.org/abs/2606.26740">arXiv:2606.26740</a> · <a href="https://github.com/cp-cp/LiveEdit">GitHub</a> · <a href="https://live-edit.github.io">Project page</a></p>
+<div>
+  <span class="badge">확산 모델</span>
+  <span class="badge">비디오 편집</span>
+  <span class="badge">스트리밍/실시간 생성</span>
+  <span class="badge">인과적 자기회귀 생성</span>
+  <span class="badge">모델 증류</span>
+  <span class="badge">토큰 캐싱</span>
+</div>
+
+<nav class="toc card">
+<strong>목차</strong>
+<ul>
+  <li><a href="#part-analysis">Part 1 · 논문 분석</a>
+    <ul>
+      <li><a href="#a-1">1. 한 줄 요약</a></li>
+      <li><a href="#a-2">2. 해결하려는 문제</a></li>
+      <li><a href="#a-3">3. 기존 접근의 한계</a></li>
+      <li><a href="#a-4">4. 제안 방법 (Method)</a></li>
+      <li><a href="#a-5">5. 핵심 기여</a></li>
+      <li><a href="#a-6">6. 실험 / 결과</a></li>
+      <li><a href="#a-7">7. 한계 및 향후 과제</a></li>
+      <li><a href="#a-8">8. 구현 단서</a></li>
+    </ul>
+  </li>
+  <li><a href="#part-detail">Part 2 · 상세 해설</a>
+    <ul>
+      <li><a href="#d-pre">사전 지식</a></li>
+      <li><a href="#d-c1">개념 1 — 인과적 프레임 단위 정식화</a></li>
+      <li><a href="#d-c2">개념 2 — 3단계 증류 파이프라인</a></li>
+      <li><a href="#d-c3">개념 3 — 마스크 캐시 + 저지연 백본</a></li>
+    </ul>
+  </li>
+  <li><a href="#part-code">Part 3 · 구현 코드 분석</a>
+    <ul>
+      <li><a href="#c-1">1. 디렉토리 구조</a></li>
+      <li><a href="#c-2">2. 논문 ↔ 코드 매핑</a></li>
+      <li><a href="#c-3">3. 데이터 흐름 추적</a></li>
+      <li><a href="#c-4">4. 핵심 코드 발췌 + 해설</a></li>
+      <li><a href="#c-5">5. 의존성 / 환경</a></li>
+      <li><a href="#c-6">6. 최소 재현 경로</a></li>
+    </ul>
+  </li>
+</ul>
+</nav>
+
+<!-- ================= PART 1 : ANALYSIS ================= -->
+<p class="part" id="part-analysis">Part 1 · 논문 분석</p>
+
+<div class="card">
+<p class="muted" style="margin-top:0">
+<strong>원문 링크</strong>: <a href="https://arxiv.org/abs/2606.26740">https://arxiv.org/abs/2606.26740</a><br>
+<strong>저자 / 발표처 / 연도</strong>: Xinyu Wang, Chongbo Zhao, Fangneng Zhan, Yue Ma / ECCV 2026 (accepted) / 2026 (arXiv 제출 2026-06-25)<br>
+<strong>분야 / 키워드</strong>: 확산 모델(Diffusion), 비디오 편집(Video Editing), 스트리밍/실시간 생성, 인과적(Causal) 자기회귀 생성, 모델 증류(Distillation), 토큰 캐싱
+</p>
+</div>
+
+<h2 id="a-1">1. 한 줄 요약</h2>
+<p>양방향 확산 트랜스포머를 3단계 증류로 단방향 스트리밍 편집기로 변환하고 AR 지향 마스크 캐시로 배경 연산을 재사용하여, 프레임 단위 인과적 비디오 편집을 <strong>12.66 FPS 실시간</strong>으로 수행하는 프레임워크다.</p>
+
+<h2 id="a-2">2. 해결하려는 문제 (Motivation)</h2>
+<p>스트리밍(실시간) 비디오 편집은 두 가지 핵심 난제를 동시에 만족해야 한다.</p>
+<ul>
+  <li><strong>콘텐츠 보존</strong>: 편집 대상이 아닌 영역(배경·비편집 영역)을 프레임 간에 일관되게 유지해야 함.</li>
+  <li><strong>저지연 응답성</strong>: 인터랙티브/증강현실(AR) 응용에 쓰일 만큼 프레임당 지연이 낮아야 함(실시간 프레임 단위 처리).</li>
+</ul>
+<p>기존 비디오 생성 방법은 이러한 편집 요구(원본 보존 + 인과적 스트리밍)에 맞게 설계되어 있지 않다.</p>
+
+<h2 id="a-3">3. 기존 접근의 한계</h2>
+<ul>
+  <li>기존 비디오 생성/편집 모델은 <strong>양방향(bidirectional) 전체 시퀀스 어텐션</strong>에 의존해 미래 프레임을 참조하므로, 프레임이 순차적으로 도착하는 <strong>인과적 스트리밍 설정에 맞지 않음</strong>.</li>
+  <li>다단계 확산 샘플링은 프레임당 연산 비용이 높아 <strong>실시간 지연 요건을 만족하지 못함</strong>.</li>
+  <li>비편집 영역의 <strong>프레임 간 일관성 유지</strong>가 어려워 배경이 흔들리거나 원본 보존이 약함.</li>
+  <li>비교 대상 기존 방법: InsV2V, LucyEdit, VideoCoF, StreamDiffusion, StreamV2V (스트리밍 baseline).</li>
+</ul>
+
+<h2 id="a-4">4. 제안 방법 (Method) — 핵심 아이디어와 동작 원리</h2>
+<p>LiveEdit은 세 가지 구성요소로 이루어진다.</p>
+<p><strong>(1) 3단계 증류 파이프라인 (Three-Stage Distillation)</strong> — 양방향 기반 모델을 효율적 단방향 스트리밍 편집기로 점진적으로 이전.</p>
+<ul>
+  <li><strong>Stage 1 — Foundation Tuning</strong>: 양방향 확산 트랜스포머(base: Wan2.1-T2V-1.3B)에 <strong>전체 시간축 어텐션(full temporal attention)</strong>으로 편집 능력을 부여.</li>
+  <li><strong>Stage 2 — Causal Adaptation (Teacher Forcing)</strong>: <strong>청크 단위 인과적 어텐션(chunk-wise causal attention)</strong>으로 전환하여 스트리밍(과거 프레임만 참조) 구조로 적응.</li>
+  <li><strong>Stage 3 — DMD Distillation</strong>: 생성 스텝을 <strong>4 스텝(4 NFEs)</strong>으로 압축하는 분포 매칭 증류(Distribution Matching Distillation)로 지연을 대폭 축소.</li>
+</ul>
+<p><strong>(2) AR-Oriented Mask Cache</strong> — 자기회귀(AR) 생성 과정에서 변하지 않는 <strong>배경/비편집 영역 토큰의 연산을 프레임 간 재사용</strong>하여 처리 부담을 줄임. 동적으로 약 70%의 중복 토큰을 프루닝. (마스크 시각화 옵션 제공.)</p>
+<p><strong>(3) 전용 벤치마크</strong> — 스트리밍 비디오 편집을 위한 평가 기준(120 video pairs)을 확립.</p>
+<blockquote>전체 흐름: 텍스트 편집 지시 + 입력 비디오 → 청크 단위(chunk = 3 latent frames) 인과적 추론 → 4스텝 확산 생성 + 마스크 캐시로 배경 재사용 → 프레임 단위 실시간 편집 출력(79ms/frame, 12.66 FPS).</blockquote>
+
+<h2 id="a-5">5. 핵심 기여 (Contributions)</h2>
+<ul>
+  <li>양방향 teacher → 단방향 스트리밍 student로의 <strong>3단계 증류 파이프라인</strong> 제안(Foundation Tuning → Causal Adaptation → DMD).</li>
+  <li>배경 토큰 연산을 재사용하는 <strong>AR-Oriented Mask Cache</strong>로 실시간 효율 확보(약 70% 토큰 프루닝).</li>
+  <li>스트리밍 비디오 편집 <strong>전용 벤치마크</strong>(120 video pairs) 및 6종 자동 평가 지표 + 사용자 연구 프로토콜 확립.</li>
+  <li>스트리밍 baseline 중 <strong>최고 시각 품질(SOTA)</strong> 및 <strong>12.66 FPS</strong> 실시간 추론 달성으로 인터랙티브·AR 응용 가능성 제시.</li>
+</ul>
+
+<h2 id="a-6">6. 실험 / 결과 — 데이터셋, 지표, 주요 수치</h2>
+<ul>
+  <li><strong>학습 데이터</strong>: Ditto-1M에서 필터링한 20K 고품질 video-video pair.</li>
+  <li><strong>벤치마크</strong>: 스트리밍 비디오 편집 전용 120 video pairs.</li>
+  <li><strong>평가 지표(6종)</strong>: Text Alignment(TA, CLIP 유사도), Background Consistency(BC, VBench), Motion Smoothness(MS, VBench), Dynamic Degree(DD, VBench), Aesthetic Quality(AQ, LAION-Aesthetic), Imaging Quality(IQ, VBench). + 20명 사용자 연구(지시 일치성/배경 보존/전체 품질).</li>
+  <li><strong>주요 수치 (Table 1, LiveEdit w/ cache)</strong>: TA 0.270 (InsV2V 0.259 대비 우위), BC 0.956, MS 0.992, DD 0.256, AQ 0.581, IQ 0.708.</li>
+  <li><strong>속도</strong>: 프레임당 79ms, <strong>12.66 FPS</strong>, 4 NFEs.</li>
+  <li><strong>Ablation (Table 2)</strong>: Stage 3(DMD) 적용 시 81프레임 기준 지연 200.36ms → 7.89ms로 대폭 감소.</li>
+  <li><strong>사용자 연구</strong>: 전체 품질에서 "95.8% top-3 preference rate", 세 항목 모두에서 LiveEdit 우세.</li>
+  <li><strong>비교 baseline</strong>: InsV2V, LucyEdit, VideoCoF, StreamDiffusion, StreamV2V.</li>
+</ul>
+
+<h2 id="a-7">7. 한계 및 향후 과제</h2>
+<ul>
+  <li>원문 초록/공개 정보에는 실패 사례·품질 저하 조건에 대한 명시적 한계 서술이 충분히 드러나지 않음(원문에 명시된 한계 절 확인 필요).</li>
+  <li><strong>DD(Dynamic Degree) 0.256</strong> 등 일부 지표는 절대값이 낮아 강한 동적 편집 표현력에는 제약 가능성(원문 상세 논의 확인 필요).</li>
+  <li>4스텝 증류로 인한 세밀 디테일 손실 가능성(증류 모델 일반 특성) — 원문에 명시된 정량 근거는 초록 범위 밖.</li>
+  <li>학습이 8× A100(Stage1 9K / Stage2 20K / Stage3 10K steps)으로 자원 요구가 큼(재현 비용).</li>
+  <li>그 외 세부 한계는 원문에 명시 없음.</li>
+</ul>
+
+<h2 id="a-8">8. 구현 단서 — 공식 코드 저장소 링크, 핵심 하이퍼파라미터</h2>
+<ul>
+  <li><strong>공식 코드 저장소</strong>: <a href="https://github.com/cp-cp/LiveEdit">https://github.com/cp-cp/LiveEdit</a> (License: Apache-2.0)</li>
+  <li><strong>프로젝트 페이지</strong>: <a href="https://live-edit.github.io">https://live-edit.github.io</a></li>
+  <li><strong>기반 코드/모델</strong>: Self-Forcing 코드베이스 기반, base model <strong>Wan2.1-T2V-1.3B</strong>.</li>
+  <li><strong>핵심 하이퍼파라미터</strong>:
+    <ul>
+      <li>Inference: 4 NFEs(증류 후), 청크 크기 3 latent frames, 프레임당 79ms(12.66 FPS). (README 기본 config는 50 denoising steps + 토큰 프루닝 변형 제공.)</li>
+      <li>Mask cache: 약 70% 중복 토큰 동적 프루닝.</li>
+      <li>Training: 8× NVIDIA A100. Stage 1 9K steps, Stage 2 20K steps, Stage 3 10K steps. 다중 GPU 학습은 <code>torchrun</code>.</li>
+      <li>입력 형식: 텍스트 지시 + 비디오 경로를 담은 JSON.</li>
+    </ul>
+  </li>
+</ul>
+
+<!-- ================= PART 2 : DETAIL ================= -->
+<p class="part" id="part-detail">Part 2 · 상세 해설</p>
+
+<blockquote>
+이 문서는 <code>/detail</code> 방식(<strong>직관 → 비유 → 단계별 → 예시</strong>)으로 LiveEdit의 세 가지 핵심 개념을 순서대로 해설합니다.
+<ol>
+  <li><strong>스트리밍 비디오 편집 문제와 인과적 프레임 단위 정식화</strong> — 문제를 실시간에 맞게 다시 정의하는 뼈대</li>
+  <li><strong>3단계 양방향→단방향 증류 파이프라인</strong> — "빠르면서도 잘하는" 모델을 만드는 학습 전략</li>
+  <li><strong>자기회귀 마스크 캐시 + 저지연 확산 편집 백본</strong> — 실시간(12.66 FPS)을 완성하는 두 가속 장치</li>
+</ol>
+원문에 없는 보충 설명은 "직관적 이해를 위한 비유"라고 명시했습니다.
+</blockquote>
+
+<h3 id="d-pre">사전 지식 (꼭 알아야 할 개념)</h3>
+<div class="card">
+<p><strong>영상·데이터 기본</strong></p>
+<ul>
+  <li><strong>비디오 편집(Video Editing)</strong>: 이미 존재하는 영상을, 텍스트 지시(예: "강아지를 고양이로 바꿔라")에 따라 원본의 구도·움직임은 유지한 채 특정 부분만 바꾸는 것. "새 영상 생성"이 아니라 "기존 영상 수정"이라는 점이 핵심.</li>
+  <li><strong>프레임(frame)</strong>: 영상을 이루는 한 장 한 장의 정지 이미지. 초당 24~30장이 흘러가면 동영상이 된다.</li>
+  <li><strong>스트리밍(streaming)</strong>: 영상 전체를 미리 다 받아놓고 처리하는 게 아니라, 프레임이 <strong>하나씩 도착하는 즉시</strong> 처리해 바로 내보내는 방식. 실시간 카메라·화상통화·AR가 대표적.</li>
+  <li><strong>latent(잠재 표현, z) / 라텐트 프레임</strong>: 영상을 픽셀 그대로 다루면 무거우므로 VAE 인코더로 압축한 작은 표현. LiveEdit은 이 압축본을 다룬다.</li>
+  <li><strong>토큰(token)</strong>: 확산 트랜스포머가 다루는 최소 단위. 화면의 한 조각(패치) 하나가 토큰 하나. 한 프레임은 토큰 수백~수천 개.</li>
+  <li><strong>chunk(청크)</strong>: LiveEdit은 latent를 <strong>3프레임씩</strong> 묶어 한 덩어리로 처리한다. <code>k</code>번째, <code>k−1</code>번째(직전) chunk 식으로 부른다.</li>
+</ul>
+<p><strong>모델·연산 기본</strong></p>
+<ul>
+  <li><strong>확산 모델(Diffusion Model)</strong>: 깨끗한 이미지/영상에 노이즈를 조금씩 더해 완전한 잡음으로 만든 뒤, 그 과정을 거꾸로 되돌리도록(노이즈 제거) 학습한 생성 모델. 생성 시 순수 노이즈에서 출발해 "노이즈를 조금씩 지우는" 단계를 여러 번 반복한다. 보통 수십 스텝이 필요해 느리다.</li>
+  <li><strong>denoising step / NFE(Number of Function Evaluations)</strong>: 노이즈를 한 번 걷어내는 = 모델을 한 번 호출하는 것. <strong>이 횟수가 곧 속도를 좌우한다</strong>(적을수록 빠름). 보통 확산 모델은 25~50 NFE. LiveEdit은 최종 <strong>4 NFE</strong>.</li>
+  <li><strong>어텐션(attention) / Self-Attention</strong>: 트랜스포머가 "지금 계산 중인 위치가 다른 어느 위치를 얼마나 참고할지" 가중치를 매겨 정보를 섞는 연산. 토큰 수가 <code>N</code>이면 비용이 대략 <strong>N×N에 비례</strong> → 토큰이 많으면 매우 비쌈. <strong>여기가 속도의 병목.</strong> "어느 위치까지 볼 수 있는가"가 인과성의 핵심 스위치다.</li>
+  <li><strong>양방향(Bidirectional) vs 단방향/인과적(Causal)</strong>:
+    <ul>
+      <li><em>양방향</em>: 한 프레임을 만들 때 과거뿐 아니라 미래 프레임도 본다. 품질은 좋지만, 미래 프레임이 아직 도착하지 않은 <strong>실시간 스트리밍에서는 불가능</strong>.</li>
+      <li><em>인과적(자기회귀, AR)</em>: 현재 출력은 과거·현재 입력에만 의존하고 미래는 절대 참조하지 않는다. 미래를 안 봐도 되니 프레임이 도착하는 대로 즉시 처리 가능 → <strong>실시간(스트리밍) 가능</strong>. (통계의 "인과추론"과 무관한, "시간 순서" 뜻.)</li>
+    </ul>
+  </li>
+  <li><strong>FFN(Feed-Forward Network)</strong>: 어텐션 뒤에 붙어 각 토큰을 독립적으로 한 번 더 변환하는 작은 신경망.</li>
+  <li><strong>백본(backbone)</strong>: 시스템의 몸통이 되는 핵심 신경망. 여기서는 편집을 실제로 수행하는 확산 트랜스포머.</li>
+</ul>
+<p><strong>학습·가속 기법</strong></p>
+<ul>
+  <li><strong>증류(Distillation)</strong>: 크고 느리지만 잘하는 <strong>교사(Teacher)</strong> 모델의 능력을, 작고 빠른 <strong>학생(Student)</strong> 모델에 옮겨 담는 기법.</li>
+  <li><strong>Teacher Forcing</strong>: 자기회귀 학습에서 학생이 만든(틀릴 수 있는) 출력 대신 <strong>정답을 다음 입력으로 넣어주는</strong> 훈련 방식. 초기 학습을 안정화한다.</li>
+  <li><strong>DMD(Distribution Matching Distillation)</strong>: 학생의 "적은 스텝 출력 분포"를 교사의 "많은 스텝 출력 분포"에 맞추는 증류. 결과를 1:1로 베끼는 게 아니라 <strong>출력들의 통계적 분포(그럴듯함)를 일치</strong>시킨다.</li>
+  <li><strong>캐시(cache)</strong>: 한 번 계산한 결과를 저장해 두었다가, 똑같은 게 또 필요하면 다시 계산하지 않고 꺼내 쓰는 것.</li>
+  <li><strong>CFG(Classifier-Free Guidance)</strong>: 텍스트 지시를 더 강하게 따르게 하려고 모델을 <em>두 번</em>(지시 있음/없음) 돌려 섞는 기법. 품질↑, 계산 2배. "CFG 불필요"해진다는 건 그만큼 빨라진다는 뜻.</li>
+  <li><strong>pruning(가지치기)</strong>: 계산에서 일부 토큰을 아예 빼버려 연산량을 줄이는 것.</li>
+</ul>
+<p><strong>평가·현상</strong></p>
+<ul>
+  <li><strong>L₂ 거리 <code>‖·‖₂</code></strong>: 두 벡터 차이를 제곱해 합산한 뒤 제곱근을 씌운 값(≈"두 점 사이의 거리"). 작을수록 비슷하다.</li>
+  <li><strong>τ(타우, threshold)</strong>: "이 정도 이상 달라지면 편집된 걸로 본다"를 정하는 기준선(임계값).</li>
+  <li><strong>flickering(깜빡임)</strong>: 안 바뀌어야 할 배경이 프레임마다 미세하게 다르게 그려져 화면이 떨리는 현상.</li>
+  <li><strong>지연시간(latency) / FPS</strong>: 입력이 들어온 뒤 결과가 나오기까지 걸리는 시간(작을수록 빠름) / 초당 처리 프레임 수(클수록 실시간). 이 둘은 반비례한다.</li>
+</ul>
+</div>
+
+<!-- ===== 개념 1 ===== -->
+<h2 id="d-c1">개념 1 — 스트리밍 비디오 편집 문제와 인과적 프레임 단위 정식화</h2>
+
+<h3>직관</h3>
+<p>이 개념이 결국 하려는 것은 <strong>"영상 편집을 '전체를 한 번에 보고 고치는 작업'에서 '흘러 들어오는 프레임을 하나씩 즉석에서 고치는 작업'으로 다시 정의하는 것"</strong> 이다. 기존 비디오 편집 모델은 영상 전체를 손에 쥐고, 각 프레임을 만들 때 앞뒤(과거·미래) 프레임을 전부 참고한다(양방향). 그래야 시간적으로 매끄럽고 배경이 안 흔들리기 때문이다. 하지만 실시간·AR 상황에서는 <strong>미래 프레임이 아직 존재하지 않는다.</strong> 지금 이 순간 카메라에서 막 들어온 프레임을, 다음 프레임을 기다리지 않고 즉시 편집해 내보내야 한다. 그래서 문제 자체를 "미래를 안 봐도 되는" 형태 — 즉 <strong>인과적(causal) 프레임 단위</strong> 로 다시 써야 한다. 동시에 편집은 "생성"과 달라서, 바꾸지 말아야 할 배경은 프레임이 계속 바뀌어도 그대로 유지돼야 한다(콘텐츠 보존). 요약하면 이 정식화는 <strong>[미래 참조 금지] + [저지연] + [배경 일관성]</strong> 세 제약을 한꺼번에 만족하는 편집 문제를 세팅하는 일이다.</p>
+
+<h3>비유</h3>
+<p><strong>생방송 자막 통역사 vs 번역 출판 편집자</strong>를 떠올리면 된다.</p>
+<ul>
+  <li><strong>출판 편집자(=기존 양방향 편집)</strong>: 원고 전체를 다 읽고, 뒷 문장까지 확인한 뒤 앞 문장을 다듬는다. 문맥을 완벽히 보니 품질은 최고지만, 원고가 다 끝나야 시작할 수 있다.</li>
+  <li><strong>생방송 통역사(=스트리밍 인과적 편집)</strong>: 화자가 방금 내뱉은 말만 듣고 즉시 통역해야 한다. <strong>아직 하지 않은 말(미래)</strong> 은 절대 들을 수 없고, 이미 통역한 앞 문장과의 일관성(같은 인물은 같은 호칭으로)은 스스로 유지해야 한다. LiveEdit이 세우는 문제 설정이 바로 이 통역사의 상황이다. "미래를 못 보는 대신, 지금까지의 문맥만으로 즉석에서, 그러나 일관되게" 처리하는 것.</li>
+</ul>
+
+<h3>단계별 전개</h3>
+<p>편집 문제를 인과적·프레임 단위로 정식화하는 논리를 한 줄씩 본다. (기호는 직관 전달용 표기이며, 핵심은 "무엇에 의존하고 무엇에 의존하지 않는가"이다.)</p>
+<ol>
+  <li><strong>입력 정의</strong>: 입력 영상 프레임열을 <code>x_1, x_2, …, x_T</code>, 텍스트 편집 지시를 <code>c</code>라 한다. (<code>x_t</code> = 시각 t에 도착하는 원본 프레임, <code>c</code> = "A를 B로 바꿔라" 같은 지시, <code>T</code> = 아직 정해지지 않았을 수도 있는(스트리밍이므로 끝이 열린) 총 길이.)</li>
+  <li><strong>출력 정의</strong>: 편집된 프레임열 <code>y_1, y_2, …, y_T</code>를 만든다. <code>y_t</code> = t번째 편집 결과 프레임.</li>
+  <li><strong>기존(양방향) 정식화</strong>: <code>y_t = F(x_1, …, x_T, c)</code>. 한 프레임 <code>y_t</code>를 만드는 함수 <code>F</code>가 <strong>전체 시퀀스 <code>x_1…x_T</code>(미래 포함)</strong> 를 다 본다. → 미래 <code>x_{t+1}, …, x_T</code>가 있어야만 계산 가능 → <strong>실시간 불가</strong>.</li>
+  <li><strong>인과적 재정식화(이 개념의 핵심)</strong>: <code>y_t = F_causal(x_1, …, x_t, y_1, …, y_{t-1}, c)</code>. <code>y_t</code>는 <strong>지금까지 도착한 입력 <code>x_1…x_t</code>(미래 없음)</strong> 와 <strong>이미 만든 과거 출력 <code>y_1…y_{t-1}</code></strong>, 그리고 지시 <code>c</code>에만 의존한다. 첨자가 전부 <code>t</code> 이하 → 인과성 보장. "이미 만든 과거 출력에 의존"한다는 점에서 이는 <strong>자기회귀(autoregressive, AR)</strong> 생성이다.</li>
+  <li><strong>어텐션 마스킹으로 구현</strong>: 위 제약을 신경망 안에서 강제하는 스위치가 <strong>인과적 어텐션 마스크</strong>다. 트랜스포머가 위치 t를 계산할 때, <code>t</code>보다 미래 위치로 가는 어텐션 가중치를 0으로 막아버린다. LiveEdit은 실제로는 프레임 1개씩이 아니라 <strong>청크(chunk = latent frame 3개) 단위</strong>로 이 인과 마스크를 적용한다("chunk-wise causal attention"): 청크 내부는 서로 보되, 청크는 자기보다 앞선(과거) 청크만 본다.</li>
+  <li><strong>저지연 제약 추가</strong>: 위 함수 <code>F_causal</code>가 프레임당 확산 스텝을 수십 번 돌면 느려서 실시간이 깨진다. 그래서 정식화에는 암묵적으로 <strong>"프레임당 지연 ≤ 실시간 예산(약 1/FPS)"</strong> 이라는 제약이 붙는다. LiveEdit은 이를 증류로 4스텝(4 NFEs)까지 줄여 79ms/frame(12.66 FPS)을 달성한다.</li>
+  <li><strong>콘텐츠 보존 제약</strong>: 편집이므로 <code>y_t</code> 중 <strong>편집 대상이 아닌 영역은 <code>x_t</code>(및 과거 프레임)와 시각적으로 일치</strong>해야 한다. 이 "배경 일관성"이 순수 생성 문제와 편집 문제를 가르는 지점이며, 뒤이어 나오는 마스크 캐시가 바로 이 비편집 영역을 재사용해 효율까지 챙기는 장치다.</li>
+</ol>
+<p>정리하면 인과적 프레임 단위 정식화란 <strong><code>y_t = F_causal(x_{≤t}, y_{&lt;t}, c)</code></strong> — "출력 t는 t 이하의 입력·과거 출력·지시에만 의존한다"는 한 줄로 압축된다.</p>
+
+<h3>예시</h3>
+<p>토이 예시로 따라가 보자. 지시 <code>c</code> = "지나가는 <strong>강아지를 고양이로</strong> 바꿔라". 배경엔 고정된 벤치와 나무가 있다. 프레임이 <code>x_1, x_2, x_3</code>로 하나씩 들어온다.</p>
+<ul>
+  <li><strong>t=1</strong>: <code>x_1</code> 도착(강아지가 화면 왼쪽). 인과 함수는 <code>y_1 = F_causal(x_1, c)</code> 계산. 아직 과거 출력이 없으니 <code>x_1</code>과 <code>c</code>만으로 강아지→고양이 치환. 배경 벤치·나무는 <code>x_1</code> 그대로 복사. → <code>y_1</code>(왼쪽에 고양이) 즉시 출력.</li>
+  <li><strong>t=2</strong>: <code>x_2</code> 도착(강아지가 가운데로 이동). <code>y_2 = F_causal(x_1, x_2, y_1, c)</code>. <strong>미래인 <code>x_3</code>는 안 본다.</strong> 대신 방금 만든 <code>y_1</code>을 참고해 "1번에서 만든 고양이"와 <strong>같은 무늬·색의 고양이</strong>를 유지(AR 일관성). 배경은 여전히 <code>x_2</code>의 벤치·나무로 고정.</li>
+  <li><strong>t=3</strong>: <code>x_3</code> 도착. <code>y_3 = F_causal(x_1, x_2, x_3, y_1, y_2, c)</code>. 과거 전부 + 현재만 참조. 고양이는 계속 같은 개체로, 배경은 계속 그대로.</li>
+</ul>
+<p>만약 이걸 <strong>양방향</strong>으로 했다면 <code>y_2</code>를 만들 때 <code>x_3</code>(미래)까지 봐야 하는데, 생방송에선 <code>x_3</code>이 아직 카메라에 안 잡혔으므로 t=2 시점에 아무것도 못 내보내고 멈춘다. 인과적 정식화는 바로 이 교착을 없애 <strong>"프레임 도착 → 즉시 편집 → 즉시 출력"</strong> 의 파이프라인을 성립시킨다. 이것이 LiveEdit 전체가 서 있는 토대다.</p>
+
+<h3>FAQ</h3>
+<ul>
+  <li><strong>Q. "인과적"이면 과거도 못 보는 것 아닌가?</strong> — 아니다. 인과적 제약은 <strong>미래만</strong> 금지한다. 과거 입력 <code>x_{&lt;t}</code>와 과거 출력 <code>y_{&lt;t}</code>는 얼마든지 참고하며, 오히려 이 과거 참조(자기회귀)가 프레임 간 일관성을 만든다.</li>
+  <li><strong>Q. 프레임 "하나씩"이라면서 왜 청크(3프레임)로 처리하나?</strong> — 개념적 정식화는 프레임 단위지만, 구현 효율을 위해 latent frame 3개를 한 청크로 묶어 인과 마스크를 적용한다. 청크끼리는 여전히 과거 청크만 보므로 인과성은 유지된다.</li>
+  <li><strong>Q. 이 정식화 자체가 LiveEdit의 성능을 내는가?</strong> — 정식화는 "문제를 실시간에 맞게 다시 정의"한 뼈대일 뿐이다. 실제 속도·품질은 이 뼈대 위에서 돌아가는 3단계 증류(개념 2)와 AR 마스크 캐시(개념 3)가 만들어낸다.</li>
+  <li><strong>Q. 편집과 생성의 차이가 왜 정식화에 들어가나?</strong> — 순수 생성이면 배경을 새로 지어내도 되지만, 편집은 비편집 영역을 <code>x_t</code>와 일치시켜야 한다는 <strong>콘텐츠 보존 제약</strong>이 추가된다. 이 제약이 있어야 "편집" 문제이고, 이후 배경 토큰 재사용(캐시)의 근거가 된다.</li>
+</ul>
+
+<!-- ===== 개념 2 ===== -->
+<h2 id="d-c2">개념 2 — 3단계 증류 파이프라인 (Foundation → Causal → DMD)</h2>
+<blockquote>이 개념은 LiveEdit의 여러 구성요소 중 <strong>"Three-Stage Bidirectional-to-Unidirectional Distillation Pipeline"</strong> 을 다룬다.</blockquote>
+
+<h3>직관</h3>
+<p>목표는 모순처럼 보이는 두 가지를 동시에 만족하는 것이다. (1) <strong>양방향 확산 모델급의 편집 품질</strong>, (2) <strong>미래를 못 보고 프레임을 하나씩 받는 실시간 스트리밍에서의 저지연</strong>. 잘하는 모델(양방향·다단계)은 느리고 미래 의존적이라 스트리밍에 못 쓰고, 빠른 모델은 품질이 떨어진다.</p>
+<p>LiveEdit의 해법은 "한 번에 바꾸지 말고 <strong>세 번에 나눠 바꾸자</strong>"이다. 능력을 <strong>한 축씩만</strong> 옮긴다. 먼저 ①편집을 할 줄 알게 만들고(품질 확보), 그다음 ②미래를 안 보게 만들고(스트리밍 구조로 변환), 마지막에 ③스텝 수를 줄인다(속도 확보). 각 단계는 앞 단계 모델을 <strong>교사로 삼아</strong> 다음 단계 학생을 가르치는 릴레이다. 한꺼번에 다 바꾸면 학습이 붕괴하지만, 한 축씩 바꾸면 각 전환의 품질 손실이 작아 최종적으로 "빠르면서도 잘하는" 모델이 남는다.</p>
+
+<h3>비유</h3>
+<p><strong>요리사 도제 훈련</strong>에 비유할 수 있다.</p>
+<ul>
+  <li><em>Stage 1</em>: 갓 들어온 요리사(범용 영상 생성 모델)에게 우선 <strong>"주문대로 요리를 고치는 법"(편집)</strong> 자체를 가르친다. 이때는 시간을 넉넉히 주고 냉장고 재료 전부(과거+미래 프레임)를 마음껏 보게 한다.</li>
+  <li><em>Stage 2</em>: 이제 <strong>오픈 키친 라이브</strong> 상황을 훈련한다. 손님 앞에서 접시가 나오는 순서대로만 요리해야 한다 — 아직 안 나온 다음 접시(미래 프레임)를 미리 볼 수 없다. 처음엔 옆에서 <strong>정답 레시피를 보여주며(Teacher Forcing)</strong> 순서대로 만드는 감각을 익힌다.</li>
+  <li><em>Stage 3</em>: 마지막으로 <strong>"손이 빠른 셰프"</strong> 로 만든다. 원래 20번 젓던 소스를 4번 만에 같은 맛(같은 분포)이 나도록 압축한다. 스승(다단계 모델)의 "완성된 맛의 기준"에 맞춰 속도를 끌어올린다.</li>
+</ul>
+<p>한 번에 "라이브 + 초고속 + 편집"을 다 시키면 무너지지만, 능력을 하나씩 얹으면 도제가 무너지지 않고 명장이 된다.</p>
+
+<h3>단계별 전개</h3>
+<p>기반 모델: <strong>Wan2.1-T2V-1.3B</strong>(양방향 텍스트→영상 확산 트랜스포머). Self-Forcing 코드베이스 기반.</p>
+<h4>Stage 1 — Foundation Tuning (편집 능력 부여, 아직 양방향)</h4>
+<ul>
+  <li>입력: <code>(원본 영상, 텍스트 편집 지시)</code> → 출력: <code>편집된 영상</code>.</li>
+  <li>어텐션 = <strong>full temporal attention</strong>: 모든 프레임이 서로(과거+미래)를 다 본다. 아직 실시간이 아니라, <strong>"편집을 잘하는 능력"만</strong> 확실히 심는 단계.</li>
+  <li>학습: 20K 고품질 video-video pair(Ditto-1M에서 필터링), 8×A100, <strong>약 9K steps</strong>.</li>
+  <li>결과물 = 이후 단계의 <strong>교사(teacher)</strong> 가 될, 품질 좋은 양방향 편집기.</li>
+</ul>
+<h4>Stage 2 — Causal Adaptation (양방향 → 인과적 전환)</h4>
+<ul>
+  <li>어텐션을 <strong>chunk-wise causal attention</strong>으로 교체: 프레임을 <strong>청크(=라텐트 프레임 3개)</strong> 단위로 묶고, 각 청크는 <strong>자기 자신 + 과거 청크만</strong> 참조(미래 차단).</li>
+  <li>이렇게 하면 미래를 못 봐 품질이 흔들리므로, <strong>Teacher Forcing</strong>으로 안정화: 학생이 앞 청크에서 낸(틀릴 수 있는) 출력 대신 <strong>정답/교사 출력을 다음 청크 입력으로</strong> 넣어 순차 생성 감각을 학습.</li>
+  <li>이 단계 교사는 Stage 1의 양방향 모델. 학생은 그 편집 품질을 <strong>인과적 구조에서도 최대한 재현</strong>하도록 배운다.</li>
+  <li>학습: <strong>약 20K steps</strong>(3단계 중 가장 김 — 구조 전환이 가장 어렵기 때문).</li>
+  <li>결과물 = 미래를 안 보는 스트리밍 편집기(단, 아직 스텝 수가 많아 느림).</li>
+</ul>
+<h4>Stage 3 — DMD Distillation (다단계 → 4스텝 압축)</h4>
+<ul>
+  <li>목표: 노이즈 제거 스텝 수를 <strong>4 NFE</strong>로 축소해 지연을 없앤다.</li>
+  <li>방법 = <strong>Distribution Matching Distillation</strong>: 4스텝 학생의 출력 <strong>분포</strong>가 다단계 교사의 출력 <strong>분포</strong>와 일치하도록 학습(각 샘플 복제가 아니라 "그럴듯함의 통계"를 맞춤).</li>
+  <li>학습: <strong>약 10K steps</strong>.</li>
+  <li>결과물 = <strong>인과적 + 4스텝</strong>의 최종 스트리밍 편집기 → 프레임당 79ms, <strong>12.66 FPS</strong>.</li>
+  <li>Ablation 근거(Table 2): DMD 적용 시 81프레임 기준 지연 <strong>200.36ms → 7.89ms</strong> 로 급감.</li>
+</ul>
+<p>핵심 설계 원칙: <strong>한 단계에 한 축만 바꾼다.</strong> (편집능력 → 인과성 → 스텝수). 각 전환의 간극이 작아 릴레이 증류의 품질 손실이 누적되지 않는다.</p>
+
+<h3>예시</h3>
+<p>라텐트 프레임 6개짜리 짧은 영상 <code>F1…F6</code>, 청크 크기 3 → 청크 <code>C1={F1,F2,F3}</code>, <code>C2={F4,F5,F6}</code>. 지시: <em>"하늘을 노을빛으로 바꿔라."</em></p>
+<ul>
+  <li><strong>Stage 1 모델이 F4를 만들 때</strong>: F1~F6 전부를 본다(양방향). F5·F6(미래)까지 참고하니 노을색이 전 프레임에 걸쳐 매끄럽지만, F5·F6가 "이미 존재"해야 하므로 실시간에선 불가능.</li>
+  <li><strong>Stage 2 모델이 C2를 만들 때</strong>: C2는 <strong>C1과 자기 자신만</strong> 본다(미래 없음). 훈련 중에는 C1 자리에 학생이 만든 값이 아니라 <strong>정답 C1(Teacher Forcing)</strong> 을 넣어 "앞 청크를 이어받아 노을을 연속시키는" 법을 안정적으로 학습. 이제 F4~F6는 F1~F3 도착 직후 바로 생성 가능(스트리밍 성립).</li>
+  <li><strong>Stage 3 모델이 각 청크를 만들 때</strong>: 원래라면 노이즈 제거를 50번 반복해야 할 것을, <strong>4번</strong>만에 교사(다단계)와 통계적으로 같은 노을 결과를 낸다. 청크당 계산이 확 줄어 79ms/frame 실시간 달성.</li>
+</ul>
+<p>즉 같은 "노을 편집"이라도, Stage를 지날수록 <strong>참조 범위(미래→과거만)</strong> 와 <strong>스텝 수(다단계→4)</strong> 만 줄어들 뿐 편집 자체의 결과는 유지되도록 릴레이로 넘겨받는다.</p>
+
+<h3>전체 흐름 한눈에 보기 (증류 파이프라인)</h3>
+<pre><code>[Wan2.1-T2V-1.3B : 양방향 확산 트랜스포머 (범용 T2V)]
+        │
+        │  Stage 1: Foundation Tuning  (~9K steps)
+        │  · full temporal attention (과거+미래 다 봄)
+        │  · 편집 능력만 부여 → 품질 좋은 "교사" 확보
+        ▼
+[양방향 편집기 (teacher)]
+        │
+        │  Stage 2: Causal Adaptation  (~20K steps)
+        │  · chunk-wise causal attention (청크=라텐트3장, 과거만)
+        │  · Teacher Forcing 으로 순차 생성 안정화
+        ▼
+[인과적 스트리밍 편집기 (아직 다단계·느림)]
+        │
+        │  Stage 3: DMD Distillation  (~10K steps)
+        │  · 출력 분포 매칭으로 스텝수 → 4 NFE 압축
+        ▼
+[최종 LiveEdit: 인과적 + 4스텝  →  79ms/frame, 12.66 FPS]</code></pre>
+<p>바꾸는 축을 단계별로 정리하면:</p>
+<div class="table-scroll"><table>
+<thead><tr><th>단계</th><th>바꾸는 축</th><th>어텐션</th><th>스텝수</th><th>남기는 것</th></tr></thead>
+<tbody>
+<tr><td>Stage 1</td><td>능력 부여</td><td>양방향(full)</td><td>다단계</td><td>편집 품질</td></tr>
+<tr><td>Stage 2</td><td>방향성</td><td>인과적(chunk)</td><td>다단계</td><td>편집 품질</td></tr>
+<tr><td>Stage 3</td><td>속도</td><td>인과적(chunk)</td><td><strong>4 NFE</strong></td><td>편집 품질</td></tr>
+</tbody>
+</table></div>
+
+<h3>FAQ</h3>
+<ul>
+  <li><strong>Q. 왜 처음부터 인과적·4스텝 모델을 학습하지 않고 3단계로 나누나?</strong> — 세 가지(편집·인과성·속도)를 동시에 바꾸면 학습 신호가 충돌해 붕괴하기 쉽다. 한 축씩 바꾸면 각 전환의 간극이 작아, 앞 단계를 교사로 삼아 품질을 잃지 않고 넘겨받을 수 있다.</li>
+  <li><strong>Q. "증류"인데 왜 스텝 수를 줄이는 것만 말하나?</strong> — 여기서 증류는 좁은 의미(스텝 압축)만이 아니다. <strong>각 단계가 앞 단계 모델을 교사로 삼는 릴레이 전이</strong> 전체가 증류다. Stage 3의 DMD가 그중 "스텝 압축" 담당일 뿐이다.</li>
+  <li><strong>Q. Teacher Forcing은 추론(실사용)에서도 쓰이나?</strong> — 아니다. 학습 안정화 기법이다. 실제 스트리밍 추론에서는 정답 청크가 없으므로 학생이 만든 이전 청크를 그대로 이어 자기회귀로 생성한다.</li>
+  <li><strong>Q. 청크(라텐트 3프레임)로 묶으면 완전한 "프레임 단위 인과성"이 아니지 않나?</strong> — 인과성의 단위가 프레임 1장이 아니라 청크(라텐트 3장)일 뿐, 미래 청크를 참조하지 않는다는 인과성/스트리밍 성질은 유지된다. 청크 단위 처리는 배치 효율을 위한 설계 선택이다.</li>
+  <li><strong>Q. DMD가 결과를 똑같이 복제하는 건가?</strong> — 아니다. 개별 출력을 1:1로 베끼는 게 아니라, 4스텝 학생 출력의 <strong>분포</strong>가 다단계 교사 출력의 <strong>분포</strong>와 통계적으로 일치하도록 맞춘다. 그래서 적은 스텝으로도 "그럴듯한" 결과가 나온다.</li>
+  <li><strong>Q. 4스텝으로 줄이면 화질 손실은 없나?</strong> — 증류 모델 일반 특성상 세밀 디테일 손실 가능성은 존재하나, 원문은 스트리밍 baseline 중 최고 시각 품질을 보고한다. 정량적 손실 근거의 상세는 본문 표(Table 1/2) 확인이 필요하다.</li>
+</ul>
+
+<!-- ===== 개념 3 ===== -->
+<h2 id="d-c3">개념 3 — 자기회귀 마스크 캐시 + 저지연 확산 편집 백본</h2>
+<blockquote>
+이 개념은 사실 <strong>두 개의 짝</strong>으로 이루어진다.
+<ul>
+  <li><strong>(A) 저지연 확산 편집 백본(low-latency diffusion editing backbone)</strong> — "한 chunk를 만드는 데 모델을 <em>몇 번</em> 부를까"를 줄이는 몸통.</li>
+  <li><strong>(B) 자기회귀 마스크 캐시(autoregressive mask cache)</strong> — "한 번 부를 때 <em>얼마나 무겁게</em> 계산할까"를 줄이는 가속기.</li>
+</ul>
+이 둘이 <strong>곱해져서</strong> LiveEdit의 실시간(12.66 FPS) 편집이 완성된다.
+</blockquote>
+
+<h3>직관</h3>
+<p>스트리밍 비디오 편집이 "실시간"이 되려면, 프레임이 들어온 뒤 <strong>결과가 나오기까지의 시간(지연)</strong>을 극단적으로 줄여야 한다. 그런데 지연은 근본적으로 딱 두 가지 곱으로 정해진다.</p>
+<pre><code>한 chunk 처리 시간 ≈ (모델을 몇 번 호출하나)  ×  (한 번 호출이 얼마나 무겁나)</code></pre>
+<p>LiveEdit은 이 <strong>두 항을 각각 다른 장치로</strong> 줄인다.</p>
+<ul>
+  <li><strong>(A) 저지연 확산 편집 백본</strong>은 앞의 항, 즉 "<strong>몇 번 호출하나</strong>"를 줄인다. 원래 확산 모델은 노이즈를 수십~수백 번 걷어내야(=NFE가 큼) 결과가 나오는데, LiveEdit은 3단계 증류로 이를 <strong>단 4번(4 NFE)</strong>까지 압축하고, 2배 비용의 <strong>CFG도 불필요</strong>하게 만든 <strong>단방향(인과) 확산 트랜스포머</strong>를 몸통으로 쓴다.</li>
+  <li><strong>(B) 자기회귀 마스크 캐시</strong>는 뒤의 항, 즉 "<strong>한 번 호출이 얼마나 무겁나</strong>"를 줄인다. 편집에서 실제로 바뀌는 영역은 화면의 일부(예: 강아지)뿐이고 배경(하늘·바닥)은 그대로여야 한다. 그래서 <strong>바뀌는 영역만 새로 계산하고, 안 바뀌는 배경 토큰(약 70%)은 직전에 계산해 둔 결과를 그대로 재사용</strong>한다. 비싼 Self-Attention에 들어가는 토큰 수를 확 줄여 호출 1번을 가볍게 만든다.</li>
+</ul>
+<p>핵심은 이 둘이 <strong>서로 다른 곳을 줄이므로 곱해져서</strong> 효과가 커진다는 점이다. 그리고 마스크 캐시는 속도만 버는 게 아니라, 배경을 캐시로 <strong>고정</strong>하므로 프레임마다 배경이 새로 그려지며 생기던 <strong>깜빡임(flickering)까지 없애</strong> 배경 일관성(BC 0.956)도 함께 올린다. 즉 보통 서로 맞바꿔야 하는 <strong>속도와 화질을 동시에</strong> 잡는 설계다. "자기회귀(AR)"라는 수식어는, 이 캐시가 <strong>과거 chunk의 결과를 다음 chunk가 이어받는</strong> 스트리밍(자기회귀) 흐름에 맞춰 설계됐다는 뜻이다.</p>
+
+<h3>비유</h3>
+<blockquote>아래는 직관적 이해를 위한 비유이며, 논문 본문에 그대로 나오는 표현이 아니다.</blockquote>
+<p>벽화를 그리는 화가를 떠올려 보자. 의뢰인이 "벽 가운데 강아지만 고양이로 바꿔주세요"라고 했다.</p>
+<ul>
+  <li><strong>(A) 붓질 수를 줄이는 훈련</strong> = 저지연 백본: 원래는 50번 붓질해야 한 장이 완성되던 견습생을, <strong>단 4번의 붓질로</strong> 비슷한 완성도를 내도록 미리 훈련시켜 두는 것(=증류로 NFE를 4로 압축). 한 장 그리는 데 드는 "동작 횟수" 자체가 줄어든다.</li>
+  <li><strong>(B) 안 바뀌는 부분은 다시 안 칠하기</strong> = 마스크 캐시: <strong>어리석은 화가</strong>는 매번 벽 전체(하늘·나무·울타리)를 처음부터 다시 칠한다 — 느리고, 다시 칠할 때마다 하늘색이 미세하게 달라져 얼룩진다(=flickering). <strong>똑똑한 화가</strong>는 강아지 부분만 <strong>마스킹 테이프로 표시</strong>해 그 영역만 새로 칠하고, 나머지는 어제 칠해 굳은 그대로 둔다. 빠르고, 배경은 전혀 흔들리지 않는다.</li>
+</ul>
+<p>여기서 "테이프로 표시한 영역"이 <strong>편집 마스크 M</strong>, "어제 칠한 그대로 두기"가 <strong>캐시 재사용</strong>이다. 어디에 테이프를 붙일지는 "어제 그림과 오늘 결과가 얼마나 다른가"(L₂ 거리)로 정한다.</p>
+
+<h3>단계별 전개</h3>
+<h4>(A) 저지연 확산 편집 백본 — "몇 번 부를까"를 줄인다</h4>
+<p>이 백본은 3단계 증류의 최종 산물인 <strong>4-step 단방향 확산 트랜스포머</strong>다. 저지연을 만드는 두 축은 다음과 같다.</p>
+<ol>
+  <li><strong>denoising step을 4개로 고정</strong>: 학습 후 추론 때 노이즈 정도가 다른 <strong>4개 timestep만</strong> 거쳐 결과를 낸다(4 NFE). 원래 100번가량 밟던 것을 4번으로 줄인 것. 이 압축은 <strong>DMD(분포 매칭 증류)</strong>로 이뤄진다.</li>
+  <li><strong>CFG 제거</strong>: 증류 후에는 텍스트 지시를 강하게 따르기 위해 모델을 2번 돌리던 CFG가 <strong>불필요</strong>해진다. 호출 수가 실질적으로 또 절반이 된다.</li>
+  <li><strong>단방향(인과) 구조</strong>: 이 백본은 미래 프레임을 보지 않고 <strong>과거·현재 chunk만</strong> 참고한다(chunk-wise causal attention). 그래야 프레임이 도착하는 즉시 처리하는 스트리밍이 성립한다.</li>
+</ol>
+<blockquote>결과(원문 ablation, Table 2): 이 저지연화(특히 Stage 3 DMD) 덕분에 81프레임 기준 지연이 <strong>200.36ms → 7.89ms</strong>로 대폭 줄었다.</blockquote>
+
+<h4>(B) 자기회귀 마스크 캐시 — "한 번 부를 때 얼마나 무거운가"를 줄인다</h4>
+<p>기호부터 정의한다.</p>
+<ul>
+  <li><code>z_src^{k-1}</code> : 직전(k−1번째) chunk의 <strong>원본(source) latent</strong> — 편집하기 전.</li>
+  <li><code>z_edit^{k-1}</code> : 직전 chunk의 <strong>편집된(edited) latent</strong> — 모델이 고쳐 놓은 결과.</li>
+  <li><code>‖·‖₂</code> : L₂ 거리("차이의 크기").</li>
+  <li><code>τ</code> : 임계값. 이보다 차이가 크면 "편집됨"으로 판정.</li>
+  <li><code>M</code> : 토큰별 이진(0/1) 마스크. <strong>1 = 편집 영역(새로 계산)</strong>, <strong>0 = 정적 영역(캐시 재사용)</strong>.</li>
+</ul>
+<ol>
+  <li><strong>차이 측정</strong>: 직전 chunk에서 각 토큰 위치마다 원본과 편집본의 차이를 잰다 — <code>d = ‖ z_edit^{k-1} − z_src^{k-1} ‖₂</code>.</li>
+  <li><strong>마스크 만들기(이진화)</strong>: 차이가 임계값을 넘으면 편집 영역으로 — <code>M = 1 (편집) if d &gt; τ, else M = 0 (정적)</code>.</li>
+  <li><strong>토큰 가지치기(prune)</strong>: 다음 chunk(k)를 처리할 때 <code>M = 0</code>인 토큰(약 70%)을 <strong>Self-Attention 연산에서 제외</strong>한다. (핵심 속도 이득.)</li>
+  <li><strong>캐시 재사용</strong>: <code>M = 0</code> 토큰의 출력은 새로 계산하지 않고 <strong>직전에 저장한 중간 feature(캐시값)를 그대로</strong> 채운다. (핵심 화질 이득.)</li>
+  <li><strong>적용 위치 제한</strong>: 캐시는 <strong>Self-Attention 층에만</strong> 적용하고 <strong>FFN에는 적용하지 않는다.</strong> 원문 ablation에 따르면 FFN까지 캐시하면 고주파(미세 디테일)에 민감해 심한 열화가 생기기 때문.</li>
+</ol>
+<p><code>d</code>와 <code>M</code> 계산 비용 자체는 매우 가볍고(뺄셈+거리 비교), 절약되는 어텐션 비용이 훨씬 커서 순이득이 난다.</p>
+
+<h4>(A)×(B)를 곱하면 — 왜 12.66 FPS가 나오는가</h4>
+<pre><code>전체 시간 ≈ (chunk당 모델 호출 수)  ×  (호출 1번당 계산 시간)
+              └─ (A): 100+ NFE → 4 NFE, CFG 제거   └─ (B): ~70% 토큰 prune</code></pre>
+<ul>
+  <li>(A)만 있으면: 호출은 4번으로 줄지만, 매 호출이 여전히 화면 전체 토큰을 계산해 무겁고 배경이 깜빡일 수 있다.</li>
+  <li>(B)만 있으면: 호출 1번은 가볍지만, 여전히 수십~백 번 호출해야 해 느리다.</li>
+  <li><strong>둘을 곱하면</strong>: 적게(4번) × 가볍게(70% 절감) → 프레임당 약 <strong>79ms</strong>, 곧 <strong>12.66 FPS</strong>(=<code>1000ms ÷ 79ms</code>)의 실시간이 나온다. 81프레임 영상은 약 <strong>7.89초</strong>에 처리된다.</li>
+</ul>
+<p>게다가 (B)가 건너뛰는 것은 "안 바뀌는 배경"뿐이라, 속도를 위해 화질을 희생하는 게 아니라 <strong>낭비를 없앤 자리에서 속도와 화질(BC 0.956, MS 0.992)을 동시에</strong> 얻는다.</p>
+
+<h3>예시</h3>
+<p>화면을 아주 단순하게 <strong>토큰 6개짜리 1차원 줄</strong>이라고 하자. 직전 chunk에서 측정한 원본/편집본 latent 값(설명용 가상의 숫자):</p>
+<div class="table-scroll"><table>
+<thead><tr><th>토큰 위치</th><th>z_src (원본)</th><th>z_edit (편집본)</th><th>차이 d = ‖edit−src‖₂</th></tr></thead>
+<tbody>
+<tr><td>1 (하늘)</td><td>2.0</td><td>2.0</td><td>0.0</td></tr>
+<tr><td>2 (하늘)</td><td>2.1</td><td>2.1</td><td>0.0</td></tr>
+<tr><td>3 (강아지→고양이)</td><td>5.0</td><td>9.0</td><td>4.0</td></tr>
+<tr><td>4 (강아지→고양이)</td><td>4.0</td><td>8.5</td><td>4.5</td></tr>
+<tr><td>5 (바닥)</td><td>1.0</td><td>1.05</td><td>0.05</td></tr>
+<tr><td>6 (바닥)</td><td>1.0</td><td>1.0</td><td>0.0</td></tr>
+</tbody>
+</table></div>
+<p><strong>(B) 마스크 캐시 적용</strong> — 임계값 <code>τ = 0.5</code>로 두면:</p>
+<ul>
+  <li>토큰 3, 4 → d(4.0, 4.5) &gt; 0.5 → <strong>M = 1 (편집)</strong> → 다음 chunk에서 새로 계산.</li>
+  <li>토큰 1, 2, 5, 6 → d(0.0~0.05) ≤ 0.5 → <strong>M = 0 (정적)</strong> → 캐시값 재사용.</li>
+</ul>
+<p>마스크: <code>M = [0, 0, 1, 1, 0, 0]</code> → 6개 중 새로 계산은 2개뿐. <strong>4/6 ≈ 67% 가지치기</strong>(논문의 "약 70% pruning"과 같은 맥락).</p>
+<p><strong>(A) 저지연 백본과 곱하기</strong> — 이 chunk를 만들 때 백본은 노이즈를 100번이 아니라 timestep <code>750 → 500 → 250 → 0</code>의 <strong>4번만</strong> 밟고(4 NFE), CFG도 안 돌린다. 즉 "4번 호출 × (편집 토큰 2개 중심의 가벼운 어텐션)"이 되어, 같은 화면을 "100번 호출 × 6토큰 전부"로 처리하던 것보다 수십 배 빨라진다.</p>
+<p><strong>τ를 잘못 잡으면?</strong></p>
+<ul>
+  <li>너무 크게(예: 5.0) 잡으면 토큰 3,4의 차이(4.0, 4.5)마저 임계값을 못 넘어 <strong>편집해야 할 영역까지 캐시로 덮어</strong> 편집이 안 먹는다.</li>
+  <li>너무 작게(예: 0.01) 잡으면 토큰 5의 미세한 0.05까지 편집으로 잡아 <strong>불필요한 계산이 늘어</strong> 느려진다.</li>
+  <li>그래서 원문도 "콘텐츠에 따라 τ의 세심한 튜닝이 필요하다"고 한계로 언급한다.</li>
+</ul>
+
+<h3>전체 흐름 한눈에 보기 (마스크 캐시)</h3>
+<pre><code>[직전 chunk k-1]
+   z_src^{k-1}  ─┐
+                 ├─▶ d = ‖z_edit − z_src‖₂   (토큰별 차이, 가벼운 연산)
+   z_edit^{k-1} ─┘
+                        │
+                        ▼
+                  d > τ ?  (임계값 비교로 이진 마스크 M 생성)
+              ┌─────────┴──────────┐
+        예(편집, M=1)          아니오(정적, M=0)  ← ≈70% 토큰
+              │                      │
+              ▼                      ▼
+   [다음 chunk k]              직전 캐시 feature
+   Self-Attention 새로 계산      그대로 재사용 (계산 skip)
+   (비싼 N×N 연산)              (배경 깜빡임 억제)
+              │                      │
+              └─────────┬────────────┘
+                        ▼
+   ── (A) 저지연 백본이 이 chunk를 처리 ────────────────
+      · 4-step denoising (timestep 750→500→250→0, 4 NFE)
+      · CFG 불필요, 단방향(인과) chunk-wise attention
+                        ▼
+   결과:  (A) 4 NFE·CFG 제거   ×   (B) ~70% 토큰 prune
+          → 79ms/프레임 → 12.66 FPS (실시간)
+          → 배경 일관성 BC 0.956, 모션 MS 0.992 유지
+   ※ 캐시는 Self-Attention 층에만, FFN에는 미적용 (FFN 캐시 시 열화)</code></pre>
+<p>핵심 한 줄: <strong>(A)는 "몇 번 부를까"를, (B)는 "한 번이 얼마나 무거운가"를 줄인다. 둘이 곱해져 12.66 FPS 실시간 편집이 나온다.</strong></p>
+
+<h3>FAQ</h3>
+<ul>
+  <li><strong>Q. "자기회귀(AR) 마스크 캐시"의 'AR'이 정확히 무슨 뜻인가요?</strong> — 과거→현재로 한 chunk씩 순서대로 생성하는 자기회귀(스트리밍) 추론 구조에 맞춰, <strong>직전 chunk의 결과를 다음 chunk가 이어받도록</strong> 캐시를 설계했다는 의미다. 미래 프레임을 미리 보는 양방향 방식에는 쓸 수 없는, 실시간 스트리밍 전용 설계다.</li>
+  <li><strong>Q. 마스크를 "지금 프레임"에서 계산하나요?</strong> — 아니다. <strong>직전 chunk(k−1)</strong>의 원본/편집본 차이로 마스크를 만들어 <strong>다음 chunk(k)</strong>에 적용한다. 미래를 보지 않는 인과 구조라서 한 박자 이전 정보를 쓴다.</li>
+  <li><strong>Q. 캐시를 쓰면 편집 품질이 떨어지지 않나요?</strong> — 편집이 일어나는 영역(M=1)은 캐시를 쓰지 않고 항상 새로 계산하므로 편집 자체는 정상 반영된다. 캐시는 "안 바뀌는 배경"에만 적용되어 오히려 배경 일관성(BC 0.956)을 <strong>높여</strong> 준다.</li>
+  <li><strong>Q. 왜 FFN에는 캐시를 안 거나요?</strong> — 원문 ablation 결과, FFN까지 캐시하면 고주파(미세 디테일)에 민감해 화질이 심하게 열화된다. 그래서 Self-Attention 층에만 적용하는 것이 최적이다.</li>
+  <li><strong>Q. "저지연 백본"의 4 step은 왜 품질이 안 무너지나요?</strong> — 보통 step을 줄이면 품질이 떨어지지만, DMD는 "한 장 베끼기"가 아니라 "<strong>결과 분포 전체를 선생과 일치</strong>"시키는 방식이라 4 step으로도 품질을 유지한다. (단 원문도 인정하듯 일반 고충실도 편집에 옮기면 디테일 열화가 생길 수 있음 — 한계.)</li>
+  <li><strong>Q. 12.66 FPS는 오직 마스크 캐시 덕분인가요?</strong> — 아니다. 실시간성은 <strong>(A) 저지연 백본(4 NFE, CFG 제거)</strong> 과 <strong>(B) 마스크 캐시(~70% prune)</strong> 두 절약이 <strong>곱해진</strong> 결과다.</li>
+  <li><strong>Q. 70% pruning이면 화면의 70%가 안 바뀐다는 뜻인가요?</strong> — 대략 그런 의미다. 일반적인 편집에선 화면 대부분이 배경(정적)이고 실제 편집 영역은 일부라, 평균적으로 약 70% 토큰이 캐시 재사용 대상이 된다. 콘텐츠에 따라 이 비율은 달라진다.</li>
+  <li><strong>Q. τ(임계값)는 어떻게 정하나요?</strong> — 콘텐츠마다 최적값이 달라 세심한 튜닝이 필요하다(원문이 인정한 한계). 너무 크면 편집이 캐시에 덮여 안 먹고, 너무 작으면 배경까지 새로 계산해 느려진다.</li>
+</ul>
+
+<div class="card">
+<h3 style="margin-top:0">출처</h3>
+<ul>
+  <li>근거 출처: <code>output/liveedit_2606.26740__A/01_analysis.md</code> (LiveEdit 분석 — §4-(1) 3단계 증류(저지연 백본) / §4-(2) AR-Oriented Mask Cache / §6 속도·ablation 수치 / §7 한계 / §8 하이퍼파라미터)</li>
+  <li>원문: arXiv:2606.26740 — <em>LiveEdit: Towards Real-Time Diffusion-Based Streaming Video Editing</em></li>
+  <li>본 문서의 비유(생방송 통역사, 요리사 도제, 화가·벽화·마스킹 테이프 등)는 직관적 이해를 돕기 위한 보조 설명으로 원문에 없다. 수식·기호·수치·임계값 규칙은 논문 분석(01_analysis.md)에 근거한다.</li>
+</ul>
+</div>
+
+<!-- ================= PART 3 : CODE ================= -->
+<p class="part" id="part-code">Part 3 · 구현 코드 분석</p>
+
+<blockquote>
+이 문서는 LiveEdit 저장소의 세 하위시스템을 통합 분석한다:
+<strong>(A) 단방향 스트리밍 확산 편집기(인과 추론 루프 + 인과 KV 캐시)</strong>, <strong>(B) 3단계 증류 파이프라인(양방향 teacher → 단방향 스트리밍 student)</strong>, <strong>(C) AR-Oriented Mask Cache(토큰 프루닝/연산 재사용)</strong>. 벤치마크·평가지표·VAE/디코딩·데이터셋 등 그 외 모듈은 범위 밖.
+</blockquote>
+
+<div class="card">
+<ul style="margin:0">
+  <li><strong>저장소</strong>: <a href="https://github.com/cp-cp/LiveEdit">https://github.com/cp-cp/LiveEdit</a> <strong>(공식, Apache-2.0)</strong> · 고정 커밋 <code>53a763c</code> ("Change citation", 2026-07-01). 베이스: <a href="https://github.com/guandeh17/Self-Forcing">Self-Forcing</a>/CausVid 코드베이스 위에 구축, base 모델 <strong>Wan2.1-T2V-1.3B</strong>(Diffusion Transformer, 30블록, <code>frame_seq_length=1560</code>).</li>
+  <li><strong>언어 / 핵심 프레임워크</strong>: Python / PyTorch(≥2.4, <code>flex_attention</code> 사용 → 2.4+ 필수), FSDP, diffusers 0.31, bf16.</li>
+  <li><strong>실행 진입점</strong>
+    <ul>
+      <li><strong>(A) 스트리밍 추론</strong>: <code>infer-local-ar-forcing.sh</code> → <code>inference-mm.py</code>(config <code>configs/wan_mm-ar-forcing-local.yaml</code>, <code>--task v2v</code>). 루프 본체 <code>pipeline/mm_inference.py:MMInferencePipeline.inference()</code> (mm_inference.py:101). 인과 어텐션 엔진 <code>wan/modules/causal_model.py:CausalWanSelfAttention.forward()</code> (causal_model.py:148) + <code>causal_rope_apply()</code> (28) + <code>_prepare_blockwise_causal_attn_mask()</code> (1109).</li>
+      <li><strong>(B) 증류(Stage 3) 학습</strong>: <code>train.py</code> → <code>trainer/distillation.py:Trainer.train</code>.</li>
+      <li><strong>(C) Mask Cache 추론</strong>: <code>infer-token-pruning.sh</code> → <code>inference-mm.py</code> → <code>pipeline/causal_inference.py:CausalInferencePipeline.inference</code>.</li>
+    </ul>
+  </li>
+</ul>
+</div>
+
+<blockquote><strong>사실 확인(진입점 배선 불일치)</strong>: <code>inference-mm.py</code>는 <code>MMInferencePipeline</code>을 import하지만(13-17) 실제로 인스턴스화하는 것은 <code>CausalInferencePipeline</code>이다(133,137). 둘은 <strong>동일한 스트리밍 루프 골격</strong>을 공유하며, <code>CausalInferencePipeline</code>은 여기에 토큰 프루닝(하위시스템 C)만 얹은 형제 클래스다. 하위시스템 (A) 해설은 프루닝을 제거한 <strong>순수 스트리밍 편집기의 정본</strong>인 <code>MMInferencePipeline.inference()</code>를 기준으로 한다.</blockquote>
+
+<h2 id="c-1">1. 디렉토리 구조 (세 하위시스템 관련만)</h2>
+<pre><code># (A) 스트리밍 추론 루프
+infer-local-ar-forcing.sh              # 실행 커맨드 (v2v, 21 latent frame, ckpt=ar-forcing_002000.pt)
+inference-mm.py                        # 진입점: config·ckpt 로드 → source VAE 인코딩 → pipeline.inference() 호출 → VAE 디코딩·저장
+pipeline/mm_inference.py               # ★ MMInferencePipeline: 스트리밍 루프 본체 + 인과 KV 캐시 소유/초기화
+wan/modules/causal_model.py            # ★ CausalWanSelfAttention: chunk-wise 인과 어텐션 + 롤링 KV 캐시 append/evict
+                                       #   causal_rope_apply(): chunk 절대 위치 기반 RoPE
+                                       #   _prepare_blockwise_causal_attn_mask(): 학습용 flex_attention 블록 마스크
+configs/wan_mm-ar-forcing-local.yaml   # denoising_step_list=[1000,750,500,250], warp_denoising_step, num_frame_per_block=3
+configs/default_config.yaml            # context_noise=0, independent_first_frame=false
+utils/wan_wrapper.py                   # WanDiffusionWrapper: generator forward → (flow_pred, x0_pred) 반환
+
+# (B) 증류 파이프라인
+trainer/distillation.py                # 증류 학습 루프(generator/critic 교대) — Stage 3
+model/mm_dmd.py                        # MMDMD: DMD 손실(generator/critic loss), teacher/critic/student 3모델
+model/base.py                          # SelfForcingModel._run_generator: backward-simulation로 fake video 생성
+configs/wan_mm-bid-diffusion.yaml      # Stage 1 Foundation Tuning(양방향 teacher)
+configs/wan_mm-ar-forcing-local.yaml   # Stage 2 Causal Adaptation(teacher forcing)
+configs/wan_mm-ar-diffusion.yaml       # Stage 3 DMD(mm_dmd, trainer=score_distillation)
+train-mm-{bid-diffusion,ar-forcing,ar-diffusion}.sh  # 3단계 torchrun 런처
+
+# (C) AR-Oriented Mask Cache
+pipeline/causal_inference.py           # 추론 파이프라인 + Mask Cache 오케스트레이션(importance/kept_indices)
+wan/modules/causal_model.py            # 트랜스포머 블록 내부 prune/restore(delta 캐시) + pruned RoPE
+configs/wan_mm-token-pruning.yaml      # Mask Cache 추론 하이퍼파라미터
+infer-token-pruning.sh                 # Mask Cache 추론 런처(--save_mask)</code></pre>
+
+<h2 id="c-2">2. 논문 ↔ 코드 매핑 표 (통합)</h2>
+
+<h3>2-A. 스트리밍 추론 루프 (인과 편집기)</h3>
+<div class="table-scroll"><table>
+<thead><tr><th>논문 개념 (01_analysis §4)</th><th>코드 위치 (파일:라인)</th><th>설명</th></tr></thead>
+<tbody>
+<tr><td><strong>청크 단위 인과 어텐션</strong>(chunk = 3 latent frame, 과거만 참조)</td><td><code>mm_inference.py:133,245</code>; <code>causal_model.py:1130,1142</code></td><td><code>num_blocks=num_frames//num_frame_per_block(=3)</code>, 시간축 루프가 chunk를 순차 처리. 마스크는 <code>kv_idx &lt; ends[q_idx]</code>(현재 chunk 끝까지만)</td></tr>
+<tr><td><strong>4-step(4 NFEs) 인과 샘플링</strong></td><td><code>mm_inference.py:260-290</code>; config <code>denoising_step_list:[1000,750,500,250]</code></td><td>chunk마다 4-step 공간 디노이징. 마지막 step의 <code>x0_pred</code>가 확정 출력</td></tr>
+<tr><td><strong>타임스텝 워프 → 샘플링 [0,250,500,750]</strong></td><td><code>mm_inference.py:37-47</code>; config <code>warp_denoising_step:true</code></td><td>스케줄러 <code>set_timesteps(N)</code> 후 <code>denoising_step_list</code>를 실제 timestep으로 매핑(CFG-free)</td></tr>
+<tr><td><strong>소스 비디오 조건화 (cross-attn 아님, 채널 concat)</strong></td><td><code>mm_inference.py:255-257,267</code>; <code>causal_model.py:1616-1620</code></td><td>매 chunk에서 소스 latent <code>y_input</code>을 채널 방향 concat(16→32ch) 후 patch_embedding</td></tr>
+<tr><td><strong>인과 KV 캐시 = 스트리밍 상태</strong></td><td><code>mm_inference.py:360-379</code>; <code>causal_model.py:288-333</code></td><td>파이프라인이 30블록×<code>{k,v,global/local_end_index}</code> 소유. 어텐션 층이 append/roll</td></tr>
+<tr><td><strong>clean-context re-run (배경/원본 보존)</strong></td><td><code>mm_inference.py:295-306</code></td><td>chunk 확정 후 <code>context_noise</code>(=0) timestep으로 재-forward → KV 캐시를 "깨끗한 컨텍스트"로 갱신</td></tr>
+<tr><td><strong>local attention window (상수 메모리/지연)</strong></td><td><code>causal_model.py:136,293-329</code></td><td><code>local_attn_size*1560</code> 초과 시 sink 보존 + 오래된 토큰 evict → 무한 스트림에서도 상수 연산</td></tr>
+<tr><td><strong>chunk 절대 위치 RoPE</strong></td><td><code>mm_inference.py:273</code>; <code>causal_model.py:28-56,270</code></td><td><code>current_start = current_start_frame*1560</code>, <code>causal_rope_apply(start_frame=...)</code>로 전역 위치 일관성</td></tr>
+</tbody>
+</table></div>
+
+<h3>2-B. 증류 파이프라인 + AR-Oriented Mask Cache</h3>
+<div class="table-scroll"><table>
+<thead><tr><th>논문 개념</th><th>코드 위치 (파일:함수/클래스)</th><th>설명</th></tr></thead>
+<tbody>
+<tr><td>3단계 증류(Stage 1/2/3)</td><td><code>configs/wan_mm-bid-diffusion.yaml</code> / <code>wan_mm-ar-forcing-local.yaml</code> / <code>wan_mm-ar-diffusion.yaml</code> + 대응 <code>train-*.sh</code></td><td>README §Training: bid=Foundation, ar-forcing=Causal Adaptation, ar-diffusion=DMD. 각 단계 산출 ckpt를 다음 단계 config의 <code>generator_ckpt</code>로 넘김</td></tr>
+<tr><td>DMD(분포 매칭 증류)</td><td><code>model/mm_dmd.py:MMDMD</code></td><td>student=<code>generator</code>, 고정 teacher=<code>real_score</code>, 학습되는 critic=<code>fake_score</code> 3모델 보유</td></tr>
+<tr><td>DMD grad (paper eq.7/8)</td><td><code>mm_dmd.py:_compute_kl_grad</code></td><td><code>grad = pred_fake - pred_real</code>, 이후 <code>p_real</code> 절댓값 평균으로 정규화</td></tr>
+<tr><td>generator/critic 교대 학습</td><td><code>trainer/distillation.py:Trainer.train</code> + <code>fwdbwd_one_step</code></td><td><code>dfake_gen_update_ratio</code>(=5) 스텝마다 generator 1회, 매 스텝 critic 1회</td></tr>
+<tr><td>데이터셋 없는 증류(backward sim)</td><td><code>model/base.py:_run_generator</code> → <code>_consistency_backward_simulation</code></td><td>노이즈에서 student를 언롤해 fake video 생성 (DMD2 §4.5)</td></tr>
+<tr><td>편집 조건 주입(source+noisy)</td><td><code>mm_dmd.py:_expand_input_layer</code></td><td><code>patch_embedding</code> 입력 16→32ch 확장, 뒤 16ch(source latent)는 0으로 초기화</td></tr>
+<tr><td>청크 단위 인과 추론</td><td><code>pipeline/causal_inference.py:inference</code>의 <code>for frame_idx,...</code> 루프</td><td><code>num_frame_per_block</code>(=3) 프레임씩 KV-cache로 스트리밍 생성</td></tr>
+<tr><td><strong>AR-Oriented Mask Cache</strong>(중요도 판정)</td><td><code>causal_inference.py:_compute_mask_from_generated</code> / <code>_compute_mask_from_importance</code></td><td>생성-소스 latent L2 차이로 importance → <code>adaptive_patch_ratio</code>(top-k%) 보존 마스크</td></tr>
+<tr><td>History-guided 재사용</td><td><code>causal_inference.py</code> <code>prev_chunk_importance_mask_1d</code></td><td>이전 청크에서 계산한 마스크를 다음 청크에 그대로 사용(마스크 계산 지연 제거)</td></tr>
+<tr><td>블록 내부 토큰 프루닝/복원</td><td><code>wan/modules/causal_model.py:_block_internal_prune</code> / <code>_block_internal_restore</code></td><td>보존 토큰만 self-attn/FFN 계산 → delta를 전체 차원으로 scatter, 나머지는 캐시된 delta로 채움</td></tr>
+<tr><td>pruned 토큰 RoPE 위치 보정</td><td><code>causal_model.py:causal_rope_apply_pruned</code></td><td>gather된 토큰에 원래 위치의 freqs를 적용해 위치정보 보존</td></tr>
+<tr><td>마스크 시각화</td><td><code>causal_inference.py:save_mask_video</code> (<code>--save_mask</code>)</td><td>청크별 마스크를 8× 업샘플해 흑백 mp4로 저장</td></tr>
+</tbody>
+</table></div>
+
+<h2 id="c-3">3. 데이터 흐름 추적</h2>
+
+<h3>3-A. 스트리밍 편집기 — chunk k 처리 (하위시스템 A)</h3>
+<p>입력: <code>noise</code>(편집 대상 노이즈 latent <code>[B, 21, 16, 60, 104]</code>), <code>y=source_latent</code>(원본 VAE latent), text prompt.</p>
+<ol>
+  <li><strong>진입/전처리</strong> (<code>inference-mm.py:219-231</code>): v2v 태스크에서 source 픽셀을 <code>pipeline.vae.encode_to_latent</code>로 latent 화 → <code>y</code>. <code>noise</code>는 순수 가우시안. <code>initial_latent=None</code>(v2v).</li>
+  <li><strong>KV/crossattn 캐시 초기화</strong> (<code>mm_inference.py:167-188</code>): 최초 1회 zero-cache 할당(<code>_initialize_kv_cache</code>), 재호출 시 <code>global/local_end_index=0</code>·crossattn <code>is_init=False</code>로 리셋만.</li>
+  <li><strong>시간축(chunk) 루프</strong> (<code>mm_inference.py:245</code>): <code>all_num_frames=[3]*num_blocks</code>. chunk마다:
+    <ul>
+      <li><strong>chunk 노이즈/소스 슬라이스</strong> (250-257): <code>noisy_input</code>, <code>y_input</code> 잘라내고 <code>noise0=randn_like</code>를 <strong>chunk당 1회만</strong> 샘플(step 간 고정).</li>
+      <li><strong>공간 디노이징 4-step</strong> (260-290): 각 step에서 <code>generator(noisy_input, ..., timestep, kv_cache, current_start, y=y_input)</code> → <code>(flow_pred, x0_pred)</code>. 마지막 step 전까지는 <code>sigma_next</code> 기반 재-노이즈, 마지막 step에서 <code>denoised_pred=x0_pred</code>.</li>
+      <li><strong>출력 기록</strong> (293): <code>output[:, start:start+3] = denoised_pred</code>.</li>
+      <li><strong>clean-context re-run</strong> (295-306): <code>context_noise</code> timestep으로 <code>denoised_pred</code>를 다시 forward → 이 chunk의 <strong>깨끗한</strong> k/v가 캐시에 남아 다음 chunk가 참조.</li>
+      <li><strong>포인터 전진</strong> (315): <code>current_start_frame += 3</code>.</li>
+    </ul>
+  </li>
+  <li><strong>VAE 디코딩</strong> (<code>mm_inference.py:337-338</code>): 전체 <code>output</code> latent → 픽셀, <code>*0.5+0.5</code> → <code>[0,1]</code>.</li>
+</ol>
+<blockquote>핵심: 편집 마스크·프루닝이 전혀 없어도, <strong>소스 채널 concat + clean-context KV 캐시</strong>만으로 미편집 배경이 소스에 앵커되어 프레임 간 일관성이 유지된다. 이것이 "streaming editor"의 최소 구성이다.</blockquote>
+
+<h3>3-B. 증류(Stage 3) 학습 흐름 (하위시스템 B)</h3>
+<pre><code>(video pair, text) → VAE.encode → source_latent(y) / target_latent(clean)
+  → conditional_dict["source_latent"]=y
+Trainer.train:
+  step % dfake_gen_update_ratio == 0 → generator 업데이트
+    MMDMD.generator_loss:
+      _run_generator (backward sim, 데이터셋 불필요) → pred_image(fake), gradient_mask
+      compute_distribution_matching_loss:
+        노이즈 추가 → _compute_kl_grad(fake_score vs real_score) → grad
+        dmd_loss = 0.5·MSE(pred, (pred-grad).detach())   # gradient_mask 영역만
+  매 step → critic(fake_score) 업데이트
+    MMDMD.critic_loss:
+      no_grad로 fake video 생성 → 노이즈 추가 → fake_score 예측 → denoising_loss(flow)
+  EMA(generator) 갱신, FSDP clip_grad_norm, log_iters마다 checkpoint 저장</code></pre>
+<p>핵심: <strong>generator=student(4-step)</strong>, <strong>real_score=고정 teacher(CFG로 real 분포)</strong>, <strong>fake_score=fake 분포 추정 critic</strong>. student를 real·fake 점수 차(=KL grad) 방향으로 밀어 teacher 분포에 정합시킨다.</p>
+
+<h3>3-C. Mask Cache 추론 흐름 (청크 단위, 하위시스템 C)</h3>
+<pre><code>inference (causal_inference.py):
+  for each chunk(frame_idx):
+    if use_internal_pruning:
+      chunk_importance_mask_1d = _compute_importance_for_internal_pruning(...)
+        chunk 0 → 전부 보존(ones); chunk>0 → 이전 청크의 prev_chunk_importance_mask_1d 재사용
+      → kept_indices_per_frame (프레임별 상위 min_kept 토큰 인덱스)
+      → Reduction% 로깅 (약 70% 감축)
+    for step in denoising_step_list(4 step):   # internal_pruning_steps=[1,2]에서만 프루닝
+      generator(..., importance_mask, kept_indices_per_frame, use_pruning)  # 블록 내부에서 prune
+    output[chunk] = denoised_pred
+    context 재실행(timestep=context_noise)로 KV cache를 clean context로 갱신
+    prev_chunk_mask = _compute_mask_from_generated(denoised_pred, y_input)  # 다음 청크용 마스크 준비
+    current_start_frame += num_frames
+  save_mask_video (옵션)</code></pre>
+
+<h2 id="c-4">4. 핵심 코드 발췌 + 해설</h2>
+
+<h3>4-A. 스트리밍 편집기 (하위시스템 A)</h3>
+
+<h4>(a) chunk-wise 시간축 + 4-step 공간 디노이징 루프</h4>
+<p class="muted"><code>pipeline/mm_inference.py:245-293</code></p>
+<pre><code>for frame_idx, current_num_frames in enumerate(all_num_frames):        # 시간축(chunk) 루프
+    noisy_input = noise[:, current_start_frame - num_input_frames :
+                           current_start_frame + current_num_frames - num_input_frames]
+    noise0 = torch.randn_like(noisy_input)          # :253 chunk당 1회, 전체 스텝 고정
+    y_input = y[:, ...] if y is not None else None   # :255-257 소스 chunk (편집 조건)
+    for index, current_timestep in enumerate(self.denoising_step_list):  # :260 4-step
+        timestep = torch.ones([B, current_num_frames], ...) * current_timestep
+        flow_pred, x0_pred = self.generator(
+            noisy_image_or_video=noisy_input,
+            conditional_dict=conditional_dict, timestep=timestep,
+            kv_cache=self.kv_cache1, crossattn_cache=self.crossattn_cache,
+            current_start=current_start_frame * self.frame_seq_length,   # :273 절대 위치
+            y=y_input)                                                    # :267
+        if index &lt; len(self.denoising_step_list) - 1:
+            sigma_next  = self.scheduler.sigmas[index + 1]
+            noisy_input = (1 - sigma_next) * x0_pred + sigma_next * noise0  # :281 재-노이즈
+        else:
+            denoised_pred = x0_pred                                        # :290 최종 x0
+    output[:, current_start_frame:current_start_frame + current_num_frames] = denoised_pred</code></pre>
+<ul>
+  <li><strong>미래 프레임 미참조</strong>: 루프가 <code>noise</code>를 chunk 순으로만 소비하고, 어텐션은 KV 캐시(과거)만 본다 → 진짜 인과 스트리밍.</li>
+  <li><strong>재-노이즈 스킴</strong>(281): flow/DMD 스케줄의 <code>sigma</code>로 다음 step 입력을 구성하되 <code>noise0</code>을 고정해 4-step 간 궤적 일관성을 유지. (주석의 <code>scheduler.step</code> 정통 ODE 경로는 비활성, 이 단순 <code>(1-σ)x0+σ·noise</code> 재노이즈가 실사용 경로.)</li>
+</ul>
+
+<h4>(b) clean-context re-run — 배경 보존의 열쇠</h4>
+<p class="muted"><code>pipeline/mm_inference.py:295-306</code></p>
+<pre><code>context_timestep = torch.ones_like(timestep) * self.args.context_noise   # 기본 0
+self.generator(
+    noisy_image_or_video=denoised_pred,          # 방금 확정한 깨끗한 latent
+    conditional_dict=conditional_dict, timestep=context_timestep,
+    kv_cache=self.kv_cache1, crossattn_cache=self.crossattn_cache,
+    current_start=current_start_frame * self.frame_seq_length,
+    y=y_input)</code></pre>
+<p>디노이징 중의 k/v는 노이즈가 낀 입력에서 나온다. chunk 확정 후 <strong>노이즈 0의 깨끗한 컨텍스트</strong>로 한 번 더 forward 하여 캐시를 덮어써, 다음 chunk가 참조하는 히스토리가 clean latent가 되도록 한다 → 시간적 안정성·배경 보존.</p>
+
+<h4>(c) 소스 채널 concat 조건화 (학습-추론 동일 경로)</h4>
+<p class="muted"><code>wan/modules/causal_model.py:1616-1620</code></p>
+<pre><code>if y is not None:  # channel-wise
+    x = [torch.cat([u, v[:, -u.shape[1]:] if u.shape[1]!=v.shape[1] else v], dim=0)
+         for u, v in zip(x, y)]
+x = [self.patch_embedding(u.unsqueeze(0)) for u in x]   # 16→32ch → dim</code></pre>
+<p>소스는 cross-attention이 아니라 <strong>입력 채널 concat(16+16=32)</strong>으로 주입된다. <code>patch_embedding</code>은 <code>_expand_input_layer</code>(mm_inference.py:63-99)로 16→32채널 확장되며, 뒤 16채널(소스) 가중치는 0으로 초기화되어 학습 초기 소스 교란을 막는다.</p>
+
+<h4>(d) 인과 KV 캐시 — append·roll(evict)로 상수 메모리</h4>
+<p class="muted"><code>wan/modules/causal_model.py:288-333</code> (<code>CausalWanSelfAttention.forward</code>의 kv_cache 분기)</p>
+<pre><code>current_end   = current_start + roped_query.shape[1]
+sink_tokens   = self.sink_size * frame_seqlen
+kv_cache_size = kv_cache["k"].shape[1]
+num_new_tokens = roped_query.shape[1]
+if self.local_attn_size != -1 and current_end > kv_cache["global_end_index"] \
+        and num_new_tokens + kv_cache["local_end_index"] > kv_cache_size:
+    # 캐시 초과 → sink 프레임은 보존, 오래된 토큰 evict 후 좌측으로 roll
+    num_evicted = num_new_tokens + kv_cache["local_end_index"].item() - kv_cache_size
+    num_rolled  = kv_cache["local_end_index"].item() - num_evicted - sink_tokens
+    kv_cache["k"][:, sink_tokens:sink_tokens+num_rolled] = \
+        kv_cache["k"][:, sink_tokens+num_evicted : sink_tokens+num_evicted+num_rolled].clone()
+    # (v도 동일) ... 이후 신규 k/v append
+local_end_index  = ...            # 새 토큰 삽입 끝 위치
+kv_cache["k"][:, local_start_index:local_end_index] = roped_key    # :312 신규 append
+kv_cache["v"][:, local_start_index:local_end_index] = v
+x = attention(roped_query,
+              kv_cache["k"][:, max(0, local_end_index-self.max_attention_size):local_end_index],
+              kv_cache["v"][:, max(0, local_end_index-self.max_attention_size):local_end_index])
+kv_cache["global_end_index"].fill_(current_end)
+kv_cache["local_end_index"].fill_(local_end_index)</code></pre>
+<ul>
+  <li><code>max_attention_size = 32760</code>(local_attn_size=-1) 또는 <code>local_attn_size*1560</code>(causal_model.py:136)로 어텐션 윈도우를 제한 → 스트림 길이에 무관한 <strong>상수 연산/메모리</strong>.</li>
+  <li><code>sink_size</code> 프레임(어텐션 싱크)은 evict 대상에서 제외되어 전역 앵커로 남는다.</li>
+  <li>쿼리는 항상 신규 chunk의 <code>roped_query</code>, 키/값은 캐시된 과거 윈도우 → chunk-wise 인과성이 런타임에서 성립.</li>
+</ul>
+
+<h4>(e) chunk 절대 위치 기반 RoPE</h4>
+<p class="muted"><code>wan/modules/causal_model.py:28-56,270,283-286</code></p>
+<pre><code>current_start_frame = current_start // frame_seqlen
+roped_query = causal_rope_apply(q, grid_sizes, freqs, start_frame=current_start_frame)
+roped_key   = causal_rope_apply(k, grid_sizes, freqs, start_frame=current_start_frame)
+# causal_rope_apply: freqs[0][start_frame:start_frame+f] 로 시간축 위치 오프셋 부여</code></pre>
+<p>각 chunk의 프레임에 <strong>스트림 전역 절대 프레임 인덱스</strong> 기준 RoPE를 적용해, chunk를 나눠 처리해도 위치 인코딩이 연속된 하나의 시퀀스처럼 유지된다(캐시된 과거 키와 위상 정합).</p>
+
+<h4>(f) 캐시 구조 초기화</h4>
+<p class="muted"><code>pipeline/mm_inference.py:360-379</code></p>
+<pre><code>kv_cache_size = self.local_attn_size*self.frame_seq_length if self.local_attn_size!=-1 else 32760
+for _ in range(self.num_transformer_blocks):        # 30 블록
+    kv_cache1.append({
+        "k": torch.zeros([B, kv_cache_size, 12, 128], ...),  # 12 heads × 128 dim
+        "v": torch.zeros([B, kv_cache_size, 12, 128], ...),
+        "global_end_index": tensor([0]), "local_end_index": tensor([0])})</code></pre>
+<p><code>inference-mm.py:117-121</code>에서 <code>num_output_frames>21</code>이면 <code>local_attn_size=21</code>로 설정(긴 영상=롤링 윈도우), 21 이하이면 <code>-1</code>(전체 캐시). CLI <code>--local_attn_size</code>로 오버라이드 가능.</p>
+
+<h3>4-B. 증류 파이프라인 (하위시스템 B)</h3>
+
+<h4>(g) DMD KL-gradient (증류의 심장)</h4>
+<p class="muted"><code>model/mm_dmd.py</code></p>
+<pre><code># _compute_kl_grad: fake/real 점수 차 = 분포 정합 gradient (DMD eq.7)
+_, pred_fake_image = self.fake_score(noisy, conditional_dict, timestep, y=source_latent)
+_, pred_real_cond  = self.real_score(noisy, conditional_dict, timestep, y=source_latent)
+_, pred_real_uncond= self.real_score(noisy, unconditional_dict, timestep, y=source_latent)
+pred_real_image = pred_real_cond + (pred_real_cond - pred_real_uncond) * self.real_guidance_scale  # CFG
+grad = (pred_fake_image - pred_real_image)
+if normalization:                                   # DMD eq.8: teacher-잔차 절댓값 평균으로 정규화
+    normalizer = torch.abs(original - pred_real_image).mean(dim=[1,2,3,4], keepdim=True)
+    grad = grad / normalizer</code></pre>
+<p><code>generator_loss</code>는 이 grad를 <code>0.5*MSE(pred, (pred-grad).detach())</code>로 감싸 backprop 가능한 손실로 만든다(<code>gradient_mask</code>로 첫 청크/이미지 latent 프레임 제외). teacher <code>real_score</code>는 <code>requires_grad_(False)</code>로 고정, critic <code>fake_score</code>만 별도로 <code>critic_loss</code>(flow denoising loss)로 학습된다.</p>
+
+<h4>(h) 편집 조건 주입: 입력 채널 확장</h4>
+<p class="muted"><code>mm_dmd.py:_expand_input_layer</code></p>
+<pre><code>new_proj = nn.Conv3d(in_channels=32, out_channels=old.out_channels, kernel=old.kernel, stride=old.stride)
+new_proj.weight.zero_()
+new_proj.weight[:, :16].copy_(old_proj.weight)   # 앞 16ch: 사전학습 노이즈 처리 가중치 유지
+# 뒤 16ch(source video latent): 0 초기화 → 학습 초기 source가 예측을 교란하지 않음</code></pre>
+<p>Wan2.1 T2V(16ch noise)를 <strong>noisy latent(16) + source latent(16)</strong> concat(32ch) 입력의 편집 모델로 변환. student·teacher·critic 세 모델 모두 동일 확장 적용.</p>
+
+<h4>(i) 증류 학습 루프</h4>
+<p class="muted"><code>trainer/distillation.py</code></p>
+<pre><code>TRAIN_GENERATOR = self.step % self.config.dfake_gen_update_ratio == 0   # 5스텝당 1회
+if TRAIN_GENERATOR:                       # generator(student) 업데이트 + EMA
+    fwdbwd_one_step(batch, train_generator=True); generator_optimizer.step()
+    if self.generator_ema is not None: self.generator_ema.update(self.model.generator)
+# 매 스텝 critic(fake_score) 업데이트
+fwdbwd_one_step(batch, train_generator=False); critic_optimizer.step()</code></pre>
+<p>generator/real_score/fake_score/text_encoder 를 각각 <code>fsdp_wrap</code>. teacher는 학습 안 하지만 CFG 추론에만 사용. 8×A100 멀티GPU는 <code>torchrun</code>(<code>train-mm-*.sh</code>).</p>
+
+<h3>4-C. AR-Oriented Mask Cache (하위시스템 C)</h3>
+
+<h4>(j) Mask 중요도 계산</h4>
+<p class="muted"><code>pipeline/causal_inference.py</code></p>
+<pre><code>def _compute_mask_from_generated(self, generated_latent, source_latent):
+    diff = (generated_latent - source_latent).pow(2).mean(dim=2)       # 편집 강도 = 채널평균 L2
+    importance = (diff - diff.min()) / (diff.max() - diff.min() + 1e-8)
+    return self._compute_mask_from_importance(importance)             # top-k% 보존 마스크
+
+def _compute_mask_from_importance(self, importance_map):              # 프레임별 독립 top-k
+    keep_num = max(1, int(H*W * self.adaptive_patch_ratio))           # 예: 0.3 → 상위 30% 보존
+    threshold = torch.kthvalue(importance_frame, num_tokens-keep_num+1).values
+    low_importance_mask = ~(importance_frame >= threshold)            # 나머지 ≈70% 프루닝</code></pre>
+<p><strong>핵심 트릭(AR 지향)</strong>: 현재 청크의 마스크를 <em>직전 청크의 생성-소스 차이</em>로 미리 구해 두고(<code>prev_chunk_importance_mask_1d</code>), 다음 청크에서 그대로 사용한다(<code>_compute_importance_for_internal_pruning</code>). 덕분에 마스크 계산이 스트리밍 지연에 추가되지 않는다. chunk 0은 전부 보존.</p>
+
+<h4>(k) 블록 내부 prune → 계산 → restore(delta 캐시)</h4>
+<p class="muted"><code>wan/modules/causal_model.py</code></p>
+<pre><code># self-attn 경로(use_self_attn_pruning)
+x_norm = norm1+modulation(x)                                  # 전체 유지
+x_pruned, flat_kept_indices = self._block_internal_prune(x_norm, kept_indices_per_frame, num_frames)
+y_pruned = self.self_attn(x_pruned, ..., pruned_info)         # 보존 토큰만 attention 계산
+y_full   = self._block_internal_restore(y_pruned, x, flat_kept_indices, ..., fill_strategy)
+x = x + (y_full * e[2])                                       # 잔차 연결(x는 항상 완전 차원)
+
+# _block_internal_restore: 계산한 delta는 보존 위치에 scatter, 나머지는 채움
+delta_full[:, flat_kept_indices, :] = delta_pruned
+if fill_strategy == "prev_step":                             # ⭐ 권장: 직전 full-step delta 재사용
+    delta_full[:, unkept_indices, :] = prev_step_deltas[block_idx][:, unkept_indices, :]</code></pre>
+<ul>
+  <li><strong>연산 재사용의 실체</strong>: 프루닝된(배경) 토큰의 attention/FFN 출력을 다시 계산하지 않고, <strong>직전 full step에서 캐시한 delta</strong>(<code>prev_step_self_attn_deltas</code>/<code>prev_step_ffn_deltas</code>)로 채운다. 프루닝은 <code>internal_pruning_steps=[1,2]</code> step에서만 수행(step 0/3은 full 계산 → 캐시 갱신).</li>
+  <li><strong>fill 전략</strong>(config <code>unpruned_fill_strategy</code>): <code>prev_step</code>(권장)·<code>first_chunk</code>·<code>source_latent</code>·<code>avg_delta</code>·<code>interpolate</code>·<code>identity/zero</code>.</li>
+  <li><strong>mean alignment</strong>(<code>use_mean_alignment</code>): 보존 토큰 delta 평균을 캐시 delta 평균에 맞춰 시프트해 분포 불일치 완화.</li>
+  <li><strong>RoPE</strong>: gather로 토큰 순서가 바뀌므로 <code>causal_rope_apply_pruned</code>가 <code>kept_indices</code>의 <em>원래</em> 위치 freqs를 적용해 위치정보 보존.</li>
+  <li>프루닝 대상은 patch_embedding 이후 <strong>1536-D feature space</strong>(latent 60×104 = 프레임당 1560 토큰).</li>
+</ul>
+
+<h2 id="c-5">5. 의존성 / 환경 요구사항 (실행에 필요한 것)</h2>
+<ul>
+  <li><strong>패키지</strong> (<code>requirements.txt</code>): <code>torch>=2.4</code>, <code>torchvision>=0.19</code>, <code>diffusers==0.31.0</code>, <code>transformers>=4.49</code>, <code>numpy==1.24.4</code>, <code>av==13.1.0</code>, <code>einops</code>, <code>omegaconf</code>, <code>wandb</code>, <code>open_clip_torch</code>, <code>git+.../CLIP.git</code>, <code>imageio-ffmpeg</code>, tqdm. FlexAttention(<code>torch.nn.attention.flex_attention</code>) 사용 → <strong>torch 2.4+ 필수</strong>, bf16 추론.</li>
+  <li><strong>가중치</strong>: base <strong>Wan2.1-T2V-1.3B</strong> + LiveEdit Stage3 체크포인트 <code>checkpoints/liveedit/ar-forcing_002000.pt</code>(HF <code>cp-cp/LiveEdit</code>). <code>patch_embedding</code>은 16→32ch 확장(<code>expand_patch_embedding=True</code>, source concat용).</li>
+  <li><strong>입력</strong>: <code>test_cases/test.json</code> (source 비디오 경로 + 편집 지시 텍스트 쌍). source 픽셀 → VAE 인코딩 → <code>y</code>.</li>
+  <li><strong>하드웨어</strong>:
+    <ul>
+      <li><strong>추론</strong>: 단일 GPU 가능(<code>CUDA_VISIBLE_DEVICES=0</code>), 논문 A100 기준 3-frame chunk당 79ms → 12.66 FPS. <code>--task v2v</code>는 분산 미지원(단일 프로세스).</li>
+      <li><strong>학습</strong>: 8×A100 <code>torchrun</code>, Stage1 9K / Stage2 20K / Stage3 10K steps, FSDP.</li>
+    </ul>
+  </li>
+</ul>
+
+<h2 id="c-6">6. 최소 재현(Minimal Repro) 가능 여부와 경로</h2>
+
+<h3>6-A. 순수 스트리밍 편집기 (하위시스템 A) — 단일 GPU, 프루닝 불필요</h3>
+<pre><code># 1) ckpt 다운로드 (스크립트 상단 주석 참조)
+huggingface-cli download cp-cp/LiveEdit ar-forcing_002000.pt --local-dir checkpoints/liveedit
+# 2) 순수 스트리밍 추론 실행
+bash infer-local-ar-forcing.sh
+#   = python inference-mm.py --config_path configs/wan_mm-ar-forcing-local.yaml \
+#       --checkpoint_path checkpoints/liveedit/ar-forcing_002000.pt \
+#       --data_path ./test_cases/test.json --num_output_frames 21 --task v2v \
+#       --output_folder videos/test</code></pre>
+<ul>
+  <li><strong>관찰 포인트</strong>:
+    <ul>
+      <li><code>--profile</code> 추가 시 chunk별 diffusion 시간이 출력(스트리밍 지연 검증).</li>
+      <li><code>num_output_frames</code>를 21 초과로 올리면 <code>local_attn_size=21</code> 롤링 KV 캐시 경로(4-A-(d) evict 분기)가 실제로 발동 → 긴 영상에서도 상수 메모리인지 확인 가능.</li>
+      <li><code>context_noise</code>(default 0)를 키우면 clean-context re-run이 약화되어 배경 흔들림이 증가하는지 육안 확인(4-A-(b)의 역할 검증).</li>
+    </ul>
+  </li>
+</ul>
+
+<h3>6-B. Mask Cache 추론 (하위시스템 C) — 가장 저비용, 권장 재현 경로</h3>
+<pre><code># 1) env + weights: Wan2.1-T2V-1.3B, huggingface-cli download cp-cp/LiveEdit ar-forcing_002000.pt
+# 2) config 경로 채우기(configs/wan_mm-token-pruning.yaml: generator_ckpt/real_ckpt/data_path)
+bash infer-token-pruning.sh   # inference-mm.py --config wan_mm-token-pruning.yaml --save_mask</code></pre>
+<p>→ <code>videos/mask-cache-test/</code>에 편집 영상 + <code>_mask.mp4</code> 시각화. <code>adaptive_patch_ratio</code>(0.3)로 프루닝 비율, <code>internal_pruning_steps=[1,2]</code>로 프루닝 step 조절 가능.</p>
+
+<h3>6-C. 증류 학습 (하위시스템 B) — 대규모 자원 필요</h3>
+<ul>
+  <li>3단계 순차 필요(bid → ar-forcing → ar-diffusion), 각 단계 ckpt를 다음 config의 <code>generator_ckpt</code>/<code>real_ckpt</code>/<code>fake_ckpt</code>에 지정. 8×A100·20K video pair 필요 → <strong>개인 재현 비현실적</strong>. 코드 경로 검증만이면 Stage 3(<code>trainer/distillation.py</code>)를 소규모 batch로 드라이런 가능.</li>
+  <li><strong>결론</strong>: 추론(스트리밍 편집기 + Mask Cache)은 단일 GPU로 완전 재현 가능. 전체 증류 파이프라인은 코드상 완결되어 있으나 실제 학습 재현은 대규모 자원 필요.</li>
+</ul>
+
+<div class="card">
+<h4 style="margin-top:0">파일 참조 색인</h4>
+<ul style="margin:0">
+  <li><strong>(A) 스트리밍 루프</strong>: <code>pipeline/mm_inference.py:101-315</code> (chunk 루프 245, 4-step 260-290, clean re-run 295-306), 캐시 초기화 360-395, denoising_step_list 셋업 37-47, patch 16→32ch 확장 63-99.</li>
+  <li><strong>(A) 인과 어텐션/KV</strong>: <code>wan/modules/causal_model.py:117-338</code> (kv_cache append/evict 288-333, max_attention_size 136), RoPE 28-56, 블록 인과 마스크 1109-1152, 소스 채널 concat 1616-1620.</li>
+  <li><strong>(A) 진입점</strong>: <code>inference-mm.py:117-151</code>(로컬 attn 설정·pipeline 생성), <code>219-342</code>(v2v 인코딩→inference 호출). 실행 스크립트 <code>infer-local-ar-forcing.sh</code>.</li>
+  <li><strong>(B) 증류</strong>: <code>trainer/distillation.py:Trainer.train</code>·<code>fwdbwd_one_step</code>, <code>model/mm_dmd.py:MMDMD</code>(<code>_compute_kl_grad</code>, <code>_expand_input_layer</code>, generator/critic loss), <code>model/base.py:_run_generator</code>. config <code>wan_mm-{bid-diffusion,ar-forcing-local,ar-diffusion}.yaml</code>, 런처 <code>train-mm-*.sh</code>.</li>
+  <li><strong>(C) Mask Cache</strong>: <code>pipeline/causal_inference.py</code>(<code>_compute_mask_from_generated</code>, <code>_compute_mask_from_importance</code>, <code>_compute_importance_for_internal_pruning</code>, <code>save_mask_video</code>), <code>wan/modules/causal_model.py</code>(<code>_block_internal_prune</code>/<code>_block_internal_restore</code>, <code>causal_rope_apply_pruned</code>). config <code>wan_mm-token-pruning.yaml</code>, 런처 <code>infer-token-pruning.sh</code>.</li>
+</ul>
+</div>
+
+</div></body></html>

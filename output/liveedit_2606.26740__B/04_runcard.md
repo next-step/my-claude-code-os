@@ -1,0 +1,13 @@
+# 실행 카드: LiveEdit — Real-Time Streaming Video Editing
+- **저장소**: https://github.com/cp-cp/LiveEdit (**공식**, Apache-2.0) · **고정 커밋**: `53a763c`
+- **언어/프레임워크**: Python 3.10 / PyTorch(bf16) + Diffusers 0.31 + flash-attn · 기반 Wan2.1-T2V-1.3B
+- **진입점**: `inference-mm.py` → `pipeline/causal_inference.py:CausalInferencePipeline.inference()`
+- **핵심 의존성**: `requirements.txt` (torch>=2.4, diffusers==0.31.0, transformers>=4.49, numpy==1.24.4, av==13.1.0, opencv-python, `git+https://github.com/openai/CLIP.git`) + `flash-attn`(별도: `pip install flash-attn --no-build-isolation`)
+- **가중치(2종, 필수)**:
+  - Wan 베이스: `huggingface-cli download Wan-AI/Wan2.1-T2V-1.3B --local-dir wan_models/Wan2.1-T2V-1.3B`
+  - LiveEdit ckpt: `huggingface-cli download cp-cp/LiveEdit ar-forcing_002000.pt --local-dir checkpoints/liveedit`
+- **최소 실행 경로**: clone → `conda create -n liveedit python=3.10 && pip install -r requirements.txt && pip install flash-attn --no-build-isolation` → 가중치 2종 다운로드 → `bash infer-local-ar-forcing.sh` (마스크캐시 버전: `bash infer-token-pruning.sh`)
+- **기본 명령 인자**: `--config_path configs/wan_mm-ar-forcing-local.yaml --checkpoint_path checkpoints/liveedit/ar-forcing_002000.pt --data_path test_cases/test.json --num_output_frames 21 --task v2v`. (마스크캐시: config를 `wan_mm-token-pruning.yaml`로 바꾸고 `--save_mask` 추가)
+- **입력**: `test_cases/test.json` 제공(instruction + source mp4 경로). 출력: `videos/`.
+- **하드웨어/데이터**: Linux + 단일 NVIDIA GPU(CUDA, Ampere+ 권장 — flash-attn 필수), bf16. VRAM ~16GB+ 추정(공식 명시 없음). Windows/CPU 비현실적. 데이터 다운로드는 체크포인트 위주(수 GB). 학습은 20K쌍·multi-GPU torchrun 필요(데이터 미공개, 일반 재현 비권장).
+- **주의**: README 기본은 50스텝이나, 논문 4스텝은 token-pruning config의 `denoising_step_list:[1000,750,500,250]` 경로로 재현.

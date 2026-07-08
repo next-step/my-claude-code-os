@@ -5,6 +5,52 @@
 
 ---
 
+## 2026-07-09
+
+### 단계별 모델/추론강도 정책 도입 — 전부 Opus, effort만 차등
+- **무엇을**: paper-os 각 단계 에이전트에 모델·추론강도를 단계별로 배정. 전 단계 Opus 고정, effort만 차등(analyze/code/run=high, triage/detail/design/gate=medium, render=low).
+- **왜**: 사고량이 큰 코드 분석·실행에 더 높은 추론강도를 주고, 조립·렌더처럼 가벼운 단계는 낮춰 품질과 비용을 함께 통제. 반복 의도는 프롬프트가 아니라 워크플로/스킬 기본값에 고정하는 정석대로 처리.
+- **설계 메모**: 실질 차등은 워크플로의 `effort`에서 일어난다(대화형 agent 프론트매터엔 표준 effort 필드가 없어 model만 지정). 재튜닝은 `POLICY` 맵 한 곳만 고치면 됨.
+- **어떻게(파일)**:
+  - `.claude/workflows/paper-os.js` — 중앙 `POLICY` 맵 + 헬퍼 `M(stage)` 추가, 13개 `agent()` 호출 전부에 `{model,effort}` 주입.
+  - `.claude/agents/*.md`(9개) — 프론트매터에 `model: opus` 명시(대화형 경로 고정).
+
+### feedback 스킬 단계별 분리 — 단일 스킬 → 핵심 5개 전용 스킬
+- **무엇을**: 6단계를 한 파일로 검증하던 `feedback` 스킬을 단계별 전용 스킬로 분리(`feedback-analysis/detail/code/run/html`). 각 스킬은 해당 단계 체크리스트만 담은 자급식 파일.
+- **왜**: 단계마다 채점 기준이 달라 한 파일에 섞이면 초점이 흐려짐. 워크플로 게이트 대상이 정확히 이 5개라 1:1로 매핑됨. design은 애초에 게이트를 안 타 기존 `feedback`(design/폴백)으로 유지.
+- **어떻게(파일)**:
+  - `.claude/skills/feedback-analysis|detail|code|run|html/SKILL.md` — 신설(단계별 체크리스트·출력형식·규칙). run은 "원본을 사용자가 실행" 모델에 맞춰 실제 실행 로그 요구 제거.
+  - `.claude/skills/feedback/SKILL.md` — design 검증·폴백 전용임을 상단에 명시, 전용 5개로 안내.
+  - `.claude/workflows/paper-os.js` — `gated()`가 단계에 맞는 `feedback-<stage>` 스킬을 읽도록 수정(없는 단계만 `feedback` 폴백).
+
+### 컨텍스트 예산 시각화 — HTML 대시보드 신설
+- **무엇을**: `PAPER-OS-CONTEXT-BUDGET.md`(측정·최적화 기록)를 한눈에 보는 자급식 HTML 대시보드로 도식화. KPI(−53%)·파일별/단계별 막대·두 허브 반복 로딩 흐름도·OPT 카드·전후 비교표.
+- **왜**: 수치·병목·최적화 효과를 텍스트보다 시각적으로 파악하기 쉽게. 프로젝트 규칙(모든 산출물은 프로젝트 안)대로 외부 호스팅 아닌 프로젝트 내 파일로 생성.
+- **어떻게(파일)**: `PAPER-OS-CONTEXT-BUDGET.html` — 신설(인라인 CSS, 라이트/다크 테마 대응, 반응형, 외부 의존 없음).
+
+### /ab-test 스킬 신설 + 워크플로 A/B 실행 인프라
+- **무엇을**: 같은 논문을 두 번 돌려 **CONTEXT.md 배경지식 주입(A) vs 미주입(B)** 를 비교하는 `/ab-test` 스킬 추가. 단일 변수 원칙·정량(크기/토큰/게이트)·블라인드 정성 채점·리포트 절차를 규정.
+- **왜**: "CONTEXT.md를 파이프라인에 배경지식으로 주면 산출물이 좋아지는가"를 프롬프트 감이 아니라 실측으로 검증하기 위함.
+- **어떻게(파일)**:
+  - `.claude/skills/ab-test/SKILL.md` — 신설.
+  - `.claude/workflows/paper-os.js` — A/B 노브 2개(`context`=배경지식 파일 주입, `tag`=출력 폴더 분리 `__A`/`__B`) 추가. `INTENT`에 `CTX` 프리앰블 결합, `FOLDER` 기준 경로 정합화.
+
+### 워크플로 버그 2건 수정 (A/B 실행 중 발견)
+- **args 문자열 파싱**: 이 환경에서 `args`가 JSON 문자열로 전달돼 `isObj`가 false→`tag`/`context` 무시로 두 팔이 같은 폴더를 덮어썼다. 최상단에 "객체형 문자열이면 JSON.parse" 정규화 추가(`ARGS`), 순수 URL 문자열은 그대로. `.claude/workflows/paper-os.js`.
+- **코드 분할경로 runcard 누락**: 코드 다중 에이전트 경로의 merge가 `04_runcard.md`를 발행하지 않아 code-run 다운스트림 최적화(OPT-1)가 깨졌다. merge 프롬프트가 단일 경로와 동일하게 runcard를 반드시 발행하도록 수정. `.claude/workflows/paper-os.js`.
+
+### CRLF 대응 — `.gitattributes` 신설
+- **무엇을**: `.claude/**`·`*.js`·`*.json`·`*.css`에 `eol=lf` 강제.
+- **왜**: `core.autocrlf=true`가 체크아웃 시 워크플로 파일을 CRLF로 바꿔, Workflow 권한 다이얼로그가 CR(0x0d)을 "숨은 제어문자"로 차단 → 실행 자체가 막혔다. LF 고정으로 재발 방지.
+
+### A/B 결과 (liveedit_2606.26740) — CONTEXT.md 주입은 도움 안 됨(소폭 해로움)
+- **무엇을**: 블라인드 채점에서 미주입(B)이 4단계 중 3개(analysis·detail·run) 우세, 주입(A)은 산출물 +27%·파이프라인 토큰 +30%만 늘림. 공정 비교 단계에서 CONTEXT는 밀도↓·헤지↑·수치모순 1건을 유입.
+- **교란요인(정직)**: Triage엔 CONTEXT 미주입인데도 복잡도 판정이 A=high/B=medium으로 갈림 → 코드 크기 차이 상당수는 CONTEXT 효과가 아니라 실행 간 무작위성. 단일 표본 한계.
+- **어떻게(파일)**: `output/liveedit_2606.26740__{A,B}/`(두 팔 산출물), `output/liveedit_2606.26740__ab/AB_REPORT.md`(정량·블라인드 채점·판정·교란요인·재현).
+- **권고**: CONTEXT 전체 통째 주입 금지 → 필요한 규약만 좁게(이미 `00_intent.md`가 담당). 다른 논문 1~2편으로 반복해 결론 확정.
+
+---
+
 ## 2026-07-02
 
 ### paper-os 단계별 컨텍스트량 측정·최적화 (약 −53%)
