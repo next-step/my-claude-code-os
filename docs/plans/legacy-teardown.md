@@ -1,6 +1,6 @@
 ---
 topic: legacy-teardown
-status: 진행중
+status: 완료
 source: docs/interviews/2026-07-08-os-docs-overhaul.md (Q3·Q6·Q7·Q11·Q12) + 2026-07-08-daily-trading-loop.md (Q1)
 ---
 

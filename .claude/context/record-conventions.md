@@ -11,9 +11,9 @@
 
 | 기록 | 경로 | 작성 주체 | 담는 것 |
 |------|------|----------|---------|
-| 분석 1건 | `data/analyses/YYYY-MM-DD-회사.md` | `save_analysis.py` (analyze-company) | 진입/목표/손절·근거·atr_pct 스냅샷. **가격 수치의 단일 진실원천** |
-| 선정 결정 | `data/recommendations/YYYY-MM-DD-run.md` | `save_run.py` (recommend-stocks) | 필터 기준·단계별 개수·탈락 표본(당시가 포함)·picks |
-| 회고 | `data/retros/YYYY-MM-DD-retro.md` | `save_retro.py` (portfolio-retrospect) | 토론 경위·종목별 평가·튜닝안 |
+| 분석 1건 | `data/analyses/YYYY-MM-DD-회사.md` | `save_analysis.py` | 진입/목표/손절·근거·atr_pct 스냅샷. **가격 수치의 단일 진실원천** |
+| 선정 결정 | `data/recommendations/YYYY-MM-DD-run.md` | `save_run.py` | 필터 기준·단계별 개수·탈락 표본(당시가 포함)·picks |
+| 회고 | `data/retros/YYYY-MM-DD-retro.md` | `save_retro.py` | 토론 경위·종목별 평가·튜닝안 |
 
 ## frontmatter 스키마 핵심
 
