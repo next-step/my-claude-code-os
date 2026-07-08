@@ -9,7 +9,7 @@
 
 ### 개편 기반 (docs-overhaul 반영)
 
-- [ ] OS.md 재작성 — 자동 시뮬레이션 루프 설계 문서로 전면 재작성 — [상세 계획](./plans/os-md-loop-rewrite.md)
+- [x] OS.md 재작성 — 자동 시뮬레이션 루프 설계 문서로 전면 재작성 — [상세 계획](./plans/os-md-loop-rewrite.md)
 - [ ] CLAUDE.md + 항상 로드 2종 재프레이밍 — 정체성·통제 손잡이 재정의 — [상세 계획](./plans/claude-md-context-reframe.md)
 - [ ] 옛 시스템 정리 + 데이터 스크립트 보존 — 옛 3스킬·기록·강의 산출물 제거, 재사용 부품 보존 — [상세 계획](./plans/legacy-teardown.md)
 - [ ] 컨텍스트 규약 재정비 — record-conventions 재작성 + data-sources·market-glossary 추가 + 빈 lessons 신설 — [상세 계획](./plans/context-conventions-rework.md)

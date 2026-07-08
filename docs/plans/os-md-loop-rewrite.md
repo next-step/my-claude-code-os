@@ -1,6 +1,6 @@
 ---
 topic: os-md-loop-rewrite
-status: 대기
+status: 완료
 source: docs/interviews/2026-07-08-os-docs-overhaul.md (Q1·Q2·Q10·Q11·Q13)
 ---
 
