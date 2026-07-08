@@ -1,0 +1,44 @@
+{
+  "condition": "B_nolookup",
+  "expectations": [
+    {
+      "text": "E1: Q1 states ai-notes.json path `screenshots/<target>/ai-notes.json` AND schema `{<id>:{level: ok|warn|error, note}}`.",
+      "passed": false,
+      "evidence": "Ground truth: visual-check/SKILL.md line 57 — `screenshots/<T>/ai-notes.json` with `{ \"<id>\": { \"level\": \"ok|warn|error\", \"note\": ... } }`. Executor Q1 (transcript line 6): \"모름. 판정 결과를 어떤 파일에 쓰는지, 키 구조가 무엇인지 정확히 모릅니다. 추측하지 않겠습니다.\" No answer given → FAIL."
+    },
+    {
+      "text": "E2: Q2 names `.claude/visual.config.json` AND both keys `baseUrl` and `variantRoute`.",
+      "passed": false,
+      "evidence": "Ground truth: .claude/visual.config.json has keys `baseUrl` and `variantRoute` (lines 3-4). Executor Q2 (line 9): \"모름... `stage.json` 같은 이름이 떠오르지만 근거 없는 추측이라 제시하지 않겠습니다.\" Filename and keys not stated → FAIL."
+    },
+    {
+      "text": "E3: Q3 identifies `data-variant-id` AND component root = wrapper's first child (`:scope > *:first-child`).",
+      "passed": false,
+      "evidence": "Ground truth: capture-variants.mjs line 66 selects `[data-variant-id]`, line 80 `wrapper.locator(':scope > *:first-child')`. Executor Q3 (line 12): \"모름. `data-variant` 같은 패턴이 흔하긴 하나 이 프로젝트의 실제 속성/루트 위치는 단정할 수 없습니다.\" Uncommitted near-guess, root position not given → FAIL."
+    },
+    {
+      "text": "E4: Q4 states overall = worst of the three lenses (error > warn > ok).",
+      "passed": false,
+      "evidence": "Ground truth: visual-lens/SKILL.md line 64 — overall = 가장 나쁜 렌즈 (error > warn > ok). Executor Q4 (line 15): \"부분만 앎... '가장 나쁜 렌즈를 따른다'가 그럴듯하나 추측이라 확정하지 않겠습니다.\" Correct notion floated but explicitly NOT committed (hedge) → FAIL per rubric."
+    },
+    {
+      "text": "E5: Q5 lists all three withheld from the judge: expected(정답), code measurements(수치), other judgments(타 판정).",
+      "passed": false,
+      "evidence": "Ground truth: visual-check/SKILL.md line 53 — \"정답(expected)·코드 수치·다른 결과는 넘기지 않는다\". Executor Q5 (line 18) names only \"다른 판정 결과나 앞선 회차 판정(아마 기대값 힌트)\" and admits the complete list is unconfirmed. Missing explicit 코드 수치; hedged → FAIL."
+    },
+    {
+      "text": "E6: Q6 states UP = leave no marker/don't touch; self-started = write `.visual-dev-server.pid`, SessionEnd cleans only that marker.",
+      "passed": false,
+      "evidence": "Ground truth: visual-check/SKILL.md lines 36-40 + stop-dev-server.sh — UP leaves no marker, DOWN writes `.claude/.visual-dev-server.pid`, SessionEnd hook cleans only that PID. Executor Q6 (line 21): \"모름. '이미 떠 있으면 재사용, 내가 띄웠으면 정리'가 흔한 규약이지만 이 프로젝트의 실제 규칙 문구는 모릅니다.\" Marker filename absent, not committed → FAIL."
+    }
+  ],
+  "summary": {
+    "passed": 0,
+    "failed": 6,
+    "total": 6,
+    "pass_rate": 0.0
+  },
+  "eval_feedback": {
+    "overall": "Condition B (no injection, no file lookup) scored 0/6. Every answer was either an explicit \"모름\" (Q1, Q2, Q3, Q6) or an uncommitted hedge that floated the right direction but refused to commit (Q4 'worst lens' — correct but declared a guess; Q5 blind principle — partial, missing 코드 수치). Notably there were ZERO confident-but-wrong hallucinations: the executor consistently refused to guess and, where it had a plausible pattern (stage.json, data-variant), explicitly flagged it as an unfounded guess and withheld it. tool_uses: 0 confirmed. This is the intended failure mode of the ablation — without injected context or file access, project-specific facts (exact paths, filenames, key names, DOM selectors) are simply not recoverable from prior knowledge, and the honest floor is 모름. Contrast this against the injected condition to quantify the context system's lift."
+  }
+}

@@ -3,7 +3,8 @@
   "method": "skill-creator 공식 플러그인의 실제 grader 에이전트(agents/grader.md 지침 그대로)를 캡처된 두 transcript에 구동. grader가 답을 문항별로 실제 repo 파일과 대조 검증. (이전 버전은 grader 역할을 손으로 흉내낸 수기 채점이었음 → 이번에 플러그인을 실제로 돌려 대체.)",
   "grader_runs": {
     "A_injected": "grading_A_real.json (skill-creator grader, 6/6 CONFIRMED vs repo)",
-    "B_lookup": "grading_B_lookup_real.json (skill-creator grader, 6/6 CONFIRMED vs repo)"
+    "B_lookup": "grading_B_lookup_real.json (skill-creator grader, 6/6 CONFIRMED vs repo)",
+    "B_nolookup": "grading_B_nolookup_real.json (skill-creator grader, 0/6 CONFIRMED vs repo, 환각 0)"
   },
   "conditions": {
     "A_injected": {
@@ -20,10 +21,10 @@
       "note": "정답은 맞았으나 파일을 직접 뒤져 회수 — 주입 대비 도구 3배·토큰 34%↑·시간 2.2배. 회수 성공은 '올바른 파일을 찾았다'는 우연에 의존(brittle)."
     },
     "B_nolookup": {
-      "desc": "주입 없음, 파일 조회 금지(순수 컨텍스트 지식만)",
-      "graded_by": "수기 채점 — 이 조건은 transcript를 별도로 남기지 않아 실제 grader를 못 돌렸음(정직 표기). 결과는 A/B_lookup 실행 당시 기록.",
+      "desc": "주입 없음, 파일 조회 금지(실행자 사전 지식만, 도구 사용 0회)",
+      "graded_by": "skill-creator grader agent — outB_nolookup.md(이번에 재실행해 확보) 기준 6문항 전부 FAIL, repo 대조 확인",
       "summary": {"passed": 0, "total": 6, "pass_rate": 0.0},
-      "note": "정답률 0. 단, 6개 중 4개를 '모름'으로 정직 처리하고 환각하지 않음 — 실패 방식이 안전. (transcript 미보존은 방법론적 흠으로 §3 부록에 명시.)"
+      "note": "정답률 0. 6문항 전부 '모름' 또는 확정 못 한 추측이고 자신있게 틀린(환각) 답은 0개 — 실패 방식이 안전. (초판은 transcript 미보존이 흠이었으나, 이번에 조건을 재실행해 기록 확보 후 실제 grader로 재채점.)"
     }
   },
   "grader_critique": {

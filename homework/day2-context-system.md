@@ -43,7 +43,7 @@
 
 **도구 확정 + 실제 실행:** 과제 원문의 `/skill-creator`는 실재하는 **Anthropic 공식 플러그인**(`skill-creator@claude-plugins-official`, `~/.claude/settings.json`의 `enabledPlugins`에 활성)이다. **초판은 이 플러그인의 grader 역할 정의(md)만 손으로 흉내 내 수기 채점했는데(= 방법론 차용, 플러그인 미실행), 이번에 플러그인의 실제 grader 에이전트(`agents/grader.md` 지침 그대로)를 캡처된 두 transcript에 구동해 재채점했다.** grader는 6문항을 하나씩 **실제 repo 파일과 대조**(SKILL.md·`capture-variants.mjs`·`visual.config.json`·`stop-dev-server.sh`)해 검증했다 — A 6/6·B(조회허용) 6/6 모두 CONFIRMED. 산출물: `injection-ab/grading_A_real.json`·`grading_B_lookup_real.json`. (블라인드 comparator는 6/6 vs 0/6로 승자가 자명해 생략.)
 
-**방법:** 대상 스킬 = `visual-check`. 이 스킬 호출 시 훅이 실제로 주입하는 payload(8,247자, `inject-context.py` 실제 출력)를 뽑아 **A 조건의 컨텍스트로 그대로** 사용했다. 그다음 *주입 안에만 있고 유추 불가능한 프로젝트 사실 6개*(ai-notes 경로·스키마, config seam 파일·키, DOM 식별 속성, lens overall 계산, 블라인드 정의, dev 서버 소유권)를 물어, **3개 독립 서브에이전트**로 답을 받아 정답 근거와 채점했다.
+**방법:** 대상 스킬 = `visual-check`. 이 스킬 호출 시 훅이 실제로 주입하는 payload(8,247자, `inject-context.py` 실제 출력)를 뽑아 **A 조건의 컨텍스트로 그대로** 사용했다. 그다음 *추론만으로는 못 얻는(주입이나 파일 조회로만 알 수 있는) 프로젝트 사실 6개*(ai-notes 경로·스키마, config seam 파일·키, DOM 식별 속성, lens overall 계산, 블라인드 정의, dev 서버 소유권)를 물어, **3개 독립 서브에이전트**로 답을 받아 정답 근거와 채점했다.
 
 **핵심 설계:** 단순 "주입 O/X" 2조건이 아니라, B(무주입)를 **파일 조회 허용 / 금지** 둘로 갈랐다. 실전에서 훅이 꺼져도 실행자는 여전히 파일을 뒤질 수 있기 때문 — 이 구분이 주입의 진짜 가치를 두 축으로 분리한다.
 
