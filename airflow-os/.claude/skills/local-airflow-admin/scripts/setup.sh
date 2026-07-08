@@ -16,4 +16,7 @@ echo "── 2. Airflow 코어 설치 (constraint 적용)"
 uv pip install --python .venv/bin/python --constraint "${CONSTRAINT_URL}" \
     "apache-airflow==${AIRFLOW_VERSION}"
 
+echo "── 3. 단위 테스트 러너 (pytest, constraint 적용)"
+uv pip install --python .venv/bin/python --constraint "${CONSTRAINT_URL}" pytest
+
 echo "── 완료. 패키지 추가는 SKILL.md의 '패키지 추가' 절 참고."
