@@ -76,7 +76,12 @@ python3 "$CLAUDE_PROJECT_DIR/.claude/skills/sim-engine/scripts/fill_engine.py" \
 ```
 
 ### 2단계 — 1분 폴링 루프 가동 (E2 · Q19)
+
+**반드시 백그라운드 프로세스로 띄운다**(`run_in_background: true`). poll은 15:30까지 안 끝나므로
+포그라운드로 실행하면 한 턴이 6.5시간 블로킹되고 이벤트를 라이브로 못 받는다.
+
 ```bash
+# run_in_background: true 로 실행 — 이 턴은 즉시 끝내고, 이벤트가 오면 재호출된다.
 python3 "$CLAUDE_PROJECT_DIR/.claude/skills/sim-engine/scripts/fill_engine.py" \
     poll --watchlist <watch.json 경로>
 ```
@@ -84,7 +89,13 @@ python3 "$CLAUDE_PROJECT_DIR/.claude/skills/sim-engine/scripts/fill_engine.py" \
   스크립트 튜닝 상수로 반영돼 있다.
 - 루프는 이벤트를 **JSON 한 줄씩 emit**한다: `fill`(체결)·`emergency`(긴급 임계)·`fetch_fail`
   (시세 조회 실패)·`session_end`(장 마감). 메인 스킬이 이 이벤트를 받아 아래 3·4단계를 수행한다.
+- **실행 모델(토큰 비용의 핵심):** 1분 폴링은 **순수 파이썬+네트워크라 토큰을 쓰지 않는다.**
+  poll을 백그라운드로 던진 뒤 이 턴은 끝내고, 스크립트가 **이벤트 한 줄을 emit할 때만** LLM이
+  재호출돼 3·4단계를 수행한다. 체결·긴급이 없는 정상 폴링은 아무것도 emit하지 않으므로, 조용한 장은
+  하루 종일 유휴(토큰 0)다. **토큰 비용은 폴링 횟수가 아니라 이벤트 수에 비례한다.**
 - **시세를 못 읽으면**(`fetch_fail`) 값을 지어내지 않는다 — 스킵하고 다음 폴링을 기다린다(무결성).
+  연속 실패는 매 분 emit하지 않고 첫 실패·`FETCH_FAIL_REMIND_MIN`(15분) 간격으로 합쳐 알린다
+  (LLM 재호출 스팸 방지). 한 번 성공하면 상태가 초기화돼 다음 실패가 새 알림으로 잡힌다.
 - 단건 확인이 필요하면 `--once`(1회 폴링)로 코드 경로만 돌린다.
 
 ### 3단계 — 체결 반영: 포트폴리오 제자리 갱신 + 체결 로그 append (E3 · Q20·Q27)

@@ -69,6 +69,7 @@ POLL_INTERVAL_SEC = 60             # 1분 폴링(Q19)
 POLL_JITTER_SEC = 8                # ±지터로 차단 회피(고정 간격 크롤링 티 방지)
 FETCH_RETRIES = 3                  # 시세 조회 실패 시 재시도 횟수
 FETCH_BACKOFF_SEC = 2              # 재시도 간 대기(선형 백오프 base)
+FETCH_FAIL_REMIND_MIN = 15         # 연속 시세 실패 재알림 간격(분) — 매 분 fetch_fail 스팸 방지
 
 STOCK_DROP_PCT = 7.0               # 종목 급락 임계: 세션 시작가 대비 -7% → 긴급위
 INDEX_MOVE_PCT = 3.0               # 지수 급변 임계: 당일 시가 대비 ±3% → 긴급위
@@ -156,12 +157,34 @@ def _now() -> _dt.datetime:
     return _dt.datetime.now()
 
 
+def _fail_should_emit(fail_state: dict, key: str, now: _dt.datetime) -> bool:
+    """연속 fetch 실패를 합쳐 emit 여부를 결정한다(매 분 fetch_fail 스팸 방지).
+
+    정상→실패 전이(첫 실패)면 True, 지속 실패는 FETCH_FAIL_REMIND_MIN 간격마다만 True.
+    한 번 성공하면 _fail_clear로 상태를 지워 다음 실패가 다시 '첫 실패'로 잡힌다.
+    """
+    st = fail_state.get(key)
+    if st is None:
+        fail_state[key] = {"since": now, "last_emit": now}
+        return True
+    if (now - st["last_emit"]).total_seconds() / 60 >= FETCH_FAIL_REMIND_MIN:
+        st["last_emit"] = now
+        return True
+    return False
+
+
+def _fail_clear(fail_state: dict, key: str) -> None:
+    """시세 조회가 다시 성공하면 실패 상태를 지운다(다음 실패를 새 전이로 취급)."""
+    fail_state.pop(key, None)
+
+
 def poll_loop(watch: dict, once: bool = False) -> int:
     """09:00~15:30 1분 폴링. 대기 주문 체결 판정 + 보유 긴급 임계 감지 이벤트를 emit."""
     orders = list(watch.get("orders", []))          # 체결되면 제거(one-shot)
     positions = list(watch.get("positions", []))
     indices = list(watch.get("indices", []))
     session_anchor: dict[str, float] = {}           # code → 세션 첫 관측가(급락 기준)
+    fail_state: dict[str, dict] = {}                 # kind:code → 연속 시세 실패 합치기 상태
 
     while True:
         now = _now()
@@ -178,10 +201,13 @@ def poll_loop(watch: dict, once: bool = False) -> int:
 
         # ── 대기 주문 체결 판정 ──────────────────────────────────────────────────
         for od in list(orders):
+            key = f"order:{od['code']}"
             price = fetch_price(od["code"])
             if price is None:
-                _emit(dict(event="fetch_fail", kind="order", code=od["code"], ts=stamp))
+                if _fail_should_emit(fail_state, key, now):
+                    _emit(dict(event="fetch_fail", kind="order", code=od["code"], ts=stamp))
                 continue
+            _fail_clear(fail_state, key)
             session_anchor.setdefault(od["code"], price)
             r = should_fill(od["side"], od["limit"], price)
             if r["filled"]:
@@ -192,10 +218,13 @@ def poll_loop(watch: dict, once: bool = False) -> int:
 
         # ── 보유 종목 긴급 임계 감지 ────────────────────────────────────────────
         for pos in positions:
+            key = f"position:{pos['code']}"
             price = fetch_price(pos["code"])
             if price is None:
-                _emit(dict(event="fetch_fail", kind="position", code=pos["code"], ts=stamp))
+                if _fail_should_emit(fail_state, key, now):
+                    _emit(dict(event="fetch_fail", kind="position", code=pos["code"], ts=stamp))
                 continue
+            _fail_clear(fail_state, key)
             anchor = session_anchor.setdefault(pos["code"], price)
             e = emergency_check(price, stoploss=pos.get("stoploss"), anchor=anchor)
             if e["breached"]:
@@ -204,10 +233,13 @@ def poll_loop(watch: dict, once: bool = False) -> int:
 
         # ── 지수 급변 감지 ──────────────────────────────────────────────────────
         for sym in indices:
+            key = f"index:{sym}"
             got = fetch_index_today(sym)
             if not got or got[0] is None or got[1] is None:
-                _emit(dict(event="fetch_fail", kind="index", code=sym, ts=stamp))
+                if _fail_should_emit(fail_state, key, now):
+                    _emit(dict(event="fetch_fail", kind="index", code=sym, ts=stamp))
                 continue
+            _fail_clear(fail_state, key)
             open_, cur = got
             e = emergency_check(cur, anchor=open_, index=True)
             if e["breached"]:
