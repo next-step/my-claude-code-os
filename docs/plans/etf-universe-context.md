@@ -1,6 +1,6 @@
 ---
 topic: etf-universe-context
-status: 진행중
+status: 완료
 source: docs/interviews/2026-07-09-asset-class-diversification.md (Q1·Q2·Q7)
 ---
 
