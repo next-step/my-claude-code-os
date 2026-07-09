@@ -193,8 +193,12 @@ python3 -m unittest discover tests        # 테스트 24개 실행
 |------|------|-----------|
 | `scripts/skill_stats.py` | 스킬 사용 로그 통계 유틸(`--top N` CLI 옵션 + 순수 함수 `count_skills`·`count_by_weekday`·`top_skills`) | **feature-dev 파이프라인**으로 개발 |
 | `tests/test_skill_stats.py` | 위 유틸의 unittest 24개 (전부 green) | 같은 파이프라인의 개발 단계(현재는 test-writer→impl-writer)가 작성 |
+| `scripts/injection_check.py` + `tests/test_injection_check.py` | 지침 주입(배선)이 깨지면 빨갛게 되는 검증 안전망(순수 함수 3 + 통합 테스트 5 + CLI). `python3 scripts/injection_check.py`로 배선 상태 확인 | 직접 작성 (testing.md·coding-style.md 준수) |
+| [`context-system.html`](context-system.html) | 컨텍스트 체계(SSOT→3중 주입→파이프라인 소비)와 주입 A/B를 담은 1페이지 도식 | 직접 작성 (아티팩트) |
 
-이 산출물 자체가 "OS 전체 사이클이 실제로 한 바퀴 돈다"는 증거다. feature-dev를 여러 번(초기 구현 → `--top N` → 요일별 집계) 구동했고, 매번 4단계 + 검증 루프를 완주했다.
+이 산출물 자체가 "OS 전체 사이클이 실제로 한 바퀴 돈다"는 증거다. feature-dev를 여러 번(초기 구현 → `--top N` → 요일별 집계) 구동했고, 매번 4단계 + 검증 루프를 완주했다. 전체 테스트는 49개(skill_stats 24 + injection_check 25) 전부 green이다.
+
+> 💡 **컨텍스트 지침 체계**는 별도 문서 없이 [`context-system.html`](context-system.html)에 시각화돼 있다. 각 에이전트의 역할·권한 요약은 위 **3장 표**가, 지침 자체의 정의는 `.claude/guidelines/`의 각 파일이 단일 출처(SSOT)다.
 
 ### 8-1. `count_by_weekday` — 요일별 호출 집계 (순수 함수)
 

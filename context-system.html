@@ -287,13 +287,13 @@
   <aside class="insight">
     <h2>핵심 — 주입은 "똑똑함"이 아니라 재현성을 준다</h2>
     <p>주입이 바꾸는 것은 모델의 지능이 아니라 <b>매번 같은 형식·판정·역할</b>이다. 특히 검증 단계에서 미주입 에이전트는 판정 자체가 없어 자동 루프를 굴릴 수 없다 — 주입은 장식이 아니라 <b>파이프라인을 굴러가게 하는 부품(load-bearing)</b>이다.</p>
-    <p class="caveat">정직한 한계: <code>general-purpose</code>도 저장소를 읽어 지침을 스스로 발견할 수 있어 "내용 격리"는 불완전했다. 그럼에도 형식·판정 차이는 뚜렷했다(리뷰의 판정 유무가 그 증거).</p>
+    <p class="caveat">통제 재실험으로 확증: baseline이 저장소를 <b>읽지 못하게 막고</b> 다시 돌려도 미주입은 판정·심각도가 없고 주입만 있었다. 즉 차이는 "저장소 누출"이 아니라 <b>.md 배선</b>에서 온다(미주입이 오히려 버그를 더 찾음 → 주입=재현성이지 지능이 아님).</p>
   </aside>
 
   <footer>
     <span>repo · my-claude-code-os</span>
     <span>branch · step2</span>
-    <span>A/B · 6 subagents (general-purpose ↔ specialized)</span>
+    <span>A/B · general-purpose ↔ specialized (+ 저장소 차단 통제 재실험)</span>
     <span>2026-07-09</span>
   </footer>
 </div>
