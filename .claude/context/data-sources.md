@@ -7,7 +7,7 @@
 | 용도 | 소스 | 왜 |
 |------|------|----|
 | 시세·시총·PER·ROE (스크리닝) | 네이버 금융 시총 표 (EUC-KR) | 키 불필요, 일괄 컬럼 제공 — `screen_kospi.py` |
-| 개별 재무 (부채비율·영업이익·배당) | 네이버 금융 종목 페이지 '기업실적분석'(FnGuide, UTF-8) | 요약 재무를 한 곳에서 — `score_stocks.py`·`fundamentals.py` |
+| 개별 재무 (부채비율·영업이익·배당) | 네이버 금융 종목 페이지 '기업실적분석'(FnGuide, UTF-8) | 요약 재무를 한 곳에서 — `fundamentals.py` |
 | 현재가·52주 고저 | 네이버 금융 — `quote.py` | 진입/손절 앵커. **현재가 진실원천은 quote.py 한 곳** (회고 evaluate_records.py도 재사용) |
 | 일별 OHLCV (지지/저항·변동성) | 네이버 일별 시세 (sise_day, EUC-KR) — `ohlcv.py` | 정밀 수치는 웹검색이 아니라 스크립트 파싱 |
 | 뉴스·미국장·거시 (정성) | 서브에이전트 웹검색 (company-news·stock-trend·kr-macro researcher) | 아침 브리핑의 국내·미국장 마감·거시 내러티브. 해석 전용 — 정밀 수치로 쓰지 않음 |
