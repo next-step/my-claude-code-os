@@ -25,7 +25,7 @@
 
 ### 위원회 아키텍처 전환 (committee-architecture 구현)
 
-- [ ] 투자 위원회 서브에이전트 전환 (동적 수렴 루프) — 7전문가 에이전트 신설 + SKILL 오케스트레이션 재작성 + personas 인덱스 축소 — [상세 계획](./plans/committee-subagent-refactor.md)
+- [~] 투자 위원회 서브에이전트 전환 (동적 수렴 루프) — 7전문가 에이전트 신설 + SKILL 오케스트레이션 재작성 + personas 인덱스 축소 — [상세 계획](./plans/committee-subagent-refactor.md)
 
 ---
 

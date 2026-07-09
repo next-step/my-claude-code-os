@@ -1,6 +1,6 @@
 ---
 topic: committee-subagent-refactor
-status: 대기
+status: 진행중
 source: docs/interviews/2026-07-09-committee-architecture.md (확정)
 ---
 
