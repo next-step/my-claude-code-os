@@ -20,8 +20,8 @@
 set -uo pipefail
 
 # ── 경로 ────────────────────────────────────────────────────────────────────────
-SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_DIR="$(cd -- "$SCRIPT_DIR/../.." && pwd)"
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"   # -P: ~/.hermes/scripts 심링크 경유 실행 시 실제 저장소 경로로 해석
+PROJECT_DIR="$(cd -- "$SCRIPT_DIR/../.." && pwd -P)"
 HERMES_HOME="${HERMES_HOME:-$HOME/.hermes}"
 LOG_DIR="$HERMES_HOME/logs"                       # 운영 로그는 저장소 밖(Q22)
 LOCK_FILE="$HERMES_HOME/morning-chain.lock"       # 스크립트별 락(Q21)
