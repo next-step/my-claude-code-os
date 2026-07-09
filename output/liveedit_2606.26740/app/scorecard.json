@@ -1,0 +1,25 @@
+{
+  "slug": "liveedit_2606.26740",
+  "iteration": 1,
+  "total": 94,
+  "threshold": 85,
+  "verdict": "PASS",
+  "criteria": {
+    "metric_fidelity":      { "score": 29, "max": 30, "notes": "논문 §6 핵심 수치가 전부 앱에 등장하고 값이 정본 01_analysis.md와 정확히 일치. 단일 진리원 LEApp.PAPER(L719-728) + part1 METRICS(L1084-1091)에 하드코딩: FPS 12.66 / 79ms / 81f·7.89s / VBench TA .270·BC .956·MS .992·DD .256·AQ .581·IQ .708 / user 95.8%(n=20) / 39K(9+20+10)K steps·lr1e-5·batch8 / Wan2.1-T2V-1.3B·A100x8·AdamW / bench120·train20K / prune~70%·keep0.3 / chunk=3 / 4NFE·[0,250,500,750]. 지어낸 값 없음. -1: 다수 지표가 실측이 아닌 애니메이션 램프(part0 FPS=0.75+0.25*progress)로 목표값에 수렴하나 종단값은 정확." },
+    "performance_coverage": { "score": 19, "max": 20, "notes": "논문 ablation을 앱이 재현: Stage1/2/3 NFE·CFG·스트리밍 표(part1 L1093-1097), 캐시 위치 ablation(Self-Attn 최적 vs FFN 열화 각주 L611), user study 도넛, W/ vs W/O 캐시 토글(part2). W/O 캐시 시 prune 0%·전토큰 재계산으로 거동 반영. -1: baseline(LucyEdit/InsV2V/StreamDiffusion) 개별 VBench 비교 막대는 논문 미보고라 Ours-only만 정성 표시(정직하게 생략, 지어내지 않음)." },
+    "method_fidelity":      { "score": 23, "max": 25, "notes": "핵심 메커니즘이 관찰 가능하게 재현됨. (1) full→block-causal 어텐션 마스크가 캔버스에서 실제 morph(attendCausal=chunkOf(k)<=chunkOf(q), maskProg 0→1 애니메이션 L991-996). (2) chunk-by-chunk 인과 추론 + KV 캐시 재사용/sink token 콘솔(L1030-1052). (3) 4-step DMD denoise 트랙 순차 점등 + Real(frozen)/Fake(trainable) score 도식. (4) 마스크 캐시: kthvalue τ를 실제 계산(paperTau, _compute_mask_from_importance 모사)해 prune≈70% 산출, τ 슬라이더·캐시 토글이 그리드에 즉시 반영. -2: 캔버스 L₂ 중요도 필드는 합성(고지됨)이고 W/O 캐시가 FPS 하락을 수치로 못 보임(논문 미보고라 '미보고' 처리 — 정직하나 대조 관찰성 제한)." },
+    "runnability":          { "score": 15, "max": 15, "notes": "단일 index.html 자급식 확인: 외부 로더 0건(src=/url()/@import/fetch/XHR/WebSocket/<link>/integrity 정규식 스캔 0). http(s)는 배너·푸터의 anchor href(github·arxiv·project)뿐 — target=_blank로 클릭 전 네트워크 요청 없음. 인라인 <script> 5개 전부 node 'new Function' 파싱 통과. 모든 시각물 Canvas2D+DOM 로컬 렌더 → file:// 더블클릭에서 콘솔 에러 없이 재생." },
+    "honesty":              { "score": 8, "max": 10, "notes": "정직성 강함: 상단 배너·각 패널에 '문서 기반 재현 시뮬레이션 / 실제 Wan2.1 가중치 추론 아님 / 수치=논문 보고값' 명시. 미보고 항목을 지어내지 않고 '논문 미보고'로 표기(W/O 캐시 FPS·지연, baseline 개별 VBench, Stage2 NFE·CFG). timestep 상충({0,250,500,750} vs 1000→250)을 ✦각주로 명시. -2: index.html L424·L705, REPRODUCE.md L5가 github.com/cp-cp/LiveEdit 를 '공식 코드/원본 공식 레포'로 단정하나, 정본 §8은 '공식 코드 저장소: 원문에 명시 없음'이라 함 — 정본과 상충하는 과대표기(메타 사실 지어내기)." }
+  },
+  "must_fix": [
+    "정본 정합성(honesty 최우선): index.html L424·L705와 REPRODUCE.md L5가 github.com/cp-cp/LiveEdit 를 '공식 코드/원본 공식 레포'로 단정하나 01_analysis.md §8은 '원문에 명시 없음'이라 함. 링크 라벨을 '비공식/커뮤니티 추정 구현'으로 낮추거나 정본에 근거를 추가해 정합화하라(현재 정본과 상충).",
+    "part0 FPS가 애니메이션 램프(0.75+0.25*progress)로만 12.66에 수렴 — 방출 프레임/누적 sim-ms(part2의 simMs 방식)로부터 유도한 값으로 바꾸면 지표 신뢰성 상승.",
+    "part2 W/O 캐시 경로가 FPS·지연을 '미보고'로만 둠(논문 미보고라 정당) — 캐시 OFF의 재계산 토큰 수(prune 0%)를 근거로 상대 비용 배수를 '추정' 라벨로 병기하면 캐시 효과 대조가 관찰 가능해짐."
+  ],
+  "learned": [
+    "정직성 축의 주된 리스크는 화면 수치가 아니라 '메타 주장'(공식 코드 저장소 존재 여부)에서 발생 — 정본에 '명시 없음'으로 기록된 항목을 앱이 '공식'으로 단정하면 감점. 정본 대비 과대표기를 다음 루프 체크리스트에 고정.",
+    "정본(01_analysis.md) §6 수치를 단일 진리원(LEApp.PAPER)+컴포넌트 상수에 하드코딩하면 metric_fidelity가 안정적으로 만점권. 미보고 항목을 '논문 미보고' pill로 명시하는 전략이 지표 정확성과 정직성을 동시에 지킴.",
+    "자급식은 anchor href의 http(s)만 남고 로더(src/url()/fetch/link) 0건이면 만점 — target=_blank href는 자동 로드가 아니므로 감점 사유 아님. node 'new Function' 파싱 + 로더 정규식 스캔 2단 검증이 저비용으로 runnability 확증.",
+    "메커니즘을 '값 표시'가 아닌 '실제 계산'(kthvalue τ→prune≈70%, attendCausal 마스크 morph)으로 구현하면 method_fidelity가 오른다 — 슬라이더·토글→그리드 즉시 반응이 관찰성의 핵심. 단, 합성 필드·미보고 대조는 상한선(23/25 부근)을 만든다."
+  ]
+}

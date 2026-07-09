@@ -1,71 +1,47 @@
-# 실행 준비 리포트: LiveEdit — Real-Time Diffusion-Based Streaming Video Editing
+# 실행 리포트: LiveEdit — Towards Real-Time Diffusion-Based Streaming Video Editing
 
-> 이 리포트는 **원본 공식 레포를 사용자가 자기 터미널에서 직접 실행**하도록 준비한 가이드입니다.
-> 클로드는 이 명령들을 대신 실행하지 않았습니다 — 아래 "복붙용 터미널 명령"을 님 터미널에 붙여넣어 실행/관찰하세요.
-> (이전 버전의 `run/run_demo.py`는 원본이 아니라 문서 동작을 재현한 **토이 데모**였습니다. 새 방식에서는 원본 레포 추론이 정본입니다.)
+> **문서 기반 재현 시뮬레이션**입니다. 실제 Wan2.1-T2V-1.3B 가중치로 추론하지 않으며, 화면 수치는 모두 **논문 보고값**입니다.
+> 원본 공식 레포: https://github.com/cp-cp/LiveEdit · 프로젝트: https://live-edit.github.io · arXiv: https://arxiv.org/abs/2606.26740
 
-## 대상 (원본 레포 / 진입점)
-- **레포**: https://github.com/cp-cp/LiveEdit (공식 · ECCV 2026 · Apache-2.0)
-- **가중치**: 베이스 `Wan-AI/Wan2.1-T2V-1.3B` + 증류 ckpt `cp-cp/LiveEdit`(`ar-forcing_002000.pt`)
-- **진입점**: `bash infer-local-ar-forcing.sh` → `python inference-mm.py --config_path configs/wan_mm-ar-forcing-local.yaml`
-- **효율(마스크 캐시/토큰 프루닝) 경로**: `bash infer-token-pruning.sh`
+## 실행 방법 (터미널 불필요)
+1. `output/liveedit_2606.26740/app/index.html` 를 **더블클릭** — 기본 브라우저에서 바로 열립니다. (설치·인터넷·GPU 불필요, 단일 파일)
+2. 상단 파란 **"▶ 실행 — 전체 재현 파이프라인 재생"** 버튼을 누르면 세 패널이 순서대로 재생되며 화면이 매끄럽게 흐릅니다:
+   ① 3단계 증류 파이프라인 → ② 성능 벤치마크 결과 패널 → ③ 마스크 캐시 스트리밍 추론.
+3. 각 패널의 자체 버튼(증류 재생 / 벤치마크 측정 / 스트리밍 추론)·토글·슬라이더로 개별 조작도 가능합니다.
 
-## 환경 요구 (OS / Python / GPU / 디스크)
-- **OS**: **Linux + NVIDIA GPU** (flash-attn 빌드 필요). Windows는 **WSL2(Ubuntu)** 권장 — 네이티브 Windows는 flash-attn/CUDA 커널 빌드 이슈.
-- **Python**: 3.10, CUDA toolkit 필수(flash-attn 빌드용)
-- **GPU**: 추론은 단일 GPU 가능(논문 학습은 A100×8). 실시간 디코딩 목표 12.66 FPS.
-- **디스크/다운로드**: Wan2.1-T2V-1.3B(수 GB) + ar-forcing_002000.pt. HF 다운로드.
+## 무엇을 보게 되는가
+- **① 3단계 증류 파이프라인** — Stage1(양방향 Foundation) → Stage2(Teacher Forcing, 어텐션 마스크가 full→block-causal 로 morph) → Stage3(DMD 4-step, `t=1000→750→500→250` 순차 점등) 애니메이션. 이어서 chunk-by-chunk 인과 추론이 스트리밍되며 콘솔 로그·KV 캐시 재사용 표시와 함께 FPS/지연/방출 프레임 카운터가 논문 보고값으로 수렴.
+- **② 벤치마크 결과 패널** — VBench 6지표 막대(TA 0.270 · BC 0.956 · MS 0.992 · DD 0.256 · AQ 0.581 · IQ 0.708), 속도 게이지(**12.66 FPS**, **79 ms/frame**, 81f/7.89s, 4 NFE, CFG 불필요), user study 도넛(**95.8%** top-3, n=20), Stage별 ablation 표.
+- **③ 마스크 캐시(인터랙티브)** — 토큰 프루닝 그리드. "논문 기준 τ(top-30%)" 버튼 → **prune ≈ 70% / keep 30%**. **W/ Cache ↔ W/O Cache** 토글: 캐시 OFF 시 전 토큰 조밀 재계산(prune 0%)으로 바뀌고 FPS·지연은 **"논문 미보고"** 로 표시(지어내지 않음). "스트리밍 추론 재생"으로 7 chunk × 4-step 로그 스트림.
+- **논문 ↔ 모사 매핑 표** — 각 화면 요소가 재현하는 논문 보고값과 근거 섹션을 한눈에.
 
-## 복붙용 터미널 명령 (clone → env → weights → run)
-> 아래를 **님의 터미널(Linux/WSL2, NVIDIA GPU)** 에 순서대로 붙여넣어 실행하세요. 클로드는 실행하지 않습니다.
-
-```bash
-# 0) 작업 폴더
-cd ~/ && git clone https://github.com/cp-cp/LiveEdit.git && cd LiveEdit
-
-# 1) conda 환경 + 의존성
-conda create -n liveedit python=3.10 -y
-conda activate liveedit
-pip install -r requirements.txt
-pip install flash-attn --no-build-isolation      # CUDA toolkit 필요, 시간 소요
-
-# 2) 가중치 다운로드 (베이스 Wan2.1 + LiveEdit 증류 ckpt)
-huggingface-cli download Wan-AI/Wan2.1-T2V-1.3B \
-  --local-dir-use-symlinks False --local-dir wan_models/Wan2.1-T2V-1.3B
-mkdir -p checkpoints/liveedit
-huggingface-cli download cp-cp/LiveEdit ar-forcing_002000.pt \
-  --local-dir checkpoints/liveedit
-
-# 3) config 경로 치환 — configs/wan_mm-ar-forcing-local.yaml 안의
-#    generator_ckpt → checkpoints/liveedit/ar-forcing_002000.pt
-#    Wan 경로       → wan_models/Wan2.1-T2V-1.3B
-#    (에디터로 열어 <CKPT_FROM_STAGE...>/<YOUR_DATA_PATH>/WANDB_* 플레이스홀더 치환)
-
-# 4) 가장 단순한 추론(마스크 캐시 OFF, 4-step 인과) — 제공 샘플 사용
-bash infer-local-ar-forcing.sh
-#    입력: test_cases/test.mp4 + test_cases/test.json(instruction)
-#    출력: 편집된 비디오
-
-# 5) (선택) 효율 경로 — 마스크 캐시/토큰 프루닝 + 마스크 시각화
-bash infer-token-pruning.sh      # python inference-mm.py --config ... --save_mask
-#    videos/masks 에 편집/정적 마스크 저장 → ~70% 프루닝 거동 확인
-```
-
-## 실행하면 보게 될 것 (성공 판정 기준)
-- **4)**: `test.mp4`가 instruction대로 편집된 출력 비디오 생성. 로그에 chunk별(3 latent-frame) 4-step denoise 진행.
-- **성능 관찰**: ~79ms / 3-frame chunk, 약 12.66 FPS 근처(하드웨어 의존).
-- **5) 마스크 시각화**: `videos/masks`의 맵에서 편집 영역(상위 30% keep)과 정적 영역(~70% prune)이 분리되어 보이면 논문의 AR-지향 마스크 캐시가 동작하는 것.
-
-## 흔한 에러 → 해결
-| 증상 | 원인 | 해결 |
+## 재현 대상 ↔ 논문 근거 (요약)
+| 화면 요소 | 논문 보고값 | 섹션 |
 |---|---|---|
-| `flash-attn` 설치 실패 | CUDA toolkit 부재/버전 | CUDA toolkit 설치 후 `--no-build-isolation` 재시도, WSL2 사용 |
-| config 실행 중 경로 에러 | `<CKPT_FROM_STAGE*>` 등 플레이스홀더 미치환 | 3) 단계에서 yaml 내 모든 플레이스홀더 실제 경로로 치환 |
-| CUDA OOM | VRAM 부족 | `num_frames`/해상도 축소, 더 큰 GPU |
-| Windows 네이티브 빌드 실패 | flash-attn | WSL2 Ubuntu에서 실행 |
+| FPS 게이지 | 12.66 FPS (W/ Cache) | §6 속도 |
+| 프레임 지연 | 79 ms / frame ✦ | §4·§6 |
+| 처리량 배지 | 81 frames · 7.89 s | §6 |
+| 4-step 트랙 | 4 NFE · CFG 불필요 · t=[0,250,500,750] | §4·§6 |
+| Stage1 대조 | 100 NFE · CFG 필요 · 비스트리밍 | §6 Ablation |
+| 마스크 캐시 | ~70% prune / 30% keep · Self-Attention 층 | §4B (code patch_ratio 0.3) |
+| chunk 단위 | 3 latent-frame / chunk | §4·§6 |
+| VBench 6지표 | TA 0.270 · BC 0.956 · MS 0.992 · DD 0.256 · AQ 0.581 · IQ 0.708 | §6 |
+| User study | 95.8% top-3 (n=20) | §6 |
+| 증류 학습량 | 9K+20K+10K = 39K steps · lr 1e-5 · batch 8 | §4·§8 |
+| 베이스/하드웨어 | Wan2.1-T2V-1.3B · A100×8 · AdamW | §8 |
 
-## 실제 실행 로그 (사용자가 붙여넣을 자리)
-> 아직 미실행. 위 명령을 님 터미널에서 돌린 뒤 출력 로그/생성 비디오 경로/FPS를 붙여주시면 아래 "결과 해석"을 채우겠습니다.
+(전체 매핑·미보고 항목은 `app/REPRODUCE.md` 참조.)
 
-## 결과 해석 (출력이 논문 동작과 일치하는가)
-> 사용자 실측 로그 수령 후 작성. (4-step DMD 추론·chunk 인과 마스크·~70% 토큰 프루닝이 04_code.md 매핑표와 일치하는지, FPS가 논문 12.66과 부합하는지 대조 예정.)
+## 정직성 고지
+- 브라우저에서 실모델을 돌리지 않습니다. 프레임·마스크 등 시각물은 로컬에서 그린 **합성(synthetic) 데모**이며, 무거운 추론이 필요한 값은 **논문 보고값**을 재생합니다.
+- 논문에 없는 수치는 지어내지 않았습니다: **W/O 캐시 FPS·지연**, **baseline 개별 VBench 수치**, **user study 세부 선호율**, **Stage2 NFE/CFG**는 "논문 미보고"로 표기합니다.
+- ✦ `79 ms` 가 단일 프레임 기준인지 3-프레임 chunk 기준인지 원문 표현이 상충합니다. 1/0.079 ≈ 12.66 FPS 정합성에 따라 프레임 기준으로 표기하고 각주로 상충을 명시했습니다(확정 질의: `CHANNEL.md` Q1/Q4).
+
+## 부록 — 원본 실제 가중치로 돌리고 싶다면 (선택)
+기본 산출물은 클릭 실행형 `app/index.html` 입니다. 진짜 추론을 원하면 Linux + NVIDIA GPU 환경에서:
+```bash
+git clone https://github.com/cp-cp/LiveEdit && cd LiveEdit
+# conda/venv 환경 생성 후 requirements 설치, Wan2.1-T2V-1.3B 가중치 다운로드
+python inference-mm.py --config configs/wan_mm-token-pruning.yaml --save_mask
+```
+(정확한 진입점/환경/가중치 경로는 레포 README 기준. 본 재현 앱은 이 실행 화면을 "코드가 실행된 것처럼" 흉내 낸 것입니다.)

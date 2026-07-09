@@ -36,7 +36,17 @@ description: Read a research paper from a given link (arXiv / PDF / web URL) and
 ## 8. 구현 단서 — 공식 코드 저장소 링크(있으면), 핵심 하이퍼파라미터
 ```
 
+## 에이전트 간 소통 (협업 규약)
+같은 논문을 다루는 **analyzer·code·code-run** 은 독립 컨텍스트로 돌기 때문에, 서로 소통하는 유일한 수단은 공용 게시판 **`output/<slug>/CHANNEL.md`** (파일 기반 blackboard)다. 이 스킬은 논문 내용의 **권위자**이므로 다른 단계의 질문에 답할 책임이 크다.
+- **시작 전**: `CHANNEL.md`가 있으면 `Read`로 읽고, 나(`→ analyzer`) 앞으로 온 `OPEN` 질문에 **논문 근거로 먼저 답한다**.
+- **소통 형식** (파일 끝에 append, 기존 내용 삭제 금지):
+  - 질문: `## Q<n> [analyzer → code] (OPEN)` + 본문
+  - 답변: `## A<n> [analyzer → code-run] (RESOLVED Q<n>)` + 본문
+- **언제 남기나**: 구현 단서(저장소 링크 등)가 필요하면 `code`에게, 재현 대상 확정이 필요하면 `code-run`에게 질문/정정을 남긴다.
+- **정직성**: 답은 반드시 원문 근거로만. 모르면 "원문 미상"으로 답한다(지어내기 금지).
+
 ## 품질 기준
 - 모든 수치/주장은 원문 근거 기반. 환각 금지.
 - 8개 섹션 모두 채울 것. 빈 섹션은 "원문에 명시 없음".
+- `CHANNEL.md`에 나(`→ analyzer`) 앞으로 온 OPEN 질문을 남겨두지 말 것 — 답하고 RESOLVED로 표시.
 - 끝나면 `output/01_analysis.md` 경로와 한 줄 요약을 보고한다.
