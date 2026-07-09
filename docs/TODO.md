@@ -23,6 +23,10 @@
 - [x] 주간 회고 스킬 (F) — 위원회 페르소나 자기 되짚기·개선안 되먹임 — [상세 계획](./plans/weekly-retro-skill.md)
 - [~] 루프 오케스트레이션 (헤르메스 체이닝) — 무인 순차 연쇄 + check_context·CLAUDE.md 안내 문단 마감 — [상세 계획](./plans/loop-orchestration.md)
 
+### 위원회 아키텍처 전환 (committee-architecture 구현)
+
+- [ ] 투자 위원회 서브에이전트 전환 (동적 수렴 루프) — 7전문가 에이전트 신설 + SKILL 오케스트레이션 재작성 + personas 인덱스 축소 — [상세 계획](./plans/committee-subagent-refactor.md)
+
 ---
 
 ### 완료 (2주차 — 컨텍스트, 정리 대기)
