@@ -82,6 +82,28 @@ npm run collect      # 수집 스텁(현재 MockAdapter 시연, 실 수집은 �
 
 - **공유 계약**: `OS.md` 12장 + `src/types/contract.ts`. 백엔드가 정의·export한 타입을 프론트가 import해 쓰는 단일 진실 출처. (contract-check가 이걸 지킨다)
 - **자동 주입 컨텍스트**: `status-context.sh`가 넣는 현황(`STATUS.md`), `skill-context.sh`가 만드는 스킬·에이전트 카탈로그, `contract-context.sh`가 넣는 공유 계약 전문. 아래 훅 참조.
+### 훅 한눈에 보기
+
+훅은 두 가지 일을 한다. **(A) 필요한 것을 알아서 넣어주기**, **(B) 벌어진 일을 알아서 남기기.**
+전부 `sed`/`awk` 만 쓴다 — **이 환경엔 `jq` 가 없다.** 그리고 전부 항상 `exit 0` 이라, 훅이 실패해도 작업은 멈추지 않는다.
+
+| 훅 | 언제 | 하는 일 | 왜 필요했나 |
+|---|---|---|---|
+| `status-context` | 세션 시작 | **A** — `STATUS.md` 전문 주입 | CLAUDE.md가 "먼저 읽어라"고 *부탁*만 했다. 이제 매 세션 *보장*된다 |
+| `skill-context` | 스킬 호출 직전 · 서브에이전트 시작 | **A** — 스킬·에이전트 카탈로그를 파일에서 실시간 생성해 주입 | 손으로 적은 목록은 반드시 실제와 어긋난다 |
+| `contract-context` | 서브에이전트 시작 | **A** — 공유 계약(`contract.ts`) 전문 주입. **개발자 둘에게만** | "단일 진실 출처"라 선언해놓고 정작 개발 에이전트는 못 보고 시작했다 |
+| `skill-usage-log` | 스킬 호출 직전 | **B** — `시각<TAB>스킬이름` 한 줄 append | `skill-stat` 이 볼 데이터가 아예 없었다(훅 미등록) |
+| `decision-log` | `OS.md` 편집 직후 | **B** — 바뀐 **절 이름**을 `DECISIONS.md` 에 기록 | "언제 청사진이 바뀌었나"를 추적. 기존 기록은 절을 몰라 쓸모가 없었다 |
+
+**주입하지 않는 것**: `OS.md`(315줄)는 커서 넣지 않고 CLAUDE.md의 이정표로만 가리킨다.
+**부산물**(전부 git 무시): `.claude/.os-snapshot.md` · `.claude/skill-usage.log` · `.claude/*.err`
+
+> **훅을 새로 만들 때 지킬 것**
+> 1. `jq` 금지 — 없다. payload 는 `sed` 로 뽑는다(`"file_path"`·`"skill"` 은 payload 에 각각 딱 한 번만 등장해 안전하다).
+> 2. **조용히 실패하지 말 것** — `decision-log` 와 `skill-usage-log` 는 몇 달간 죽은 줄 아무도 몰랐다. 실패하면 `.err` 에 흔적을 남긴다.
+> 3. `settings.json` 은 **세션 시작 때 한 번** 읽힌다. 훅을 새로 *등록*하면 다음 세션부터다. 반면 스크립트 *내용*은 실행할 때마다 새로 읽히므로 즉시 반영된다.
+> 4. payload 모양을 추측하지 말 것. 이미 등록된 훅에 임시로 `cat > dump.json` 을 넣고 한 번 실행해 **실측**한 뒤 되돌리면 된다.
+
 - **훅 (`.claude/hooks/`, `.claude/settings.json`에 연결)**: 협업 흔적을 자동 기록하거나 컨텍스트를 자동 주입하는 백그라운드 장치.
   - `status-context.sh` — **SessionStart** 훅. `STATUS.md`(46줄)를 통째로 읽어 `additionalContext`로 주입한다. `CLAUDE.md`가 "작업 시작 시 STATUS.md를 먼저 확인하라"고 **부탁**하던 것을, 세션마다 반드시 들어오는 **보장**으로 바꾼 장치다. 반면 `OS.md`(315줄)는 크기 때문에 주입하지 않고 이정표로만 가리킨다. 외부 의존성 없음(`jq` 불필요), 파일이 없으면 조용히 `exit 0`.
   - `skill-context.sh` — **PreToolUse(matcher `Skill`)** + **SubagentStart** 훅. `.claude/skills/*/SKILL.md`와 `.claude/agents/*.md`의 frontmatter를 그때그때 읽어 "무엇이 있고 언제 쓰는지" 카탈로그를 만들고, `hookSpecificOutput.additionalContext`로 컨텍스트에 넣는다. 손으로 관리하는 목록이 없어 **드리프트가 구조적으로 불가능**하다. 외부 의존성 없음(`jq` 불필요), 항상 `exit 0`.

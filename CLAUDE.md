@@ -21,12 +21,28 @@ Next.js(App Router) + TypeScript + Prisma + SQLite(M1, 이후 Postgres). 수집�
 
 ## 실행 명령
 
+`node_modules`·`prisma/dev.db` 는 git 에 없다(.gitignore). **없으면 아래 명령들은 전부 실패한다.**
+
 ```bash
+# 최초 1회 (node_modules 가 없으면 반드시 먼저)
+npm install
+cp .env.example .env   # DATABASE_URL 없으면 db:push 가 P1012 로 실패
+npm run db:push        # Prisma 스키마 → SQLite 반영 (prisma/dev.db 생성)
+npm run db:seed        # mock 데이터 적재
+
+# 평소
 npm run dev        # http://localhost:3000
-npm run db:push    # Prisma 스키마 → SQLite 반영
-npm run db:seed    # mock 데이터 적재
 npm run collect    # 수집 스텁(현재 MockAdapter)
+npm run typecheck  # tsc --noEmit — 계약 위반을 기계적으로 잡는 유일한 수단
 ```
+
+- **검증은 `npm run typecheck` 로 한다.** 테스트는 아직 0개다. 계약(`contract.ts`)이 `strict` 로 검사되므로, `deadline`/`description` 의 `null` 미처리나 `JobDTO` 필드 오사용을 여기서 잡는다. (2026-07-09 기준 통과)
+- **`npm run lint` 는 쓰지 말 것.** eslint 설정 파일이 없어 `next lint` 는 **검사를 하지 않고** "ESLint를 어떻게 구성할까요?"를 되묻는다. 터미널에선 멈추고, 에이전트가 실행하면 그냥 실패한다(실측).
+- Prisma 클라이언트가 생성돼 있지 않으면 `typecheck` 가 **계약과 무관한 오류 5개**(`JobWhereInput` 등)를 낸다. `npm install` 뒤 `db:push` 를 반드시 먼저.
+- **이 PC 는 회사 보안 프로그램(Somansa)이 HTTPS 를 가로챈다.** Node 는 그 인증서를 몰라서 `prisma generate`/`db:push` 가 `SELF_SIGNED_CERT_IN_CHAIN` 으로 죽는다(엔진을 `binaries.prisma.sh` 에서 받기 때문). 엔진이 아직 없다면 그 명령에만 붙여 통과시킨다 — 시스템 설정은 건드리지 말 것.
+  ```bash
+  NODE_TLS_REJECT_UNAUTHORIZED=0 npm run db:push   # 최초 1회, 엔진 캐시된 뒤엔 불필요
+  ```
 
 ## 계약 (가장 중요)
 
