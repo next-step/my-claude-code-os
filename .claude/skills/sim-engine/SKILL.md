@@ -18,7 +18,7 @@ description: 장중 09:00~15:30 위원회 투자계획서대로 모의 체결하
 - `.claude/context/record-conventions.md` — 상태(제자리 갱신) vs 사건(append) 분리, 기록물 5종·경로 규약.
 - `.claude/context/market-glossary.md` — KRX 호가단위표·한 틱 관통 체결 규칙(결정론 사실).
 - `.claude/context/trading-principles.md` — 무결성 가드레일(지어낸 값 금지)·루프 층(모의·긴급 시장가 예외).
-- `.claude/context/committee-personas.md` — 긴급위가 재사용할 정규 페르소나(부분집합) 정의.
+- `.claude/context/committee-personas.md` — 위원회 7인 명단·공통 규약 인덱스. 긴급위는 이 명단에서 급변 대응 렌즈만 골라 같은 `committee-*` 에이전트를 **긴급 모드로 스폰**해 재사용한다(렌즈 정의는 각 에이전트 md가 진실원천).
 
 ## 이 엔진이 소유/하지 않는 것
 
@@ -112,16 +112,22 @@ python3 "$CLAUDE_PROJECT_DIR/.claude/skills/sim-engine/scripts/fill_engine.py" \
 
 ### 4단계 — 긴급위 자동 발동 (E4 · Q26·Q27)
 `emergency` 이벤트가 오면(종목 급락·손절가 도달·지수 급변 — 임계는 `fill_engine.py` 튜닝 상수):
-1. **축약 3~4인 소집**: `committee-personas.md`에서 급변 대응 렌즈만 **부분집합 재사용**한다
-   (새 페르소나 금지). 기본 소집 = **리스크(폴 튜더 존스)·기술(미너비니)·수급(드러켄밀러)**,
-   필요 시 회의론자(탈레브)를 더한다. 페르소나 정의·오마주는 그 파일이 진실원천이다.
+1. **축약 3~4인 소집(에이전트 부분집합 스폰)**: 정규 위원회와 **같은 `committee-*` 에이전트**를
+   급변 대응 렌즈만 골라 스폰한다(새 페르소나·정의 중복 금지 — 렌즈 정의는 각 에이전트 md가
+   진실원천). 기본 소집 = **리스크(`committee-risk`)·기술(`committee-technical`)·수급
+   (`committee-flow`)**, 필요 시 회의론자(`committee-skeptic`)를 더한다. 각 에이전트에 넘기는 것:
+   메인이 조립한 **긴급 사실판**(발동 임계·해당 종목 현재가·보유/손절/비중 현황) + **모드=긴급**.
+   - **속도 우선(정규 수렴 루프와 다름)**: 긴급위는 최대 5R 수렴 루프를 돌리지 않는다. 관련 렌즈를
+     **한 번에 병렬 스폰**해 개회 주장(AGREE/DISSENT)을 받고, 메인이 **즉시 종합해 결론**을 낸다
+     (trading-principles 루프 층 3 — 급변 대응 속도를 위한 예외). 리스크가 강하게 DISSENT하면
+     한 라운드만 더 반박을 받아 조정하되, 관통 대기 없이 그 분 안에 마무리한다.
 2. **즉시 시장가 모의 체결**(관통 대기 없음): 결정된 주문을 **그 분 현재가 기준**으로 즉시 체결한다
    (trading-principles 루프 층 3 — 긴급위 즉시 시장가 예외, 모의 층에 한함).
 3. **즉시 반영**: 바뀐 보유·손절·비중을 포트폴리오·계획서에 바로 반영하고, 체결을 체결 로그에
    append한다(3단계와 동일 규약).
 4. **긴급 회의록 append**: `data/minutes/YYYY-MM-DD.md`에 **'긴급' 표기**로 append한다
    (record-conventions Q27 — 별도 긴급 로그를 두지 않고 회의록 로그를 공유). 담는 것: 발동 임계·
-   소집 렌즈별 핵심 주장 한 줄·결정·즉시 체결 결과.
+   소집 에이전트별 핵심 주장 한 줄·결정·즉시 체결 결과.
 
 ## 기록물 경로 요약 (record-conventions 기록물 5종)
 
