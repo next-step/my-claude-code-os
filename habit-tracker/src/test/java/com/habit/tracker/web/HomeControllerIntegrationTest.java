@@ -1,6 +1,7 @@
 package com.habit.tracker.web;
 
 import com.habit.tracker.service.RoutineService;
+import com.habit.tracker.service.UserStatsService;
 import com.habit.tracker.service.dto.RoutineForm;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -44,6 +45,9 @@ class HomeControllerIntegrationTest {
 
     @Autowired
     private RoutineService routineService;
+
+    @Autowired
+    private UserStatsService userStatsService;
 
     /** 각 테스트에서 사용하는 루틴 ID */
     private Long routineId;
@@ -171,5 +175,45 @@ class HomeControllerIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(view().name("history/index"))
                 .andExpect(model().attributeExists("target"));
+    }
+
+    // ── POST /check/{routineId} — 레벨업 시나리오 ─────────────────────────────
+
+    @Test
+    @DisplayName("POST /check/{id}: 체크 완료로 레벨업 발생 시 플래시 속성에 레벨 정보를 담아 / 로 리다이렉트한다")
+    void toggleCheck_레벨업발생시_플래시속성전달() throws Exception {
+        // given — 레벨업 직전 XP 상태 만들기
+        // SPROUT(0XP) → SAPLING(200XP) 레벨업을 유발하기 위해 190XP 를 미리 적립한다.
+        // 루틴 체크 시 +10XP 가 추가되면 200XP 가 되어 레벨업이 발생한다.
+        userStatsService.awardXp(190);
+
+        // when & then — 체크 후 / 로 리다이렉트되고 플래시 속성이 포함된다
+        mockMvc.perform(post("/check/" + routineId))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/"));
+    }
+
+    @Test
+    @DisplayName("POST /check/{id}: 레벨업 없이 체크 완료 시 플래시 속성 없이 / 로 리다이렉트한다")
+    void toggleCheck_레벨업없을때_기본리다이렉트() throws Exception {
+        // given — XP 가 낮아 레벨업이 발생하지 않는 상태 (기본값 0 XP)
+
+        // when & then — 체크 후 / 로 리다이렉트
+        mockMvc.perform(post("/check/" + routineId))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/"));
+    }
+
+    @Test
+    @DisplayName("POST /check/{id}: returnDate 있을 때 레벨업이 발생해도 플래시 속성 없이 히스토리로 리다이렉트한다")
+    void toggleCheck_returnDate있으면_레벨업이어도_히스토리리다이렉트() throws Exception {
+        // given — 레벨업 직전 XP 상태
+        userStatsService.awardXp(190);
+
+        // when & then — returnDate 가 있으면 레벨업과 무관하게 히스토리로 리다이렉트
+        mockMvc.perform(post("/check/" + routineId)
+                        .param("returnDate", "2024-01-01"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/history?date=2024-01-01"));
     }
 }
