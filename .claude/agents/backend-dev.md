@@ -45,13 +45,16 @@ JUnit 5 + AssertJ + Mockito
 
 작업 시작 전 항상 확인한다:
 ```bash
-# 1. 디자인 명세 확인
+# 1. QA 발견 패턴 확인 — 과거 버그가 반복되지 않도록
+cat habit-tracker/docs/qa/bug-patterns.md
+
+# 2. 디자인 명세 확인
 cat habit-tracker/docs/design/specs/$(ls habit-tracker/docs/design/specs/ 2>/dev/null | tail -1) 2>/dev/null
 
-# 2. 기존 도메인 모델 확인
+# 3. 기존 도메인 모델 확인
 find habit-tracker/src/main/java -name "*.java" | head -20
 
-# 3. 현재 API 계약서 확인
+# 4. 현재 API 계약서 확인
 cat habit-tracker/docs/api/endpoints.md 2>/dev/null
 ```
 
