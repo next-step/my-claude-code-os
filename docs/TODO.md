@@ -35,6 +35,15 @@
 - [x] investment-committee ETF 편입 — 입력 조립·국면 주입(인버스=기초지수 반대)·계획 합의·계획서 '자산군' 칸 — [상세 계획](./plans/committee-etf-integration.md)
 - [x] 포트폴리오·시뮬엔진 자산군 태그 — portfolio 스키마 칸 + sim-engine 체결 태그 기록 — [상세 계획](./plans/portfolio-asset-class-tag.md)
 
+### 위원회 출력 계약 2차 개정 (committee-position-field 구현)
+
+> E2E 스모크(2026-07-10)에서 계획 합의가 전원 관망으로 닫혀 **복수 종목 진입 경로가 미검증**임이 드러났다.
+> 잠정 입장 필드가 단수형이라 여러 종목을 주장할 표기가 없었고, 긴급위 필드 값 집합은 아예 미정의였다.
+> 아래 두 항목은 **순차**다 — 2번이 1번의 필드 문법을 전제로 서술한다.
+
+- [ ] 위원회 출력 계약 복수 종목 확장 — 잠정 입장 필드를 종목 리스트 + 현금 비중으로, 긴급위 값 집합 3진법 신설(에이전트 7 md + personas 8곳 동기화) — [상세 계획](./plans/committee-position-field-contract.md)
+- [ ] 위원회 수렴 판정·비중 확정 오케스트레이션 — 종목 집합 일치 수렴 · 리스크 봉투 안 의장 확정 · 5R 교집합 부분 채택 · 봉투 부재 폴백 · 회의록 궤적 — [상세 계획](./plans/committee-convergence-multi-position.md)
+
 ---
 
 ### 완료 (2주차 — 컨텍스트, 정리 대기)
