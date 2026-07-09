@@ -78,7 +78,9 @@ def digest_minutes(start: _dt.date, end: _dt.date) -> dict:
     emergency = 0
     for day, p in base["_paths"]:
         text = p.read_text(encoding="utf-8", errors="replace")
-        is_emg = ("긴급" in text) or ("긴급" in p.name)
+        # 긴급위 마커는 '긴급' 표기 헤딩(record-conventions)이다. 본문에 단어가 언급됐다고
+        # 긴급 회의로 세면 정규 회의록이 오탐된다(긴급위 규약을 논의만 해도 걸린다).
+        is_emg = bool(re.search(r"^#{1,3}.*긴급", text, re.MULTILINE)) or ("긴급" in p.name)
         emergency += 1 if is_emg else 0
         entries.append({
             "date": day.isoformat(),
@@ -97,8 +99,11 @@ def digest_minutes(start: _dt.date, end: _dt.date) -> dict:
 
 
 def _section(text: str, header: str):
-    """'## <header>' 다음부터 다음 '## '(또는 EOF)까지를 그대로 잘라낸다. 없으면 None."""
-    m = re.search(rf"^##\s*{re.escape(header)}\s*$", text, re.MULTILINE)
+    """'## <header>' 다음부터 다음 '## '(또는 EOF)까지를 그대로 잘라낸다. 없으면 None.
+
+    회의록 스키마는 헤딩에 괄호 주석을 허용한다("## 국면 합의  (라운드 2에 수렴)").
+    """
+    m = re.search(rf"^##\s*{re.escape(header)}\s*(?:\(.*\))?\s*$", text, re.MULTILINE)
     if not m:
         return None
     rest = text[m.end():]
