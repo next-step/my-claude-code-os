@@ -27,6 +27,12 @@
 
 - [x] 투자 위원회 서브에이전트 전환 (동적 수렴 루프) — 7전문가 에이전트 신설 + SKILL 오케스트레이션 재작성 + personas 인덱스 축소 — [상세 계획](./plans/committee-subagent-refactor.md)
 
+### 자산군 다변화 (ETF 편입 — asset-class-diversification 구현)
+
+- [ ] etf-universe.md 컨텍스트 신설 — 상시 ETF 후보 목록 + 메타데이터(자산군·방향·기초지수·레버리지), check_context 연결 — [상세 계획](./plans/etf-universe-context.md)
+- [ ] investment-committee ETF 편입 — 입력 조립·국면 주입(인버스=기초지수 반대)·계획 합의·계획서 '자산군' 칸 — [상세 계획](./plans/committee-etf-integration.md)
+- [ ] 포트폴리오·시뮬엔진 자산군 태그 — portfolio 스키마 칸 + sim-engine 체결 태그 기록 — [상세 계획](./plans/portfolio-asset-class-tag.md)
+
 ---
 
 ### 완료 (2주차 — 컨텍스트, 정리 대기)
