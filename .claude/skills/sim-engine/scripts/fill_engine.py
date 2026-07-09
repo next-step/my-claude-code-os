@@ -30,7 +30,8 @@
   # (2) 긴급 임계 판정 — 순수, 네트워크 없음
   python3 fill_engine.py emergency --price 162000 --stoploss 165000 --anchor 180000
 
-  # (3) 1분 폴링 루프 — 대기 주문/보유를 담은 watchlist JSON을 읽어 장중 이벤트를 emit
+  # (3) 1분 폴링 루프 — watchlist JSON 경로를 계속 들고, 매 사이클 mtime 변화를 따라잡으며
+  #     대기 주문 체결·긴급 임계 이벤트를 emit(헤르메스가 상시 프로세스로 띄운다)
   python3 fill_engine.py poll --watchlist watch.json           # 09:00~15:30 루프
   python3 fill_engine.py poll --watchlist watch.json --once    # 1회만(장외 코드경로 확인)
 
@@ -70,6 +71,7 @@ POLL_JITTER_SEC = 8                # ±지터로 차단 회피(고정 간격 크
 FETCH_RETRIES = 3                  # 시세 조회 실패 시 재시도 횟수
 FETCH_BACKOFF_SEC = 2              # 재시도 간 대기(선형 백오프 base)
 FETCH_FAIL_REMIND_MIN = 15         # 연속 시세 실패 재알림 간격(분) — 매 분 fetch_fail 스팸 방지
+EMERGENCY_COOLDOWN_MIN = 30        # 종목별 긴급 재알림 간격(분) — breach 지속 시 매 분 emit 스팸 방지
 
 STOCK_DROP_PCT = 7.0               # 종목 급락 임계: 세션 시작가 대비 -7% → 긴급위
 INDEX_MOVE_PCT = 3.0               # 지수 급변 임계: 당일 시가 대비 ±3% → 긴급위
@@ -178,16 +180,83 @@ def _fail_clear(fail_state: dict, key: str) -> None:
     fail_state.pop(key, None)
 
 
-def poll_loop(watch: dict, once: bool = False) -> int:
-    """09:00~15:30 1분 폴링. 대기 주문 체결 판정 + 보유 긴급 임계 감지 이벤트를 emit."""
+def _emergency_should_emit(emergency_state: dict, key: str, now: _dt.datetime,
+                           stoploss: float | None = None, is_position: bool = False) -> bool:
+    """긴급 이벤트 emit 여부를 종목별 쿨다운으로 결정한다(fetch_fail 합치기와 같은 패턴).
+
+    첫 breach면 True, 지속 breach는 EMERGENCY_COOLDOWN_MIN 간격마다만 True(매 분 스팸 방지).
+    보유 종목(is_position)이면 그때의 손절가를 함께 저장해 리로드 시 변경 감지에 쓴다.
+    """
+    st = emergency_state.get(key)
+    if st is None or (now - st["last_emit"]).total_seconds() / 60 >= EMERGENCY_COOLDOWN_MIN:
+        entry: dict = {"last_emit": now}
+        if is_position:
+            entry["stoploss"] = stoploss          # 손절가 변경 감지용(리로드 정리)
+        emergency_state[key] = entry
+        return True
+    return False
+
+
+def _emergency_reconcile(emergency_state: dict, positions: list) -> None:
+    """watchlist 리로드 후 쿨다운 상태를 정리한다(계획 단계 2).
+
+    보유에서 빠진 종목·손절가가 바뀐 종목은 쿨다운을 리셋해, 다음 breach가 즉시 알려지게 한다.
+    지수 등 position이 아닌 키(손절가 미보유)는 건드리지 않는다.
+    """
+    pos_stoploss = {p["code"]: p.get("stoploss") for p in positions}
+    for key in list(emergency_state):
+        st = emergency_state[key]
+        if "stoploss" not in st:
+            continue                              # 지수 등 보유가 아닌 키는 유지
+        if key not in pos_stoploss or pos_stoploss[key] != st["stoploss"]:
+            del emergency_state[key]              # 보유 이탈 or 손절가 변경 → 쿨다운 리셋
+
+
+def _load_watch(path: str) -> dict:
+    with open(path, encoding="utf-8") as f:
+        return json.load(f)
+
+
+def poll_loop(watchlist_path: str, once: bool = False) -> int:
+    """09:00~15:30 1분 폴링. 대기 주문 체결 판정 + 보유 긴급 임계 감지 이벤트를 emit.
+
+    watchlist는 **경로로** 들고 매 사이클 mtime을 확인한다(계획 단계 1). 파일이 바뀌면
+    orders·positions·indices를 갈아끼운다 — 긴급위 시장가 청산·신규 주문을 장중에 따라잡기 위함.
+    프로세스가 살아 있으므로 session_anchor(급락 기준)·fail_state(실패 합치기)는 보존한다.
+    """
+    watch = _load_watch(watchlist_path)
+    try:
+        watch_mtime = os.path.getmtime(watchlist_path)
+    except OSError:
+        watch_mtime = None
     orders = list(watch.get("orders", []))          # 체결되면 제거(one-shot)
     positions = list(watch.get("positions", []))
     indices = list(watch.get("indices", []))
-    session_anchor: dict[str, float] = {}           # code → 세션 첫 관측가(급락 기준)
-    fail_state: dict[str, dict] = {}                 # kind:code → 연속 시세 실패 합치기 상태
+    session_anchor: dict[str, float] = {}           # code → 세션 첫 관측가(급락 기준). 리로드에도 보존.
+    fail_state: dict[str, dict] = {}                 # kind:code → 연속 시세 실패 합치기 상태. 리로드에도 보존.
+    emergency_state: dict[str, dict] = {}           # code/sym → 긴급 재알림 쿨다운 상태
 
     while True:
         now = _now()
+
+        # ── watchlist mtime 리로드 ────────────────────────────────────────────────
+        # 계획·보유가 장중에 바뀌면(긴급위 청산·신규 주문) 파일이 갱신된다. mtime이 바뀌었으면
+        # orders·positions·indices만 갈아끼우고, 프로세스 상태(anchor·fail·긴급 쿨다운)는 유지한다.
+        try:
+            cur_mtime = os.path.getmtime(watchlist_path)
+        except OSError:
+            cur_mtime = watch_mtime
+        if cur_mtime != watch_mtime:
+            try:
+                watch = _load_watch(watchlist_path)
+            except (OSError, json.JSONDecodeError):
+                pass                                # 쓰기 도중(부분 파일)이면 다음 사이클에 다시 시도
+            else:
+                watch_mtime = cur_mtime
+                orders = list(watch.get("orders", []))
+                positions = list(watch.get("positions", []))
+                indices = list(watch.get("indices", []))
+                _emergency_reconcile(emergency_state, positions)
         # 장중 창 밖이면: --once는 코드경로만 돌리고, 루프 모드는 개장까지 짧게 대기.
         in_session = MARKET_OPEN <= now.time() <= MARKET_CLOSE
         if not in_session and not once:
@@ -227,7 +296,9 @@ def poll_loop(watch: dict, once: bool = False) -> int:
             _fail_clear(fail_state, key)
             anchor = session_anchor.setdefault(pos["code"], price)
             e = emergency_check(price, stoploss=pos.get("stoploss"), anchor=anchor)
-            if e["breached"]:
+            if e["breached"] and _emergency_should_emit(
+                    emergency_state, pos["code"], now,
+                    stoploss=pos.get("stoploss"), is_position=True):
                 _emit(dict(event="emergency", ts=stamp, code=pos["code"], name=pos.get("name"),
                            price=price, reasons=e["reasons"]))
 
@@ -242,7 +313,7 @@ def poll_loop(watch: dict, once: bool = False) -> int:
             _fail_clear(fail_state, key)
             open_, cur = got
             e = emergency_check(cur, anchor=open_, index=True)
-            if e["breached"]:
+            if e["breached"] and _emergency_should_emit(emergency_state, sym, now):
                 _emit(dict(event="emergency", ts=stamp, code=sym, kind="index",
                            price=cur, reasons=e["reasons"]))
 
@@ -283,9 +354,7 @@ def main() -> int:
                          ensure_ascii=False))
         return 0
     if args.cmd == "poll":
-        with open(args.watchlist, encoding="utf-8") as f:
-            watch = json.load(f)
-        return poll_loop(watch, once=args.once)
+        return poll_loop(args.watchlist, once=args.once)
     return 1
 
 
