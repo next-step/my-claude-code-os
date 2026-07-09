@@ -1,6 +1,6 @@
 ---
 topic: morning-news-skill
-status: 대기
+status: 진행중
 source: docs/interviews/2026-07-08-daily-trading-loop.md (Q4·Q5·Q6·Q7)
 ---
 

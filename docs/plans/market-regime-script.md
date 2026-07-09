@@ -1,6 +1,6 @@
 ---
 topic: market-regime-script
-status: 대기
+status: 진행중
 source: docs/interviews/2026-07-08-daily-trading-loop.md (Q12·Q13·Q14·Q15)
 ---
 

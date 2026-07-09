@@ -16,8 +16,8 @@
 
 ### 새 루프 시스템 (daily-trading-loop 구현)
 
-- [ ] 아침 뉴스 수집 스킬 (A) — 구조화 브리핑 append-only 수집 — [상세 계획](./plans/morning-news-skill.md)
-- [ ] 국면 지표 스크립트 (C) — 지수+종목 국면 3축 결정론 산출(사실판) — [상세 계획](./plans/market-regime-script.md)
+- [~] 아침 뉴스 수집 스킬 (A) — 구조화 브리핑 append-only 수집 — [상세 계획](./plans/morning-news-skill.md)
+- [~] 국면 지표 스크립트 (C) — 지수+종목 국면 3축 결정론 산출(사실판) — [상세 계획](./plans/market-regime-script.md)
 - [ ] 투자 위원회 스킬 (B) + 페르소나 + 계획서 (D) — 7인 2단계 토론·회의록·살아있는 계획서 — [상세 계획](./plans/investment-committee-skill.md)
 - [ ] 모의 시뮬레이션 엔진 (E) — 1분 폴링 체결·포트폴리오 상태·긴급 위원회 — [상세 계획](./plans/simulation-engine-skill.md)
 - [ ] 주간 회고 스킬 (F) — 위원회 페르소나 자기 되짚기·개선안 되먹임 — [상세 계획](./plans/weekly-retro-skill.md)
