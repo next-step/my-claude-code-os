@@ -1,6 +1,6 @@
 ---
 topic: simulation-engine-skill
-status: 진행중
+status: 완료
 source: docs/interviews/2026-07-08-daily-trading-loop.md (Q19~Q27)
 ---
 
