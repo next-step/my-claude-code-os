@@ -2,7 +2,7 @@
 date: 2026-07-10
 topic: 위원회 잠정 입장 필드 규약 (복수 종목 진입 표기 + 수렴 판정 + 긴급위 값 집합)
 outcome: 확정
-artifact: (미구현)
+artifact: .claude/skills/investment-committee/SKILL.md, .claude/skills/sim-engine/SKILL.md, docs/OS.md
 ---
 
 # 인터뷰: 위원회 잠정 입장 필드 규약
