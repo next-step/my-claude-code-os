@@ -53,7 +53,8 @@ CONSUMERS = {
     # 새 루프 스킬 4종 (신설 완료 — 현존 강제)
     ".claude/skills/morning-briefing/SKILL.md": ["data-sources.md", "record-conventions.md"],
     ".claude/skills/investment-committee/SKILL.md":
-        ["record-conventions.md", "market-glossary.md", "committee-personas.md"],
+        ["record-conventions.md", "market-glossary.md", "committee-personas.md",
+         "etf-universe.md"],
     ".claude/skills/sim-engine/SKILL.md":
         ["record-conventions.md", "market-glossary.md", "committee-personas.md"],
     ".claude/skills/weekly-retrospect/SKILL.md":
