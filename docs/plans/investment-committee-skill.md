@@ -1,6 +1,6 @@
 ---
 topic: investment-committee-skill
-status: 진행중
+status: 완료
 source: docs/interviews/2026-07-08-daily-trading-loop.md (Q8~Q11·Q14·Q16~Q18) + 2026-07-08-os-docs-overhaul.md (Q4/I2)
 ---
 
