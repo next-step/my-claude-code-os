@@ -1,4 +1,21 @@
 {
+  "permissions": {
+    "allow": [
+      "Bash(python3:*)",
+      "Bash(mkdir:*)",
+      "Read(data/**)",
+      "Read(.claude/context/**)",
+      "Read(.runtime/**)",
+      "Edit(data/**)",
+      "Write(data/**)",
+      "Edit(.runtime/**)",
+      "Write(.runtime/**)",
+      "Task(committee-risk)",
+      "Task(committee-technical)",
+      "Task(committee-flow)",
+      "Task(committee-skeptic)"
+    ]
+  },
   "hooks": {
     "PreToolUse": [
       {
