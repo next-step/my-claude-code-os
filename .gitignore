@@ -24,5 +24,9 @@ next-env.d.ts
 /.claude/.os-snapshot.md
 /.claude/decision-log.err
 
+# skill-usage-log hook 부산물 (로컬 사용 기록 · 실패 흔적)
+/.claude/skill-usage.log
+/.claude/skill-usage.err
+
 # misc
 *.tsbuildinfo

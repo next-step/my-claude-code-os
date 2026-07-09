@@ -74,7 +74,7 @@ npm run collect      # 수집 스텁(현재 MockAdapter 시연, 실 수집은 �
 | **handoff** | 기획→개발 위임 시 "범위·참조 계약·완료 기준·의존성"을 표준 양식으로 정리 | orchestrate 2단계(개발자 병렬 호출) 직전에 위임 품질을 일정화 |
 | **contract-check** | 공유 계약(OS.md 12장 ↔ backend 타입 ↔ frontend 사용처)의 드리프트 점검 | 세 지점의 타입/스펙 불일치를 잡아내는 검증 절차 |
 | **interview** | 지시가 모호할 때 추측 대신 선택지로 되물어 뜻을 분명히 함 | `SKILL.md`(절차)와 `PHILOSOPHY.md`(왜)를 분리한 유일한 스킬 |
-| **skill-stat** | 지금까지 호출된 스킬의 횟수·마지막 호출 시각 통계 표시 | 아래 `skill-usage-log` 훅이 쌓은 통계를 읽어 보여줌 (**현재 훅 미등록 → 항상 빈 결과**) |
+| **skill-stat** | 지금까지 호출된 스킬의 횟수·마지막 호출 시각 통계 표시 | 아래 `skill-usage-log` 훅이 쌓은 로그를 `awk`로 집계해 보여줌 |
 
 ## 협업·공유 계층 (에이전트 외의 공유 자원)
 공유 서브에이전트(위 3명)에 더해, 아래 두 가지가 스킬·에이전트가 함께 딛는 공유 기반이다.
@@ -100,4 +100,7 @@ npm run collect      # 수집 스텁(현재 MockAdapter 시연, 실 수집은 �
     - **CRLF 주의**: 이 저장소의 `.md`는 CRLF다. 어떤 도구가 LF로 저장하면 전 줄이 바뀐 것으로 오탐하므로(실측: `+315/-315`) `diff --strip-trailing-cr`을 반드시 붙인다.
     - **조용한 실패 금지**: 이전 버전은 `jq`로 payload를 파싱했는데 이 환경엔 `jq`가 없어, 경로를 못 읽고 조용히 `exit 0` 하며 몇 달간 죽어 있었다(2026-07-05 이후 기록 중단). 지금은 `sed`로 파싱하고, 파싱에 실패하면 `.claude/decision-log.err`에 흔적을 남긴다.
     - **한계**: "왜" 바꿨는지는 payload에 없다. 의도는 계속 OS.md 본문과 커밋 메시지가 보관한다. 사람이 에디터로 직접 OS.md를 고치면 스냅샷이 갱신되지 않아, 그 변경분은 다음 훅 실행 때 함께 묶여 보고된다.
-  - `skill-usage-log.sh` — **미등록·미동작.** 어느 `settings.json`에도 연결돼 있지 않고, 내부적으로 `jq`를 쓰는데 이 환경엔 `jq`가 없다. 살리려면 `jq` 의존 제거 + 통계 파일을 프로젝트 안(`.claude/`)으로 옮기고 `settings.json`에 등록해야 한다.
+  - `skill-usage-log.sh` — **PreToolUse(matcher `Skill`)** 훅. 스킬이 호출될 때마다 `.claude/skill-usage.log`(git 무시)에 `시각<TAB>스킬이름` 한 줄을 append한다. `skill-stat`이 이 로그를 `awk`로 집계한다.
+    - **JSON 상태 파일을 쓰지 않는다**: 이전 버전은 `jq`로 `~/.claude/skill-stats.json`을 읽고 고쳐 썼다. `jq` 없이 JSON을 갱신하는 건 취약하므로, **덧붙이기 전용 로그 + 읽을 때 집계**로 바꿨다. 덤으로 호출 이력이 그대로 남는다.
+    - **세 가지가 동시에 고장나 있었다**: ① `jq` 의존, ② 어느 `settings.json`에도 **미등록**, ③ 기록 위치가 프로젝트 밖(`~/.claude/`)이라 CLAUDE.md 1번 규칙 위반. 게다가 `skill-stat`의 `SKILL.md`도 `jq`로 읽고 있어 훅만 고쳐선 소용이 없었다. 넷 다 고쳤다.
+    - 스킬 이름은 `tool_input.skill`에서 뽑는다(payload에 `"skill"`은 정확히 한 번만 등장). 로그 오염을 막으려 이름은 `[A-Za-z0-9_:-]`만 남긴다. 파싱 실패 시 `.claude/skill-usage.err`에 흔적.

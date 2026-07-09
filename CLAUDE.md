@@ -49,7 +49,7 @@ npm run collect    # 수집 스텁(현재 MockAdapter)
   - `skill-context`(PreToolUse `Skill` + SubagentStart) — 스킬·에이전트 카탈로그 자동 주입
   - `contract-context`(SubagentStart) — `src/types/contract.ts` 전문을 **개발 에이전트(backend/frontend)에만** 주입(`agent_type` 으로 분기). 그래서 그 둘은 계약 파일을 따로 열 필요가 없다.
   - `decision-log`(PostToolUse `Edit|Write`) — OS.md 변경 → `DECISIONS.md` 에 **바뀐 절 이름**까지 기록. 직전본 스냅샷(`.claude/.os-snapshot.md`, git 무시)과 비교해 알아낸다.
-  - `skill-usage-log` — 스크립트만 존재하고 **등록되지 않음**(`jq` 미설치라 현재 동작 불가). `skill-stat` 은 그래서 항상 빈 결과.
+  - `skill-usage-log`(PreToolUse `Skill`) — 스킬 호출을 `.claude/skill-usage.log` 에 한 줄씩 append. `skill-stat` 이 이걸 awk 로 집계한다.
 - 이 환경엔 **`jq` 가 없다.** 훅은 `sed` 만으로 작성할 것(`skill-context.sh`·`status-context.sh` 참고).
 
 ## 어디를 읽을지 (컨텍스트 이정표)
