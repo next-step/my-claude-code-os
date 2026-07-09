@@ -60,11 +60,12 @@ def resolve_code(name: str) -> str | None:
 def fetch_quote(code: str) -> dict | None:
     html = _get(ITEM.format(code=code), "utf-8")          # 개별 페이지는 UTF-8
     flat = re.sub(r"<[^>]+>", " ", html)                  # 52주 고저는 태그 사이에 걸쳐 있어 평문화 후 매칭
-    price = _find(r"현재가[^0-9]*([\d,]{3,})", html)
+    # 자릿수 하한을 두지 않는다 — 두 자리 가격 종목이 실재한다(예: 252670 인버스2X = 90원).
+    price = _find(r"현재가[^0-9]*([\d,]+)", html)
     name = (re.search(r"<title>([^:<]+)", html) or [None, ""])[1].strip() or None
     hi = _find(r"52주\s*최고\s*[:：]?\s*([\d,]+)", flat)
     lo = _find(r"52주\s*최저\s*[:：]?\s*([\d,]+)", flat)
-    vol = _find(r"거래량[^0-9]*([\d,]{3,})", html)
+    vol = _find(r"거래량[^0-9]*([\d,]+)", html)
     if price is None:
         return None
     return dict(code=code, name=name, price=price,
