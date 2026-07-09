@@ -1,6 +1,6 @@
 ---
 topic: weekly-retro-skill
-status: 대기
+status: 진행중
 source: docs/interviews/2026-07-08-daily-trading-loop.md (Q28·Q29·Q30 + F 세션 확인)
 ---
 
