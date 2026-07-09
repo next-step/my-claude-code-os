@@ -5,7 +5,7 @@
 > 자율 투자 위원회를 구성하는 7인의 **추론 렌즈** 정의. 각 페르소나는 실존 투자자를 오마주해
 > **어떤 관점으로 사고하고 무엇을 강조하는지(추론 스타일·강조점)**만 정한다. 사실·수치는 여기서
 > 지어내지 않는다 — 모든 정량치는 아침 브리핑(`data/briefings/`)과 스크립트
-> (`morning_quant.py`·`market_regime.py`·`ohlcv.py`) 출처만 쓴다(무결성 가드레일,
+> (`scripts/morning_quant.py`·`scripts/market_regime.py`·`.claude/lib/ohlcv.py`) 출처만 쓴다(무결성 가드레일,
 > [trading-principles.md](./trading-principles.md) 무결성 1·3).
 
 ## 이 파일을 공유하는 곳

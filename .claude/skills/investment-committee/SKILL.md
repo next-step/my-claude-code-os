@@ -63,7 +63,7 @@ python3 "$CLAUDE_PROJECT_DIR/scripts/market_regime.py" --index KOSPI KOSDAQ --co
 
 - 출력 JSON의 3축(추세·사이클 위치·변동성, `market-glossary.md` 정의)을 **정량 사실**로
   토론에 싣는다. 스크립트가 `error`/`확인 불가`를 낸 항목은 그대로 두고 추정치로 채우지
-  않는다(무결성 가드레일). 필요하면 `scripts/ohlcv.py`로 종목 지지/저항을 함께 조회한다.
+  않는다(무결성 가드레일). 필요하면 `$CLAUDE_PROJECT_DIR/.claude/lib/ohlcv.py`로 종목 지지/저항을 함께 조회한다.
 - 대상 종목이 아직 없으면(초기) 지수 배경 국면만 산출하고, 관심 종목은 브리핑·토론에서 발굴한다.
 
 ### 3단계 — 2단계 순차 토론 (B3)
