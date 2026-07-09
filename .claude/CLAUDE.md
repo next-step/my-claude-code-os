@@ -7,3 +7,14 @@
    - 비밀값(토큰·키·비밀번호)을 커밋하지 않는다.
    - 프로덕션 데이터·환경을 건드리지 않는다.
 5. 작업 방식은 `.claude/guides/work-principles.md`를 따를 것(가급적 묻고, 시킨 것만)
+
+## 컨텍스트 자동 주입
+
+이 OS의 컨텍스트 체계는 레지스트리가 관리한다: `.claude/context/INDEX.md`(카탈로그 +
+주입 매트릭스). 아래 4개 컨텍스트는 세션 시작 시 이 CLAUDE.md를 통해 메인 컨텍스트에
+자동 주입된다(경로는 이 파일 기준 상대 경로).
+
+@context/user.md
+@context/project.md
+@guides/writing-style.md
+@guides/work-principles.md
