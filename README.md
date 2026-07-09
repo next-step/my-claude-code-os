@@ -8,6 +8,12 @@
 ## 온라인 코드 리뷰 과정
 * [텍스트와 이미지로 살펴보는 온라인 코드 리뷰 과정](https://github.com/next-step/nextstep-docs/tree/master/codereview)
 
+## 주차별 문서
+
+| 주차 | 문서 | 내용 |
+|---|---|---|
+| 2주차 | [2주차 context 설명](docs/context.md) | Claude 가 무엇을·언제 보게 되는가. 컨텍스트 분류, 훅 5개, 설계 원칙 |
+
 ---
 
 # 채용 리서치 웹 서비스 (M1)
