@@ -7,3 +7,4 @@
    - 구현·유틸 코드 작성·수정 → `coding-style.md`
    - 코드 리뷰·판정        → `review-criteria.md`
    - 문서 작성·갱신        → `doc-style.md`
+   - 일일 회고 작성        → `retro-guideline.md`

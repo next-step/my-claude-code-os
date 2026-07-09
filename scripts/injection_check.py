@@ -19,7 +19,7 @@ GUIDELINE_DIRNAME = os.path.join(".claude", "guidelines")
 
 # 실제로 "주입"되는 지침들. subagent-specialization.md는 청사진 문서일 뿐
 # 규칙으로 주입되지 않으므로 여기 포함하지 않는다.
-INJECTED_GUIDELINES = ("testing.md", "coding-style.md", "review-criteria.md", "doc-style.md")
+INJECTED_GUIDELINES = ("testing.md", "coding-style.md", "review-criteria.md", "doc-style.md", "retro-guideline.md")
 
 # 지켜야 할 주입 맵: {지침: {이 지침을 참조해야 하는 소비처(.claude/ 기준 상대경로)}}.
 # 이 맵이 곧 "의도된 배선"의 단일 출처다. 배선을 바꾸면 여기도 함께 고친다.
@@ -44,6 +44,10 @@ REQUIRED_INJECTIONS = {
     "doc-style.md": {
         "agents/doc-writer.md",
         "skills/feature-dev/SKILL.md",
+    },
+    "retro-guideline.md": {
+        "agents/retro-writer.md",
+        "skills/daily-review/SKILL.md",
     },
 }
 
@@ -186,7 +190,7 @@ def main():
         or result["dangling"]
     )
     if not problems:
-        print("✅ 컨텍스트 주입 배선 정상 — 지침 4개가 모두 올바르게 연결됨.")
+        print(f"✅ 컨텍스트 주입 배선 정상 — 지침 {len(INJECTED_GUIDELINES)}개가 모두 올바르게 연결됨.")
         return 0
 
     print("❌ 컨텍스트 주입 배선 문제 발견:")
