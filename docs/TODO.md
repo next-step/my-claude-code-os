@@ -21,7 +21,7 @@
 - [x] 투자 위원회 스킬 (B) + 페르소나 + 계획서 (D) — 7인 2단계 토론·회의록·살아있는 계획서 — [상세 계획](./plans/investment-committee-skill.md)
 - [x] 모의 시뮬레이션 엔진 (E) — 1분 폴링 체결·포트폴리오 상태·긴급 위원회 — [상세 계획](./plans/simulation-engine-skill.md)
 - [x] 주간 회고 스킬 (F) — 위원회 페르소나 자기 되짚기·개선안 되먹임 — [상세 계획](./plans/weekly-retro-skill.md)
-- [ ] 루프 오케스트레이션 (헤르메스 체이닝) — 무인 순차 연쇄 + check_context·CLAUDE.md 안내 문단 마감 — [상세 계획](./plans/loop-orchestration.md)
+- [~] 루프 오케스트레이션 (헤르메스 체이닝) — 무인 순차 연쇄 + check_context·CLAUDE.md 안내 문단 마감 — [상세 계획](./plans/loop-orchestration.md)
 
 ---
 

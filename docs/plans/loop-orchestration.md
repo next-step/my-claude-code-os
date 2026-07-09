@@ -1,6 +1,6 @@
 ---
 topic: loop-orchestration
-status: 대기
+status: 진행중
 source: docs/interviews/2026-07-08-daily-trading-loop.md (Q2·Q6/A4 + F 트리거) + 2026-07-08-os-docs-overhaul.md (check_context 마감)
 ---
 
