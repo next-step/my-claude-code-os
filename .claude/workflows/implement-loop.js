@@ -5,7 +5,7 @@ export const meta = {
   phases: [
     { title: 'Setup', detail: 'Resolve slug/threshold/maxIters/maxParallel, locate output/<slug>/' },
     { title: 'Triage', detail: 'Judge reproduction complexity → decide build-agent count + component split' },
-    { title: 'Loop', detail: 'Per iteration (independent contexts): parallel component builds → merge → sync (analyzer/code answer code-run via CHANNEL.md) → score → distill learnings; stop at threshold' },
+    { title: 'Loop', detail: 'Per iteration (independent contexts): parallel component builds → merge → sync (analyzer/code answer code-run via CHANNEL.md) → score (incl. repo-fidelity: WebFetch real repo & compare) → distill learnings; stop at threshold' },
     { title: 'Report', detail: 'Summarize iterations, final score, app path' },
   ],
 }
@@ -27,6 +27,10 @@ const SLUG = String(SLUG_RAW).replace(/[^a-zA-Z0-9._-]/g, '_').slice(0, 60)
 const THRESHOLD = (isObj && ARGS.threshold) || 85
 const MAX_ITERS = (isObj && ARGS.maxIters) || 4
 const MAX_PARALLEL = (isObj && ARGS.maxParallel) || 4
+// Optional externally-injected guidance for THIS run (e.g. verified corrections
+// to apply). Appended to every build prompt and surfaced to score. Empty = none.
+const NOTES = (isObj && ARGS.notes) || ''
+const NOTE = NOTES ? `\n\n[이번 실행 반영 지침 — 최우선]\n${NOTES}` : ''
 
 const SK = (n) => `${ROOT}/.claude/skills/${n}/SKILL.md`
 const OUTDIR = `${ROOT}/output/${SLUG}`
@@ -98,7 +102,7 @@ async function buildStage(i, prior) {
 ${prior}
 입력: ${OUTDIR}/01_analysis.md(논문 보고값 정본), ${OUTDIR}/04_code.md.
 산출: ${P('index.html')}(단일·자급식·더블클릭·외부요청0), ${P('REPRODUCE.md')}, ${OUTDIR}/05_run.md.
-성능 테스트/벤치마크가 있으면 반드시 포함하고 화면 수치는 전부 논문 보고값으로 라벨링(지어내기 금지). 끝나면 index.html 경로와 개선점 반환.` + CH,
+성능 테스트/벤치마크가 있으면 반드시 포함하고 화면 수치는 전부 논문 보고값으로 라벨링(지어내기 금지). 끝나면 index.html 경로와 개선점 반환.` + CH + NOTE,
       { phase: `Iter${i}:build`, label: `build#${i}`, ...M }
     )
   }
@@ -108,7 +112,7 @@ ${prior}
       `작업 디렉토리 ${ROOT}. ${SK('code-run')} 의 원칙(자급식·클릭실행·논문 보고값만·정직성)에 따라, 논문 ${SLUG} 재현 프로그램의 **'${c}' 컴포넌트만** 만들어라.
 ${prior}
 입력: ${OUTDIR}/01_analysis.md(논문 보고값 정본), ${OUTDIR}/04_code.md.
-이 컴포넌트에 필요한 HTML 조각 + <style> 규칙 + <script> 로직을, 다른 컴포넌트와 충돌하지 않도록 **고유 접두사/네임스페이스**로 작성해 ${B(`part${idx}.md`)} 에 저장하라(코드블록으로). 외부 요청 금지(인라인/data URI). 이 컴포넌트가 재현하는 논문 보고값도 함께 적어라.` + CH,
+이 컴포넌트에 필요한 HTML 조각 + <style> 규칙 + <script> 로직을, 다른 컴포넌트와 충돌하지 않도록 **고유 접두사/네임스페이스**로 작성해 ${B(`part${idx}.md`)} 에 저장하라(코드블록으로). 외부 요청 금지(인라인/data URI). 이 컴포넌트가 재현하는 논문 보고값도 함께 적어라.` + CH + NOTE,
       { phase: `Iter${i}:build`, label: `build#${i}:${c}`, ...M }
     )))
   // 병합 → 단일 자급식 index.html
@@ -116,7 +120,7 @@ ${prior}
     `작업 디렉토리 ${ROOT}. ${SK('code-run')} 를 Read로 읽고, ${APP}/_build/part*.md 조각들을 모두 Read로 읽어 **하나의 자급식 ${P('index.html')}** 로 조립하라.
 ${prior}
 요구: 단일 파일·외부요청0·더블클릭 실행·콘솔 에러 없음. 조각들의 style/script를 통합(중복·충돌 제거)하고, 상단 "실행" 버튼→파이프라인 재생→결과 패널이 매끄럽게 흐르게 하라. 정직성 배너와 원본 레포 링크 포함.
-또한 ${P('REPRODUCE.md')}(재현항목↔논문 보고값 표)와 ${OUTDIR}/05_run.md(클릭 실행 가이드)를 발행하라. 병합 후 ${APP}/_build/ 조각 파일은 삭제. 끝나면 index.html 경로와 통합 결과를 반환.` + CH,
+또한 ${P('REPRODUCE.md')}(재현항목↔논문 보고값 표)와 ${OUTDIR}/05_run.md(클릭 실행 가이드)를 발행하라. 병합 후 ${APP}/_build/ 조각 파일은 삭제. 끝나면 index.html 경로와 통합 결과를 반환.` + CH + NOTE,
     { phase: `Iter${i}:merge`, label: `build#${i}:merge`, ...M }
   )
 }
@@ -132,7 +136,7 @@ let last = null
 
 for (let i = 1; i <= MAX_ITERS; i++) {
   const prior = i === 1
-    ? '이번이 첫 루프다. LEARNINGS.md·scorecard.json이 아직 없다.'
+    ? `이번 실행의 첫 루프다. 이전 실행 산출물(${P('index.html')}·${P('LEARNINGS.md')}·${P('scorecard.json')}·${CHANNEL})이 이미 있으면 Read로 읽어 **처음부터 다시 만들지 말고 이어서 개선**하라(재실행일 수 있음). 위 [이번 실행 반영 지침]이 있으면 그것부터 반영.`
     : `이번은 ${i}번째 루프다. 직전 총점 ${last ? last.total : '?'}/100 (목표 ${THRESHOLD}). 반드시 ${P('LEARNINGS.md')} 와 ${P('scorecard.json')} 를 먼저 Read로 읽고, must_fix 항목부터 고쳐라.`
 
   // build (병렬 컴포넌트 → 병합, 또는 단일) — 각 조각도 독립 컨텍스트
@@ -153,9 +157,10 @@ ${CHANNEL} 를 Read로 읽어라(없으면 이번엔 할 일 없음). '[code-run
 
   // score (독립 컨텍스트) — scorecard.json/md 기록 + 구조화 verdict 반환
   const score = await agent(
-    `작업 디렉토리 ${ROOT}. ${SK('score')} 를 Read로 읽고 그 기준(총 100점, 5축)에 따라 논문 ${SLUG} 의 재현 프로그램 ${P('index.html')} 를 채점하라.
+    `작업 디렉토리 ${ROOT}. ${SK('score')} 를 Read로 읽고 그 기준(총 100점, **6축 — 실제 코드 대조(repo_fidelity) 축 포함**)에 따라 논문 ${SLUG} 의 재현 프로그램 ${P('index.html')} 를 채점하라.
 임계값 threshold=${THRESHOLD}. 현재 iteration=${i}.
 정본은 ${OUTDIR}/01_analysis.md 의 논문 보고값이며, ${P('REPRODUCE.md')} 주장과 앱 실제를 대조하라. 자급식 여부는 index.html 안 외부 http/src/cdn/fetch 참조로 검사.
+**실제 코드 대조(repo_fidelity)**: 공식 저장소 URL(${OUTDIR}/01_analysis.md §8·${OUTDIR}/04_code.md·${P('REPRODUCE.md')}에서 확인)을 찾아, WebFetch로 레포 실제 소스(config yaml·진입 스크립트·추론 파이프라인·모델 소스)를 직접 읽어 앱이 주장한 코드 수준 값(예: chunk 크기·denoise step 리스트·prune 비율·마스크 식·베이스 모델)을 하나씩 검증하라. 필요하면 먼저 ToolSearch로 'select:WebFetch'를 로드. 대조 결과는 scorecard.json의 repo_checks에 파일·실제값·일치여부로 남겨라. WebFetch가 불가하면 그 사실을 명시하고 이 축을 추정으로 채우지 말 것.
 ${P('scorecard.json')}(iteration=${i}, threshold=${THRESHOLD} 기입)와 ${P('scorecard.md')} 를 Write로 저장하고, 구조화 결과(total/verdict/must_fix/learned)를 반환.`,
     { phase: `Iter${i}:score`, label: `score#${i}`, schema: SCORE_SCHEMA, ...M }
   )
