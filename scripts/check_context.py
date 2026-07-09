@@ -2,7 +2,7 @@
 """컨텍스트 주입 정적 검증 (step2 도전1).
 
 혼합 주입 전략의 연결이 올바른지 결정론적으로 검사한다:
-  ① 컨텍스트 파일 7종이 .claude/context/ 에 존재하는가
+  ① 컨텍스트 파일 8종이 .claude/context/ 에 존재하는가
   ② 항상 로드 2종이 CLAUDE.md 에 연결(@임포트)돼 있는가
   ③ 현존 소비자(에이전트·스킬 md)가 자기 몫 컨텍스트 경로를 참조하는가
 
@@ -20,9 +20,10 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 CONTEXT_DIR = ".claude/context"
 
-# ① 존재해야 하는 컨텍스트 파일 7종 (자동 시뮬레이션 루프 개편판)
+# ① 존재해야 하는 컨텍스트 파일 8종 (자동 시뮬레이션 루프 개편판)
 #    retro-lessons.md(폐기)는 새 루프 회고용 loop-lessons.md로 교체됐다.
 #    committee-personas.md는 위원회 항목에서 신설된 공유 페르소나 정의(정규위·긴급위·회고 공유).
+#    etf-universe.md는 자산군 다변화 항목에서 신설된 상시 ETF 후보 목록(위원회가 계획 합의에서 Read).
 CONTEXT_FILES = [
     "investor-profile.md",
     "trading-principles.md",
@@ -31,6 +32,7 @@ CONTEXT_FILES = [
     "market-glossary.md",
     "loop-lessons.md",
     "committee-personas.md",
+    "etf-universe.md",
 ]
 
 # ② 항상 로드: CLAUDE.md 가 @임포트로 연결해야 하는 2종
