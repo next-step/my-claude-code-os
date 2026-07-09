@@ -28,6 +28,16 @@
 `permissions.allow` 화이트리스트로 연다(브리핑의 `WebSearch`/`WebFetch`·리서처/위원회 서브에이전트 Task
 등). 목록 밖의 행동은 거부된다 — 그게 안전선이다.
 
+## 전제 조건
+
+cron을 걸기 전에 아래가 만족돼야 한다. 하나라도 빠지면 개장일 첫 실행에서 체인이 멈춘다.
+
+1. **`flock` 설치** — `brew install flock` (macOS 기본 미포함). 없으면 세 스크립트가 중복 실행
+   방지 불가로 즉시 `exit 1`한다(조용히 이중 체결하는 것보다 안전).
+2. **`claude` CLI가 cron 환경의 `PATH`에 있을 것** — 스크립트가 `claude -p`를 직접 부른다.
+   cron/launchd는 로그인 셸 PATH를 물려받지 않으므로, 헤르메스 cron 등록 시 PATH를 확인한다.
+3. **디스코드 채널 ID 2개** — `~/.hermes/channel_directory.json`의 `일간`·`주간`.
+
 ## cron 등록
 
 헤르메스 `--script`는 **`~/.hermes/scripts/` 하위**의 스크립트만 실행한다. 저장소의 이 디렉터리를
@@ -62,5 +72,4 @@ hermes cron create "0 9 * * 6" --no-agent \
 
 - 요일 필터(`1-5`)는 주말만 거른다. 평일 중 휴장(설날·추석·임시공휴일)은 `morning-chain.sh` 안의
   `market_calendar.py` 게이트가 걸러 클로드를 한 번도 부르지 않는다.
-- `flock`이 필요하다(`brew install ...` 또는 배포판 패키지). 미설치면 스크립트가 중복 실행 방지 불가로
-  크게 실패한다(조용히 이중 체결하는 것보다 안전).
+- 전제 조건(`flock`·`claude` PATH·채널 ID)은 위 "전제 조건" 절을 먼저 확인한다.
