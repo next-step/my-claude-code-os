@@ -1,6 +1,6 @@
 ---
 topic: committee-agent-output-contract
-status: 진행중
+status: 완료
 source: docs/interviews/2026-07-09-committee-architecture.md (후속 Q8·Q10·Q14 — 토큰 폐지·잠정 입장 필드·HOLD·전원 동일 계약)
 ---
 

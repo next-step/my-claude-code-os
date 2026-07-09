@@ -1,6 +1,6 @@
 ---
 topic: committee-orchestration-rework
-status: 대기
+status: 진행중
 source: docs/interviews/2026-07-09-committee-architecture.md (후속 Q9·Q11~Q17 — 발산/수렴 분리·쟁점 정리·전원 재소집·수렴 판정·회의록 궤적)
 ---
 
