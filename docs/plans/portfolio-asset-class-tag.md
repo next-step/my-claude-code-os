@@ -1,6 +1,6 @@
 ---
 topic: portfolio-asset-class-tag
-status: 대기
+status: 진행중
 source: docs/interviews/2026-07-09-asset-class-diversification.md (Q5·Q6)
 ---
 

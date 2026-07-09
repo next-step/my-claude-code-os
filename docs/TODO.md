@@ -31,7 +31,7 @@
 
 - [x] etf-universe.md 컨텍스트 신설 — 상시 ETF 후보 목록 + 메타데이터(자산군·방향·기초지수·레버리지), check_context 연결 — [상세 계획](./plans/etf-universe-context.md)
 - [x] investment-committee ETF 편입 — 입력 조립·국면 주입(인버스=기초지수 반대)·계획 합의·계획서 '자산군' 칸 — [상세 계획](./plans/committee-etf-integration.md)
-- [ ] 포트폴리오·시뮬엔진 자산군 태그 — portfolio 스키마 칸 + sim-engine 체결 태그 기록 — [상세 계획](./plans/portfolio-asset-class-tag.md)
+- [~] 포트폴리오·시뮬엔진 자산군 태그 — portfolio 스키마 칸 + sim-engine 체결 태그 기록 — [상세 계획](./plans/portfolio-asset-class-tag.md)
 
 ---
 
