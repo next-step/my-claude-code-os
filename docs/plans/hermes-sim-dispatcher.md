@@ -1,6 +1,6 @@
 ---
 topic: hermes-sim-dispatcher
-status: 대기
+status: 진행중
 source: docs/interviews/2026-07-10-hermes-wiring.md (Q3·Q4·Q6·Q14·Q16·Q19·Q21·Q22)
 ---
 
