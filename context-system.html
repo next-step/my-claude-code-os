@@ -1,0 +1,299 @@
+<title>컨텍스트 체계 &amp; 주입 효과 — My Claude Code OS</title>
+<style>
+  * { box-sizing: border-box; }
+
+  :root {
+    --bg:#E7ECF1; --surface:#F6F9FB; --surface-2:#DDE4EB; --raise:#FFFFFF;
+    --ink:#16212E; --soft:#4C5A6C; --faint:#7C8A9C; --line:#C4CDD8;
+    --accent:#0C7C86; --accent-ink:#0C7C86; --accent-soft:#0c7c8618;
+    --good:#1E8B55; --good-soft:#1e8b5518; --miss:#9AA6B4; --miss-soft:#9aa6b41f;
+    --c-test:#2F7DB5; --c-code:#0E8C86; --c-review:#BC7415; --c-doc:#7E57A8;
+    --shadow:0 1px 2px rgba(20,33,46,.06), 0 6px 20px rgba(20,33,46,.05);
+    --font-sans:system-ui,-apple-system,"Segoe UI","Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+    --font-mono:ui-monospace,"SF Mono","JetBrains Mono",Menlo,Consolas,monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg:#0D1624; --surface:#152030; --surface-2:#1D293A; --raise:#20304400;
+      --ink:#E7EEF5; --soft:#98A7B9; --faint:#6E7E92; --line:#2A3A4E;
+      --accent:#3FD0D9; --accent-ink:#6FE0E7; --accent-soft:#3fd0d918;
+      --good:#4BCF89; --good-soft:#4bcf8918; --miss:#66768A; --miss-soft:#66768a24;
+      --c-test:#5AA9DE; --c-code:#3FD0D9; --c-review:#E0A24A; --c-doc:#B48AD8;
+      --shadow:0 1px 2px rgba(0,0,0,.3), 0 8px 26px rgba(0,0,0,.28);
+    }
+  }
+  :root[data-theme="light"] {
+    --bg:#E7ECF1; --surface:#F6F9FB; --surface-2:#DDE4EB; --raise:#FFFFFF;
+    --ink:#16212E; --soft:#4C5A6C; --faint:#7C8A9C; --line:#C4CDD8;
+    --accent:#0C7C86; --accent-ink:#0C7C86; --accent-soft:#0c7c8618;
+    --good:#1E8B55; --good-soft:#1e8b5518; --miss:#9AA6B4; --miss-soft:#9aa6b41f;
+    --c-test:#2F7DB5; --c-code:#0E8C86; --c-review:#BC7415; --c-doc:#7E57A8;
+    --shadow:0 1px 2px rgba(20,33,46,.06), 0 6px 20px rgba(20,33,46,.05);
+  }
+  :root[data-theme="dark"] {
+    --bg:#0D1624; --surface:#152030; --surface-2:#1D293A; --raise:#20304400;
+    --ink:#E7EEF5; --soft:#98A7B9; --faint:#6E7E92; --line:#2A3A4E;
+    --accent:#3FD0D9; --accent-ink:#6FE0E7; --accent-soft:#3fd0d918;
+    --good:#4BCF89; --good-soft:#4bcf8918; --miss:#66768A; --miss-soft:#66768a24;
+    --c-test:#5AA9DE; --c-code:#3FD0D9; --c-review:#E0A24A; --c-doc:#B48AD8;
+    --shadow:0 1px 2px rgba(0,0,0,.3), 0 8px 26px rgba(0,0,0,.28);
+  }
+
+  body { background:var(--bg); color:var(--ink); font-family:var(--font-sans);
+    line-height:1.55; -webkit-font-smoothing:antialiased; }
+  .wrap { max-width:1000px; margin:0 auto; padding:clamp(20px,4vw,52px) clamp(16px,4vw,32px) 40px; }
+
+  code, .mono { font-family:var(--font-mono); }
+  .eyebrow { font-family:var(--font-mono); font-size:11.5px; letter-spacing:.16em;
+    text-transform:uppercase; color:var(--accent-ink); margin:0 0 10px; font-weight:600; }
+  h1 { font-size:clamp(26px,4.4vw,34px); line-height:1.12; margin:0 0 12px; letter-spacing:-.015em;
+    text-wrap:balance; font-weight:750; }
+  .lede { font-size:16px; color:var(--soft); max-width:66ch; margin:0; }
+  .lede b { color:var(--ink); font-weight:650; }
+
+  section { margin-top:30px; }
+  .band { background:var(--surface); border:1px solid var(--line); border-radius:14px;
+    padding:clamp(16px,2.4vw,22px); box-shadow:var(--shadow); }
+  h2 { font-size:19px; margin:0 0 4px; letter-spacing:-.01em; font-weight:700;
+    display:flex; align-items:center; gap:10px; flex-wrap:wrap; text-wrap:balance; }
+  .band-note { margin:0 0 16px; color:var(--soft); font-size:13.5px; }
+  .tag { font-family:var(--font-mono); font-size:10.5px; letter-spacing:.1em; font-weight:700;
+    color:var(--accent-ink); background:var(--accent-soft); border:1px solid var(--accent);
+    padding:3px 8px; border-radius:6px; text-transform:uppercase; }
+
+  /* SSOT files */
+  .files { display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:12px; }
+  .file { background:var(--surface-2); border:1px solid var(--line);
+    border-left:4px solid var(--cat,var(--accent)); border-radius:10px; padding:13px 14px; }
+  .file h3 { font-family:var(--font-mono); font-size:13.5px; margin:0 0 6px; font-weight:650;
+    display:flex; align-items:center; gap:7px; color:var(--ink); }
+  .dot { width:9px; height:9px; border-radius:50%; background:var(--cat,var(--accent)); flex:none; }
+  .file p { margin:0 0 9px; font-size:12.5px; color:var(--soft); line-height:1.45; }
+  .who { display:flex; flex-wrap:wrap; gap:5px; }
+  .who span { font-family:var(--font-mono); font-size:10.5px; color:var(--faint);
+    border:1px solid var(--line); border-radius:5px; padding:1px 6px; background:var(--bg); }
+  .c-test{--cat:var(--c-test);} .c-code{--cat:var(--c-code);}
+  .c-review{--cat:var(--c-review);} .c-doc{--cat:var(--c-doc);}
+
+  /* flow connector */
+  .flow { display:flex; flex-direction:column; align-items:center; gap:2px; padding:12px 0 4px; }
+  .flow .chev { color:var(--accent); font-size:16px; line-height:1; }
+  .flow .lbl { font-family:var(--font-mono); font-size:11px; color:var(--faint); letter-spacing:.04em; }
+
+  /* injection layers */
+  .layers { display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:12px; }
+  .layer { background:var(--surface-2); border:1px solid var(--line); border-radius:10px; padding:14px; position:relative; }
+  .layer.key { border-color:var(--accent); box-shadow:0 0 0 1px var(--accent) inset; }
+  .layer .lname { font-family:var(--font-mono); font-size:12.5px; font-weight:650; margin:0 0 2px; color:var(--ink); }
+  .layer .lscope { font-size:11px; color:var(--accent-ink); font-family:var(--font-mono); margin:0 0 8px; }
+  .layer p { margin:0; font-size:12.5px; color:var(--soft); line-height:1.45; }
+  .star { position:absolute; top:11px; right:12px; font-family:var(--font-mono); font-size:10px;
+    color:var(--accent-ink); background:var(--accent-soft); border:1px solid var(--accent);
+    padding:2px 6px; border-radius:5px; font-weight:700; }
+
+  /* pipeline */
+  .pipe-scroll { overflow-x:auto; padding-bottom:6px; }
+  .pipe { display:flex; align-items:stretch; gap:8px; min-width:min-content; }
+  .stage { background:var(--surface-2); border:1px solid var(--line); border-radius:10px;
+    padding:12px; min-width:158px; flex:1 0 158px; display:flex; flex-direction:column; gap:7px; }
+  .stage .num { font-family:var(--font-mono); font-size:11px; color:var(--accent-ink); font-weight:700; letter-spacing:.04em; }
+  .stage .agent { font-size:13px; font-weight:650; line-height:1.25; }
+  .stage .agent small { display:block; color:var(--faint); font-weight:500; font-size:11px; font-family:var(--font-mono); }
+  .chips { display:flex; flex-wrap:wrap; gap:4px; margin-top:auto; }
+  .chip { font-family:var(--font-mono); font-size:10px; padding:1px 6px 1px 5px; border-radius:5px;
+    border:1px solid var(--line); background:var(--bg); color:var(--soft); display:flex; align-items:center; gap:4px; }
+  .chip::before { content:""; width:7px; height:7px; border-radius:50%; background:var(--cat,var(--faint)); }
+  .chip.none { color:var(--faint); font-style:normal; }
+  .chip.none::before { display:none; }
+  .arrow { align-self:center; color:var(--accent); font-family:var(--font-mono); font-size:15px; flex:none; padding:0 1px; }
+
+  /* A/B */
+  .ab { display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:14px; }
+  .cmp { background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:16px; box-shadow:var(--shadow); }
+  .cmp.hero { border-color:var(--accent); }
+  .cmp h3 { font-size:14px; margin:0 0 2px; display:flex; align-items:center; gap:8px; }
+  .cmp h3 code { font-size:12px; color:var(--accent-ink); }
+  .cmp .stage-of { font-size:11.5px; color:var(--faint); margin:0 0 12px; font-family:var(--font-mono); }
+  .col { border-radius:8px; padding:10px 11px; font-size:12.5px; line-height:1.45; }
+  .col + .col { margin-top:8px; }
+  .col .clab { font-family:var(--font-mono); font-size:10px; font-weight:700; letter-spacing:.08em;
+    text-transform:uppercase; display:inline-block; padding:1px 7px; border-radius:5px; margin-bottom:6px; }
+  .col.miss { background:var(--miss-soft); border:1px dashed var(--miss); }
+  .col.miss .clab { color:var(--miss); border:1px solid var(--miss); }
+  .col.miss .txt { color:var(--soft); }
+  .col.inj { background:var(--good-soft); border:1px solid var(--good); }
+  .col.inj .clab { color:var(--good); border:1px solid var(--good); }
+  .col b { color:var(--ink); font-weight:650; }
+  .verdict { margin-top:11px; font-size:12px; color:var(--soft); display:flex; gap:7px; align-items:baseline; }
+  .verdict .k { font-family:var(--font-mono); font-size:10px; letter-spacing:.06em; text-transform:uppercase; color:var(--faint); flex:none; }
+
+  /* insight */
+  .insight { background:var(--accent-soft); border:1px solid var(--accent); border-left-width:4px;
+    border-radius:12px; padding:18px 20px; }
+  .insight h2 { font-size:16px; margin:0 0 8px; }
+  .insight p { margin:0 0 8px; font-size:14px; color:var(--ink); max-width:74ch; }
+  .insight p.caveat { font-size:12.5px; color:var(--soft); margin-bottom:0; }
+  .insight b { color:var(--accent-ink); }
+
+  footer { margin-top:34px; padding-top:16px; border-top:1px solid var(--line);
+    font-family:var(--font-mono); font-size:11px; color:var(--faint);
+    display:flex; flex-wrap:wrap; gap:6px 18px; }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .band, .cmp, header, .insight { animation:rise .5s cubic-bezier(.2,.7,.3,1) both; }
+    section:nth-child(2){animation-delay:.04s} section:nth-child(4){animation-delay:.08s}
+    @keyframes rise { from{opacity:0; transform:translateY(10px)} to{opacity:1; transform:none} }
+  }
+</style>
+
+<div class="wrap">
+  <header>
+    <p class="eyebrow">My Claude Code OS · 컨텍스트 아키텍처</p>
+    <h1>컨텍스트 체계 &amp; 주입 효과</h1>
+    <p class="lede">지침을 <b>한 곳(SSOT)</b>에 정의하고, <b>3중 경로</b>로 격리된 서브에이전트에 주입한다. 아래는 그 흐름의 도식과, 주입이 실제로 에이전트 동작을 바꾼다는 <b>A/B 증거</b>다.</p>
+  </header>
+
+  <!-- ── 도식 ── -->
+  <section class="band" aria-label="컨텍스트 체계 도식">
+    <h2><span class="tag">SSOT</span> 단일 출처 · <code>.claude/guidelines/</code></h2>
+    <p class="band-note">규칙의 정의·체크리스트·심각도는 오직 이 네 파일에만 산다. 기준을 바꿀 땐 여기 한 곳만 고치면 모든 소비처에 반영된다(드리프트 방지).</p>
+    <div class="files">
+      <div class="file c-test">
+        <h3><span class="dot"></span>testing.md</h3>
+        <p>테스트 규약 · 필수 케이스 체크리스트(정상/빈입력/경계/음수/형식오류/타입방어/tie-break)</p>
+        <div class="who"><span>test-writer ②a</span><span>review-tests ③</span></div>
+      </div>
+      <div class="file c-code">
+        <h3><span class="dot"></span>coding-style.md</h3>
+        <p>구현 컨벤션 · 순수 함수 우선 · 외부 의존성 금지 · YAGNI · 실패는 예외로</p>
+        <div class="who"><span>impl-writer ②b</span><span>test-writer ②a</span></div>
+      </div>
+      <div class="file c-review">
+        <h3><span class="dot"></span>review-criteria.md</h3>
+        <p>심각도 3단계(🔴/🟡/🟢) 정의 · 판정 규칙(🔴 하나라도 → 수정필요)</p>
+        <div class="who"><span>review-correctness ③</span><span>review-tests ③</span><span>code-reviewer</span></div>
+      </div>
+      <div class="file c-doc">
+        <h3><span class="dot"></span>doc-style.md</h3>
+        <p>문서 톤 · 요약 먼저 · 표 · 💡"왜" 팁 박스 · 코드-문서 정합성 확인</p>
+        <div class="who"><span>doc-writer ④</span></div>
+      </div>
+    </div>
+  </section>
+
+  <div class="flow" aria-hidden="true">
+    <span class="lbl">3중 주입 · 참조 포인터만 전달(정의는 SSOT에)</span>
+    <span class="chev">▼</span>
+  </div>
+
+  <section class="band" aria-label="3중 주입 경로">
+    <h2>주입 경로 3층</h2>
+    <p class="band-note">파일에는 <b>정의가 아니라 "이 지침을 따르라"는 포인터</b>가 들어간다. 에이전트가 그 포인터를 보고 SSOT 파일을 읽는다.</p>
+    <div class="layers">
+      <div class="layer">
+        <div class="lname">CLAUDE.md</div>
+        <div class="lscope">전역 · 메인 세션</div>
+        <p>매 세션 자동 로드(규칙 #3, 4개 매핑). 단, 격리된 서브에이전트에는 <b>자동 상속되지 않는다.</b></p>
+      </div>
+      <div class="layer key">
+        <span class="star">★ 핵심</span>
+        <div class="lname">에이전트 .md</div>
+        <div class="lscope">서브에이전트 시스템 프롬프트</div>
+        <p>포인터가 본문에 박혀 있어 에이전트가 뜰 때마다 자동 포함 — <b>격리 컨텍스트로 가는 진짜 경로.</b></p>
+      </div>
+      <div class="layer">
+        <div class="lname">SKILL.md</div>
+        <div class="lscope">오케스트레이터</div>
+        <p>스킬 호출 시 로드. 해당 단계에서 "이 지침 챙겨라"라고 상기시킨다.</p>
+      </div>
+    </div>
+  </section>
+
+  <div class="flow" aria-hidden="true">
+    <span class="lbl">파이프라인이 각 단계에서 담당 지침을 읽음</span>
+    <span class="chev">▼</span>
+  </div>
+
+  <section class="band" aria-label="파이프라인 소비 지점">
+    <h2>feature-dev 파이프라인 — 단계별 소비</h2>
+    <p class="band-note">각 단계 박스의 색점 = 그 에이전트가 읽는 지침(위 SSOT 카드 색과 대응).</p>
+    <div class="pipe-scroll">
+      <div class="pipe">
+        <div class="stage">
+          <span class="num">①</span>
+          <span class="agent">code-analyzer<small>파악 (읽기 전용)</small></span>
+          <div class="chips"><span class="chip none">관습 흡수</span></div>
+        </div>
+        <span class="arrow" aria-hidden="true">→</span>
+        <div class="stage">
+          <span class="num">②a</span>
+          <span class="agent">test-writer<small>red 테스트=스펙</small></span>
+          <div class="chips"><span class="chip c-test">testing</span><span class="chip c-code">coding</span></div>
+        </div>
+        <span class="arrow" aria-hidden="true">→</span>
+        <div class="stage">
+          <span class="num">②b</span>
+          <span class="agent">impl-writer<small>green 구현</small></span>
+          <div class="chips"><span class="chip c-code">coding</span></div>
+        </div>
+        <span class="arrow" aria-hidden="true">→</span>
+        <div class="stage">
+          <span class="num">③ ∥</span>
+          <span class="agent">review-correctness<br>&amp; review-tests<small>병렬 검증</small></span>
+          <div class="chips"><span class="chip c-review">review</span><span class="chip c-test">testing</span></div>
+        </div>
+        <span class="arrow" aria-hidden="true">→</span>
+        <div class="stage">
+          <span class="num">④</span>
+          <span class="agent">doc-writer<small>문서화</small></span>
+          <div class="chips"><span class="chip c-doc">doc</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── A/B ── -->
+  <section aria-label="주입 A/B 비교">
+    <h2 style="margin-bottom:6px;">주입 A/B — 같은 작업, 미주입 vs 주입</h2>
+    <p class="band-note" style="margin-bottom:16px;">같은 작업을 <code>general-purpose</code>(지침 배선 없음)와 배선된 전문 에이전트에 각각 시켜 6개 에이전트로 비교했다. 프롬프트에는 지침을 언급하지 않아 <b>.md 배선만의 효과</b>를 봤다.</p>
+    <div class="ab">
+      <div class="cmp hero">
+        <h3><span class="dot" style="background:var(--c-review)"></span>review-criteria <code>· 리뷰</code></h3>
+        <p class="stage-of">code-reviewer · 가장 뚜렷한 차이 ★</p>
+        <div class="col miss"><span class="clab">미주입</span><div class="txt">버그(ZeroDivision·타입)는 잘 찾음. 그러나 <b>판정도, 🔴🟡🟢 심각도도 없음</b> — 자유 산문.</div></div>
+        <div class="col inj"><span class="clab">주입</span><div class="txt"><b>"판정: 수정필요"</b> + 🔴/🟡/🟢 분류 + 항목별 실패 시나리오.</div></div>
+        <div class="verdict"><span class="k">함의</span><span>검증 루프가 <b>판정에 의존</b> → 미주입은 자동 루프를 못 돌린다.</span></div>
+      </div>
+
+      <div class="cmp">
+        <h3><span class="dot" style="background:var(--c-doc)"></span>doc-style <code>· 문서화</code></h3>
+        <p class="stage-of">doc-writer</p>
+        <div class="col miss"><span class="clab">미주입</span><div class="txt">설명+예시는 있으나 <b>표·💡"왜" 박스 없음.</b> 정합성 확인 없음.</div></div>
+        <div class="col inj"><span class="clab">주입</span><div class="txt">표 + 💡"왜" 팁 박스 + <b>코드-문서 정합성 확인.</b></div></div>
+        <div class="verdict"><span class="k">차이</span><span>집안 스타일이 주입에서만 재현됨.</span></div>
+      </div>
+
+      <div class="cmp">
+        <h3><span class="dot" style="background:var(--c-code)"></span>coding-style <code>· 구현</code></h3>
+        <p class="stage-of">impl-writer</p>
+        <div class="col miss"><span class="clab">미주입</span><div class="txt">순수 함수 분리·예시까진 양호(저장소에서 관습 흡수).</div></div>
+        <div class="col inj"><span class="clab">주입</span><div class="txt">+ <b>"YAGNI로 미룸"</b> 명시, 역할 인식("test-writer에게"), 지침 어휘.</div></div>
+        <div class="verdict"><span class="k">차이</span><span>작음 — 규율·역할 경계가 더 또렷.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── 통찰 ── -->
+  <aside class="insight">
+    <h2>핵심 — 주입은 "똑똑함"이 아니라 재현성을 준다</h2>
+    <p>주입이 바꾸는 것은 모델의 지능이 아니라 <b>매번 같은 형식·판정·역할</b>이다. 특히 검증 단계에서 미주입 에이전트는 판정 자체가 없어 자동 루프를 굴릴 수 없다 — 주입은 장식이 아니라 <b>파이프라인을 굴러가게 하는 부품(load-bearing)</b>이다.</p>
+    <p class="caveat">정직한 한계: <code>general-purpose</code>도 저장소를 읽어 지침을 스스로 발견할 수 있어 "내용 격리"는 불완전했다. 그럼에도 형식·판정 차이는 뚜렷했다(리뷰의 판정 유무가 그 증거).</p>
+  </aside>
+
+  <footer>
+    <span>repo · my-claude-code-os</span>
+    <span>branch · step2</span>
+    <span>A/B · 6 subagents (general-purpose ↔ specialized)</span>
+    <span>2026-07-09</span>
+  </footer>
+</div>
