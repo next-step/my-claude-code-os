@@ -1,6 +1,6 @@
 ---
 name: review-correctness
-description: 변경된 코드를 "정확성·안정성" 렌즈 하나로만 깊게 리뷰한다. 로직 오류·경계값·오프바이원·null/빈 값·예외 및 실패 경로를 찾아 통과/수정필요를 판정한다. feature-dev의 검증 루프에서 review-tests와 함께 병렬로 호출된다. 읽기 전용이며 코드를 직접 수정하지 않고 지적과 판정만 한다.
+description: 정확성·안정성 렌즈만으로 로직·경계·null·예외를 깊게 보고 통과/수정필요를 판정하는 리뷰어. feature-dev 검증 루프에서 review-tests와 병렬. 읽기 전용(지적만).
 tools: Read, Grep, Glob, Bash
 ---
 

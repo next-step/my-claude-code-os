@@ -1,6 +1,6 @@
 ---
 name: review-tests
-description: 변경된 코드를 "테스트" 렌즈 하나로만 깊게 리뷰한다. 테스트가 수용 기준을 실제로 검증하는지, 빠진 케이스는 없는지, .claude/guidelines/testing.md 커버리지를 지키는지, 전부 green인지를 보고 통과/수정필요를 판정한다. feature-dev의 검증 루프에서 review-correctness와 함께 병렬로 호출된다. 읽기 전용이며 코드를 직접 수정하지 않고 지적과 판정만 한다.
+description: 테스트 렌즈만으로 수용 기준 검증·빠진 케이스·green 여부를 보고 통과/수정필요를 판정하는 리뷰어. feature-dev 검증 루프에서 review-correctness와 병렬. 읽기 전용(지적만).
 tools: Read, Grep, Glob, Bash
 ---
 

@@ -1,6 +1,6 @@
 ---
 name: code-analyzer
-description: 코드베이스를 탐색해 특정 작업과 관련된 파일·패턴·컨벤션·진입점을 찾아 지도로 정리한다. 기능 개발이나 리뷰를 시작하기 전 "어디를 고쳐야 하나, 이 프로젝트는 어떤 규칙을 쓰나"를 파악할 때 가장 먼저 호출한다. feature-dev와 quick-review 두 스킬이 공유한다. 읽기 전용이며 코드를 수정하지 않는다.
+description: 코드베이스에서 작업 관련 파일·컨벤션·진입점을 찾아 지도로 정리하는 읽기 전용 분석가. feature-dev·quick-review가 개발/리뷰 시작 전 가장 먼저 공유 호출한다.
 tools: Read, Grep, Glob, Bash
 ---
 

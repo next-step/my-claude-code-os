@@ -1,6 +1,6 @@
 ---
 name: test-writer
-description: TDD의 "무엇을(스펙)"을 담당하는 테스트 작성 에이전트. 요구사항을 분석해 수용 기준을 도출하고, 그것을 검증하는 실패하는(red) 테스트를 작성한다. impl-writer가 받을 명세를 만드는 셈이다. code-analyzer의 지도를 받아 시작하며, 검증 루프에서 review-tests가 테스트 문제를 지적하면 그 보강도 이 에이전트가 한다. 구현 코드는 쓰지 않고, 테스트 파일만 만든다.
+description: TDD의 스펙 담당. 요구를 분석해 수용 기준을 도출하고 실패하는(red) 테스트를 쓴다. code-analyzer 지도로 시작하고 검증 루프의 테스트 지적도 보강한다. 구현은 하지 않고 테스트만 만든다.
 tools: Read, Grep, Glob, Write, Edit, Bash
 ---
 

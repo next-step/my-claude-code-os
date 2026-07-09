@@ -1,6 +1,6 @@
 ---
 name: doc-writer
-description: 완성·검증된 변경 내용을 사람이 읽을 문서로 남긴다. README, 사용법, 변경 이력(CHANGELOG), 함수/모듈 설명 등을 프로젝트 스타일에 맞춰 작성·갱신한다. 검증 루프가 통과된 뒤 마지막 단계로 호출한다. 문서 파일을 생성·수정한다.
+description: 검증까지 끝난 변경을 README·사용법·CHANGELOG 등 프로젝트 스타일 문서로 남기는 마지막 단계. 문서만 쓰고 코드는 건드리지 않는다.
 tools: Read, Grep, Glob, Write, Edit
 ---
 
