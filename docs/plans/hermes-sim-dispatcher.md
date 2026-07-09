@@ -1,6 +1,6 @@
 ---
 topic: hermes-sim-dispatcher
-status: 진행중
+status: 대기
 source: docs/interviews/2026-07-10-hermes-wiring.md (Q3·Q4·Q6·Q14·Q16·Q19·Q21·Q22)
 ---
 
@@ -57,3 +57,26 @@ Q3에서 '6.5시간 클로드 세션' 대신 '상시 poll + 이벤트당 짧은 
 - `watchlist.json`의 저장 경로 — `data/` 하위(박제 기록물)가 아니라 작업 파일이므로 어디에 둘지
   구현 시 정한다. 인터뷰에서 다루지 않았다.
 - 디스코드 채널 ID 두 개(`#일간`·`#주간`)는 `~/.hermes/channel_directory.json`에 있다.
+
+## 보류 — Q6(`--dangerously-skip-permissions`) 재검토 필요 (2026-07-10)
+
+`work-todo`가 이 항목을 구현하려 했으나 **구현을 시작하지 못하고 보류**했다. 구현 서브에이전트
+스폰이 auto-mode 분류기에 `[Create Unsafe Agents]`로 세 번 차단됐다 — 범위(Q6)가 모든 `claude -p`
+호출에 `--dangerously-skip-permissions`를 붙이도록 확정하고 있어, 그런 스크립트를 만드는 행위
+자체가 차단 대상이다. (오케스트레이터가 릴레이한 사용자 승인으로는 열리지 않는다. 릴레이 승인이
+벽을 열면 승인 체인이 무의미해지므로 옳은 동작이다.)
+
+재검토가 필요한 이유는 분류기 때문만이 아니다. Q6이 풀려던 문제는 "무인 세션이 권한 프롬프트에
+답할 수 없다"인데, 그 해법은 **권한 프롬프트를 없애는 것**이지 **권한 검사를 전부 끄는 것**이
+아니다. 특히 `morning-chain.sh`의 첫 단계(`/morning-briefing`)가 웹검색으로 외부 텍스트를 끌어오고,
+같은 체인의 뒷 단계가 같은 레포에서 파일을 쓰고 명령을 실행한다 — 플래그를 켜면 그 사이에 사람도
+권한 검사도 없다(프롬프트 주입 노출면).
+
+대안 (인터뷰에서 다시 정할 것):
+- **A**: 플래그 대신 `.claude/settings.json`의 `permissions.allow`에 루프가 실제로 쓰는 툴만
+  열거한다. 무인 세션은 프롬프트 없이 돌되 목록 밖의 행동은 여전히 막힌다.
+- **B**: `autoMode.allow` 규칙으로 분류기를 열고 Q6을 그대로 간다(위 노출면을 안고 감).
+- **C**: 스크립트를 사람이 직접 작성한다.
+
+이 항목과 [hermes-daily-weekly-chain.md](./hermes-daily-weekly-chain.md)가 같은 결정을 공유하므로
+둘 다 이 재검토에 걸린다.

@@ -49,7 +49,7 @@
 
 - [x] sim-engine 실행 모델 전환 — fill_engine watchlist 리로드·긴급 쿨다운 + SKILL 실행 모델 재작성 — [상세 계획](./plans/sim-engine-execution-model.md)
 - [x] 휴장일 게이트 — exchange_calendars 의존성 + 개장 여부 판정 스크립트 — [상세 계획](./plans/market-calendar-gate.md)
-- [~] 시뮬 디스패처 스크립트 — sim-chain.sh (flock·watchlist 조립·이벤트 직렬 디스패치) — [상세 계획](./plans/hermes-sim-dispatcher.md)
+- [ ] 시뮬 디스패처 스크립트 — sim-chain.sh (flock·watchlist 조립·이벤트 직렬 디스패치) — [상세 계획](./plans/hermes-sim-dispatcher.md)
 - [ ] 아침·주간 체인 스크립트 + 오케스트레이션 마감 — morning/weekly-chain.sh + cron 등록 문서 + OS.md 갱신 — [상세 계획](./plans/hermes-daily-weekly-chain.md)
 
 ---
