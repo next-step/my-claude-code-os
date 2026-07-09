@@ -1,0 +1,4 @@
+# 외부 파이썬 의존성 (저장소 첫 requirements). 설치: pip install -r requirements.txt
+# exchange_calendars — 오프라인 거래소 달력. scripts/market_calendar.py의 XKRX(한국거래소)
+# 휴장일 판정에 사용한다. 네트워크 없이 동작하는 로컬 달력이라 무인 루프의 게이트로 쓴다.
+exchange_calendars
