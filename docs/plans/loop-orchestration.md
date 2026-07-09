@@ -1,6 +1,6 @@
 ---
 topic: loop-orchestration
-status: 진행중
+status: 완료
 source: docs/interviews/2026-07-08-daily-trading-loop.md (Q2·Q6/A4 + F 트리거) + 2026-07-08-os-docs-overhaul.md (check_context 마감)
 ---
 
@@ -27,6 +27,14 @@ source: docs/interviews/2026-07-08-daily-trading-loop.md (Q2·Q6/A4 + F 트리�
 5. CLAUDE.md 컨텍스트 안내 문단의 파일 목록을 최종 집합과 재대조·마감(항목 2에서 미뤄둔 부분). **(완료 — 안내 문단은 파일 목록을 열거하지 않고 `.claude/context/`·check_context.py로 위임, 폐기 파일 잔여 언급 없음 확인 → 변경 불필요)**
 
 > 진행 메모(work-plan 2026-07-09): 단계 4·5(check_context·CLAUDE.md 마감)만 완료. 헤르메스 에이전트 배선(1~3)은 사용자가 직접 진행하기로 해 미완. 그 배선이 끝나면 이 항목을 완료 표기한다.
+
+> 마감(work-todo 2026-07-10): 미완이던 단계 1~3(헤르메스 실체 확정·일일 체인·주간 체인)은
+> `2026-07-10-hermes-wiring.md` 인터뷰로 실체를 확정하고 후속 항목들이 대체해 구현을 마쳤다 —
+> `hermes-sim-dispatcher`(장중 시뮬 디스패처 `sim-chain.sh`), `market-calendar-gate`(휴장일 게이트),
+> `hermes-daily-weekly-chain`(`morning-chain.sh`·`weekly-chain.sh`·`scripts/hermes/README.md`의 cron
+> 등록·심링크 안내). 헤르메스는 순수 스케줄러(`--no-agent`)로 두고 셸이 `claude -p`를 직접 부르는
+> 형태로 배선됐다. 이로써 단계 1~3이 닫히고 이 항목을 `완료`로 표기한다(설계 본문은 `docs/OS.md`
+> "오케스트레이션 (헤르메스 체이닝)"이 진실원천).
 
 ## 건드릴 파일
 - 헤르메스 에이전트 구성(위치·형태 구현 시 확정).
