@@ -13,7 +13,14 @@
       "Task(committee-risk)",
       "Task(committee-technical)",
       "Task(committee-flow)",
-      "Task(committee-skeptic)"
+      "Task(committee-skeptic)",
+      "Task(committee-fundamental)",
+      "Task(committee-macro)",
+      "Task(committee-sentiment)",
+      "Task(kr-macro-researcher)",
+      "Task(company-news-researcher)",
+      "WebSearch",
+      "WebFetch"
     ]
   },
   "hooks": {
