@@ -27,7 +27,7 @@
 
 - [x] 투자 위원회 서브에이전트 전환 (동적 수렴 루프) — 7전문가 에이전트 신설 + SKILL 오케스트레이션 재작성 + personas 인덱스 축소 — [상세 계획](./plans/committee-subagent-refactor.md)
 - [x] 위원회 에이전트 출력 계약 전환 — AGREE/DISSENT 토큰 폐지, 잠정 입장 필드 + HOLD 도입(7 에이전트 + personas 공통 규약) — [상세 계획](./plans/committee-agent-output-contract.md)
-- [~] 위원회 오케스트레이션 전환 — 라운드1 발산 / 라운드2+ 쟁점 정리·전원 재소집·입장 필드로 수렴 판정, 회의록에 입장 변화 궤적 — [상세 계획](./plans/committee-orchestration-rework.md)
+- [x] 위원회 오케스트레이션 전환 — 라운드1 발산 / 라운드2+ 쟁점 정리·전원 재소집·입장 필드로 수렴 판정, 회의록에 입장 변화 궤적 — [상세 계획](./plans/committee-orchestration-rework.md)
 
 ### 자산군 다변화 (ETF 편입 — asset-class-diversification 구현)
 
