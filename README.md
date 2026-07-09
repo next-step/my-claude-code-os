@@ -107,7 +107,7 @@ npm run collect      # 수집 스텁(현재 MockAdapter 시연, 실 수집은 �
 > **훅을 새로 만들 때 지킬 것**
 > 1. `jq` 금지 — 없다. payload 는 `sed` 로 뽑는다(`"file_path"`·`"skill"` 은 payload 에 각각 딱 한 번만 등장해 안전하다).
 > 2. **조용히 실패하지 말 것** — `decision-log` 와 `skill-usage-log` 는 몇 달간 죽은 줄 아무도 몰랐다. 실패하면 `.err` 에 흔적을 남긴다.
-> 3. `settings.json` 은 **세션 시작 때 한 번** 읽힌다. 훅을 새로 *등록*하면 다음 세션부터다. 반면 스크립트 *내용*은 실행할 때마다 새로 읽히므로 즉시 반영된다.
+> 3. 스크립트 *내용*은 실행할 때마다 새로 읽히므로 **즉시** 반영된다. 반면 `settings.json` 에 훅을 새로 *등록*하면 언제부터 도는지 **이벤트마다 다르다** — 실측 결과 `SubagentStart` 는 같은 세션에서 바로 돌았고, `PreToolUse` 는 다음 세션까지 안 돌았다. **돈다고 가정하지 말고 표식을 넣어 확인할 것.** 자세한 근거는 [`docs/context.md`](docs/context.md).
 > 4. payload 모양을 추측하지 말 것. 이미 등록된 훅에 임시로 `cat > dump.json` 을 넣고 한 번 실행해 **실측**한 뒤 되돌리면 된다.
 
 - **훅 (`.claude/hooks/`, `.claude/settings.json`에 연결)**: 협업 흔적을 자동 기록하거나 컨텍스트를 자동 주입하는 백그라운드 장치.
