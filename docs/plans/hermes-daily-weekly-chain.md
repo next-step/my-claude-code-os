@@ -21,6 +21,10 @@ source: docs/interviews/2026-07-10-hermes-wiring.md (Q1·Q2·Q5·Q11·Q13·Q15·
   - `scripts/hermes/morning-chain.sh` — 휴장일 게이트 → flock → 브리핑 → 위원회 → 시뮬 직접 기동 → 요약 푸시.
   - `scripts/hermes/weekly-chain.sh` — flock → 주간 회고 → 리포트를 `#주간`으로 푸시.
   - 단계별 독립 `claude -p` 세션(Q2), 각 단계 **1회 재시도 후 중단**(Q13).
+  - **무인 세션의 권한은 화이트리스트로 연다**(Q6 재결정 — [hermes-sim-dispatcher.md](./hermes-sim-dispatcher.md)
+    "결정 기록"이 근거를 소유한다). `claude -p`에 `--dangerously-skip-permissions`를 **붙이지 않고**,
+    선행 항목이 만든 `.claude/settings.json`의 `permissions.allow`에 아침·주간 체인이 추가로 쓰는
+    툴(브리핑의 WebSearch/WebFetch, 회고 스크립트 실행 등)만 덧붙인다.
   - 앞 단계가 끝나면 다음을 잇는 완료 이벤트 체이닝(Q2·Q20) — 시각 기반이 아니다.
   - 헤르메스 cron 등록 명령을 문서로 남긴다(등록은 사용자가 헤르메스 에이전트에게 부탁 — Q7).
   - `loop-orchestration.md` 마감 + `docs/OS.md` 갱신(오케스트레이션 실체 확정, 열린 질문에서 제거).
@@ -34,14 +38,14 @@ source: docs/interviews/2026-07-10-hermes-wiring.md (Q1·Q2·Q5·Q11·Q13·Q15·
    - `scripts/market_calendar.py` 호출. 종료 코드 1(휴장) → 즉시 종료. 2(판정 불가) → **진행하고
      이상을 푸시**(Q18).
    - flock 획득(Q21).
-   - `claude -p "/morning-briefing" --dangerously-skip-permissions` — 실패 시 1회 재시도, 또 실패면
-     체인 중단 + 푸시(Q13).
+   - `claude -p "/morning-briefing"` — 실패 시 1회 재시도, 또 실패면 체인 중단 + 푸시(Q13).
    - `claude -p "/investment-committee" ...` — 동일한 재시도·중단 규칙.
    - 위원회가 끝나면 `sim-chain.sh`를 직접 호출한다(Q20 — '끝나면 다음'). 09:00 cron은 백스톱이므로
      여기서 이미 떠 있으면 그쪽이 락에 걸려 빠진다.
    - 오늘 계획 요약을 stdout으로 내보내 `#일간`에 전달(Q15·Q17).
-2. `weekly-chain.sh` 작성: flock → `claude -p "/weekly-retrospect" --dangerously-skip-permissions`
-   → 리포트 요약을 stdout으로(`#주간`).
+2. `weekly-chain.sh` 작성: flock → `claude -p "/weekly-retrospect"` → 리포트 요약을 stdout으로(`#주간`).
+2b. `.claude/settings.json`의 `permissions.allow`(선행 항목이 신설)에 이 두 체인이 추가로 쓰는
+   툴만 덧붙인다. 와일드카드 Bash나 광범위 허용은 넣지 않는다.
 3. cron 등록 명령 3종을 문서화한다(`scripts/hermes/README.md` 또는 loop-orchestration.md):
    - `0 8 * * 1-5` → `morning-chain.sh` (`--no-agent`, `--deliver discord:<일간>`)
    - `0 9 * * 1-5` → `sim-chain.sh` (백스톱)
@@ -54,6 +58,7 @@ source: docs/interviews/2026-07-10-hermes-wiring.md (Q1·Q2·Q5·Q11·Q13·Q15·
 
 ## 건드릴 파일
 - `scripts/hermes/morning-chain.sh` · `weekly-chain.sh` — 신설.
+- `.claude/settings.json` — `permissions.allow`에 체인이 쓰는 툴 추가(선행 항목이 신설한 목록).
 - `scripts/hermes/README.md` — 신설(cron 등록 명령·심링크 안내).
 - `docs/plans/loop-orchestration.md` — 마감.
 - `docs/TODO.md` · `docs/OS.md` — 항목 마감·설계 문서 갱신.
