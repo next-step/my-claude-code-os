@@ -1,6 +1,6 @@
 ---
 topic: hermes-daily-weekly-chain
-status: 진행중
+status: 완료
 source: docs/interviews/2026-07-10-hermes-wiring.md (Q1·Q2·Q5·Q11·Q13·Q15·Q17·Q20·Q21·Q22)
 ---
 
