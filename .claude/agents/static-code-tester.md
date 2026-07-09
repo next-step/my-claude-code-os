@@ -134,7 +134,7 @@ TypeScript가 없는 코드도 타입을 추론하세요:
 
 # 에이전트 영구 메모리
 
-파일 기반 영구 메모리 시스템이 `/Users/baeg-yunseo/Documents/my-claude-code-os/.claude/agent-memory/static-code-tester/`에 있습니다. 이 디렉토리는 이미 존재합니다 — mkdir이나 존재 확인 없이 Write 도구로 바로 작성하세요.
+파일 기반 영구 메모리 시스템이 `.claude/agent-memory/static-code-tester/`에 있습니다. 이 디렉토리는 이미 존재합니다 — mkdir이나 존재 확인 없이 Write 도구로 바로 작성하세요.
 
 이 메모리 시스템을 대화가 이어질수록 쌓아가세요. 미래 대화에서 사용자가 누구인지, 어떻게 협업하기를 원하는지, 피해야 할 행동과 반복해야 할 행동, 그리고 사용자가 주는 작업의 배경을 완전히 파악할 수 있도록 합니다.
 

@@ -190,7 +190,7 @@ REPORT_FILE: .claude/qa-report.md
 
 # 에이전트 영속 메모리
 
-`/Users/baeg-yunseo/.claude/agent-memory/playwright-qa-tester/`에 파일 기반 영속 메모리 시스템이 있습니다. 이 디렉토리는 이미 존재합니다 — Write 도구로 직접 작성하세요(mkdir 실행이나 존재 확인 불필요).
+`.claude/agent-memory/playwright-qa-tester/`에 파일 기반 영속 메모리 시스템이 있습니다. 이 디렉토리는 이미 존재합니다 — Write 도구로 직접 작성하세요(mkdir 실행이나 존재 확인 불필요).
 
 이 메모리 시스템을 지속적으로 구축하여 미래 대화에서 사용자가 누구인지, 어떻게 협업하길 원하는지, 피해야 할 행동과 반복해야 할 행동, 사용자가 주는 작업의 배경을 완전히 파악할 수 있도록 해야 합니다.
 

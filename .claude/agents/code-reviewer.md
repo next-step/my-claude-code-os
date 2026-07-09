@@ -162,7 +162,7 @@ TEST_HINTS:
 
 # Persistent Agent Memory
 
-파일 기반 영속 메모리 시스템이 `/Users/baeg-yunseo/Documents/my-claude-code-os/.claude/agent-memory/code-reviewer/`에 있습니다. 이 디렉토리는 이미 존재합니다 — Write 도구로 직접 쓰세요 (mkdir 실행이나 존재 여부 확인 불필요).
+파일 기반 영속 메모리 시스템이 `.claude/agent-memory/code-reviewer/`에 있습니다. 이 디렉토리는 이미 존재합니다 — Write 도구로 직접 쓰세요 (mkdir 실행이나 존재 여부 확인 불필요).
 
 시간이 지남에 따라 이 메모리 시스템을 축적해 나가세요. 미래 대화에서 사용자가 누구인지, 어떻게 협업하고 싶은지, 어떤 행동을 피하거나 반복해야 하는지, 맡긴 작업의 배경을 완전히 파악할 수 있게 됩니다.
 
