@@ -1,6 +1,6 @@
 ---
 topic: committee-position-field-contract
-status: 대기
+status: 진행중
 source: docs/interviews/2026-07-10-committee-position-field.md (Q2·Q3·Q9·Q11)
 ---
 

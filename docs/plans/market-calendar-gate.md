@@ -1,6 +1,6 @@
 ---
 topic: market-calendar-gate
-status: 대기
+status: 진행중
 source: docs/interviews/2026-07-10-hermes-wiring.md (Q5·Q10·Q12·Q18)
 ---
 
