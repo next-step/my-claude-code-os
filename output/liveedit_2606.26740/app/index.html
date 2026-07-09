@@ -1,0 +1,1420 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LiveEdit — 클릭 실행형 재현 데모 (arXiv:2606.26740)</title>
+<style>
+/* ===================== LiveEdit part3 scaffold — namespace --le-/.le- ===================== */
+:root{
+  --le-bg:#0b0e14; --le-panel:#121722; --le-panel2:#0e131c; --le-edge:#232c3b;
+  --le-ink:#e7edf6; --le-muted:#93a1b5; --le-dim:#5f6d82;
+  --le-accent:#5ad1ff; --le-accent2:#7c8cff; --le-ok:#43d17a; --le-warn:#ff6a8b;
+  --le-mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  --le-sans:system-ui,-apple-system,"Segoe UI",Roboto,"Malgun Gothic",sans-serif;
+}
+@media (prefers-color-scheme:light){
+  :root{--le-bg:#eef1f6;--le-panel:#fff;--le-panel2:#f4f6fa;--le-edge:#d7dde7;
+    --le-ink:#141a24;--le-muted:#516074;--le-dim:#8593a6;--le-accent:#0a86c9;--le-accent2:#4b57d6;}
+}
+:root[data-theme="light"]{--le-bg:#eef1f6;--le-panel:#fff;--le-panel2:#f4f6fa;--le-edge:#d7dde7;
+  --le-ink:#141a24;--le-muted:#516074;--le-dim:#8593a6;--le-accent:#0a86c9;--le-accent2:#4b57d6;}
+:root[data-theme="dark"]{--le-bg:#0b0e14;--le-panel:#121722;--le-panel2:#0e131c;--le-edge:#232c3b;
+  --le-ink:#e7edf6;--le-muted:#93a1b5;--le-dim:#5f6d82;--le-accent:#5ad1ff;--le-accent2:#7c8cff;}
+
+/* the scaffold owns the page frame */
+body{margin:0;background:var(--le-bg);color:var(--le-ink);font-family:var(--le-sans);
+  line-height:1.55;-webkit-font-smoothing:antialiased;}
+.le-wrap *{box-sizing:border-box;}
+.le-wrap{max-width:1080px;margin:0 auto;padding:22px 18px 70px;}
+.le-wrap a{color:var(--le-accent);}
+
+.le-head{margin:2px 0 16px;}
+.le-titlebar{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;}
+.le-h1{font-size:26px;margin:0;letter-spacing:-.4px;}
+.le-tag{font:600 11px var(--le-mono);color:var(--le-muted);border:1px solid var(--le-edge);
+  border-radius:20px;padding:3px 9px;}
+.le-sub{color:var(--le-muted);font-size:13.5px;margin:6px 0 0;}
+
+/* honesty banner */
+.le-banner{background:linear-gradient(180deg,rgba(124,140,255,.14),rgba(124,140,255,.05));
+  border:1px solid var(--le-edge);border-radius:12px;padding:13px 15px;margin:0 0 22px;}
+.le-banner-head{display:flex;align-items:center;gap:9px;font-size:13.5px;}
+.le-dot{width:9px;height:9px;border-radius:50%;background:var(--le-warn);flex:none;
+  box-shadow:0 0 0 4px rgba(255,106,139,.15);}
+.le-banner-x{margin-left:auto;font:600 11.5px var(--le-sans);color:var(--le-muted);
+  background:var(--le-panel2);border:1px solid var(--le-edge);border-radius:8px;padding:4px 10px;cursor:pointer;}
+.le-banner-x:hover{color:var(--le-ink);}
+.le-banner-body{margin-top:10px;}
+.le-banner-p{font-size:12.8px;color:var(--le-muted);margin:0 0 10px;}
+.le-banner-p b{color:var(--le-ink);}
+.le-principles{margin:0 0 10px;padding-left:18px;font-size:12.3px;color:var(--le-muted);
+  display:grid;gap:3px;}
+@media(min-width:680px){.le-principles{grid-template-columns:1fr 1fr;}}
+.le-principles b{color:var(--le-ink);}
+.le-links{display:flex;gap:8px;flex-wrap:wrap;}
+.le-links a{font:600 12px var(--le-sans);text-decoration:none;border:1px solid var(--le-edge);
+  background:var(--le-panel2);padding:5px 11px;border-radius:20px;}
+.le-banner.le-collapsed .le-banner-body{display:none;}
+
+/* ===== master run bar (top "실행" control that drives the whole pipeline) ===== */
+.le-runbar{display:flex;flex-wrap:wrap;align-items:center;gap:14px;margin:0 0 22px;
+  background:linear-gradient(180deg,rgba(90,209,255,.12),rgba(124,140,255,.05));
+  border:1px solid var(--le-edge);border-radius:14px;padding:16px 18px;}
+.le-master-btn{appearance:none;cursor:pointer;border:0;border-radius:11px;
+  background:linear-gradient(90deg,var(--le-accent),var(--le-accent2));color:#04121f;
+  font:800 15px var(--le-sans);padding:13px 22px;letter-spacing:.2px;transition:filter .15s,transform .05s;}
+.le-master-btn:hover{filter:brightness(1.08);}
+.le-master-btn:active{transform:translateY(1px);}
+.le-master-btn:disabled{opacity:.6;cursor:progress;}
+.le-master-status{font-size:12.5px;color:var(--le-muted);font-weight:600;flex:1;min-width:220px;}
+
+/* assembly slots */
+.le-slots{display:block;}
+.le-slot{margin:0 0 22px;}
+.le-slot:empty{display:none;}
+.le-slot-ph{border:1px dashed var(--le-edge);border-radius:14px;padding:22px;text-align:center;
+  color:var(--le-dim);font:600 12.5px var(--le-sans);background:var(--le-panel2);}
+.le-slot.le-filled>.le-slot-ph{display:none;}
+
+/* shared card look (reusable by mounted components) */
+.le-card{background:var(--le-panel);border:1px solid var(--le-edge);border-radius:16px;
+  padding:20px;margin:0 0 22px;}
+.le-h2{font-size:18px;margin:0 0 12px;letter-spacing:-.2px;display:flex;align-items:center;gap:9px;}
+.le-n{font:700 12px var(--le-mono);color:var(--le-bg);background:var(--le-accent);
+  border-radius:6px;padding:2px 8px;}
+.le-sub2{color:var(--le-muted);font-size:13px;margin:0 0 14px;}
+.le-kbd{font:600 11px var(--le-mono);background:var(--le-panel2);border:1px solid var(--le-edge);
+  border-radius:5px;padding:1px 6px;color:var(--le-muted);}
+
+/* slot section title */
+.le-slot-title{font:700 13px var(--le-sans);color:var(--le-muted);letter-spacing:.3px;
+  margin:0 0 9px;display:flex;align-items:center;gap:8px;}
+.le-slot-title .le-num{font:700 11px var(--le-mono);color:var(--le-bg);background:var(--le-accent2);
+  border-radius:6px;padding:2px 8px;}
+
+/* mapping table */
+.le-tablewrap{overflow-x:auto;}
+.le-table{width:100%;border-collapse:collapse;font-size:13px;min-width:520px;}
+.le-table th,.le-table td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--le-edge);
+  vertical-align:top;}
+.le-table th{color:var(--le-muted);font-size:11.5px;text-transform:uppercase;letter-spacing:.4px;font-weight:600;}
+.le-table td:nth-child(2){font:600 12.5px var(--le-mono);color:var(--le-ink);white-space:nowrap;}
+.le-table td:nth-child(3){color:var(--le-dim);font-size:12px;white-space:nowrap;}
+.le-note{font-size:11.6px;color:var(--le-dim);margin:12px 0 0;line-height:1.6;}
+
+.le-foot{color:var(--le-dim);font-size:12px;text-align:center;margin-top:26px;}
+
+/* ============================================================= */
+/* part0 — LEDIST 3-Stage Distillation Pipeline (namespace ledist-) */
+/* ============================================================= */
+#ledist-root{
+  --ledist-bg:#0e1116; --ledist-panel:#161b23; --ledist-panel2:#1d242e;
+  --ledist-line:#2a3340; --ledist-txt:#e7edf3; --ledist-mut:#8fa0b3;
+  --ledist-accent:#3ea6ff; --ledist-accent2:#7c5cff; --ledist-edit:#ff7a59;
+  --ledist-ok:#39d98a; --ledist-dim:#3a4453; --ledist-cache:#f5c451;
+  color:var(--ledist-txt);
+  font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans KR",sans-serif;
+  background:var(--ledist-bg);
+  border:1px solid var(--ledist-line); border-radius:14px;
+  padding:20px 20px 22px; margin:0; max-width:none;
+  box-sizing:border-box; line-height:1.5;
+}
+#ledist-root *{box-sizing:border-box}
+#ledist-root .ledist-head{display:flex;flex-wrap:wrap;align-items:baseline;gap:10px 14px}
+#ledist-root .ledist-title{font-size:19px;font-weight:700;letter-spacing:.2px}
+#ledist-root .ledist-sub{font-size:12.5px;color:var(--ledist-mut)}
+#ledist-root .ledist-total{margin-left:auto;font-size:11.5px;color:var(--ledist-mut);
+  border:1px solid var(--ledist-line);border-radius:20px;padding:4px 11px;white-space:nowrap}
+#ledist-root .ledist-total b{color:var(--ledist-accent)}
+#ledist-root .ledist-honesty{margin-top:8px;font-size:11px;color:var(--ledist-mut);
+  background:var(--ledist-panel);border-left:3px solid var(--ledist-cache);
+  padding:6px 10px;border-radius:6px}
+
+#ledist-root .ledist-controls{display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin:16px 0 14px}
+#ledist-root button.ledist-btn{
+  font:inherit;font-size:13px;font-weight:600;cursor:pointer;color:#04121f;
+  background:var(--ledist-accent);border:0;border-radius:8px;padding:9px 16px;transition:.15s}
+#ledist-root button.ledist-btn:hover{filter:brightness(1.08)}
+#ledist-root button.ledist-btn.ledist-ghost{background:transparent;color:var(--ledist-txt);
+  border:1px solid var(--ledist-line)}
+#ledist-root button.ledist-btn:disabled{opacity:.45;cursor:default;filter:none}
+#ledist-root .ledist-speed{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--ledist-mut)}
+#ledist-root .ledist-speed input{accent-color:var(--ledist-accent)}
+#ledist-root .ledist-phase{margin-left:auto;font-size:12px;font-weight:600;color:var(--ledist-mut)}
+#ledist-root .ledist-phase b{color:var(--ledist-txt)}
+
+#ledist-root .ledist-stages{display:grid;grid-template-columns:1fr auto 1fr auto 1fr;gap:8px;align-items:stretch}
+#ledist-root .ledist-stage{background:var(--ledist-panel);border:1px solid var(--ledist-line);
+  border-radius:11px;padding:12px 13px;transition:.25s;position:relative;overflow:hidden}
+#ledist-root .ledist-stage.ledist-on{border-color:var(--ledist-accent);
+  box-shadow:0 0 0 1px var(--ledist-accent),0 6px 24px -12px var(--ledist-accent)}
+#ledist-root .ledist-stage.ledist-done{border-color:var(--ledist-ok)}
+#ledist-root .ledist-stage::after{content:"";position:absolute;left:0;bottom:0;height:3px;width:var(--p,0%);
+  background:linear-gradient(90deg,var(--ledist-accent),var(--ledist-accent2));transition:width .3s}
+#ledist-root .ledist-stage.ledist-done::after{background:var(--ledist-ok)}
+#ledist-root .ledist-stg-no{font-size:10.5px;font-weight:700;letter-spacing:1px;color:var(--ledist-accent)}
+#ledist-root .ledist-stage.ledist-done .ledist-stg-no{color:var(--ledist-ok)}
+#ledist-root .ledist-stg-name{font-size:14px;font-weight:700;margin:2px 0 6px}
+#ledist-root .ledist-stg-desc{font-size:11.5px;color:var(--ledist-mut);min-height:32px}
+#ledist-root .ledist-chips{display:flex;flex-wrap:wrap;gap:4px;margin-top:8px}
+#ledist-root .ledist-chip{font-size:10px;color:var(--ledist-mut);background:var(--ledist-panel2);
+  border:1px solid var(--ledist-line);border-radius:5px;padding:2px 6px}
+#ledist-root .ledist-chip.k{color:var(--ledist-accent);border-color:#274a63}
+#ledist-root .ledist-arrow{display:flex;align-items:center;justify-content:center;
+  color:var(--ledist-dim);font-size:20px;font-weight:700}
+#ledist-root .ledist-arrow.ledist-flow{color:var(--ledist-accent2)}
+
+#ledist-root .ledist-viz{display:grid;grid-template-columns:minmax(220px,1fr) 1.15fr;gap:14px;margin-top:16px}
+#ledist-root .ledist-card{background:var(--ledist-panel);border:1px solid var(--ledist-line);
+  border-radius:11px;padding:12px 13px}
+#ledist-root .ledist-card h4{margin:0 0 4px;font-size:12.5px;font-weight:700}
+#ledist-root .ledist-card .ledist-note{font-size:10.5px;color:var(--ledist-mut);margin-bottom:9px}
+#ledist-root canvas.ledist-attn{width:100%;height:auto;display:block;
+  background:var(--ledist-bg);border-radius:8px;border:1px solid var(--ledist-line)}
+#ledist-root .ledist-legend{display:flex;flex-wrap:wrap;gap:10px;margin-top:8px;font-size:10.5px;color:var(--ledist-mut)}
+#ledist-root .ledist-legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:4px;vertical-align:-1px}
+
+#ledist-root .ledist-track{display:flex;gap:7px;margin:4px 0 2px}
+#ledist-root .ledist-step{flex:1;text-align:center;background:var(--ledist-panel2);
+  border:1px solid var(--ledist-line);border-radius:7px;padding:9px 4px;transition:.2s;opacity:.5}
+#ledist-root .ledist-step.ledist-hot{opacity:1;border-color:var(--ledist-accent2);
+  box-shadow:0 0 0 1px var(--ledist-accent2)}
+#ledist-root .ledist-step.ledist-past{opacity:1;border-color:var(--ledist-ok)}
+#ledist-root .ledist-step .t{font-size:14px;font-weight:700}
+#ledist-root .ledist-step .n{font-size:9.5px;color:var(--ledist-mut)}
+#ledist-root .ledist-dmd{display:flex;gap:8px;margin-top:10px;font-size:10.5px}
+#ledist-root .ledist-dmd .box{flex:1;border:1px dashed var(--ledist-line);border-radius:7px;padding:7px;text-align:center;color:var(--ledist-mut)}
+#ledist-root .ledist-dmd .box.real{border-color:#3a5a44}
+#ledist-root .ledist-dmd .box.fake{border-color:#5a3a44}
+#ledist-root .ledist-dmd .box b{display:block;color:var(--ledist-txt);font-size:11px}
+
+#ledist-root .ledist-flowwrap{margin-top:14px;background:var(--ledist-panel);
+  border:1px solid var(--ledist-line);border-radius:11px;padding:12px 13px}
+#ledist-root .ledist-flowwrap h4{margin:0 0 3px;font-size:12.5px;font-weight:700}
+#ledist-root .ledist-flowwrap .ledist-note{font-size:10.5px;color:var(--ledist-mut);margin-bottom:10px}
+#ledist-root .ledist-chunks{display:flex;gap:9px;overflow-x:auto;padding-bottom:4px}
+#ledist-root .ledist-chunk{min-width:96px;flex:0 0 auto;background:var(--ledist-panel2);
+  border:1px solid var(--ledist-line);border-radius:9px;padding:9px 8px;position:relative;transition:.2s;opacity:.55}
+#ledist-root .ledist-chunk.ledist-active{opacity:1;border-color:var(--ledist-accent);
+  box-shadow:0 0 0 1px var(--ledist-accent)}
+#ledist-root .ledist-chunk.ledist-emitted{opacity:1;border-color:var(--ledist-ok)}
+#ledist-root .ledist-chunk .cl{font-size:10px;color:var(--ledist-mut)}
+#ledist-root .ledist-chunk .cf{display:flex;gap:3px;margin:6px 0}
+#ledist-root .ledist-chunk .cf span{flex:1;height:16px;border-radius:3px;background:var(--ledist-dim);transition:.2s}
+#ledist-root .ledist-chunk.ledist-active .cf span{background:var(--ledist-accent2)}
+#ledist-root .ledist-chunk.ledist-emitted .cf span{background:var(--ledist-ok)}
+#ledist-root .ledist-chunk .cs{font-size:9px;color:var(--ledist-mut)}
+#ledist-root .ledist-kv{font-size:9.5px;color:var(--ledist-cache);margin-top:4px;min-height:12px}
+
+#ledist-root .ledist-meters{display:flex;flex-wrap:wrap;gap:10px;margin-top:12px}
+#ledist-root .ledist-meter{flex:1;min-width:120px;background:var(--ledist-panel);
+  border:1px solid var(--ledist-line);border-radius:10px;padding:10px 12px}
+#ledist-root .ledist-meter .v{font-size:22px;font-weight:800;letter-spacing:.3px}
+#ledist-root .ledist-meter .v small{font-size:12px;font-weight:600;color:var(--ledist-mut)}
+#ledist-root .ledist-meter .l{font-size:10.5px;color:var(--ledist-mut);margin-top:1px}
+#ledist-root .ledist-meter .src{font-size:9px;color:var(--ledist-accent);margin-top:3px}
+
+#ledist-root .ledist-console{margin-top:14px;background:#0a0d12;border:1px solid var(--ledist-line);
+  border-radius:9px;padding:10px 12px;font-family:ui-monospace,"Cascadia Code",Consolas,monospace;
+  font-size:11px;line-height:1.6;height:132px;overflow-y:auto;color:#b9c6d3}
+#ledist-root .ledist-console .ln{white-space:pre-wrap}
+#ledist-root .ledist-console .c-accent{color:var(--ledist-accent)}
+#ledist-root .ledist-console .c-v{color:var(--ledist-accent2)}
+#ledist-root .ledist-console .c-ok{color:var(--ledist-ok)}
+#ledist-root .ledist-console .c-cache{color:var(--ledist-cache)}
+#ledist-root .ledist-console .c-mut{color:var(--ledist-mut)}
+
+@media (max-width:760px){
+  #ledist-root .ledist-stages{grid-template-columns:1fr}
+  #ledist-root .ledist-arrow{transform:rotate(90deg);height:16px}
+  #ledist-root .ledist-viz{grid-template-columns:1fr}
+}
+
+/* ===== part1 — LiveEdit 성능지표/벤치마크 패널 (namespace: lebench-) ===== */
+#lebench-root{
+  --lb-bg:#ffffff; --lb-panel:#f7f8fa; --lb-border:#e3e6ec; --lb-ink:#1b1f27;
+  --lb-mut:#5c6470; --lb-accent:#4f7cff; --lb-accent2:#12b886; --lb-warn:#e8590c;
+  --lb-track:#e7eaf0; --lb-shadow:0 1px 3px rgba(20,30,60,.08);
+  color:var(--lb-ink); background:var(--lb-bg);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans KR",sans-serif;
+  line-height:1.5; padding:20px; border-radius:14px; border:1px solid var(--lb-border);
+  max-width:none; margin:0; box-sizing:border-box;
+}
+@media (prefers-color-scheme:dark){
+  #lebench-root{
+    --lb-bg:#12151b; --lb-panel:#1a1e27; --lb-border:#2a2f3a; --lb-ink:#e8ebf1;
+    --lb-mut:#9aa3b2; --lb-track:#242a35; --lb-shadow:0 1px 3px rgba(0,0,0,.4);
+  }
+}
+:root[data-theme="dark"] #lebench-root{
+  --lb-bg:#12151b; --lb-panel:#1a1e27; --lb-border:#2a2f3a; --lb-ink:#e8ebf1;
+  --lb-mut:#9aa3b2; --lb-track:#242a35; --lb-shadow:0 1px 3px rgba(0,0,0,.4);
+}
+:root[data-theme="light"] #lebench-root{
+  --lb-bg:#ffffff; --lb-panel:#f7f8fa; --lb-border:#e3e6ec; --lb-ink:#1b1f27;
+  --lb-mut:#5c6470; --lb-track:#e7eaf0; --lb-shadow:0 1px 3px rgba(20,30,60,.08);
+}
+#lebench-root *{box-sizing:border-box;}
+.lebench-head{display:flex;flex-wrap:wrap;align-items:baseline;gap:8px 12px;margin-bottom:4px;}
+.lebench-head h2{font-size:19px;margin:0;letter-spacing:-.01em;}
+.lebench-tag{font-size:11px;font-weight:600;color:var(--lb-accent);
+  border:1px solid var(--lb-accent);border-radius:999px;padding:1px 8px;}
+.lebench-note{font-size:12px;color:var(--lb-mut);margin:2px 0 16px;}
+.lebench-btn{appearance:none;cursor:pointer;border:none;border-radius:9px;
+  background:var(--lb-accent);color:#fff;font-size:13px;font-weight:600;
+  padding:8px 16px;margin-bottom:16px;transition:filter .15s,transform .05s;}
+.lebench-btn:hover{filter:brightness(1.07);}
+.lebench-btn:active{transform:translateY(1px);}
+.lebench-btn[disabled]{opacity:.55;cursor:default;}
+.lebench-grid{display:grid;grid-template-columns:1fr;gap:14px;}
+@media(min-width:680px){.lebench-grid{grid-template-columns:3fr 2fr;}}
+.lebench-card{background:var(--lb-panel);border:1px solid var(--lb-border);
+  border-radius:12px;padding:14px 16px;box-shadow:var(--lb-shadow);}
+.lebench-card h3{margin:0 0 12px;font-size:14px;letter-spacing:-.01em;
+  display:flex;align-items:center;gap:6px;}
+.lebench-src{font-size:10px;font-weight:600;color:var(--lb-mut);
+  border:1px solid var(--lb-border);border-radius:6px;padding:1px 6px;margin-left:auto;}
+/* --- VBench 막대 --- */
+.lebench-metric{margin-bottom:11px;}
+.lebench-metric:last-child{margin-bottom:0;}
+.lebench-mrow{display:flex;justify-content:space-between;align-items:baseline;
+  font-size:12px;margin-bottom:4px;}
+.lebench-mname{color:var(--lb-ink);font-weight:600;}
+.lebench-mname small{color:var(--lb-mut);font-weight:400;margin-left:4px;}
+.lebench-mval{font-variant-numeric:tabular-nums;font-weight:700;font-size:13px;}
+.lebench-bar{height:8px;background:var(--lb-track);border-radius:5px;overflow:hidden;}
+.lebench-fill{height:100%;width:0;border-radius:5px;
+  background:linear-gradient(90deg,var(--lb-accent),var(--lb-accent2));
+  transition:width 1.1s cubic-bezier(.22,1,.36,1);}
+/* --- 속도/처리량 --- */
+.lebench-stat{text-align:center;padding:6px 0 10px;}
+.lebench-fps{font-size:44px;font-weight:800;line-height:1;letter-spacing:-.02em;
+  font-variant-numeric:tabular-nums;color:var(--lb-accent);}
+.lebench-fps span{font-size:15px;font-weight:600;color:var(--lb-mut);margin-left:4px;}
+.lebench-sub{display:flex;justify-content:center;gap:18px;margin-top:10px;flex-wrap:wrap;}
+.lebench-sub div{font-size:12px;color:var(--lb-mut);}
+.lebench-sub b{display:block;font-size:17px;color:var(--lb-ink);font-weight:700;
+  font-variant-numeric:tabular-nums;}
+.lebench-badges{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin-top:12px;}
+.lebench-badge{font-size:11px;font-weight:600;padding:3px 9px;border-radius:999px;
+  background:var(--lb-track);color:var(--lb-ink);}
+.lebench-badge.hl{background:var(--lb-accent2);color:#fff;}
+/* --- User study 도넛 (병합 시 레이어링/센터링 보정) --- */
+.lebench-us{display:flex;align-items:center;gap:16px;}
+.lebench-donut{--p:0;width:96px;height:96px;border-radius:50%;flex:0 0 auto;position:relative;
+  background:conic-gradient(var(--lb-accent2) calc(var(--p)*1%),var(--lb-track) 0);
+  display:grid;place-items:center;transition:none;}
+.lebench-donut::after{content:"";width:70px;height:70px;border-radius:50%;
+  background:var(--lb-panel);position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);}
+.lebench-donut b{position:relative;z-index:1;font-size:20px;font-weight:800;
+  font-variant-numeric:tabular-nums;}
+.lebench-uslabel{font-size:12px;color:var(--lb-mut);}
+.lebench-uslabel b{display:block;color:var(--lb-ink);font-size:14px;margin-bottom:2px;}
+/* --- Stage 표 --- */
+.lebench-tablewrap{overflow-x:auto;margin-top:14px;}
+table.lebench-tbl{width:100%;border-collapse:collapse;font-size:12.5px;min-width:520px;}
+.lebench-tbl th,.lebench-tbl td{padding:9px 10px;text-align:left;
+  border-bottom:1px solid var(--lb-border);}
+.lebench-tbl th{font-size:11px;text-transform:uppercase;letter-spacing:.04em;
+  color:var(--lb-mut);font-weight:600;}
+.lebench-tbl td:first-child{font-weight:600;}
+.lebench-tbl tr[data-active="1"]{background:rgba(79,124,255,.10);}
+.lebench-pill{display:inline-block;font-size:11px;font-weight:600;padding:1px 8px;
+  border-radius:999px;background:var(--lb-track);color:var(--lb-ink);}
+.lebench-pill.ok{background:var(--lb-accent2);color:#fff;}
+.lebench-pill.no{background:var(--lb-warn);color:#fff;}
+.lebench-pill.na{background:transparent;color:var(--lb-mut);border:1px dashed var(--lb-border);}
+.lebench-foot{font-size:11px;color:var(--lb-mut);margin-top:12px;line-height:1.6;}
+.lebench-foot code{font-size:11px;background:var(--lb-track);padding:1px 5px;border-radius:4px;}
+
+/* ===== part2 scoped styles (.le2-root) ===== */
+.le2-root{--le2-bg:#0f1420;--le2-panel:#161d2c;--le2-line:#26314a;--le2-txt:#e7ecf5;--le2-dim:#8a97b0;
+  --le2-edit:#ff8a3d;--le2-cache:#3b6ea5;--le2-acc:#5ad1c4;font-family:ui-sans-serif,system-ui,"Segoe UI",Roboto,sans-serif;
+  color:var(--le2-txt);background:var(--le2-bg);border:1px solid var(--le2-line);border-radius:14px;padding:18px 18px 20px;margin:0;}
+.le2-root *{box-sizing:border-box;}
+.le2-head{margin-bottom:14px;}
+.le2-title{font-size:1.15rem;font-weight:700;margin:0 0 4px;letter-spacing:.2px;}
+.le2-sub{font-size:.86rem;line-height:1.5;color:#c3ccdd;margin:0 0 8px;}
+.le2-note{font-size:.76rem;line-height:1.45;color:var(--le2-dim);background:rgba(255,138,61,.07);
+  border:1px solid rgba(255,138,61,.25);border-radius:8px;padding:7px 10px;margin:0;}
+.le2-grid-2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px;}
+@media(max-width:760px){.le2-grid-2{grid-template-columns:1fr;}}
+.le2-card{background:var(--le2-panel);border:1px solid var(--le2-line);border-radius:11px;padding:13px;}
+.le2-controls{display:flex;flex-direction:column;gap:11px;margin-bottom:12px;}
+.le2-toggle{display:inline-flex;background:#0d1220;border:1px solid var(--le2-line);border-radius:9px;padding:3px;width:max-content;}
+.le2-tg{appearance:none;border:0;background:transparent;color:var(--le2-dim);font-size:.82rem;font-weight:600;
+  padding:6px 14px;border-radius:7px;cursor:pointer;transition:.15s;}
+.le2-tg-on{background:var(--le2-acc);color:#08201d;}
+.le2-slider-wrap{display:flex;align-items:center;gap:9px;flex-wrap:wrap;}
+.le2-lab{font-size:.8rem;color:#c3ccdd;font-weight:600;}
+.le2-range{flex:1;min-width:120px;accent-color:var(--le2-edit);cursor:pointer;}
+.le2-range:disabled{opacity:.4;cursor:not-allowed;}
+.le2-tauval{font-variant-numeric:tabular-nums;font-size:.82rem;color:var(--le2-edit);font-weight:700;min-width:34px;text-align:right;}
+.le2-mini{appearance:none;border:1px solid var(--le2-line);background:#0d1220;color:#c3ccdd;font-size:.72rem;
+  padding:5px 9px;border-radius:7px;cursor:pointer;white-space:nowrap;}
+.le2-mini:hover{border-color:var(--le2-acc);color:var(--le2-acc);}
+.le2-canvas-box{width:100%;overflow-x:auto;background:#0b0f1a;border:1px solid var(--le2-line);border-radius:9px;padding:8px;}
+#le2Grid{display:block;width:100%;height:auto;image-rendering:auto;}
+.le2-legend{display:flex;flex-wrap:wrap;gap:14px;margin-top:10px;font-size:.76rem;color:#c3ccdd;}
+.le2-lg{display:inline-flex;align-items:center;gap:6px;}
+.le2-sw{width:13px;height:13px;border-radius:3px;display:inline-block;}
+.le2-sw-edit{background:var(--le2-edit);}
+.le2-sw-cache{background:var(--le2-cache);}
+.le2-gridnote{font-size:.7rem;color:var(--le2-dim);margin:6px 0 0;}
+.le2-metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:8px;}
+.le2-m{background:#0d1220;border:1px solid var(--le2-line);border-radius:9px;padding:9px 8px;text-align:center;}
+.le2-mv{font-size:1.15rem;font-weight:700;font-variant-numeric:tabular-nums;color:var(--le2-acc);line-height:1.1;}
+.le2-mv.le2-muted{color:var(--le2-dim);font-size:.9rem;}
+.le2-ml{font-size:.66rem;color:var(--le2-dim);margin-top:3px;line-height:1.25;}
+.le2-src{display:block;color:#6d7a93;font-size:.6rem;}
+.le2-scope{font-size:.76rem;color:#c3ccdd;margin:2px 0 12px;padding:6px 9px;background:rgba(90,209,196,.07);
+  border:1px solid rgba(90,209,196,.22);border-radius:8px;}
+.le2-console-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px;}
+.le2-run{appearance:none;border:0;background:var(--le2-edit);color:#2a1400;font-weight:700;font-size:.84rem;
+  padding:8px 15px;border-radius:8px;cursor:pointer;transition:.15s;}
+.le2-run:hover{filter:brightness(1.08);}
+.le2-run:disabled{opacity:.55;cursor:progress;}
+.le2-prog{font-size:.74rem;color:var(--le2-dim);font-variant-numeric:tabular-nums;}
+.le2-console{margin:0;height:210px;overflow-y:auto;background:#080b12;border:1px solid var(--le2-line);border-radius:9px;
+  padding:10px 11px;font-family:ui-monospace,"Cascadia Code",Consolas,monospace;font-size:.72rem;line-height:1.55;
+  color:#cfe3dd;white-space:pre-wrap;word-break:break-word;}
+.le2-console .le2-dim{color:#5c6a82;}
+.le2-console .le2-k{color:var(--le2-acc);}
+.le2-console .le2-o{color:var(--le2-edit);}
+.le2-console .le2-b{color:#6fa8dc;}
+.le2-console .le2-w{color:#e6c34a;}
+</style>
+</head>
+<body>
+
+<!-- ===================== LiveEdit shell (part3, namespace: le-) ===================== -->
+<div class="le-wrap" id="le-app">
+
+  <header class="le-head">
+    <div class="le-titlebar">
+      <h1 class="le-h1">LiveEdit</h1>
+      <span class="le-tag">ECCV 2026 · arXiv:2606.26740</span>
+    </div>
+    <p class="le-sub">Towards Real-Time Diffusion-Based Streaming Video Editing — 클릭 실행형 재현 데모</p>
+  </header>
+
+  <!-- ===== 정직성 배너: 합성 데이터 · 비실추론 disclaimer ===== -->
+  <section class="le-banner" role="note" aria-label="정직성 고지">
+    <div class="le-banner-head">
+      <span class="le-dot" aria-hidden="true"></span>
+      <b>문서 기반 재현 시뮬레이션</b>
+      <button type="button" class="le-banner-x" id="le-banner-toggle" aria-expanded="true">숨기기</button>
+    </div>
+    <div class="le-banner-body" id="le-banner-body">
+      <p class="le-banner-p">
+        이 페이지는 실제 <b>Wan2.1-T2V-1.3B</b> 가중치로 추론하지 <b>않습니다</b>.
+        화면의 프레임·마스크 등 시각물은 브라우저에서 그린 <b>합성(synthetic) 데모</b>이며 모델 출력이 아닙니다.
+        모든 정량 수치는 <b>논문 보고값</b>이고, 지어내지 않았습니다.
+        실제 추론에는 Linux + NVIDIA GPU가 필요합니다(가이드: <span class="le-kbd">05_run.md</span>).
+      </p>
+      <ul class="le-principles">
+        <li><b>자급식</b> — 외부 요청 0 (CSS·JS 인라인, 자산 data URI)</li>
+        <li><b>클릭 실행</b> — 단일 <span class="le-kbd">index.html</span> 더블클릭</li>
+        <li><b>논문 보고값만</b> — 미보고 항목은 "논문 미보고"로 표기</li>
+        <li><b>정직성</b> — 실가중치 추론이 아님을 명시</li>
+      </ul>
+      <div class="le-links">
+        <a href="https://live-edit.github.io" target="_blank" rel="noopener">프로젝트 페이지 ↗</a>
+        <a href="https://github.com/cp-cp/LiveEdit" target="_blank" rel="noopener">공식 코드 cp-cp/LiveEdit ↗</a>
+        <a href="https://arxiv.org/abs/2606.26740" target="_blank" rel="noopener">arXiv ↗</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== 상단 "실행" 마스터 바: 전체 파이프라인을 순서대로 재생 ===== -->
+  <section class="le-runbar" aria-label="전체 파이프라인 실행">
+    <button id="le-master-run" class="le-master-btn" type="button">▶ 실행 — 전체 재현 파이프라인 재생</button>
+    <span id="le-master-status" class="le-master-status">대기 중 · 누르면 ① 증류 파이프라인 → ② 결과 패널 → ③ 마스크 캐시 추론이 순서대로 재생됩니다.</span>
+  </section>
+
+  <!-- ===== 조립 스캐폴드: 컴포넌트가 채워진 슬롯 ===== -->
+  <main id="le-slots" class="le-slots">
+
+    <!-- ① 3단계 증류 파이프라인 (part0) -->
+    <section id="le-slot-distill" class="le-slot le-filled">
+      <div class="le-slot-title"><span class="le-num">①</span> 3단계 증류 파이프라인</div>
+
+      <!-- ============================================================= -->
+      <!-- LEDIST — LiveEdit 3-Stage Distillation Pipeline (part0)        -->
+      <!-- ============================================================= -->
+      <section id="ledist-root" aria-label="LiveEdit 3단계 증류 파이프라인 애니메이션">
+        <div class="ledist-head">
+          <span class="ledist-title">3단계 증류 파이프라인</span>
+          <span class="ledist-sub">양방향 편집 baseline → 4-step 인과 스트리밍 모델</span>
+          <span class="ledist-total">총 학습 <b id="ledist-totsteps">39K</b> steps · 논문 보고값</span>
+        </div>
+        <div class="ledist-honesty">문서 기반 재현 시뮬레이션 — 실제 가중치 추론이 아니며, 화면의 모든 수치는 <b>논문 보고값</b>(LiveEdit, 2606.26740)의 재생입니다.</div>
+
+        <div class="ledist-controls">
+          <button class="ledist-btn" id="ledist-play">▶ 증류 파이프라인 재생</button>
+          <button class="ledist-btn ledist-ghost" id="ledist-reset">↺ 리셋</button>
+          <label class="ledist-speed">속도
+            <input type="range" id="ledist-speed" min="0.5" max="2.5" step="0.5" value="1">
+            <span id="ledist-speedv">1.0×</span>
+          </label>
+          <span class="ledist-phase" id="ledist-phase">대기 중 · <b>재생</b>을 누르세요</span>
+        </div>
+
+        <div class="ledist-stages">
+          <div class="ledist-stage" id="ledist-s1">
+            <div class="ledist-stg-no">STAGE 1</div>
+            <div class="ledist-stg-name">Foundation Tuning</div>
+            <div class="ledist-stg-desc">양방향 DiT 편집 baseline. source+noise latent 채널 concat, MSE 손실로 학습.</div>
+            <div class="ledist-chips">
+              <span class="ledist-chip k">9K steps</span><span class="ledist-chip">MSE loss</span>
+              <span class="ledist-chip">100 NFE</span><span class="ledist-chip">CFG 필요</span>
+              <span class="ledist-chip">비스트리밍</span>
+            </div>
+          </div>
+          <div class="ledist-arrow" id="ledist-a1">→</div>
+          <div class="ledist-stage" id="ledist-s2">
+            <div class="ledist-stg-no">STAGE 2</div>
+            <div class="ledist-stg-name">Teacher Forcing</div>
+            <div class="ledist-stg-desc">양방향→인과 전환. chunk-wise causal mask로 미래 토큰 차단, 구조 prior 유지.</div>
+            <div class="ledist-chips">
+              <span class="ledist-chip k">20K steps</span><span class="ledist-chip">causal mask</span>
+              <span class="ledist-chip">chunk=3 latent</span><span class="ledist-chip">스트리밍 전환</span>
+            </div>
+          </div>
+          <div class="ledist-arrow" id="ledist-a2">→</div>
+          <div class="ledist-stage" id="ledist-s3">
+            <div class="ledist-stg-no">STAGE 3</div>
+            <div class="ledist-stg-name">DMD 증류 (4-step)</div>
+            <div class="ledist-stg-desc">Stage2 가중치에서 초기화(ODE 우회). Real(frozen)/Fake(trainable) score로 4-step 압축.</div>
+            <div class="ledist-chips">
+              <span class="ledist-chip k">10K steps</span><span class="ledist-chip">4 NFE</span>
+              <span class="ledist-chip">CFG 불필요</span><span class="ledist-chip">DMD</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="ledist-viz">
+          <div class="ledist-card">
+            <h4 id="ledist-attn-title">어텐션 마스크</h4>
+            <div class="ledist-note" id="ledist-attn-note">9 latent frame (3 chunk × 3) · query행 → key열</div>
+            <canvas class="ledist-attn" id="ledist-attn" width="360" height="360"></canvas>
+            <div class="ledist-legend">
+              <span><i style="background:#3ea6ff"></i>attend</span>
+              <span><i style="background:#7c5cff"></i>현재 chunk(query)</span>
+              <span><i style="background:#3a4453"></i>masked(미래)</span>
+            </div>
+          </div>
+
+          <div class="ledist-card">
+            <h4>Stage 3 · DMD 4-step denoise</h4>
+            <div class="ledist-note">4 NFE · denoise 1000→250 <span style="color:var(--ledist-mut)">(논문 본문 표기 {0,250,500,750} 병기 — CHANNEL Q1)</span></div>
+            <div class="ledist-track" id="ledist-track">
+              <div class="ledist-step" data-t="1000"><div class="t">t=1000</div><div class="n">NFE 1</div></div>
+              <div class="ledist-step" data-t="750"><div class="t">t=750</div><div class="n">NFE 2</div></div>
+              <div class="ledist-step" data-t="500"><div class="t">t=500</div><div class="n">NFE 3</div></div>
+              <div class="ledist-step" data-t="250"><div class="t">t=250</div><div class="n">NFE 4</div></div>
+            </div>
+            <div class="ledist-dmd">
+              <div class="box real"><b>Real Score</b>frozen<br>사전학습 분포</div>
+              <div class="box" style="align-self:center;border:0">grad =<br>fake − real</div>
+              <div class="box fake"><b>Fake Score</b>trainable<br>generator 분포</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="ledist-flowwrap">
+          <h4>chunk-by-chunk 인과 추론 흐름</h4>
+          <div class="ledist-note">3-latent-frame chunk 단위 스트리밍 · KV 캐시 재사용 (sink token 유지 + 롤링 eviction)</div>
+          <div class="ledist-chunks" id="ledist-chunks"></div>
+        </div>
+
+        <div class="ledist-meters">
+          <div class="ledist-meter"><div class="v"><span id="ledist-fps">0.00</span> <small>FPS</small></div>
+            <div class="l">실시간 스트리밍 처리량</div><div class="src">논문 보고값 12.66 FPS</div></div>
+          <div class="ledist-meter"><div class="v"><span id="ledist-ms">—</span> <small>ms/chunk</small></div>
+            <div class="l">프레임당 지연 (3-frame chunk 기준)</div><div class="src">논문 보고값 79 ms</div></div>
+          <div class="ledist-meter"><div class="v"><span id="ledist-frames">0</span><small>/81</small></div>
+            <div class="l">방출 프레임</div><div class="src">논문: 81프레임 7.89초</div></div>
+        </div>
+
+        <div class="ledist-console" id="ledist-console"><div class="ln c-mut">// LiveEdit distillation console — 재생 대기 중…</div></div>
+      </section>
+    </section>
+
+    <!-- ② 성능 벤치마크 · 결과 패널 (part1) -->
+    <section id="le-slot-bench" class="le-slot le-filled">
+      <div class="le-slot-title"><span class="le-num">②</span> 성능 벤치마크 · 결과 패널</div>
+
+      <!-- ===== LiveEdit 성능지표/벤치마크 패널 (namespace: lebench-) ===== -->
+      <section id="lebench-root" aria-label="LiveEdit 성능지표 및 벤치마크 패널">
+        <div class="lebench-head">
+          <h2>성능지표 / 벤치마크</h2>
+          <span class="lebench-tag">논문 보고값</span>
+        </div>
+        <p class="lebench-note">
+          LiveEdit (arXiv:2606.26740) — VBench 6지표 · 실시간 속도 · user study · Stage별 ablation.
+          모든 수치는 논문 보고값 재생이며 실모델 추론 결과가 아닙니다.
+        </p>
+        <button class="lebench-btn" id="lebench-run" type="button">▶ 벤치마크 측정 재생</button>
+
+        <div class="lebench-grid">
+          <!-- 좌: VBench 6지표 -->
+          <div class="lebench-card">
+            <h3>VBench 6지표 (Ours W/ Cache)<span class="lebench-src">논문 §6</span></h3>
+            <div id="lebench-metrics"></div>
+          </div>
+
+          <!-- 우: 속도 + user study -->
+          <div style="display:grid;gap:14px;">
+            <div class="lebench-card">
+              <h3>실시간 추론 속도<span class="lebench-src">논문 §6</span></h3>
+              <div class="lebench-stat">
+                <div class="lebench-fps"><span id="lebench-fps">0.00</span><span>FPS</span></div>
+                <div class="lebench-sub">
+                  <div>프레임당 지연<b><span id="lebench-ms">0</span> ms</b></div>
+                  <div>처리량<b>81f / 7.89s</b></div>
+                </div>
+                <div class="lebench-badges">
+                  <span class="lebench-badge hl">4 NFE</span>
+                  <span class="lebench-badge">CFG 불필요</span>
+                  <span class="lebench-badge">3-frame chunk</span>
+                </div>
+              </div>
+            </div>
+            <div class="lebench-card">
+              <h3>User Study (n=20)<span class="lebench-src">논문 §6</span></h3>
+              <div class="lebench-us">
+                <div class="lebench-donut" id="lebench-donut"><b id="lebench-usnum">0.0%</b></div>
+                <div class="lebench-uslabel">
+                  <b>Top-3 선호율 95.8%</b>
+                  전체 품질 기준 20명 평가.<br>지시 일관성·배경 보존·종합 품질에서 우세
+                  <em>(개별 선호율 논문 미보고)</em>.
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Stage별 ablation -->
+        <div class="lebench-card" style="margin-top:14px;">
+          <h3>Stage별 Ablation — NFE / CFG / 스트리밍<span class="lebench-src">논문 §6</span></h3>
+          <div class="lebench-tablewrap">
+            <table class="lebench-tbl">
+              <thead>
+                <tr><th>Stage</th><th>NFE</th><th>CFG</th><th>스트리밍</th><th>설명</th></tr>
+              </thead>
+              <tbody id="lebench-stages"></tbody>
+            </table>
+          </div>
+          <p class="lebench-foot">
+            캐시 위치 ablation: <b>Self-Attention 층 캐시가 최적</b>, <code>FFN</code> 캐시 시 고주파 민감도로 <b>심한 열화</b> (논문 §4B/§6).
+            Stage 2의 NFE·CFG 구체값과 baseline 개별 VBench 수치는 <b>논문 미보고</b>이므로 표기하지 않음(지어내지 않음).
+          </p>
+        </div>
+      </section>
+    </section>
+
+    <!-- ③ AR-지향 마스크 캐시 · 스트리밍 추론 (part2) -->
+    <section id="le-slot-ablation" class="le-slot le-filled">
+      <div class="le-slot-title"><span class="le-num">③</span> AR-지향 마스크 캐시 · 스트리밍 추론 (인터랙티브)</div>
+
+      <!-- ================= LiveEdit part2 : AR-Oriented Mask Cache (namespace: le2 / .le2-root) ================= -->
+      <section class="le2-root" id="le2Root" aria-label="AR-지향 마스크 캐시 인터랙션">
+        <header class="le2-head">
+          <h2 class="le2-title">AR-지향 마스크 캐시 · 토큰 프루닝</h2>
+          <p class="le2-sub">
+            직전 chunk의 <b>L₂ 거리</b>로 편집/정적 토큰을 이진 분리 → 상위 30%만 재계산, 하위 ≈70%는
+            <b>Self-Attention 캐시</b> 재사용. 아래에서 캐시 토글 · 임계 τ · 스트리밍을 직접 돌려 거동을 관찰한다.
+          </p>
+          <p class="le2-note">
+            ⚠︎ 문서 기반 재현 시뮬레이션 — L₂ 중요도 필드는 <b>합성(예시)</b>이며 실제 가중치 추론이 아님.
+            정량값(≈70% prune · 30% keep · 79ms/frame · 12.66 FPS · chunk=3 · 4-step)은 <b>논문 보고값</b>.
+          </p>
+        </header>
+
+        <div class="le2-grid-2">
+          <!-- 왼쪽: 컨트롤 + 토큰 그리드 -->
+          <div class="le2-card">
+            <div class="le2-controls">
+              <div class="le2-toggle" role="group" aria-label="마스크 캐시 토글">
+                <button id="le2CacheOn"  class="le2-tg le2-tg-on"  type="button" aria-pressed="true">W/ Cache</button>
+                <button id="le2CacheOff" class="le2-tg"            type="button" aria-pressed="false">W/O Cache</button>
+              </div>
+              <div class="le2-slider-wrap">
+                <label class="le2-lab" for="le2Tau">L₂ 임계 τ</label>
+                <input id="le2Tau" class="le2-range" type="range" min="0" max="1" step="0.01" value="0.5" />
+                <span id="le2TauVal" class="le2-tauval">0.50</span>
+                <button id="le2Paper" class="le2-mini" type="button" title="kthvalue: 상위 30% keep 지점">논문 기준 τ (top-30%)</button>
+              </div>
+            </div>
+
+            <div class="le2-canvas-box">
+              <canvas id="le2Grid" width="520" height="286" aria-label="토큰 프루닝 그리드"></canvas>
+            </div>
+
+            <div class="le2-legend">
+              <span class="le2-lg"><i class="le2-sw le2-sw-edit"></i> 편집 영역 · 재계산 (keep, imp ≥ τ)</span>
+              <span class="le2-lg"><i class="le2-sw le2-sw-cache"></i> 정적 영역 · Self-Attn 캐시 재사용 (prune)</span>
+            </div>
+            <p class="le2-gridnote">그리드 = 대표 토큰 맵(26×14). 실제 latent 60×104 → patch 30×52 tokens/latent-frame.</p>
+          </div>
+
+          <!-- 오른쪽: 지표 + 콘솔 -->
+          <div class="le2-card">
+            <div class="le2-metrics">
+              <div class="le2-m"><div class="le2-mv" id="le2Prune">70.0%</div><div class="le2-ml">토큰 prune <span class="le2-src">논문 ≈70%</span></div></div>
+              <div class="le2-m"><div class="le2-mv" id="le2Keep">30.0%</div><div class="le2-ml">keep(편집) <span class="le2-src">ratio 0.3</span></div></div>
+              <div class="le2-m"><div class="le2-mv" id="le2Fps">12.66</div><div class="le2-ml">FPS <span class="le2-src">논문 보고</span></div></div>
+              <div class="le2-m"><div class="le2-mv" id="le2Lat">79</div><div class="le2-ml">ms / chunk <span class="le2-src">3-frame</span></div></div>
+              <div class="le2-m"><div class="le2-mv" id="le2Nfe">4</div><div class="le2-ml">NFE step <span class="le2-src">[1000,750,500,250]</span></div></div>
+              <div class="le2-m"><div class="le2-mv" id="le2Chunk">3</div><div class="le2-ml">latent frame/chunk <span class="le2-src">num_frame_per_block</span></div></div>
+            </div>
+            <p class="le2-scope" id="le2Scope">캐시 위치: <b>Self-Attention 전용</b> (FFN 제외 — 논문 ablation)</p>
+
+            <div class="le2-console-head">
+              <button id="le2Run" class="le2-run" type="button">▶ 스트리밍 추론 재생</button>
+              <span id="le2Prog" class="le2-prog">idle</span>
+            </div>
+            <pre id="le2Log" class="le2-console" aria-live="polite"><span class="le2-dim">// inference-mm.py --config wan_mm-token-pruning.yaml --save_mask</span>
+<span class="le2-dim">// 클릭하면 chunk-by-chunk 인과 추론이 스트리밍됩니다.</span></pre>
+          </div>
+        </div>
+      </section>
+      <!-- ================= /part2 ================= -->
+    </section>
+
+  </main>
+
+  <!-- ===== 논문 ↔ 모사 매핑 ===== -->
+  <section class="le-card" id="le-map">
+    <h2 class="le-h2"><span class="le-n">✓</span> 논문 ↔ 모사 매핑</h2>
+    <p class="le-sub2">이 데모의 각 요소가 논문의 어떤 보고값을 재현하는지 정리합니다. 값은 전부
+      <b>논문 보고값</b>(정본 <span class="le-kbd">01_analysis.md</span>), 단일 진리원 <span class="le-kbd">LEApp.PAPER</span>에서 렌더링.</p>
+    <div class="le-tablewrap">
+      <table class="le-table">
+        <thead><tr><th>모사 요소</th><th>논문 보고값</th><th>근거</th></tr></thead>
+        <tbody id="le-map-body"></tbody>
+      </table>
+    </div>
+    <p class="le-note" id="le-map-note"></p>
+  </section>
+
+  <footer class="le-foot">
+    LiveEdit 재현 데모 · 단일 파일 · 외부 요청 0 · 화면 수치 = 논문 보고값 ·
+    원본 <a href="https://github.com/cp-cp/LiveEdit" target="_blank" rel="noopener">github.com/cp-cp/LiveEdit</a>
+  </footer>
+</div>
+
+<!-- ===================== scripts ===================== -->
+<!-- part3 스크립트(LEApp)가 먼저 로드돼 window.LEApp / PAPER 를 만든다. -->
+<script>
+"use strict";
+/* ===== LiveEdit part3 — 조립 스캐폴드 / 논문↔모사 매핑 (전역 LEApp) ===== */
+(function(){
+  if(window.__leScaffold) return;      // 중복 병합 방지
+  window.__leScaffold=true;
+
+  // ---------- 단일 진리원: 논문 보고값 (01_analysis.md) ----------
+  var PAPER={
+    fps:12.66, latMsPerFrame:79, totalFrames:81, totalSeconds:7.89,
+    nfeStage3:4, nfeStage1:100, chunkLatentFrames:3, timesteps:[0,250,500,750],
+    prunePct:70, keepPct:30, patchRatio:0.3, cacheLayer:"self_attn",
+    benchmark:{TA:0.270, BC:0.956, MS:0.992, DD:0.256, AQ:0.581, IQ:0.708},
+    userTop3Pct:95.8, userN:20,
+    steps:{stage1:9000, stage2:20000, stage3:10000, total:39000},
+    lr:"1e-5", batch:8, baseModel:"Wan2.1-T2V-1.3B", hardware:"NVIDIA A100 ×8",
+    benchPairs:120, trainPairs:20000, source:"01_analysis.md (논문 보고값 정본)"
+  };
+
+  // ---------- 조립 API: 다른 컴포넌트가 mount 로 슬롯을 채운다 ----------
+  var queue=[];
+  var LEApp={
+    PAPER:PAPER,
+    slot:function(name){ return document.getElementById("le-slot-"+name); },
+    mount:function(name,node){
+      var host=document.getElementById("le-slots");
+      if(!host){ queue.push([name,node]); return false; }   // DOM 준비 전 → 큐잉
+      var s=this.slot(name);
+      if(!s){ s=document.createElement("section"); s.id="le-slot-"+name; s.className="le-slot"; host.appendChild(s); }
+      var ph=s.querySelector(".le-slot-ph"); if(ph) ph.remove();
+      s.appendChild(node); s.classList.add("le-filled");
+      return true;
+    },
+    _flush:function(){ while(queue.length){ var it=queue.shift(); this.mount(it[0],it[1]); } }
+  };
+  window.LEApp=LEApp;
+
+  // ---------- 배너 접기/펼치기 ----------
+  function wireBanner(){
+    var btn=document.getElementById("le-banner-toggle");
+    var banner=btn && btn.closest(".le-banner");
+    if(!btn||!banner) return;
+    btn.addEventListener("click",function(){
+      var open=!banner.classList.toggle("le-collapsed");
+      btn.setAttribute("aria-expanded",String(open));
+      btn.textContent=open?"숨기기":"펼치기";
+    });
+  }
+
+  // ---------- 논문↔모사 매핑 표 렌더 ----------
+  function renderMap(){
+    var body=document.getElementById("le-map-body");
+    if(!body) return;
+    var P=PAPER, b=P.benchmark;
+    var bench="TA "+b.TA.toFixed(3)+" · BC "+b.BC.toFixed(3)+" · MS "+b.MS.toFixed(3)
+            +" · DD "+b.DD.toFixed(3)+" · AQ "+b.AQ.toFixed(3)+" · IQ "+b.IQ.toFixed(3);
+    var rows=[
+      ["스트리밍 추론 재생 (chunk 단위 4-step denoise)",
+        P.nfeStage3+" NFE · chunk="+P.chunkLatentFrames+" latent-frame · t="+JSON.stringify(P.timesteps),"§4·§6"],
+      ["실시간 처리량(FPS) 게이지", P.fps.toFixed(2)+" FPS (W/ Cache)","§6 속도"],
+      ["프레임 지연 메트릭", P.latMsPerFrame+" ms / frame ✦","§4·§6"],
+      ["전체 시퀀스 생성", P.totalFrames+" frames · "+P.totalSeconds+" s","§6"],
+      ["NFE 토글 (Stage3 ↔ Stage1)", P.nfeStage3+" NFE·CFG-free / "+P.nfeStage1+" NFE·CFG","§6 Ablation"],
+      ["AR-지향 마스크 캐시 프루닝", "~"+P.prunePct+"% prune (상위 "+P.keepPct+"% keep) · "+P.cacheLayer,"§4 (patch_ratio "+P.patchRatio+")"],
+      ["벤치마크 (VBench+CLIP, Ours W/Cache)", bench,"§6"],
+      ["User study 선호율", P.userTop3Pct+"% top-3 (n="+P.userN+")","§6"],
+      ["3단계 증류 학습량", (P.steps.stage1/1000)+"K+"+(P.steps.stage2/1000)+"K+"+(P.steps.stage3/1000)+"K = "
+        +(P.steps.total/1000)+"K steps · lr "+P.lr+" · batch "+P.batch,"§4·§8"],
+      ["베이스 / 하드웨어", P.baseModel+" · "+P.hardware+" · AdamW","§8"],
+      ["데이터", "벤치 "+P.benchPairs+" 쌍 / 학습 필터 "+(P.trainPairs/1000)+"K 쌍","§6·§8"]
+    ];
+    var html="";
+    rows.forEach(function(r){
+      html+="<tr><td>"+r[0]+"</td><td>"+r[1]+"</td><td>"+r[2]+"</td></tr>";
+    });
+    body.innerHTML=html;
+
+    var note=document.getElementById("le-map-note");
+    if(note){
+      note.innerHTML=
+        "✦ <b>79 ms</b> 가 단일 프레임 기준인지 3-프레임 chunk 기준인지 원문 표현이 상충(§6 \"3프레임 기준\")됩니다. "
+      + "1/0.079 ≈ 12.66 FPS 이므로 <b>프레임 기준</b>으로 표기했으며, 확정 질의는 CHANNEL Q1 참조.<br>"
+      + "미보고 항목(캐시 OFF의 FPS, baseline 개별 수치 등)은 <b>지어내지 않고</b> \"논문 미보고\"로 둡니다. "
+      + "출처: "+P.source+".";
+    }
+  }
+
+  function init(){ wireBanner(); renderMap(); LEApp._flush(); }
+  if(document.readyState==="loading"){ document.addEventListener("DOMContentLoaded",init); }
+  else { init(); }
+})();
+</script>
+
+<script>
+/* ===== part0 — LEDIST 3-Stage Distillation Pipeline ===== */
+(function(){
+  "use strict";
+  var root = document.getElementById("ledist-root");
+  if(!root || root.dataset.ledistInit) return;
+  root.dataset.ledistInit = "1";
+
+  var LEDIST = {};
+  var $ = function(id){ return document.getElementById(id); };
+
+  // ---- config (paper-reported) ----
+  var FRAMES = 9, CH = 3;                 // 9 latent frames, chunk size 3 → 3 chunks
+  var STREAM_CHUNKS = 5;                  // streaming demo chunks (representational)
+  var STEPS = [1000,750,500,250];         // 4 NFE, denoise direction
+  var TARGET_FPS = 12.66, LAT_MS = 79;    // paper-reported
+  var TOTAL_FRAMES = 81;
+
+  var speed = 1;
+  var runToken = 0;                       // cancellation token
+  var running = false;
+
+  // ---- attention canvas ----
+  var cv = $("ledist-attn"), ctx = cv.getContext("2d");
+  // state: maskProgress 0=full(bidirectional) .. 1=block-causal ; activeChunk = -1 none
+  var attnState = { mode:"full", maskProg:0, activeChunk:-1 };
+
+  function chunkOf(i){ return Math.floor(i/CH); }
+  function attendFull(){ return true; }
+  function attendCausal(q,k){ return chunkOf(k) <= chunkOf(q); } // block-wise causal
+
+  function drawAttn(){
+    var W = cv.width, H = cv.height, n = FRAMES;
+    var pad = 18, cell = (Math.min(W,H)-pad*2)/n;
+    ctx.clearRect(0,0,W,H);
+    for(var q=0;q<n;q++){
+      for(var k=0;k<n;k++){
+        var x = pad + k*cell, y = pad + q*cell;
+        var lit = attendFull();                 // full base
+        var causalAttend = attendCausal(q,k);
+        var col;
+        if(attnState.activeChunk===chunkOf(q) && causalAttend){
+          col = "#7c5cff";                       // active query chunk
+        } else if(causalAttend){
+          col = "#3ea6ff";
+        } else {
+          // masked target: blend accent->dim by maskProg
+          col = blend("#3ea6ff","#3a4453",attnState.maskProg);
+        }
+        ctx.fillStyle = col;
+        ctx.globalAlpha = 0.92;
+        ctx.fillRect(x+1,y+1,cell-2,cell-2);
+      }
+    }
+    ctx.globalAlpha = 1;
+    // chunk boundary lines
+    ctx.strokeStyle = "#0e1116"; ctx.lineWidth = 2;
+    for(var c=1;c<n/CH;c++){
+      var p = pad + c*CH*cell;
+      ctx.beginPath(); ctx.moveTo(p,pad); ctx.lineTo(p,pad+n*cell); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(pad,p); ctx.lineTo(pad+n*cell,p); ctx.stroke();
+    }
+  }
+  function blend(a,b,t){
+    var A=hex(a),B=hex(b);
+    var r=Math.round(A[0]+(B[0]-A[0])*t),g=Math.round(A[1]+(B[1]-A[1])*t),bl=Math.round(A[2]+(B[2]-A[2])*t);
+    return "rgb("+r+","+g+","+bl+")";
+  }
+  function hex(h){ h=h.replace("#",""); return [parseInt(h.slice(0,2),16),parseInt(h.slice(2,4),16),parseInt(h.slice(4,6),16)]; }
+
+  function resizeCanvas(){
+    var w = cv.clientWidth || 340;
+    cv.width = Math.round(w); cv.height = Math.round(w);
+    drawAttn();
+  }
+  window.addEventListener("resize", resizeCanvas);
+
+  // ---- console ----
+  var cons = $("ledist-console");
+  function log(html){
+    var d = document.createElement("div");
+    d.className = "ln"; d.innerHTML = html;
+    cons.appendChild(d); cons.scrollTop = cons.scrollHeight;
+  }
+  function clearLog(){ cons.innerHTML = ''; }
+
+  // ---- timing ----
+  function wait(ms){
+    var tok = runToken;
+    return new Promise(function(res){
+      setTimeout(function(){ if(tok===runToken) res(); }, ms/speed);
+    });
+  }
+  function guard(){ return runToken; }
+
+  // ---- stage helpers ----
+  function setPhase(txt){ $("ledist-phase").innerHTML = txt; }
+  function stageOn(id){ $(id).classList.add("ledist-on"); $(id).style.setProperty("--p","0%"); }
+  function stageProg(id,p){ $(id).style.setProperty("--p",p+"%"); }
+  function stageDone(id){ var e=$(id); e.classList.remove("ledist-on"); e.classList.add("ledist-done"); e.style.setProperty("--p","100%"); }
+
+  async function fillProgress(id, ms){
+    var tok = guard(), n = 20;
+    for(var i=1;i<=n;i++){
+      await wait(ms/n); if(guard()!==tok) return;
+      stageProg(id, Math.round(i/n*100));
+    }
+  }
+
+  // ---- build streaming chunk boxes ----
+  var chunkWrap = $("ledist-chunks");
+  function buildChunks(){
+    chunkWrap.innerHTML = '';
+    for(var i=0;i<STREAM_CHUNKS;i++){
+      var d = document.createElement("div");
+      d.className = "ledist-chunk"; d.id = "ledist-ck"+i;
+      d.innerHTML =
+        '<div class="cl">chunk '+i+' · f'+(i*CH)+'–'+(i*CH+2)+'</div>'+
+        '<div class="cf"><span></span><span></span><span></span></div>'+
+        '<div class="cs" id="ledist-cs'+i+'">대기</div>'+
+        '<div class="ledist-kv" id="ledist-kv'+i+'"></div>';
+      chunkWrap.appendChild(d);
+    }
+  }
+
+  // ---- counters ----
+  function setFPS(v){ $("ledist-fps").textContent = v.toFixed(2); }
+  function setFrames(v){ $("ledist-frames").textContent = v; }
+
+  // ---- reset ----
+  function reset(){
+    runToken++; running = false;
+    ["ledist-s1","ledist-s2","ledist-s3"].forEach(function(id){
+      var e=$(id); e.classList.remove("ledist-on","ledist-done"); e.style.setProperty("--p","0%");
+    });
+    $("ledist-a1").classList.remove("ledist-flow");
+    $("ledist-a2").classList.remove("ledist-flow");
+    attnState = { mode:"full", maskProg:0, activeChunk:-1 };
+    $("ledist-attn-title").textContent = "어텐션 마스크";
+    $("ledist-attn-note").textContent = "9 latent frame (3 chunk × 3) · query행 → key열";
+    document.querySelectorAll("#ledist-track .ledist-step").forEach(function(s){
+      s.classList.remove("ledist-hot","ledist-past");
+    });
+    buildChunks();
+    setFPS(0); $("ledist-ms").textContent="—"; setFrames(0);
+    clearLog(); log('<span class="c-mut">// LiveEdit distillation console — 재생 대기 중…</span>');
+    setPhase('대기 중 · <b>재생</b>을 누르세요');
+    $("ledist-play").disabled = false;
+    resizeCanvas();
+  }
+
+  // ---- main sequence ----
+  async function play(){
+    if(running) return;
+    running = true; runToken++; var tok = guard();
+    $("ledist-play").disabled = true;
+    reset(); // reset increments token again → capture new
+    runToken++; tok = guard(); running = true; $("ledist-play").disabled = true;
+
+    clearLog();
+    log('<span class="c-accent">[init]</span> base = Wan2.1-T2V-1.3B (Diffusion Transformer) · AdamW · lr 1e-5 · batch 8');
+    log('<span class="c-mut">[init]</span> 문서 기반 재현 시뮬레이션 · 수치=논문 보고값');
+    await wait(500); if(guard()!==tok) return;
+
+    /* ---------- STAGE 1 ---------- */
+    setPhase('실행 중 · <b>Stage 1 — Foundation Tuning</b>');
+    stageOn("ledist-s1");
+    $("ledist-attn-title").textContent = "Stage 1 · 양방향(full) 어텐션";
+    $("ledist-attn-note").textContent = "모든 프레임이 상호 attend — 편집 능력 baseline 확보";
+    attnState.mode="full"; attnState.maskProg=0; attnState.activeChunk=-1; drawAttn();
+    log('<span class="c-accent">[stage1]</span> Foundation Tuning 시작 — 양방향 DiT 편집 baseline');
+    log('  source latent(16ch) ⊕ noise latent(16ch) → 32ch DiT 입력 (Conv3d 확장, 신규채널 0초기화)');
+    await wait(500); if(guard()!==tok) return;
+    log('  loss = ‖ε − ε_θ^bid(z_t, t, c)‖₂²  <span class="c-mut">(MSE / flow)</span>');
+    await fillProgress("ledist-s1", 2200); if(guard()!==tok) return;
+    log('<span class="c-ok">[stage1] done</span> 9K steps · 100 NFE · CFG 필요 · <span class="c-mut">비스트리밍(양방향)</span>');
+    stageDone("ledist-s1"); $("ledist-a1").classList.add("ledist-flow");
+    await wait(450); if(guard()!==tok) return;
+
+    /* ---------- STAGE 2 ---------- */
+    setPhase('실행 중 · <b>Stage 2 — Teacher Forcing (인과 전환)</b>');
+    stageOn("ledist-s2");
+    $("ledist-attn-title").textContent = "Stage 2 · chunk-wise causal mask";
+    $("ledist-attn-note").textContent = "미래 chunk 차단: (kv_idx < ends[q]) | (q==kv) · num_frame_per_block=3";
+    log('<span class="c-accent">[stage2]</span> Teacher Forcing — 양방향→인과 구조 전환');
+    log('  block-wise causal attention mask 적용 <span class="c-mut">(chunk = latent 3프레임)</span>');
+    // animate mask morph full -> causal
+    for(var s=0;s<=12;s++){
+      await wait(90); if(guard()!==tok) return;
+      attnState.maskProg = s/12; drawAttn();
+      stageProg("ledist-s2", Math.round(s/12*55));
+    }
+    attnState.mode="causal"; drawAttn();
+    log('  미래 토큰 접근 차단 → 어텐션 분포 이동(attention distribution shift) 억제, 구조 prior 유지');
+    await fillProgress("ledist-s2", 1600); if(guard()!==tok) return;
+    log('<span class="c-ok">[stage2] done</span> 20K steps · 스트리밍 추론 활성화');
+    stageDone("ledist-s2"); $("ledist-a2").classList.add("ledist-flow");
+    await wait(450); if(guard()!==tok) return;
+
+    /* ---------- STAGE 3 ---------- */
+    setPhase('실행 중 · <b>Stage 3 — DMD 증류 (4-step)</b>');
+    stageOn("ledist-s3");
+    log('<span class="c-accent">[stage3]</span> DMD — Stage2 가중치에서 직접 초기화 <span class="c-mut">(비싼 ODE 초기화 우회)</span>');
+    log('  grad = (fake_score − real_score) → 정규화 후 MSE 형태로 역전파 (분포정합, reverse-KL 근사)');
+    await wait(400); if(guard()!==tok) return;
+    // light up the 4 denoise steps
+    var track = document.querySelectorAll("#ledist-track .ledist-step");
+    for(var i=0;i<STEPS.length;i++){
+      if(guard()!==tok) return;
+      track.forEach(function(s){ s.classList.remove("ledist-hot"); });
+      track[i].classList.add("ledist-hot");
+      log('  <span class="c-v">NFE '+(i+1)+'</span> · denoise t='+STEPS[i]+'  <span class="c-mut">→ z_{t} 갱신</span>');
+      stageProg("ledist-s3", Math.round((i+1)/STEPS.length*70));
+      await wait(520); if(guard()!==tok) return;
+      track[i].classList.remove("ledist-hot"); track[i].classList.add("ledist-past");
+    }
+    await fillProgress("ledist-s3", 900); if(guard()!==tok) return;
+    log('<span class="c-ok">[stage3] done</span> 10K steps · 4 NFE · CFG 불필요 · 4-step 인과 모델 완성');
+    stageDone("ledist-s3");
+    log('<span class="c-mut">[distill] 총 9K + 20K + 10K = 39K steps 완료 → 스트리밍 추론 개시</span>');
+    await wait(500); if(guard()!==tok) return;
+
+    /* ---------- chunk-by-chunk causal inference ---------- */
+    setPhase('실행 중 · <b>chunk-by-chunk 인과 추론 스트리밍</b>');
+    log('<span class="c-accent">[infer]</span> chunk-by-chunk 인과 추론 시작 (3-latent-frame chunk · 4-step denoise)');
+    var t0perf = 0, emitted = 0;
+    for(var c=0;c<STREAM_CHUNKS;c++){
+      if(guard()!==tok) return;
+      var box = $("ledist-ck"+c), cs = $("ledist-cs"+c), kv = $("ledist-kv"+c);
+      box.classList.add("ledist-active");
+      attnState.activeChunk = Math.min(c, FRAMES/CH-1); drawAttn();
+      cs.textContent = "4-step denoise…";
+      if(c>0){ kv.innerHTML = "↺ KV 캐시 재사용 (chunk 0–"+(c-1)+")"; }
+      else   { kv.innerHTML = "◦ KV 캐시 초기화 · sink token"; }
+      // 4 denoise steps for this chunk
+      for(var st=0;st<STEPS.length;st++){
+        await wait(160); if(guard()!==tok) return;
+      }
+      box.classList.remove("ledist-active"); box.classList.add("ledist-emitted");
+      cs.textContent = "방출 ✓";
+      emitted += CH;
+      setFrames(Math.min(emitted, TOTAL_FRAMES));
+      // ramp FPS toward paper value
+      var f = TARGET_FPS * (0.75 + 0.25*(c+1)/STREAM_CHUNKS);
+      setFPS(Math.min(f, TARGET_FPS));
+      $("ledist-ms").textContent = LAT_MS;
+      log('  chunk '+c+' → '+CH+' latent frame 방출 · '+ (c>0?'캐시 재사용(정적영역)':'전체 계산') );
+      await wait(180); if(guard()!==tok) return;
+    }
+    setFPS(TARGET_FPS);
+    attnState.activeChunk = -1; drawAttn();
+    log('<span class="c-ok">[infer] steady-state</span> 12.66 FPS · 79 ms/chunk · 81프레임 7.89초 <span class="c-mut">(논문 보고값)</span>');
+    setPhase('완료 · <b>4-step 인과 스트리밍 편집 재현됨</b>');
+    $("ledist-play").disabled = false;
+    running = false;
+  }
+
+  // ---- wire ----
+  $("ledist-play").addEventListener("click", function(){ play(); });
+  $("ledist-reset").addEventListener("click", function(){ reset(); });
+  $("ledist-speed").addEventListener("input", function(e){
+    speed = parseFloat(e.target.value); $("ledist-speedv").textContent = speed.toFixed(1)+"×";
+  });
+
+  // init
+  buildChunks();
+  // defer canvas sizing until laid out
+  if(document.readyState==="complete" || document.readyState==="interactive"){ setTimeout(resizeCanvas,0); }
+  else { window.addEventListener("DOMContentLoaded", resizeCanvas); }
+  setTimeout(resizeCanvas, 60);
+  window.LEDIST = LEDIST;
+})();
+</script>
+
+<script>
+/* ===== part1 — LiveEdit 성능지표/벤치마크 패널 ===== */
+(function(){
+  "use strict";
+  var NS = window.LEBench = window.LEBench || {};
+  // ---- 논문 보고값 (정본: 01_analysis.md §6) ----
+  var METRICS = [
+    {k:"TA", name:"Text Alignment",         v:0.270},
+    {k:"BC", name:"Background Consistency",  v:0.956},
+    {k:"MS", name:"Motion Smoothness",       v:0.992},
+    {k:"DD", name:"Dynamic Degree",          v:0.256},
+    {k:"AQ", name:"Aesthetic Quality",       v:0.581},
+    {k:"IQ", name:"Imaging Quality",         v:0.708}
+  ];
+  var FPS=12.66, MS=79, USER=95.8;
+  var STAGES = [
+    {s:"Stage 1 · Foundation Tuning", nfe:"100", cfg:["필요","no"],   stream:["비스트리밍","no"], d:"양방향 편집 baseline (MSE)"},
+    {s:"Stage 2 · Teacher Forcing",   nfe:["미보고","na"], cfg:["미보고","na"], stream:["스트리밍","ok"], d:"양방향→인과 전환 (chunk causal mask)"},
+    {s:"Stage 3 · DMD",               nfe:"4",   cfg:["불필요","ok"], stream:["스트리밍","ok"], d:"4-step 실시간 (12.66 FPS)"}
+  ];
+
+  function el(tag, cls, html){var e=document.createElement(tag); if(cls)e.className=cls; if(html!=null)e.innerHTML=html; return e;}
+  function pill(spec){
+    if(Array.isArray(spec)){var c=spec[1]; return '<span class="lebench-pill '+(c==='no'?'no':c==='ok'?'ok':c==='na'?'na':'')+'">'+spec[0]+'</span>';}
+    return '<span class="lebench-pill">'+spec+'</span>';
+  }
+
+  var root=document.getElementById("lebench-root");
+  if(!root){return;}
+  var mWrap=root.querySelector("#lebench-metrics");
+  var sWrap=root.querySelector("#lebench-stages");
+  var fills=[];
+
+  // build metric bars
+  METRICS.forEach(function(m){
+    var box=el("div","lebench-metric");
+    box.innerHTML =
+      '<div class="lebench-mrow"><span class="lebench-mname">'+m.k+
+      ' <small>'+m.name+' ↑</small></span>'+
+      '<span class="lebench-mval" data-t="'+m.v+'">0.000</span></div>'+
+      '<div class="lebench-bar"><div class="lebench-fill"></div></div>';
+    mWrap.appendChild(box);
+    fills.push({fill:box.querySelector(".lebench-fill"), val:box.querySelector(".lebench-mval"), t:m.v});
+  });
+
+  // build stage rows
+  STAGES.forEach(function(st,i){
+    var tr=el("tr");
+    tr.setAttribute("data-idx",i);
+    tr.innerHTML="<td>"+st.s+"</td><td>"+pill(st.nfe)+"</td><td>"+pill(st.cfg)+
+                 "</td><td>"+pill(st.stream)+"</td><td>"+st.d+"</td>";
+    sWrap.appendChild(tr);
+  });
+
+  var fpsEl=root.querySelector("#lebench-fps"),
+      msEl=root.querySelector("#lebench-ms"),
+      usEl=root.querySelector("#lebench-usnum"),
+      donut=root.querySelector("#lebench-donut"),
+      btn=root.querySelector("#lebench-run");
+
+  function animateNum(node, target, dur, decimals, done){
+    var t0=null;
+    function step(ts){
+      if(t0===null)t0=ts;
+      var p=Math.min((ts-t0)/dur,1);
+      var e=1-Math.pow(1-p,3); // easeOutCubic
+      node.textContent=(target*e).toFixed(decimals);
+      if(p<1)requestAnimationFrame(step); else if(done)done();
+    }
+    requestAnimationFrame(step);
+  }
+
+  function play(){
+    btn.disabled=true;
+    // reset
+    fills.forEach(function(f){f.fill.style.width="0";f.val.textContent="0.000";});
+    donut.style.setProperty("--p",0); usEl.textContent="0.0%";
+    fpsEl.textContent="0.00"; msEl.textContent="0";
+    // stage highlight sweep
+    var rows=sWrap.querySelectorAll("tr");
+    rows.forEach(function(r){r.removeAttribute("data-active");});
+    rows.forEach(function(r,i){ setTimeout(function(){
+      rows.forEach(function(x){x.removeAttribute("data-active");});
+      r.setAttribute("data-active","1");
+      if(i===rows.length-1)setTimeout(function(){r.removeAttribute("data-active");},700);
+    }, 200+i*260); });
+    // bars
+    requestAnimationFrame(function(){
+      fills.forEach(function(f){
+        f.fill.style.width=(f.t*100).toFixed(1)+"%";
+        animateNum(f.val,f.t,1100,3);
+      });
+    });
+    // speed + user study
+    animateNum(fpsEl,FPS,1200,2);
+    animateNum(msEl,MS,1200,0);
+    var t0=null;
+    function donutStep(ts){
+      if(t0===null)t0=ts;
+      var p=Math.min((ts-t0)/1300,1); var e=1-Math.pow(1-p,3);
+      var v=USER*e;
+      donut.style.setProperty("--p",v);
+      usEl.textContent=v.toFixed(1)+"%";
+      if(p<1)requestAnimationFrame(donutStep); else btn.disabled=false;
+    }
+    requestAnimationFrame(donutStep);
+  }
+
+  btn.addEventListener("click",play);
+  NS.play=play;
+  // autoplay on first view
+  if("IntersectionObserver" in window){
+    var once=false;
+    var io=new IntersectionObserver(function(es){
+      es.forEach(function(en){ if(en.isIntersecting && !once){once=true; play(); io.disconnect();} });
+    },{threshold:.25});
+    io.observe(root);
+  } else { play(); }
+})();
+</script>
+
+<script>
+/* ===== part2 logic: AR-Oriented Mask Cache (IIFE, namespace le2) ===== */
+(function(){
+  "use strict";
+  var root = document.getElementById("le2Root");
+  if(!root) return;
+  // --- 논문 보고값(라벨된 상수) ---
+  var PAPER = {fps:"12.66", latMs:79, keepRatio:0.30, pruneApprox:70, nfe:4, chunkFrames:3,
+               latentFrames:21, chunks:7, pixelFrames:81, steps:[1000,750,500,250]};
+  var GW=26, GH=14, N=GW*GH;            // 대표 토큰 그리드
+  var cacheOn = true;
+  var running = false;
+  var curChunk = 0;
+  var field = new Float32Array(N);      // 현재 chunk의 정규화 L₂ 중요도(합성)
+
+  var elGrid=document.getElementById("le2Grid"), ctx=elGrid.getContext("2d");
+  var elTau=document.getElementById("le2Tau"), elTauVal=document.getElementById("le2TauVal");
+  var elPrune=document.getElementById("le2Prune"), elKeep=document.getElementById("le2Keep");
+  var elFps=document.getElementById("le2Fps"), elLat=document.getElementById("le2Lat");
+  var elScope=document.getElementById("le2Scope"), elLog=document.getElementById("le2Log");
+  var elRun=document.getElementById("le2Run"), elProg=document.getElementById("le2Prog");
+  var btnOn=document.getElementById("le2CacheOn"), btnOff=document.getElementById("le2CacheOff");
+  var btnPaper=document.getElementById("le2Paper");
+
+  // 결정론적 해시 노이즈(정적 배경 성분)
+  function hash(x,y){var h=(x*73856093)^(y*19349663);h=(h^(h>>>13))*1274126177;return ((h>>>0)%1000)/1000;}
+
+  // chunk c 의 편집 blob 중심을 드리프트시키며 L₂ 중요도 필드(합성) 생성 → min-max 정규화(코드와 동일)
+  function buildField(c){
+    var t=c/Math.max(1,PAPER.chunks-1);
+    var cx=GW*(0.30+0.42*t), cy=GH*(0.50+0.28*Math.sin(t*3.1));
+    var sx=GW*0.17, sy=GH*0.26;
+    var mn=1e9,mx=-1e9,i=0;
+    for(var y=0;y<GH;y++){for(var x=0;x<GW;x++,i++){
+      var dx=(x-cx)/sx, dy=(y-cy)/sy;
+      var blob=Math.exp(-0.5*(dx*dx+dy*dy));
+      var v=blob + 0.14*hash(x+c*7,y+c*3);       // 편집 신호 + 정적 배경 노이즈
+      field[i]=v; if(v<mn)mn=v; if(v>mx)mx=v;
+    }}
+    var rng=(mx-mn)||1e-8;
+    for(i=0;i<N;i++) field[i]=(field[i]-mn)/rng;   // (diff-min)/(max-min+eps)
+  }
+
+  // kthvalue: 상위 keepRatio 만큼 keep 되는 임계 τ (코드 _compute_mask_from_importance)
+  function paperTau(){
+    var arr=Array.prototype.slice.call(field).sort(function(a,b){return a-b;});
+    var idx=Math.floor((1-PAPER.keepRatio)*N);      // 하위 70% 경계
+    idx=Math.min(Math.max(idx,0),N-1);
+    return arr[idx];
+  }
+
+  function pruneStats(tau){
+    if(!cacheOn) return {prune:0, keep:100};
+    var pr=0; for(var i=0;i<N;i++) if(field[i]<tau) pr++;
+    var p=100*pr/N; return {prune:p, keep:100-p};
+  }
+
+  function draw(tau){
+    var W=elGrid.width, H=elGrid.height, pad=6, gap=3;
+    var cw=(W-pad*2-gap*(GW-1))/GW, ch=(H-pad*2-gap*(GH-1))/GH, i=0;
+    ctx.clearRect(0,0,W,H);
+    ctx.fillStyle="#0b0f1a"; ctx.fillRect(0,0,W,H);
+    for(var y=0;y<GH;y++){for(var x=0;x<GW;x++,i++){
+      var keep = cacheOn ? (field[i]>=tau) : true;   // W/O: 전 토큰 재계산
+      var px=pad+x*(cw+gap), py=pad+y*(ch+gap);
+      if(keep){
+        var a=0.45+0.55*field[i];
+        ctx.fillStyle="rgba(255,138,61,"+a.toFixed(3)+")";  // 편집·재계산
+      } else {
+        ctx.fillStyle="rgba(59,110,165,0.42)";              // 정적·캐시 재사용
+      }
+      rr(ctx,px,py,cw,ch,2); ctx.fill();
+    }}
+  }
+  function rr(c,x,y,w,h,r){c.beginPath();c.moveTo(x+r,y);c.arcTo(x+w,y,x+w,y+h,r);
+    c.arcTo(x+w,y+h,x,y+h,r);c.arcTo(x,y+h,x,y,r);c.arcTo(x,y,x+w,y,r);c.closePath();}
+
+  function refresh(){
+    var tau=parseFloat(elTau.value);
+    elTauVal.textContent=tau.toFixed(2);
+    var s=pruneStats(tau);
+    draw(tau);
+    if(cacheOn){
+      elPrune.textContent=s.prune.toFixed(1)+"%"; elPrune.classList.remove("le2-muted");
+      elKeep.textContent=s.keep.toFixed(1)+"%";   elKeep.classList.remove("le2-muted");
+      elFps.textContent=PAPER.fps; elFps.classList.remove("le2-muted");
+      elLat.textContent=PAPER.latMs; elLat.classList.remove("le2-muted");
+      elScope.innerHTML="캐시 위치: <b>Self-Attention 전용</b> (FFN 제외 — 논문 ablation)";
+    } else {
+      elPrune.textContent="0%"; elPrune.classList.add("le2-muted");
+      elKeep.textContent="100%"; elKeep.classList.add("le2-muted");
+      elFps.textContent="미보고"; elFps.classList.add("le2-muted");
+      elLat.textContent="미보고"; elLat.classList.add("le2-muted");
+      elScope.innerHTML="캐시 OFF: 전 토큰 조밀 재계산 · W/O 캐시 <b>FPS·지연은 논문 미보고</b>";
+    }
+  }
+
+  function log(html){ elLog.insertAdjacentHTML("beforeend","\n"+html); elLog.scrollTop=elLog.scrollHeight; }
+
+  function setCache(on){
+    cacheOn=on;
+    btnOn.classList.toggle("le2-tg-on",on);  btnOn.setAttribute("aria-pressed",on);
+    btnOff.classList.toggle("le2-tg-on",!on); btnOff.setAttribute("aria-pressed",!on);
+    elTau.disabled=!on; btnPaper.disabled=!on;
+    refresh();
+  }
+
+  // 스트리밍 재생: 21 latent frame = 7 chunk, 각 chunk 4-step, ~79ms/chunk
+  function play(){
+    if(running) return; running=true; elRun.disabled=true;
+    elLog.innerHTML='<span class="le2-dim">// inference-mm.py --config wan_mm-token-pruning.yaml --save_mask</span>';
+    log('<span class="le2-k">[init]</span> Wan2.1-T2V-1.3B · 4-step causal · num_frame_per_block='+PAPER.chunkFrames+' · KV cache + sink token');
+    var c=0, simMs=0;
+    (function step(){
+      curChunk=c; buildField(c);
+      // τ는 슬라이더 유지(사용자 설정). 표시엔 현재 prune% 반영.
+      var tau=parseFloat(elTau.value); refresh();
+      var s=pruneStats(tau);
+      var f0=c*PAPER.chunkFrames, f1=f0+PAPER.chunkFrames-1;
+      elProg.textContent="chunk "+(c+1)+"/"+PAPER.chunks+"  ·  latent "+f0+"–"+f1;
+      if(cacheOn){
+        simMs+=PAPER.latMs;
+        log('<span class="le2-k">[chunk '+(c+1)+'/'+PAPER.chunks+']</span> latent '+f0+'–'+f1+
+            ' | mask←L₂(prev) | keep top30% <span class="le2-o">τ='+tau.toFixed(2)+'</span>'+
+            ' | prune <span class="le2-o">'+s.prune.toFixed(1)+'%</span>'+
+            ' | <span class="le2-b">self_attn cache reuse</span> | 4-step[1000,750,500,250] | <span class="le2-w">+'+PAPER.latMs+'ms</span>');
+      } else {
+        log('<span class="le2-k">[chunk '+(c+1)+'/'+PAPER.chunks+']</span> latent '+f0+'–'+f1+
+            ' | <span class="le2-w">full recompute (prune 0%)</span> | 4-step[1000,750,500,250] | latency <span class="le2-dim">논문 미보고</span>');
+      }
+      c++;
+      if(c<PAPER.chunks){ setTimeout(step,360); }
+      else{
+        if(cacheOn){
+          log('<span class="le2-k">[done]</span> '+PAPER.pixelFrames+' frames · sim '+(simMs/1000).toFixed(2)+
+              's · <span class="le2-o">'+PAPER.fps+' FPS</span> <span class="le2-dim">(논문 보고값)</span>');
+        } else {
+          log('<span class="le2-k">[done]</span> '+PAPER.pixelFrames+' frames · <span class="le2-dim">W/O 캐시 FPS·지연 논문 미보고</span>');
+        }
+        elProg.textContent="완료"; running=false; elRun.disabled=false;
+      }
+    })();
+  }
+
+  // 이벤트
+  elTau.addEventListener("input",refresh);
+  btnOn.addEventListener("click",function(){setCache(true);});
+  btnOff.addEventListener("click",function(){setCache(false);});
+  btnPaper.addEventListener("click",function(){ if(!cacheOn)return; elTau.value=paperTau().toFixed(2); refresh(); });
+  elRun.addEventListener("click",play);
+
+  // 초기 상태: chunk0 필드 + 논문 기준 τ(top-30% keep → prune≈70%)
+  buildField(0);
+  elTau.value=paperTau().toFixed(2);
+  setCache(true);
+})();
+</script>
+
+<script>
+/* ===== 상단 "실행" 마스터 오케스트레이터 =====
+   각 패널의 자체 실행 버튼을 순서대로 클릭 → 스크롤하며 파이프라인을 매끄럽게 재생한다.
+   내부 로직을 건드리지 않고(각 IIFE 캡슐화 유지), 버튼의 disabled 상태만 관찰해 완료를 감지한다. */
+(function(){
+  "use strict";
+  var btn=document.getElementById("le-master-run");
+  var status=document.getElementById("le-master-status");
+  if(!btn) return;
+  function q(id){ return document.getElementById(id); }
+  function say(t){ if(status) status.textContent=t; }
+  function scrollTo(el){ if(el && el.scrollIntoView) el.scrollIntoView({behavior:"smooth",block:"start"}); }
+  function sleep(ms){ return new Promise(function(r){ setTimeout(r,ms); }); }
+
+  // 버튼을 눌러 시작시킨 데모의 완료를 disabled 상태 전이(true→false)로 감지
+  function waitDone(el, maxMs){
+    return new Promise(function(resolve){
+      if(!el){ resolve(); return; }
+      var start=Date.now(), sawBusy=false;
+      var iv=setInterval(function(){
+        if(el.disabled) sawBusy=true;
+        if((sawBusy && !el.disabled) || (Date.now()-start>maxMs)){ clearInterval(iv); resolve(); }
+      },200);
+    });
+  }
+
+  var running=false;
+  btn.addEventListener("click", async function(){
+    if(running) return; running=true;
+    var label=btn.textContent;
+    btn.disabled=true; btn.textContent="■ 재생 중…";
+    try{
+      // ① 3단계 증류 파이프라인
+      say("① 3단계 증류 파이프라인 재생 중…");
+      scrollTo(q("ledist-root"));
+      await sleep(450);
+      var d=q("ledist-play");
+      if(d){ d.click(); await waitDone(d, 40000); }
+
+      // ② 성능 벤치마크 · 결과 패널
+      say("② 성능 벤치마크 결과 패널 재생 중…");
+      scrollTo(q("lebench-root"));
+      await sleep(650);
+      var b=q("lebench-run");
+      if(b){ b.click(); }
+      await sleep(1700);
+
+      // ③ 마스크 캐시 · 스트리밍 추론
+      say("③ 마스크 캐시 · 스트리밍 추론 재생 중…");
+      scrollTo(q("le2Root"));
+      await sleep(650);
+      var m=q("le2Run");
+      if(m){ m.click(); await waitDone(m, 12000); }
+
+      say("완료 · 각 패널의 버튼·토글·슬라이더로 개별 재생과 파라미터 변화를 직접 관찰해 보세요.");
+    } finally {
+      btn.textContent=label; btn.disabled=false; running=false;
+    }
+  });
+})();
+</script>
+
+</body>
+</html>
