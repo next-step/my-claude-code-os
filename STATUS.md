@@ -21,6 +21,9 @@
 - 실 DB 읽기(Prisma + SQLite), 북마크 CRUD, `role` 다중값 필터
 - API 엔드포인트 8종 (GET /api/jobs … DELETE /api/bookmarks/:id)
 - 컨텍스트 보강: CLAUDE.md 항상-참인 사실 주입
+- **`status-context` 훅(SessionStart)** — 이 파일(`STATUS.md`)을 매 세션 자동 주입. "먼저 확인하라"는 부탁을 보장으로 전환. `jq` 없이 `sed`만 사용
+- **`contract-context` 훅(SubagentStart)** — `src/types/contract.ts` 전문을 개발 에이전트(backend/frontend)에만 주입. payload 의 `agent_type` 으로 분기(실측 확인)
+- **`decision-log` 훅 복구** — `jq` 의존 제거(`sed` 파싱), 스냅샷 diff 로 **바뀐 절 이름**까지 기록, 파싱 실패 시 `.claude/decision-log.err` 에 흔적. 2026-07-05 이후 조용히 죽어 있던 것을 살림
 - **피드 정렬·필터 UX 개선** (orchestrate 시연) — `sort=recent` 정렬·집계 규약 구현(`totalCount` 부분집합 버그 수정), 필터↔URL 동기화(새로고침·공유 복원), 적용된 필터 칩·"필터 전체 해제". 계약 모호점을 OS.md 12.6/6장에 명문화(DECISIONS.md 자동 기록)
 - **수집 파이프라인 구현 (OS.md 12.8)** — fixture(`saramin-job-search.json`, FULL 5+PARTIAL 4) → `SaraminAdapter`(fetchFn 주입, 실행당 최대 5콜) → `Normalizer`(name 키워드 라벨 매핑·dedupKey·dataQuality) → `scripts/collect.ts`(`COLLECT_SOURCE` 스위치, idempotent upsert). `saramin-fixture` 모드로 수집→upsert→`GET /api/jobs` 노출까지 검증(재실행 시 신규 0 확인)
 

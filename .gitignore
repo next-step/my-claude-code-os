@@ -20,5 +20,9 @@ next-env.d.ts
 /prisma/dev.db
 /prisma/dev.db-journal
 
+# decision-log hook 부산물 (OS.md 직전본 스냅샷 · 실패 흔적)
+/.claude/.os-snapshot.md
+/.claude/decision-log.err
+
 # misc
 *.tsbuildinfo

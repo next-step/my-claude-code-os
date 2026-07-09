@@ -73,13 +73,31 @@ npm run collect      # 수집 스텁(현재 MockAdapter 시연, 실 수집은 �
 | **orchestrate** | 기획자↔개발자 서브에이전트를 정해진 순서로 호출·중개해 기능 한 단위를 완성 | 서브에이전트는 서로 못 부르므로 **메인 Claude가 유일한 오케스트레이터**가 되는 절차 |
 | **handoff** | 기획→개발 위임 시 "범위·참조 계약·완료 기준·의존성"을 표준 양식으로 정리 | orchestrate 2단계(개발자 병렬 호출) 직전에 위임 품질을 일정화 |
 | **contract-check** | 공유 계약(OS.md 12장 ↔ backend 타입 ↔ frontend 사용처)의 드리프트 점검 | 세 지점의 타입/스펙 불일치를 잡아내는 검증 절차 |
-| **skill-stat** | 지금까지 호출된 스킬의 횟수·마지막 호출 시각 통계 표시 | 아래 훅이 쌓은 `~/.claude/skill-stats.json`을 읽어 보여줌 |
+| **interview** | 지시가 모호할 때 추측 대신 선택지로 되물어 뜻을 분명히 함 | `SKILL.md`(절차)와 `PHILOSOPHY.md`(왜)를 분리한 유일한 스킬 |
+| **skill-stat** | 지금까지 호출된 스킬의 횟수·마지막 호출 시각 통계 표시 | 아래 `skill-usage-log` 훅이 쌓은 통계를 읽어 보여줌 (**현재 훅 미등록 → 항상 빈 결과**) |
 
 ## 협업·공유 계층 (에이전트 외의 공유 자원)
 공유 서브에이전트(위 3명)에 더해, 아래 두 가지가 스킬·에이전트가 함께 딛는 공유 기반이다.
 참고로 서브에이전트끼리는 **직접 호출이 불가능**하므로, 이들을 엮는 오케스트레이션은 항상 메인 Claude가 맡는다.
 
 - **공유 계약**: `OS.md` 12장 + `src/types/contract.ts`. 백엔드가 정의·export한 타입을 프론트가 import해 쓰는 단일 진실 출처. (contract-check가 이걸 지킨다)
-- **훅 (`.claude/hooks/`, `.claude/settings.json`에 연결)**: 협업 흔적을 자동 기록하는 백그라운드 장치.
-  - `skill-usage-log.sh` — **PreToolUse** 훅. Skill 호출 payload에서 스킬 이름을 뽑아 `~/.claude/skill-stats.json`에 횟수·시각을 원자적으로 누적(항상 `exit 0`으로 도구 실행 불방해). → skill-stat이 소비.
-  - `decision-log.sh` — **PostToolUse(Edit|Write)** 훅. `OS.md`가 수정될 때마다 `DECISIONS.md`에 "언제·어떤 파일·어떤 도구로" 한 줄을 append해 청사진 변경 추적선을 남김.
+- **자동 주입 컨텍스트**: `status-context.sh`가 넣는 현황(`STATUS.md`), `skill-context.sh`가 만드는 스킬·에이전트 카탈로그, `contract-context.sh`가 넣는 공유 계약 전문. 아래 훅 참조.
+- **훅 (`.claude/hooks/`, `.claude/settings.json`에 연결)**: 협업 흔적을 자동 기록하거나 컨텍스트를 자동 주입하는 백그라운드 장치.
+  - `status-context.sh` — **SessionStart** 훅. `STATUS.md`(46줄)를 통째로 읽어 `additionalContext`로 주입한다. `CLAUDE.md`가 "작업 시작 시 STATUS.md를 먼저 확인하라"고 **부탁**하던 것을, 세션마다 반드시 들어오는 **보장**으로 바꾼 장치다. 반면 `OS.md`(315줄)는 크기 때문에 주입하지 않고 이정표로만 가리킨다. 외부 의존성 없음(`jq` 불필요), 파일이 없으면 조용히 `exit 0`.
+  - `skill-context.sh` — **PreToolUse(matcher `Skill`)** + **SubagentStart** 훅. `.claude/skills/*/SKILL.md`와 `.claude/agents/*.md`의 frontmatter를 그때그때 읽어 "무엇이 있고 언제 쓰는지" 카탈로그를 만들고, `hookSpecificOutput.additionalContext`로 컨텍스트에 넣는다. 손으로 관리하는 목록이 없어 **드리프트가 구조적으로 불가능**하다. 외부 의존성 없음(`jq` 불필요), 항상 `exit 0`.
+    - PreToolUse는 **호출한 쪽**(메인 대화) 컨텍스트에, SubagentStart는 **생성되는 서브에이전트 안쪽** 컨텍스트에 주입된다. 두 이벤트가 필요한 이유가 이것이다.
+  - `contract-context.sh` — **SubagentStart** 훅. 공유 계약 `src/types/contract.ts`(207줄) 전문을 코드펜스에 담아 주입한다. 단, **`backend-developer` / `frontend-developer` 에만** 넣고 `product-planner`(상위 의사결정만 함)와 내장 에이전트에는 넣지 않는다. 분기 근거는 SubagentStart payload 의 `agent_type` 필드다 — 실측한 payload 는 아래 형태다.
+    ```json
+    {"session_id":"…","transcript_path":"…","cwd":"…","prompt_id":"…",
+     "agent_id":"a72176a23e08574dc","agent_type":"backend-developer","hook_event_name":"SubagentStart"}
+    ```
+    `CLAUDE.md`가 이 파일을 "공유 타입 단일 출처"로 선언해 놓고도 정작 개발 에이전트는 못 본 채 시작하던 간극을 메운다. `jq` 불필요(`sed`로 `agent_type` 추출), 항상 `exit 0`.
+  - `decision-log.sh` — **PostToolUse(Edit|Write)** 훅. `OS.md`가 수정될 때마다 `DECISIONS.md`에 **언제·어느 절이** 바뀌었는지 한 줄을 append한다.
+    ```
+    - 2026-07-09T06:23Z · OS.md 「12.6 정렬·필터 규약 (양쪽 합의)」 Edit (+3/-1)
+    ```
+    - **절 탐지 방식**: payload의 `tool_response.structuredPatch`를 파싱하는 대신, `.claude/.os-snapshot.md`(직전본, git 무시)와 `diff`해 바뀐 줄 번호를 얻고 그 위의 가장 가까운 제목을 절 이름으로 삼는다. 형식 변화에 강하고 `Edit`·`Write` 어느 쪽이든 동일하게 동작한다. 절이 4개 이상이면 3개만 적고 `외 N개`.
+    - **CRLF 주의**: 이 저장소의 `.md`는 CRLF다. 어떤 도구가 LF로 저장하면 전 줄이 바뀐 것으로 오탐하므로(실측: `+315/-315`) `diff --strip-trailing-cr`을 반드시 붙인다.
+    - **조용한 실패 금지**: 이전 버전은 `jq`로 payload를 파싱했는데 이 환경엔 `jq`가 없어, 경로를 못 읽고 조용히 `exit 0` 하며 몇 달간 죽어 있었다(2026-07-05 이후 기록 중단). 지금은 `sed`로 파싱하고, 파싱에 실패하면 `.claude/decision-log.err`에 흔적을 남긴다.
+    - **한계**: "왜" 바꿨는지는 payload에 없다. 의도는 계속 OS.md 본문과 커밋 메시지가 보관한다. 사람이 에디터로 직접 OS.md를 고치면 스냅샷이 갱신되지 않아, 그 변경분은 다음 훅 실행 때 함께 묶여 보고된다.
+  - `skill-usage-log.sh` — **미등록·미동작.** 어느 `settings.json`에도 연결돼 있지 않고, 내부적으로 `jq`를 쓰는데 이 환경엔 `jq`가 없다. 살리려면 `jq` 의존 제거 + 통계 파일을 프로젝트 안(`.claude/`)으로 옮기고 `settings.json`에 등록해야 한다.
