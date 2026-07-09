@@ -1,6 +1,6 @@
 ---
 topic: committee-position-field-contract
-status: 진행중
+status: 완료
 source: docs/interviews/2026-07-10-committee-position-field.md (Q2·Q3·Q9·Q11)
 ---
 

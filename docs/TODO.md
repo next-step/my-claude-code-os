@@ -40,15 +40,15 @@
 > 잠정 입장 필드가 단수형이라 여러 종목을 주장할 표기가 없었고, 긴급위 필드 값 집합은 아예 미정의였다.
 > 아래 두 항목은 **순차**다 — 2번이 1번의 필드 문법을 전제로 서술한다.
 
-- [~] 위원회 출력 계약 복수 종목 확장 — 잠정 입장 필드를 종목 리스트 + 현금 비중으로, 긴급위 값 집합 3진법 신설(에이전트 7 md + personas 8곳 동기화) — [상세 계획](./plans/committee-position-field-contract.md)
+- [x] 위원회 출력 계약 복수 종목 확장 — 잠정 입장 필드를 종목 리스트 + 현금 비중으로, 긴급위 값 집합 3진법 신설(에이전트 7 md + personas 8곳 동기화) — [상세 계획](./plans/committee-position-field-contract.md)
 - [ ] 위원회 수렴 판정·비중 확정 오케스트레이션 — 종목 집합 일치 수렴 · 리스크 봉투 안 의장 확정 · 5R 교집합 부분 채택 · 봉투 부재 폴백 · 회의록 궤적 — [상세 계획](./plans/committee-convergence-multi-position.md)
 
 ### 헤르메스 배선 (hermes-wiring 구현)
 
 > 순서가 있다 — 1·2는 3·4의 선행 조건이다.
 
-- [~] sim-engine 실행 모델 전환 — fill_engine watchlist 리로드·긴급 쿨다운 + SKILL 실행 모델 재작성 — [상세 계획](./plans/sim-engine-execution-model.md)
-- [~] 휴장일 게이트 — exchange_calendars 의존성 + 개장 여부 판정 스크립트 — [상세 계획](./plans/market-calendar-gate.md)
+- [x] sim-engine 실행 모델 전환 — fill_engine watchlist 리로드·긴급 쿨다운 + SKILL 실행 모델 재작성 — [상세 계획](./plans/sim-engine-execution-model.md)
+- [x] 휴장일 게이트 — exchange_calendars 의존성 + 개장 여부 판정 스크립트 — [상세 계획](./plans/market-calendar-gate.md)
 - [ ] 시뮬 디스패처 스크립트 — sim-chain.sh (flock·watchlist 조립·이벤트 직렬 디스패치) — [상세 계획](./plans/hermes-sim-dispatcher.md)
 - [ ] 아침·주간 체인 스크립트 + 오케스트레이션 마감 — morning/weekly-chain.sh + cron 등록 문서 + OS.md 갱신 — [상세 계획](./plans/hermes-daily-weekly-chain.md)
 

@@ -1,6 +1,6 @@
 ---
 topic: sim-engine-execution-model
-status: 진행중
+status: 완료
 source: docs/interviews/2026-07-10-hermes-wiring.md (Q3·Q8·Q9)
 ---
 
