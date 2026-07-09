@@ -41,7 +41,7 @@
 > 아래 두 항목은 **순차**다 — 2번이 1번의 필드 문법을 전제로 서술한다.
 
 - [x] 위원회 출력 계약 복수 종목 확장 — 잠정 입장 필드를 종목 리스트 + 현금 비중으로, 긴급위 값 집합 3진법 신설(에이전트 7 md + personas 8곳 동기화) — [상세 계획](./plans/committee-position-field-contract.md)
-- [~] 위원회 수렴 판정·비중 확정 오케스트레이션 — 종목 집합 일치 수렴 · 리스크 봉투 안 의장 확정 · 5R 교집합 부분 채택 · 봉투 부재 폴백 · 회의록 궤적 — [상세 계획](./plans/committee-convergence-multi-position.md)
+- [x] 위원회 수렴 판정·비중 확정 오케스트레이션 — 종목 집합 일치 수렴 · 리스크 봉투 안 의장 확정 · 5R 교집합 부분 채택 · 봉투 부재 폴백 · 회의록 궤적 — [상세 계획](./plans/committee-convergence-multi-position.md)
 
 ### 헤르메스 배선 (hermes-wiring 구현)
 
