@@ -149,10 +149,14 @@ input:  ticket-start의 작업 브리핑
         태스크 목록 출력 + 사용자 확인
         (수정 / 추가 / 순서 변경 기회 제공)
           ↓
-        [태스크 루프]
-        태스크 1 → 구현 → 변경사항 검토 → auto-commit
-        태스크 2 → 구현 → 변경사항 검토 → auto-commit
-        ...
+        태스크 목록을 docs/tasks.md에 저장 (진행 상태의 단일 원본)
+          ↓
+        [태스크 루프 — 규모에 따라 선택]
+        직접 실행: 태스크 1 → 구현 → 검토 → auto-commit → 태스크 2 → ...
+        위임 모드: 독립 태스크들을 병렬 에이전트로 실행
+        랄프 모드: /loop /task-impl 랄프 반복 — 반복마다 새 컨텍스트에서
+                   tasks.md 읽기 → 태스크 하나 구현·커밋·체크 → 종료,
+                   전부 완료 시 DONE 출력으로 루프 정지
           ↓
 output: 모든 태스크 커밋 완료
         + 커밋 이력 요약 (태스크 ↔ 커밋 SHA 매핑)
@@ -166,6 +170,8 @@ output: 모든 태스크 커밋 완료
 - [x] 사용자 확인 단계 설계 (수정/추가/순서 변경 허용)
 - [x] 태스크별 구현 → auto-commit 루프 (직접 실행 + 에이전트 위임 모드)
 - [x] 커밋 이력 요약 포맷 정의 (SHA 매핑 테이블)
+- [x] `docs/tasks.md` 영속화 — 체크박스 + SHA + 메모(가정/이탈/보류만) 포맷
+- [x] 랄프 모드 — 외부 루프(/loop) 기반 반복 실행, 질문 대신 가정 기록/보류 규칙, DONE/BLOCKED 정지 신호
 
 ---
 
@@ -256,6 +262,7 @@ output: Slack 배포 완료 메시지 전송
 | Step 2.7 | `ticket-start` QA 체크리스트 생성 — 기획서 시나리오 → Playwright 실행 가능 포맷으로 `docs/qa-checklist.md` 저장 | ✅ 완료 |
 | Step 2.8 | `dev-loop` Playwright QA 실행 — `docs/qa-checklist.md` 기반 체크리스트 순회 + PR 본문 자동 반영                 | ✅ 완료 |
 | Step 2.9 | `/dev-loop` 분리 — `/dev-test`(테스트+리뷰) + `/dev-pr`(리뷰루프+PR) + `/dev-loop`(오케스트레이터)            | ✅ 완료 |
+| Step 2.10 | `task-impl` 랄프 모드 — `docs/tasks.md` 영속화 + 외부 루프(/loop) 반복 실행                                    | ✅ 완료 |
 | Step 3   | `/deploy-notify` 스킬 구현                                                                                      | 🔲 예정 |
 | Step 4   | 배포 명령 감지 훅 자동화                                                                                        | 🔲 예정 |
 | Step 5   | Memory 시스템 구축                                                                                              | 🔲 예정 |
