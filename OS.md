@@ -45,16 +45,16 @@ AI는 아래 규칙을 위반할 수 없다. 위반이 필요하다고 판단되
 | 게이트 | **대응표 확인**: 모든 시나리오가 테스트에 1:1 이상 커버됨 |
 | 담당 | 메인 + test-writer |
 
-### 3-3. /m-build — 테스트를 통과시키고 감사받기
+### 3-3. /m-build — 테스트를 통과시키고(GREEN) 리팩터하고 감사받기
 
 | | |
 |---|---|
 | 입력 | 태스크 목록 + 테스트 코드 (read-only, H3) |
-| 과정 | 내부 루프: 구현 → 러너 즉시 실행 → 실패 시 수정. **러너를 3회 연속 실행해도 전체 통과에 이르지 못하면 사람에게 에스컬레이션.** 전체 통과 시 verifier 감사 |
-| verifier 감사 | ① 실행된 테스트 수 = 대응표의 테스트 수 ② `src/test/**` diff 없음 ③ 러너 출력 전문 첨부 |
-| 산출물 | 프로덕션 코드 + 감사 보고 |
+| 과정 | **① GREEN**: 내부 루프로 구현 → 러너 즉시 실행 → 실패 시 수정. **러너를 3회 연속 실행해도 전체 통과에 이르지 못하면 사람에게 에스컬레이션.** → **② REFACTOR(선택)**: 전체 통과 후 tdd-refactor가 동작을 바꾸지 않고 코드 품질 개선. 단계마다 러너로 GREEN 재확인, 개선 여지 없으면 건너뜀. 테스트는 여전히 read-only(H3). → **③ verifier 감사** |
+| verifier 감사 | ① 실행된 테스트 수 = 대응표의 테스트 수 ② `src/test/**` diff 없음 ③ 러너 출력 전문 첨부 (리팩터가 있었으면 리팩터 후 상태 기준) |
+| 산출물 | 프로덕션 코드 + 리팩터 요약 + 감사 보고 |
 | 게이트 | **사람 최종 승인** → 커밋 |
-| 담당 | implementer + verifier |
+| 담당 | implementer + tdd-refactor + verifier |
 
 ## 4. 에이전트 구성
 
@@ -63,13 +63,23 @@ AI는 아래 규칙을 위반할 수 없다. 위반이 필요하다고 판단되
 - `/m-retrospect` — 파이프라인 밖 유틸리티. 사이클 종료 후 회고 적립 (§6)
 - `/m-brainstorm` — 파이프라인 진입 전. 소크라테스식 문답으로 "요구 한 줄" 정제 (read-only)
 - `/m-status` — 현재 phase·사이클 진행도·미커밋 변경을 리포트 (read-only)
+- `/m-tdd` — 파이프라인 밖 경량 진입점. 스펙 문서·phase 마커·커밋 게이트 없이 요구 한 줄에서 바로 RED→GREEN→REFACTOR 사이클만 돈다. 언어·런너 자동 감지 후 tdd 오케스트레이터에 위임. 정식 파이프라인의 게이트가 필요 없는 빠른 TDD용.
 
 ### 서브에이전트 (스폰)
+
+**정식 파이프라인 (§3):**
 - **spec-writer** — 인터뷰, Given/When/Then 시나리오 작성. /m-spec과 /m-retrospect(스펙 갱신)에서 공유.
 - **conflict-analyzer** — 기존 `specs/` 전체 대비 충돌·중복·영향 분석. spec-writer와 분리된 독립 컨텍스트 (§3-1).
 - **test-writer** — 시나리오→테스트 코드 생성. 독립 컨텍스트 (H2).
 - **implementer** — 테스트를 통과시키는 최소 구현. 테스트 수정 불가 (H3).
+- **tdd-refactor** — GREEN 유지 리팩터. 동작 불변, 테스트 read-only, 단계별 러너 GREEN 확인 (§3-3 REFACTOR).
 - **verifier** — 러너 출력 전문 대조 감사 (H1, H5).
+
+**`/m-tdd` 경량 진입점 전용 (파이프라인 밖):**
+- **tdd** — RED→GREEN→REFACTOR 사이클 오케스트레이터. 아래 3개를 순서대로 스폰.
+- **tdd-test-writer** — RED 테스트 작성. 프로덕션 코드 열람 금지 (H2).
+- **tdd-implementer** — GREEN 최소 구현. 테스트 read-only (H3).
+- (REFACTOR는 위 tdd-refactor를 공유)
 
 ## 5. 디렉토리 구조
 
@@ -79,8 +89,9 @@ project/
 ├── CLAUDE.md              # OS.md 참조 지시 + 회고 적립 (§6)
 ├── specs/                 # 스펙 누적. 삭제 금지. NNN-{spec,plan}.md
 ├── .claude/
-│   ├── skills/            # 스킬 6개 (m-spec, m-plan, m-build, m-retrospect, m-brainstorm, m-status)
-│   ├── agents/            # 서브에이전트 5개 (spec-writer, conflict-analyzer, test-writer, implementer, verifier)
+│   ├── skills/            # 스킬 7개 (m-spec, m-plan, m-build, m-retrospect, m-brainstorm, m-status, m-tdd)
+│   ├── agents/            # 파이프라인 6개 (spec-writer, conflict-analyzer, test-writer, implementer, tdd-refactor, verifier)
+│   │                      #  + m-tdd 전용 3개 (tdd, tdd-test-writer, tdd-implementer)
 │   ├── hooks/             # 훅 스크립트 (test-guard, commit-guard, skill-stat, session-guard)
 │   └── phase              # 현재 단계 표시 (test-guard, commit-guard가 참조)
 └── src/
