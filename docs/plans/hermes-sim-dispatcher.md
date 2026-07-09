@@ -1,6 +1,6 @@
 ---
 topic: hermes-sim-dispatcher
-status: 진행중
+status: 완료
 source: docs/interviews/2026-07-10-hermes-wiring.md (Q3·Q4·Q6·Q14·Q16·Q19·Q21·Q22)
 ---
 
@@ -86,3 +86,9 @@ Q3에서 '6.5시간 클로드 세션' 대신 '상시 poll + 이벤트당 짧은 
 - **기각 C**(사람이 스크립트 직접 작성): 노출면 문제를 풀지 못하고 자동화만 늦춘다.
 
 이 결정은 [hermes-daily-weekly-chain.md](./hermes-daily-weekly-chain.md)와 공유한다.
+
+**남은 폭 (구현 후 기록).** 화이트리스트에 `Bash(python3:*)`가 들어갔다. `python3 -c '...'`로
+임의 코드를 돌릴 수 있으니 A안이 세우려던 경계보다 넓다. 스크립트 경로까지 고정하려 했으나
+SKILL.md가 `python3 "$CLAUDE_PROJECT_DIR/scripts/krx_tick.py"` 형태로 부르는 탓에 변수 확장·따옴표에
+프리픽스 매칭이 걸려 무인 루프가 조용히 죽을 위험이 더 컸다. 좁히려면 SKILL.md의 호출 형태를
+먼저 리터럴 경로로 바꿔야 한다 — 표본(실구동 1회) 확보 후 재검토한다.
