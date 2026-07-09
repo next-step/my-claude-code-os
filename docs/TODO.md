@@ -21,7 +21,6 @@
 - [x] 투자 위원회 스킬 (B) + 페르소나 + 계획서 (D) — 7인 2단계 토론·회의록·살아있는 계획서 — [상세 계획](./plans/investment-committee-skill.md)
 - [x] 모의 시뮬레이션 엔진 (E) — 1분 폴링 체결·포트폴리오 상태·긴급 위원회 — [상세 계획](./plans/simulation-engine-skill.md)
 - [x] 주간 회고 스킬 (F) — 위원회 페르소나 자기 되짚기·개선안 되먹임 — [상세 계획](./plans/weekly-retro-skill.md)
-- [~] 루프 오케스트레이션 (헤르메스 체이닝) — 무인 순차 연쇄 + check_context·CLAUDE.md 안내 문단 마감 — [상세 계획](./plans/loop-orchestration.md)
 
 ### 위원회 아키텍처 전환 (committee-architecture 구현)
 
@@ -43,6 +42,18 @@
 
 - [ ] 위원회 출력 계약 복수 종목 확장 — 잠정 입장 필드를 종목 리스트 + 현금 비중으로, 긴급위 값 집합 3진법 신설(에이전트 7 md + personas 8곳 동기화) — [상세 계획](./plans/committee-position-field-contract.md)
 - [ ] 위원회 수렴 판정·비중 확정 오케스트레이션 — 종목 집합 일치 수렴 · 리스크 봉투 안 의장 확정 · 5R 교집합 부분 채택 · 봉투 부재 폴백 · 회의록 궤적 — [상세 계획](./plans/committee-convergence-multi-position.md)
+
+### 헤르메스 배선 (hermes-wiring 구현)
+
+- [~] 루프 오케스트레이션 (헤르메스 체이닝) — 무인 순차 연쇄 + check_context·CLAUDE.md 안내 문단 마감 — [상세 계획](./plans/loop-orchestration.md)
+
+> 위 `루프 오케스트레이션` 항목의 미완 단계(헤르메스 실체·일일/주간 체인)를 이 4항목이 대체한다.
+> 순서가 있다 — 1·2는 3·4의 선행 조건이다.
+
+- [ ] sim-engine 실행 모델 전환 — fill_engine watchlist 리로드·긴급 쿨다운 + SKILL 실행 모델 재작성 — [상세 계획](./plans/sim-engine-execution-model.md)
+- [ ] 휴장일 게이트 — exchange_calendars 의존성 + 개장 여부 판정 스크립트 — [상세 계획](./plans/market-calendar-gate.md)
+- [ ] 시뮬 디스패처 스크립트 — sim-chain.sh (flock·watchlist 조립·이벤트 직렬 디스패치) — [상세 계획](./plans/hermes-sim-dispatcher.md)
+- [ ] 아침·주간 체인 스크립트 + 오케스트레이션 마감 — morning/weekly-chain.sh + cron 등록 문서 + OS.md 갱신 — [상세 계획](./plans/hermes-daily-weekly-chain.md)
 
 ---
 
