@@ -6,3 +6,6 @@
 *.egg-info/
 __pycache__/
 img.png
+
+# 커버리지 아티팩트
+.coverage
