@@ -34,6 +34,7 @@ cron을 걸기 전에 아래가 만족돼야 한다. 하나라도 빠지면 개�
 
 1. **`flock` 설치** — `brew install flock` (macOS 기본 미포함). 없으면 세 스크립트가 중복 실행
    방지 불가로 즉시 `exit 1`한다(조용히 이중 체결하는 것보다 안전).
+   brew 자체가 없다면 먼저 [Homebrew](https://brew.sh) 설치가 필요하다.
 2. **`claude` CLI가 cron 환경의 `PATH`에 있을 것** — 스크립트가 `claude -p`를 직접 부른다.
    cron/launchd는 로그인 셸 PATH를 물려받지 않으므로, 헤르메스 cron 등록 시 PATH를 확인한다.
 3. **디스코드 채널 ID 2개** — `~/.hermes/channel_directory.json`의 `일간`·`주간`.
@@ -44,13 +45,20 @@ cron을 걸기 전에 아래가 만족돼야 한다. 하나라도 빠지면 개�
 그 아래로 **심링크**로 이어 붙인 뒤(Q22), cron 3종을 등록한다. 등록 자체는 사용자가 헤르메스 에이전트에게
 부탁한다(Q7).
 
-### 1) 심링크
+### 1) 스크립트를 `~/.hermes/scripts/`에 배치
+
+헤르메스 cronjob 도구는 `~/.hermes/scripts/` 하위 파일만 실행한다. **심링크는 사용할 수 없다** —
+경로 검증이 심링크를 따라가 실제 경로가 `~/.hermes/scripts/` 밖이면 "directory traversal" 에러로
+거부한다. 스크립트를 직접 복사해야 한다.
 
 ```bash
 mkdir -p ~/.hermes/scripts
-ln -sfn "$(git -C . rev-parse --show-toplevel)/scripts/hermes" ~/.hermes/scripts/hermes
-# (또는 저장소 절대경로로) ln -sfn /path/to/repo/scripts/hermes ~/.hermes/scripts/hermes
+cp scripts/hermes/morning-chain.sh scripts/hermes/sim-chain.sh scripts/hermes/weekly-chain.sh ~/.hermes/scripts/
+chmod +x ~/.hermes/scripts/morning-chain.sh ~/.hermes/scripts/sim-chain.sh ~/.hermes/scripts/weekly-chain.sh
 ```
+
+> 주의: 원본 스크립트가 변경되면 복사본도 갱신해야 한다. 나중에 cronjob 경로 검증이
+> 심링크를 허용하면 심링크로 바꾸는 것이 유지보수에 낫다.
 
 ### 2) cron 3종
 
