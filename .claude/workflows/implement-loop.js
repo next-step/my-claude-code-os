@@ -157,9 +157,10 @@ ${CHANNEL} 를 Read로 읽어라(없으면 이번엔 할 일 없음). '[code-run
 
   // score (독립 컨텍스트) — scorecard.json/md 기록 + 구조화 verdict 반환
   const score = await agent(
-    `작업 디렉토리 ${ROOT}. ${SK('score')} 를 Read로 읽고 그 기준(총 100점, **6축 — 실제 코드 대조(repo_fidelity) 축 포함**)에 따라 논문 ${SLUG} 의 재현 프로그램 ${P('index.html')} 를 채점하라.
+    `작업 디렉토리 ${ROOT}. ${SK('score')} 를 Read로 읽고 그 기준(총 100점, **6축 — 최우선 축은 실제 동작 구현(functional_reproduction, 25점), 실제 코드 대조(repo_fidelity, 20점) 포함**)에 따라 논문 ${SLUG} 의 재현 프로그램 ${P('index.html')} 를 채점하라.
 임계값 threshold=${THRESHOLD}. 현재 iteration=${i}.
-정본은 ${OUTDIR}/01_analysis.md 의 논문 보고값이며, ${P('REPRODUCE.md')} 주장과 앱 실제를 대조하라. 자급식 여부는 index.html 안 외부 http/src/cdn/fetch 참조로 검사.
+**실제 동작 검증(최우선)**: index.html의 JS 로직을 읽어 논문 태스크(예: 동영상 편집)와 핵심 알고리즘(예: AR 마스크 캐시)이 하드코딩/애니메이션이 아니라 **실제 계산으로 구현**됐는지, 컨트롤이 실측 지표를 실제로 바꾸는지 확인하고 functional_checks에 남겨라.
+정본은 ${OUTDIR}/01_analysis.md 의 논문 보고값이며, ${P('REPRODUCE.md')} 주장과 앱 실제를 대조하라. 자급식 여부는 index.html 안 외부 http/src/cdn/fetch 참조로 검사(로컬 파일 입력 File/createObjectURL은 허용).
 **실제 코드 대조(repo_fidelity)**: 공식 저장소 URL(${OUTDIR}/01_analysis.md §8·${OUTDIR}/04_code.md·${P('REPRODUCE.md')}에서 확인)을 찾아, WebFetch로 레포 실제 소스(config yaml·진입 스크립트·추론 파이프라인·모델 소스)를 직접 읽어 앱이 주장한 코드 수준 값(예: chunk 크기·denoise step 리스트·prune 비율·마스크 식·베이스 모델)을 하나씩 검증하라. 필요하면 먼저 ToolSearch로 'select:WebFetch'를 로드. 대조 결과는 scorecard.json의 repo_checks에 파일·실제값·일치여부로 남겨라. WebFetch가 불가하면 그 사실을 명시하고 이 축을 추정으로 채우지 말 것.
 ${P('scorecard.json')}(iteration=${i}, threshold=${THRESHOLD} 기입)와 ${P('scorecard.md')} 를 Write로 저장하고, 구조화 결과(total/verdict/must_fix/learned)를 반환.`,
     { phase: `Iter${i}:score`, label: `score#${i}`, schema: SCORE_SCHEMA, ...M }

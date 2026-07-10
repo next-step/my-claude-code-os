@@ -71,10 +71,43 @@ Setup → Triage(1회) → ┌─ Build(병렬 컴포넌트 N개) → Merge(단�
 
 ---
 
-## Run #2 — threshold 90 (6축, 실제 코드 대조 축 추가) · 진행 중
+## Run #2 — 실제 동작 구현 전환 (threshold 88, 6축) · **95/100 PASS**
 
-Run #1의 사후 검증 결과를 반영해 다음을 적용하고 재실행:
-1. **채점에 '실제 코드 대조(repo_fidelity, 20점)' 축 추가** — score 단계가 WebFetch로 실제 레포 소스를 읽어 앱의 코드 수준 값과 대조.
-2. **확정 4가지 주입**(build 지침): (a) timestep을 코드 확정값 `[1000,750,500,250]`+`warp_denoising_step:true`로 상향, (b) github.com/cp-cp/LiveEdit를 '공식 저장소 확인됨'으로 반영, (c) 캐시 self-attn 뉘앙스(코드 default는 self_attn+ffn, 배포 config가 self_attn 한정)로 정정, (d) 실제 config 값 보강(`internal_pruning_steps:[1,2]`·`timestep_shift:5.0`·`guidance_scale:3.0`·`num_frames:81`·latent `[1,21,16,60,104]`).
+사용자 지시로 방향을 크게 바꿨다: **"단순 수치 재생이 아니라, 실제로 동영상을 편집하는 프로그램"**. 이에 맞춰 스킬·채점을 개편하고 재실행.
 
-> 실행이 끝나면 이 섹션에 Run #2의 triage·병렬 빌드·sync 신규 문답·6축 점수·최종 verdict를 채운다.
+### 무엇을 바꿨나
+1. **`code-run` 최우선 원칙 '실제 동작 우선' 추가** — 애니메이션이 아니라 실제 입력에 논문 태스크를 실제로 수행. 대형 가중치만 라벨된 경량 대체.
+2. **채점 6축 재편(실제 동작 최우선)**: 실제 동작 구현 25 · 실제 코드 대조 20 · 방법 충실도 15 · 지표 재현 15 · 실행성 15 · 정직성 10.
+3. **주입 지침(notes)**: (i) 실제 동영상 편집기로 재작성, (ii) Run #1 사후 검증의 코드 확정 4가지 반영.
+
+### 실행 경과 (정직한 기록)
+- **API 무중단 아님**: 이 실행은 야간 API/네트워크 장애 구간을 통과하며 ~14.8시간 걸렸고, `score#1`(401)·`build#2:merge`·`sync#2`·`score#2`·`build#3:*`가 연결 오류로 실패했다. 그 결과 **iter1이 빌드한 실제-편집기 `index.html`이 정본으로 남았고**(iter2/3의 재병합이 네트워크로 실패), iter3의 score가 그 앱을 채점해 **95/100 PASS**를 냈다.
+- triage: 다시 **빌드 에이전트 4개**로 병렬 분할.
+
+### 최종 채점 (95/100)
+| 축 | 점수 |
+|---|---|
+| 실제 동작 구현 | 23/25 |
+| 실제 코드 대조 | 20/20 |
+| 방법 충실도 | 14/15 |
+| 지표 재현 | 14/15 |
+| 실행 가능성 | 14/15 |
+| 정직성 | 10/10 |
+
+### 실제 동작 검증 (functional_checks)
+- `editTile()`: 타일 픽셀을 실제로 읽어 3×3 이웃 평균(컨볼루션) + 주황영역(r>150&&r>b+30) teal 리컬러 — **실제 픽셀 편집**.
+- `computeImp()`/`computeL2()`: 타일별 **L2²(편집−원본)** 누적 → min-max 정규화, `kthTau()`가 정렬 배열에서 top-30% 임계 산출 — **실제 마스크 캐시 계산**.
+- `streamRun()`: cacheOn이면 keep 타일만 `editTile` 재계산(perf 측정)·prune 타일 `copyTile` 캐시 재사용 — **컨트롤이 실측 지표를 실제로 바꿈**.
+- 입력: 동영상 파일 업로드(`type=file`+`accept=video`+`createElement('video')`+`drawImage`) + 절차적 샘플(`genFrame`) — 입력 없이도 동작.
+- 실측 vs 논문: `PAPER` 상수(12.66FPS·79ms·`[1000,750,500,250]`)는 [논문 보고값], 속도는 [실측 perf.now]로 분리 라벨.
+- 자급식: 원격 로더 0, 인라인 `<script>` 6개 전부 구문 검사 통과.
+
+### 실제 코드 대조 (repo_fidelity 20/20 — 12개 항목 전부 일치, file:line 인용)
+`adaptive_patch_ratio:0.3` · `denoising_step_list:[1000,750,500,250]`+`warp` · `num_frame_per_block:3` · `internal_pruning_steps:[1,2]` · `internal_pruning_layers:['self_attn']`(배포) vs default `['self_attn','ffn']` · `unpruned_fill_strategy:'prev_step'` · `timestep_shift:5.0`/`guidance_scale:3.0`/`num_frames:81` · latent `[1,21,16,60,104]` · `patch_size=(1,2,2)`→1560 tok/frame · causal mask `(kv_idx<ends[q])|(q==kv)` · `kthvalue` 기반 마스크 계산 · **FPS/지연은 레포 미기재=논문 전용**으로 확인.
+
+### 남은 개선점(must_fix)
+- 정적 코드리뷰 기반 채점이므로, **실제 브라우저 더블클릭 실행으로 콘솔 에러 0을 1회 확증**하고 로그를 REPRODUCE에 남길 것.
+- 편집 stand-in에 캔버스 상시 `[경량 STAND-IN]` 워터마크 노출(배너 접힘 시 오해 방지).
+- DMD 학습 하이퍼파라미터(`real_score/fake_score_num_frame_per_block=21`, `dfake_gen_update_ratio=5`)도 증류 패널에 보강.
+
+> 원본 코드를 직접 받아 비교하려면 `liveedit-official/`(공식 레포 클론)와 `liveedit-official/RUN-GUIDE.md` 참고.

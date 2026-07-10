@@ -1,74 +1,72 @@
 # Scorecard — LiveEdit (arXiv:2606.26740) 재현 앱
 
 - **대상**: `output/liveedit_2606.26740/app/index.html`
-- **정본**: `output/liveedit_2606.26740/01_analysis.md` (논문 보고값)
-- **주장 대조**: `output/liveedit_2606.26740/app/REPRODUCE.md`
-- **iteration**: 1 · **threshold**: 85
-- **총점**: **94 / 100** · **판정: PASS** ✅
+- **정본**: `output/liveedit_2606.26740/01_analysis.md` · 주장 매핑 `app/REPRODUCE.md`
+- **공식 저장소**: https://github.com/cp-cp/LiveEdit — 작업 디렉토리 `liveedit-official/`에 **로컬 클론**되어 있어(git remote 확인) 실제 소스를 직접 대조함
+- **iteration**: 3 · **threshold**: 88
+- **총점**: **95 / 100** · **판정: PASS** ✅
 
-| 축 | 배점 | 점수 |
+## 축별 점수
+
+| 축 | 점수 | 근거 요약 |
 |---|---|---|
-| 지표 재현 (Metric Fidelity) | 30 | 29 |
-| 성능 테스트 반영 (Performance-Test Coverage) | 20 | 19 |
-| 방법 충실도 (Method Fidelity) | 25 | 23 |
-| 실행 가능성 (Runnability) | 15 | 15 |
-| 정직성 (Honesty) | 10 | 8 |
-| **합계** | **100** | **94** |
+| 1. 실제 동작 구현 (Functional) | **23 / 25** | 마스크 캐시가 part1·part2 **두 곳에서 실제 계산**. editTile 실픽셀 편집, computeImp 타일 L2²+정규화, kthTau top-30% 임계, cache/τ가 실측 ms·FPS·prune% 실제 변화 |
+| 2. 실제 코드 대조 (Repo Fidelity) | **20 / 20** | 로컬 클론 소스로 12개 코드값 전부 일치 확인(config·patch_size·마스크 식·kthvalue) |
+| 3. 방법 충실도 (Method) | **14 / 15** | 3단계 증류·chunk=3 인과 스트리밍·직전 chunk L2 마스크·self-attn 캐시 개념 정확 반영 |
+| 4. 지표 재현 (Metric) | **14 / 15** | VBench 6지표·12.66 FPS·95.8% user study·Stage ablation 논문값 일치, 실측 병기 |
+| 5. 실행 가능성 (Runnability) | **14 / 15** | 단일 파일·외부 네트워크 0(앵커 3개뿐)·createObjectURL 로컬 입력만 |
+| 6. 정직성 (Honesty) | **10 / 10** | stand-in 라벨·[실측] vs [논문 보고값] 분리·미보고 미조작·attribution 정확 |
 
----
+## 실제 동작 검증 (최우선)
 
-## 1. 지표 재현 — 29/30
-논문 §6의 핵심 정량 지표가 전부 앱에 나타나고 값이 정본과 **정확히 일치**한다. 단일 진리원 `LEApp.PAPER`(L719-728)와 part1 `METRICS`(L1084-1091)에 하드코딩:
+앱의 핵심 기여(**AR-지향 마스크 캐시**)는 애니메이션이 아니라 **실제 계산**으로 구현됨 — 두 개의 독립 구현:
 
-- 속도: **12.66 FPS**, **79 ms/chunk**, **81 frames / 7.89 s** ✓
-- VBench 6지표: TA **0.270** · BC **0.956** · MS **0.992** · DD **0.256** · AQ **0.581** · IQ **0.708** ✓
-- User study: **95.8% top-3 (n=20)** ✓
-- 학습: **9K+20K+10K = 39K steps · lr 1e-5 · batch 8** ✓
-- 베이스/HW: **Wan2.1-T2V-1.3B · A100×8 · AdamW** ✓
-- 데이터: 벤치 **120** · 학습 필터 **20K** ✓
-- 추론: **4 NFE**, timesteps **[0,250,500,750]**, chunk **3** latent-frame, prune **~70%** / keep **0.3** ✓
+- **part2 편집기 (`le2Root`, 앱의 핵심)**
+  - `editTile()` — 타일 픽셀을 소스에서 읽어 3×3 이웃 평균(컨볼루션) + 주황영역 teal 리컬러(경량 확산 stand-in). 실제 픽셀 연산.
+  - `computeImp()` — 타일별 **L2²(ePrev−sPrev)** 누적 후 min-max 정규화 → 실측 중요도맵. (04_code `_compute_mask_from_generated`)
+  - `kthTau()` — 정렬 후 `a[floor((1-0.30)*N)]` 임계 → **상위 30% keep(=~70% prune)**. (`kthvalue` + `adaptive_patch_ratio=0.3`)
+  - `streamRun()` — keep 타일만 `editTile` 재계산(`perf.now` 측정)·prune 타일 `copyTile` 캐시 재사용. `updateMeasured()`가 emaMs·FPS=1000/emaMs·speedup=baseFullMs/emaMs 실측.
+  - **컨트롤 반응성**: cache 토글 ON/OFF·τ 슬라이더가 실측 ms/FPS/speedup/prune%를 **실제로 바꿈**(하드코딩 재생 아님). 업로드 영상은 `createObjectURL`로 21프레임 로컬 디코딩 후 실제 편집.
+- **part1 micro-benchmark (`lebench-root`)** — `timePath→genFrame→computeL2→kthThreshold→processFrame`로 24프레임 벽시계 실측(cache on vs off ms/frame·speedup·실측 prune%). 워밍업 3프레임 후 측정.
 
-**-1**: 다수 지표가 실측이 아닌 애니메이션 램프(part0 FPS = `0.75+0.25*progress`)로 목표값에 수렴 — 종단값은 정확하나 유도값은 아님.
+한계(정직 라벨됨): 실제 Wan2.1-T2V-1.3B 확산 백본/DMD는 브라우저 불가 → 편집 연산자만 경량 stand-in으로 대체. VBench 막대·상단 FPS 게이지는 **논문값으로의 애니메이션**이며 [논문 보고값] 라벨.
 
-## 2. 성능 테스트 반영 — 19/20
-논문 ablation을 앱이 재현한다.
-- Stage1/2/3 **NFE·CFG·스트리밍** 표(L1093-1097)
-- 캐시 위치 ablation: **Self-Attention 최적 vs FFN 열화** 각주(L611)
-- **W/ vs W/O 캐시** 토글(part2) — OFF 시 prune 0%·전토큰 재계산 거동 반영
-- User study 도넛
+## 실제 코드 대조 (repo_fidelity) — 로컬 공식 소스 인용
 
-**-1**: baseline(LucyEdit/InsV2V/StreamDiffusion) 개별 VBench 비교 막대는 **논문 미보고**라 Ours-only만 표시(정직하게 생략, 지어내지 않음).
+`liveedit-official/`의 git remote = `https://github.com/cp-cp/LiveEdit.git`. WebFetch 없이 실제 파일 대조:
 
-## 3. 방법 충실도 — 23/25
-핵심 메커니즘이 **관찰 가능하게** 재현된다.
-1. **어텐션 마스크 morph**: full → block-causal 로 캔버스에서 실제 애니메이션(`attendCausal = chunkOf(k) <= chunkOf(q)`, `maskProg` 0→1, L991-996).
-2. **chunk-by-chunk 인과 추론** + KV 캐시 재사용 / sink token 콘솔(L1030-1052).
-3. **4-step DMD denoise** 트랙 순차 점등 + Real(frozen)/Fake(trainable) score 도식.
-4. **AR-지향 마스크 캐시**: `paperTau()`(kthvalue, `_compute_mask_from_importance` 모사)로 τ를 실제 계산 → prune ≈ 70% 산출. τ 슬라이더·캐시 토글이 그리드에 즉시 반영.
+| 앱 주장 | 레포 실제값 | 파일 | 일치 |
+|---|---|---|---|
+| adaptive_patch_ratio=0.3 | `adaptive_patch_ratio: 0.3` | configs/wan_mm-token-pruning.yaml:85 | ✅ |
+| denoise steps [1000,750,500,250] +warp | 동일 + `warp_denoising_step: true` | 〃:8-13 | ✅ |
+| num_frame_per_block=3 | `num_frame_per_block: 3` | 〃:47 | ✅ |
+| internal_pruning_steps=[1,2] | `internal_pruning_steps: [1,2]` | 〃:80 | ✅ |
+| layers=['self_attn'] (코드 default +ffn) | config `['self_attn']`; default `['self_attn','ffn']` | 〃:60 · causal_inference.py:64 | ✅ |
+| unpruned_fill_strategy='prev_step' | `unpruned_fill_strategy: 'prev_step'` | 〃:70 | ✅ |
+| timestep_shift 5.0·guidance 3.0·num_frames 81 | 동일 | 〃:16,17,51 | ✅ |
+| latent [1,21,16,60,104] | `image_or_video_shape: [1,21,16,60,104]` | 〃:38-43 | ✅ |
+| patch_size (1,2,2) → 30×52=1560 tok | `t2v_1_3B.patch_size = (1, 2, 2)` | wan/configs/wan_t2v_1_3B.py:20 | ✅ |
+| mask (kv_idx<ends[q])\|(q==kv) | `(kv_idx < ends[q_idx]) \| (q_idx == kv_idx)` | wan/modules/causal_model.py:1140 | ✅ |
+| kthvalue 마스크 산출 | `int(num_tokens*ratio)`·`torch.kthvalue`·`>=threshold` | pipeline/causal_inference.py:141,179,182 | ✅ |
+| 12.66 FPS·79ms = 논문 전용(코드 미기재) | 레포 전역 FPS/latency 수치 없음 | (repo 미기재) | ✅ (attribution 정확) |
 
-**-2**: L₂ 중요도 필드는 **합성**(고지됨)이고, W/O 캐시가 FPS 하락을 수치로 못 보임(논문 미보고라 '미보고' 처리 — 정직하나 대조 관찰성 제한).
+**12개 항목 전부 일치.** 앱이 코드값과 논문 전용값(FPS/latency)을 올바르게 구분 라벨함.
 
-## 4. 실행 가능성 — 15/15
-자급식 검증 통과.
-- **외부 로더 0건**: `src=`/`url()`/`@import`/`fetch(`/`XHR`/`WebSocket`/`<link>`/`integrity` 정규식 스캔 결과 **0**.
-- `http(s)` 등장은 배너·푸터의 **anchor href**(github·arxiv·project)뿐 — `target=_blank`로 클릭 전 네트워크 요청 없음.
-- 인라인 `<script>` **5개 전부 node `new Function` 파싱 통과**.
-- 모든 시각물 Canvas 2D + DOM 로컬 렌더 → `file://` 더블클릭에서 콘솔 에러 없이 재생.
+## 자급식 검증
 
-## 5. 정직성 — 8/10
-정직성은 전반적으로 강하다: 상단 배너·각 패널에 "문서 기반 재현 시뮬레이션 / 실제 Wan2.1 가중치 추론 아님 / 수치=논문 보고값" 명시. 미보고 항목(W/O 캐시 FPS·지연, baseline 개별 VBench, Stage2 NFE·CFG)을 **지어내지 않고** "논문 미보고"로 표기. timestep 표기 상충({0,250,500,750} vs 1000→250)을 ✦각주로 명시.
+- 외부 http(s) 등장은 `arxiv.org/abs/2606.26740` · `github.com/cp-cp/LiveEdit` · `live-edit.github.io` **앵커 3개(target=_blank)뿐** — 클릭 전 네트워크 요청 없음.
+- `src=`(비-data)/`fetch(`/`XHR`/`WebSocket`/`@import`/CDN/`<link>` 로더 **0건**. 입력은 절차적 canvas 또는 `URL.createObjectURL`(로컬 영상, 허용)뿐.
 
-**-2 (과대표기)**: `index.html` L424·L705와 `REPRODUCE.md` L5가 **github.com/cp-cp/LiveEdit** 를 "공식 코드 / 원본 공식 레포"로 단정한다. 그러나 정본 §8은 **"공식 코드 저장소: 원문에 명시 없음"**이라고 기록한다 — 정본과 상충하는 메타 사실 과대표기.
+## must_fix (다음 빌드)
 
----
-
-## must_fix (다음 빌드 지시)
-1. **[정합성·최우선]** `index.html` L424·L705, `REPRODUCE.md` L5의 "공식 코드 / 원본 공식 레포" 라벨을 **"비공식/커뮤니티 추정 구현"**으로 낮추거나 정본에 근거를 추가해 정합화하라. 정본 §8은 "원문에 명시 없음".
-2. part0 FPS를 애니메이션 램프 대신 **방출 프레임/누적 sim-ms**(part2 `simMs` 방식)에서 유도한 값으로 바꿔 지표 신뢰성 향상.
-3. part2 W/O 캐시 경로에 **재계산 토큰 수(prune 0%) 기반 상대 비용 배수**를 '추정' 라벨로 병기하면 캐시 효과 대조가 관찰 가능(논문 미보고는 유지).
+1. 브라우저 `file://` 더블클릭 실제 실행으로 콘솔 에러 0·6개 `<script>` 정상 초기화를 1회 확증하고 REPRODUCE에 실행 로그 근거를 남길 것(현재는 정적 코드리뷰 기준).
+2. part2 편집 stand-in이 '확산 백본 대체'임을 캔버스 위 상시 라벨로 노출(배너 접힘 시 오해 방지).
+3. (선택) DMD 학습 하이퍼(real/fake_score_num_frame_per_block=21, dfake_gen_update_ratio=5)도 ① 증류 패널에 코드 확정값으로 노출하면 repo attribution 폭 확대.
 
 ## learned (다음 루프 인계)
-- 정직성 리스크는 화면 수치가 아니라 **메타 주장**(공식 코드 저장소 존재 여부)에서 발생 — 정본에 "명시 없음"인 항목을 앱이 "공식"으로 단정하면 감점.
-- 정본 §6 수치를 **단일 진리원 + 컴포넌트 상수**에 하드코딩 + 미보고를 "논문 미보고" pill로 명시 → metric·honesty 동시 최적.
-- 자급식은 **로더 0건**이면 만점 — `target=_blank` href는 자동 로드가 아니라 감점 사유 아님. `new Function` 파싱 + 로더 정규식 2단 검증이 저비용 확증법.
-- 메커니즘을 '값 표시'가 아닌 **'실제 계산'**(kthvalue τ→prune, causal mask morph)으로 구현하면 method_fidelity 상승. 단 합성 필드·미보고 대조가 상한(≈23/25)을 만든다.
+
+- 공식 저장소가 `liveedit-official/`에 **로컬 클론**되어 있어(git remote 확인) WebFetch 없이 실제 소스 대조 가능 — repo_fidelity 만점 가능.
+- 핵심 코드값은 `configs/wan_mm-token-pruning.yaml`에 집약, 마스크 식은 `causal_model.py:1140`, pruning 로직은 `causal_inference.py`의 kthvalue/`_compute_mask_from_importance`.
+- `01_analysis.md §8`은 '저장소 미기재'로 적었으나 실제로는 `github.com/cp-cp/LiveEdit` 확인됨 → 정본 URL 갱신 권장.
+- 마스크 캐시가 part1·part2 두 곳에서 독립 실제 계산되며 cache/τ가 실측 지표를 실제로 바꿈 → 'functional 실측 반응성' 충족.
+- 12.66 FPS·79ms는 레포 미기재 논문 전용 수치 → code attribution 금지, [논문 보고값] 라벨만. 앱이 이를 정확히 준수해 honesty 만점.
