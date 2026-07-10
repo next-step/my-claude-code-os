@@ -15,9 +15,13 @@
 # 설계 근거: docs/interviews/2026-07-10-hermes-wiring.md (Q1·Q2·Q11·Q13·Q15·Q17·Q21·Q22)
 set -uo pipefail
 
+# ── 환경(cron은 최소 PATH만 가지므로 homebrew·로컬 경로를 보정) ──────────────────
+export PATH="/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:$HOME/.local/bin:$PATH"
+
 # ── 경로 ────────────────────────────────────────────────────────────────────────
-SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"   # -P: ~/.hermes/scripts 심링크 경유 실행 시 실제 저장소 경로로 해석
-PROJECT_DIR="$(cd -- "$SCRIPT_DIR/../.." && pwd -P)"
+# 복사본 경로 보정: ~/.hermes/scripts/ 에 복사된 실행 환경에서 저장소 루트를 가리키도록 고정.
+PROJECT_DIR="/Users/parkchu/Workspace/my-claude-code-os"
+SCRIPT_DIR="$PROJECT_DIR/scripts/hermes"
 HERMES_HOME="${HERMES_HOME:-$HOME/.hermes}"
 LOG_DIR="$HERMES_HOME/logs"                       # 운영 로그는 저장소 밖(Q22)
 LOCK_FILE="$HERMES_HOME/weekly-chain.lock"        # 스크립트별 락(Q21)
