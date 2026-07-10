@@ -1,25 +1,72 @@
 {
   "slug": "liveedit_2606.26740",
-  "iteration": 1,
-  "total": 94,
-  "threshold": 85,
+  "iteration": 3,
+  "total": 95,
+  "threshold": 88,
   "verdict": "PASS",
   "criteria": {
-    "metric_fidelity":      { "score": 29, "max": 30, "notes": "논문 §6 핵심 수치가 전부 앱에 등장하고 값이 정본 01_analysis.md와 정확히 일치. 단일 진리원 LEApp.PAPER(L719-728) + part1 METRICS(L1084-1091)에 하드코딩: FPS 12.66 / 79ms / 81f·7.89s / VBench TA .270·BC .956·MS .992·DD .256·AQ .581·IQ .708 / user 95.8%(n=20) / 39K(9+20+10)K steps·lr1e-5·batch8 / Wan2.1-T2V-1.3B·A100x8·AdamW / bench120·train20K / prune~70%·keep0.3 / chunk=3 / 4NFE·[0,250,500,750]. 지어낸 값 없음. -1: 다수 지표가 실측이 아닌 애니메이션 램프(part0 FPS=0.75+0.25*progress)로 목표값에 수렴하나 종단값은 정확." },
-    "performance_coverage": { "score": 19, "max": 20, "notes": "논문 ablation을 앱이 재현: Stage1/2/3 NFE·CFG·스트리밍 표(part1 L1093-1097), 캐시 위치 ablation(Self-Attn 최적 vs FFN 열화 각주 L611), user study 도넛, W/ vs W/O 캐시 토글(part2). W/O 캐시 시 prune 0%·전토큰 재계산으로 거동 반영. -1: baseline(LucyEdit/InsV2V/StreamDiffusion) 개별 VBench 비교 막대는 논문 미보고라 Ours-only만 정성 표시(정직하게 생략, 지어내지 않음)." },
-    "method_fidelity":      { "score": 23, "max": 25, "notes": "핵심 메커니즘이 관찰 가능하게 재현됨. (1) full→block-causal 어텐션 마스크가 캔버스에서 실제 morph(attendCausal=chunkOf(k)<=chunkOf(q), maskProg 0→1 애니메이션 L991-996). (2) chunk-by-chunk 인과 추론 + KV 캐시 재사용/sink token 콘솔(L1030-1052). (3) 4-step DMD denoise 트랙 순차 점등 + Real(frozen)/Fake(trainable) score 도식. (4) 마스크 캐시: kthvalue τ를 실제 계산(paperTau, _compute_mask_from_importance 모사)해 prune≈70% 산출, τ 슬라이더·캐시 토글이 그리드에 즉시 반영. -2: 캔버스 L₂ 중요도 필드는 합성(고지됨)이고 W/O 캐시가 FPS 하락을 수치로 못 보임(논문 미보고라 '미보고' 처리 — 정직하나 대조 관찰성 제한)." },
-    "runnability":          { "score": 15, "max": 15, "notes": "단일 index.html 자급식 확인: 외부 로더 0건(src=/url()/@import/fetch/XHR/WebSocket/<link>/integrity 정규식 스캔 0). http(s)는 배너·푸터의 anchor href(github·arxiv·project)뿐 — target=_blank로 클릭 전 네트워크 요청 없음. 인라인 <script> 5개 전부 node 'new Function' 파싱 통과. 모든 시각물 Canvas2D+DOM 로컬 렌더 → file:// 더블클릭에서 콘솔 에러 없이 재생." },
-    "honesty":              { "score": 8, "max": 10, "notes": "정직성 강함: 상단 배너·각 패널에 '문서 기반 재현 시뮬레이션 / 실제 Wan2.1 가중치 추론 아님 / 수치=논문 보고값' 명시. 미보고 항목을 지어내지 않고 '논문 미보고'로 표기(W/O 캐시 FPS·지연, baseline 개별 VBench, Stage2 NFE·CFG). timestep 상충({0,250,500,750} vs 1000→250)을 ✦각주로 명시. -2: index.html L424·L705, REPRODUCE.md L5가 github.com/cp-cp/LiveEdit 를 '공식 코드/원본 공식 레포'로 단정하나, 정본 §8은 '공식 코드 저장소: 원문에 명시 없음'이라 함 — 정본과 상충하는 과대표기(메타 사실 지어내기)." }
+    "functional_reproduction": {
+      "score": 23,
+      "max": 25,
+      "notes": "핵심 기여(AR-지향 마스크 캐시)가 두 곳에서 실제 계산으로 구현됨. part2(le2Root): editTile()이 3×3 컨볼루션+주황→teal 리컬러를 실제 픽셀 연산으로 수행, computeImp()이 타일별 L2²(ePrev−sPrev)를 실측 후 min-max 정규화, kthTau()가 정렬 후 (1-0.30)*N 임계로 상위 30% keep(=~70% prune) 산출, streamRun()에서 keep 타일만 재계산(perf.now 측정)·prune 타일은 copyTile로 캐시 재사용. cacheOn 토글/τ 슬라이더가 실측 ms·FPS·speedup·prune%를 실제로 바꿈. part1도 timePath/computeL2/kthThreshold/processFrame로 독립 micro-benchmark를 실측(cache on vs off ms/frame·speedup). 업로드 영상은 createObjectURL로 로컬 디코딩해 실제 프레임 편집. 감점: 편집 연산자 자체는 확산 백본 stand-in(리컬러+블러)이라 태스크 픽셀 품질은 논문과 무관(불가피, 정직 라벨됨). VBench 막대·FPS 게이지는 논문값으로의 애니메이션(단 라벨 정확)."
+    },
+    "repo_fidelity": {
+      "score": 20,
+      "max": 20,
+      "notes": "공식 저장소 cp-cp/LiveEdit를 로컬 클론(git remote=https://github.com/cp-cp/LiveEdit.git)으로 직접 대조. 앱이 주장한 코드 수준 값이 전부 실제 소스와 일치. configs/wan_mm-token-pruning.yaml: adaptive_patch_ratio=0.3(L85), denoising_step_list=[1000,750,500,250]+warp_denoising_step:true(L8-13), num_frame_per_block=3(L47), internal_pruning_steps=[1,2](L80), internal_pruning_layers=['self_attn'](L60, 코드 default ['self_attn','ffn']=causal_inference.py L64 — attribution 정확), unpruned_fill_strategy='prev_step'(L70), timestep_shift=5.0(L16), guidance_scale=3.0(L17), num_frames=81(L51), image_or_video_shape=[1,21,16,60,104](L38-43). wan/configs/wan_t2v_1_3B.py L20: patch_size=(1,2,2) → 60×104/patch=30×52=1560 tok/latent-frame 정확 유도. wan/modules/causal_model.py L1140: attention_mask=(kv_idx<ends[q_idx])|(q_idx==kv_idx) — 앱 R6 주장과 정확 일치. pipeline/causal_inference.py L141 _compute_mask_from_importance + L179 torch.kthvalue + L182 (importance>=threshold) keep — 앱 kthTau 로직과 일치. FPS 12.66/79ms는 레포에 없음 → 앱이 [논문 보고값]으로만 라벨(code attribution 금지) — 정직."
+    },
+    "method_fidelity": {
+      "score": 14,
+      "max": 15,
+      "notes": "논문 파이프라인이 개념적으로 정확히 반영: 3단계 증류(Foundation→Teacher Forcing→DMD), chunk-wise 인과 스트리밍(chunk=3), 직전 chunk L2 거리로 편집/정적 이진 마스크 산출(AR-oriented, imp가 sPrev/ePrev=k-1 프레임에서 계산됨), Self-Attention 층 캐시, 상위 30% keep. 첫 chunk full recompute 후 마스크 캐시 적용도 논문 서술과 일치. 감점: 실제 diffusion denoise/DMD gradient는 stand-in relaxation으로 대체(구조적 불가피)."
+    },
+    "metric_fidelity": {
+      "score": 14,
+      "max": 15,
+      "notes": "VBench 6지표가 논문값과 정확 일치: TA 0.270·BC 0.956·MS 0.992·DD 0.256·AQ 0.581·IQ 0.708(§6). 속도 12.66 FPS·79ms/frame·81 frames 7.89s·4 NFE·CFG-free, user study 95.8% top-3(n=20), Stage ablation 표(Stage1 100 NFE/CFG필요/비스트리밍→Stage3 4 NFE/CFG불필요/스트리밍), 39K steps. 실측값(part1 micro-bench·part2 편집기)이 논문값과 라벨 구분되어 나란히 표시. baseline 개별 VBench·user study 세부·Stage2 NFE는 논문 미보고 → 정직하게 미생성/미보고 표기. 감점: 실측과 논문 절대치는 GPU vs 브라우저 stand-in이라 직접 비교 불가(라벨로 명시)."
+    },
+    "runnability": {
+      "score": 14,
+      "max": 15,
+      "notes": "단일 index.html 자급식. 외부 네트워크 요청 0 — http(s) 등장은 arxiv.org/abs/2606.26740·github.com/cp-cp/LiveEdit·live-edit.github.io 앵커 3개(target=_blank, 클릭 전 요청 없음)뿐. src/fetch/XHR/WebSocket/@import/CDN/link 로더 0건. 입력은 절차적 canvas 생성 또는 URL.createObjectURL(로컬 영상, 허용). 모든 시각물 Canvas 2D+TypedArray 로컬 렌더. 감점: 브라우저 실제 실행으로 콘솔 에러 무결 여부는 정적 코드리뷰로만 확인(명백한 외부 의존/문법 오류는 없음)."
+    },
+    "honesty": {
+      "score": 10,
+      "max": 10,
+      "notes": "정직성 배너에서 stand-in 백본/VAE를 [경량 STAND-IN] 라벨로 명시, [실측]과 [논문 보고값]을 색·라벨로 분리. 12.66 FPS·79ms를 '공식 저장소에 없는 논문 전용 수치'로 정직 귀속. W/O 캐시 FPS·지연은 '논문 미보고'로 표기하고 실측 상대 speedup만 관찰. baseline·user study 세부·Stage2 값 등 미보고 항목을 지어내지 않음. internal_pruning_layers는 배포 config['self_attn'] vs 코드 default['self_attn','ffn']을 각주로 구분. 지어낸 값 없음."
+    }
   },
+  "functional_checks": [
+    { "capability": "실제 프레임 편집 출력(픽셀 연산)", "works": true, "evidence": "part2 editTile(): 타일 픽셀을 src에서 읽어 3×3 이웃 평균(컨볼루션)+주황영역(r>150&&r>b+30) teal 리컬러하여 out에 기록. drawEditor()가 ImageData로 canvas 출력. 업로드 영상은 loadVideo()가 createObjectURL로 21프레임 디코딩 후 동일 편집." },
+    { "capability": "AR 마스크 캐시 실제 계산(실측 prune%)", "works": true, "evidence": "computeImp()이 타일별 L2²(ePrev−sPrev) 누적 후 min-max 정규화(imp[]), kthTau()가 정렬 배열의 a[floor((1-0.30)*N)]로 top-30% keep 임계 산출(=kthvalue). stats()가 imp[t]<tau 개수로 실측 prune% 반환. '논문 기준 τ' 버튼 → 실측 prune ≈70%." },
+    { "capability": "컨트롤이 실측 지표를 실제로 변화", "works": true, "evidence": "streamRun()에서 cacheOn이면 keep 타일만 editTile 재계산(te~perf 측정)·prune 타일 copyTile 재사용, OFF면 전 타일 재계산. updateMeasured()가 emaMs·FPS=1000/emaMs·speedup=baseFullMs/emaMs를 실측 갱신. τ 슬라이더 input → refreshStatic()로 prune%·히트맵 즉시 갱신." },
+    { "capability": "독립 실측 micro-benchmark(part1)", "works": true, "evidence": "part1 timePath(cacheOn,24)가 genFrame→computeL2(타일 L2²)→kthThreshold(top-30%)→processFrame(keep 타일만 or 전량 editTile)을 24프레임 벽시계 측정, off/on ms·speedup·실측 prune% 산출. 워밍업 3프레임 후 측정." },
+    { "capability": "실측 vs 논문 보고값 분리 표시", "works": true, "evidence": "PAPER 상수(fps 12.66·latMs 79·steps [1000,750,500,250]) 라벨 표시, [실측]은 perf.now 기반. done 로그에 '실측 X FPS ‖ 논문 보고값 12.66 FPS(GPU 확산, 절대치 비교 아님)' 병기." }
+  ],
+  "repo_checks": [
+    { "claim": "adaptive_patch_ratio=0.3 (상위30% keep)", "repo_value": "adaptive_patch_ratio: 0.3", "file": "configs/wan_mm-token-pruning.yaml:85", "match": true },
+    { "claim": "denoising_step_list=[1000,750,500,250] +warp", "repo_value": "denoising_step_list: [1000,750,500,250]; warp_denoising_step: true", "file": "configs/wan_mm-token-pruning.yaml:8-13", "match": true },
+    { "claim": "num_frame_per_block=3", "repo_value": "num_frame_per_block: 3", "file": "configs/wan_mm-token-pruning.yaml:47", "match": true },
+    { "claim": "internal_pruning_steps=[1,2]", "repo_value": "internal_pruning_steps: [1,2]", "file": "configs/wan_mm-token-pruning.yaml:80", "match": true },
+    { "claim": "internal_pruning_layers=['self_attn'] (배포), 코드 default ['self_attn','ffn']", "repo_value": "config: internal_pruning_layers: ['self_attn']; code default getattr(...,['self_attn','ffn'])", "file": "configs/wan_mm-token-pruning.yaml:60 · pipeline/causal_inference.py:64", "match": true },
+    { "claim": "unpruned_fill_strategy='prev_step'", "repo_value": "unpruned_fill_strategy: 'prev_step'", "file": "configs/wan_mm-token-pruning.yaml:70", "match": true },
+    { "claim": "timestep_shift=5.0 · guidance_scale=3.0 · num_frames=81", "repo_value": "timestep_shift: 5.0; guidance_scale: 3.0; num_frames: 81", "file": "configs/wan_mm-token-pruning.yaml:16,17,51", "match": true },
+    { "claim": "latent shape [1,21,16,60,104]", "repo_value": "image_or_video_shape: [1,21,16,60,104]", "file": "configs/wan_mm-token-pruning.yaml:38-43", "match": true },
+    { "claim": "patch_size=(1,2,2) → 30×52=1560 tok/latent-frame", "repo_value": "t2v_1_3B.patch_size = (1, 2, 2); 60/2×104/2=30×52=1560", "file": "wan/configs/wan_t2v_1_3B.py:20", "match": true },
+    { "claim": "chunk-wise causal mask (kv_idx<ends[q])|(q==kv)", "repo_value": "return (kv_idx < ends[q_idx]) | (q_idx == kv_idx)", "file": "wan/modules/causal_model.py:1140", "match": true },
+    { "claim": "kthvalue 기반 _compute_mask_from_importance / _compute_mask_from_generated", "repo_value": "keep_num=int(num_tokens*adaptive_patch_ratio); torch.kthvalue(...); high=(importance>=threshold)", "file": "pipeline/causal_inference.py:141,160,179,182", "match": true },
+    { "claim": "FPS 12.66 · 79ms/frame (코드 미기재, 논문 전용)", "repo_value": "레포 config/스크립트/소스에 FPS·latency 수치 없음 → 앱이 [논문 보고값]으로만 라벨", "file": "(repo 전역: 미기재 확인)", "match": true }
+  ],
   "must_fix": [
-    "정본 정합성(honesty 최우선): index.html L424·L705와 REPRODUCE.md L5가 github.com/cp-cp/LiveEdit 를 '공식 코드/원본 공식 레포'로 단정하나 01_analysis.md §8은 '원문에 명시 없음'이라 함. 링크 라벨을 '비공식/커뮤니티 추정 구현'으로 낮추거나 정본에 근거를 추가해 정합화하라(현재 정본과 상충).",
-    "part0 FPS가 애니메이션 램프(0.75+0.25*progress)로만 12.66에 수렴 — 방출 프레임/누적 sim-ms(part2의 simMs 방식)로부터 유도한 값으로 바꾸면 지표 신뢰성 상승.",
-    "part2 W/O 캐시 경로가 FPS·지연을 '미보고'로만 둠(논문 미보고라 정당) — 캐시 OFF의 재계산 토큰 수(prune 0%)를 근거로 상대 비용 배수를 '추정' 라벨로 병기하면 캐시 효과 대조가 관찰 가능해짐."
+    "브라우저 file:// 더블클릭 실제 실행으로 콘솔 에러 0·6개 <script> 정상 초기화를 1회 확증하고 REPRODUCE에 실행 로그 근거를 남길 것(현재는 정적 코드리뷰로만 무결 판단).",
+    "part2 편집 stand-in이 '확산 백본 대체'임을 캔버스 위 상시 워터마크/라벨로 노출해(배너 접힘 시 오해 방지) [경량 STAND-IN] 인지도를 높일 것.",
+    "config의 real_score/fake_score_num_frame_per_block=21, dfake_gen_update_ratio=5 등 DMD 학습 하이퍼파라미터도 ① 증류 패널에 코드 확정값으로 노출하면 repo attribution 폭이 넓어짐(선택)."
   ],
   "learned": [
-    "정직성 축의 주된 리스크는 화면 수치가 아니라 '메타 주장'(공식 코드 저장소 존재 여부)에서 발생 — 정본에 '명시 없음'으로 기록된 항목을 앱이 '공식'으로 단정하면 감점. 정본 대비 과대표기를 다음 루프 체크리스트에 고정.",
-    "정본(01_analysis.md) §6 수치를 단일 진리원(LEApp.PAPER)+컴포넌트 상수에 하드코딩하면 metric_fidelity가 안정적으로 만점권. 미보고 항목을 '논문 미보고' pill로 명시하는 전략이 지표 정확성과 정직성을 동시에 지킴.",
-    "자급식은 anchor href의 http(s)만 남고 로더(src/url()/fetch/link) 0건이면 만점 — target=_blank href는 자동 로드가 아니므로 감점 사유 아님. node 'new Function' 파싱 + 로더 정규식 스캔 2단 검증이 저비용으로 runnability 확증.",
-    "메커니즘을 '값 표시'가 아닌 '실제 계산'(kthvalue τ→prune≈70%, attendCausal 마스크 morph)으로 구현하면 method_fidelity가 오른다 — 슬라이더·토글→그리드 즉시 반응이 관찰성의 핵심. 단, 합성 필드·미보고 대조는 상한선(23/25 부근)을 만든다."
+    "이 논문의 공식 저장소(cp-cp/LiveEdit)가 작업 디렉토리 liveedit-official에 로컬 클론되어 있어(git remote 확인) WebFetch 없이 실제 config yaml·causal_model.py·causal_inference.py를 직접 대조할 수 있었다 — repo_fidelity를 소스 인용으로 만점 가까이 채점 가능.",
+    "핵심 코드값은 configs/wan_mm-token-pruning.yaml(adaptive_patch_ratio 0.3·num_frame_per_block 3·denoising_step_list·internal_pruning_layers ['self_attn']·unpruned_fill_strategy prev_step)에 집약; 마스크 식은 causal_model.py:1140 (kv_idx<ends[q])|(q==kv); pruning 로직은 causal_inference.py의 kthvalue/_compute_mask_from_importance에 있다.",
+    "01_analysis.md는 '공식 저장소 원문 미기재'로 적었으나 REPRODUCE.md/로컬 클론으로 저장소가 확인됨 — 다음 루프는 01_analysis §8을 실제 repo URL(github.com/cp-cp/LiveEdit)로 갱신하는 편이 정본 일관성에 좋다.",
+    "앱은 마스크 캐시 알고리즘을 part1(micro-benchmark)·part2(편집기) 두 곳에서 독립적으로 실제 계산하며, cache 토글·τ가 실측 ms/FPS/speedup/prune%를 실제로 바꾼다 — functional_reproduction의 '실측 반응성' 요건을 충실히 충족.",
+    "12.66 FPS·79ms는 레포 어디에도 없는 논문 본문 전용 수치 — code attribution 금지, [논문 보고값] 라벨만 허용. 이 규칙을 앱이 정확히 지켜 honesty 만점."
   ]
 }
