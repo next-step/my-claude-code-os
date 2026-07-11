@@ -52,6 +52,13 @@
 - [x] 시뮬 디스패처 스크립트 — sim-chain.sh (flock·watchlist 조립·이벤트 직렬 디스패치) — [상세 계획](./plans/hermes-sim-dispatcher.md)
 - [x] 아침·주간 체인 스크립트 + 오케스트레이션 마감 — morning/weekly-chain.sh + cron 등록 문서 + OS.md 갱신 — [상세 계획](./plans/hermes-daily-weekly-chain.md)
 
+### 루프 건강도 측정 (integrity-health-metric 구현)
+
+> "루프가 나아지고 있나"를 손익(소표본 노이즈)이 아니라 프로세스·무결성 정합으로 재는 뼈대.
+> 계획서 자기정합 점검 4종 → `건강도 = 1 − 위반/점검`을 주간 회고(F)가 집계, 주별 시계열로 추세 추적.
+
+- [~] 무결성 건강도 지표 뼈대 (주간 회고 편입) — weekly_retro_status.py에 점검 4종·integrity_health 블록·시계열 원장 + 회고 리포트 스코어카드·추세 + OS.md F절 — [상세 계획](./plans/integrity-health-metric.md)
+
 ---
 
 ### 완료 (2주차 — 컨텍스트, 정리 대기)
