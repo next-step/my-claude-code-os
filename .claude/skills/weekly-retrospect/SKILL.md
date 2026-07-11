@@ -37,11 +37,18 @@ description: 매주 토요일, 계획을 세운 위원회 전문가 에이전트
 
 ```bash
 # 오늘(토요일) 기준 최근 7일 루프 기록물을 한 번에 집계 → JSON 사실판
-python3 "$CLAUDE_PROJECT_DIR/scripts/weekly_retro_status.py" --end <YYYY-MM-DD> --days 7
+# --append-health-ledger: 무결성 건강도를 창 종료일 키로 주별 원장에 멱등 append(추세 시계열 축적).
+python3 "$CLAUDE_PROJECT_DIR/scripts/weekly_retro_status.py" --end <YYYY-MM-DD> --days 7 --append-health-ledger
 ```
 
 - 출력 JSON은 창(window) 안의 **회의록(국면 합의·계획 결정·긴급 여부)·체결 인벤토리·계획 상태
   라벨 집계·포트폴리오 손익 추출**을 담는다. 이 값을 **정량 사실**로 토론에 싣는다.
+- `integrity_health` 블록은 그 주 계획서(`investment-plan.md`) **내부 자기정합 점검 4종**(①근거 유무
+  ②손절가≥진입가 ③목표가≤진입가 ④수량이 양의 정수 아님)의 `점검/위반/건강도(=1−위반/점검)`와
+  `위반내역[]`·`확인불가[]`를 담는다. 값이 없어 판정 못 한 셀은 위반이 아니라 **확인 불가**다(무결성 1 —
+  날조 금지). `--append-health-ledger`를 붙이면 이 요약 한 줄이 `data/health/integrity-health.jsonl`에
+  창 종료일(window_end) 키로 **멱등 append**된다(같은 주 재실행은 중복 추가 안 함). 리포트의 추세 절은
+  이 원장을 읽어 렌더한다.
 - 스크립트가 `확인 불가`/`null`로 낸 항목(특히 **주간 수익률**은 포트폴리오가 상태 파일이라
   결정론 산출 불가)은 그대로 두고 추정치로 채우지 않는다(무결성 1·3). 위원회는 체결 로그·회의록의
   체결가로 정성 판단하되 없는 수치를 지어내지 않는다.
@@ -89,6 +96,12 @@ python3 "$CLAUDE_PROJECT_DIR/scripts/weekly_retro_status.py" --end <YYYY-MM-DD> 
 ## 이번 주 사실 (weekly_retro_status.py)
 - 회의록 N건(긴급 M건) · 체결 K건 · 계획 상태: 대기 a / 진행중 b / 완료 c
 - 손익(포트폴리오): 현금·평가손익·총평가액 (출처: portfolio.md)  · 주간 수익률: 확인 불가(상태 파일 한계)
+
+## 무결성 건강도 (weekly_retro_status.py integrity_health)
+- 이번 주: 점검 <점검>건 · 위반 <위반>건 · 건강도 <건강도>(=1−위반/점검, 점검 0이면 확인 불가)
+- 위반내역: <종목·점검·값 나열, 없으면 "없음">  · 확인 불가(미기재): <종목·점검, 없으면 "없음">
+- 최근 N주 추세(data/health/integrity-health.jsonl): <window_end: health 시계열 — 예 07-04:1.0 → 07-11:0.89>
+  - 추세가 신호다. 초기엔 1.0이 정상이고 **위반이 처음 잡힌 주**가 되짚을 대상. 한 주 하락만으로 단정하지 않는다.
 
 ## 렌즈별 되짚기
 - 기술/거시(국면): <국면 판정이 사후에도 맞았나 — 근거 수치>
