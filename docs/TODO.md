@@ -57,7 +57,7 @@
 > "루프가 나아지고 있나"를 손익(소표본 노이즈)이 아니라 프로세스·무결성 정합으로 재는 뼈대.
 > 계획서 자기정합 점검 4종 → `건강도 = 1 − 위반/점검`을 주간 회고(F)가 집계, 주별 시계열로 추세 추적.
 
-- [~] 무결성 건강도 지표 뼈대 (주간 회고 편입) — weekly_retro_status.py에 점검 4종·integrity_health 블록·시계열 원장 + 회고 리포트 스코어카드·추세 + OS.md F절 — [상세 계획](./plans/integrity-health-metric.md)
+- [x] 무결성 건강도 지표 뼈대 (주간 회고 편입) — weekly_retro_status.py에 점검 4종·integrity_health 블록·시계열 원장 + 회고 리포트 스코어카드·추세 + OS.md F절 — [상세 계획](./plans/integrity-health-metric.md)
 
 ---
 

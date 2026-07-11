@@ -1,6 +1,6 @@
 ---
 topic: integrity-health-metric
-status: 진행중
+status: 완료
 source: 대화 중 확정 (2026-07-11, 3지점 결정: 프로세스·무결성 중심 / 한 줄 건강도 수식 뼈대 / 주간 회고 F 편입)
 ---
 
