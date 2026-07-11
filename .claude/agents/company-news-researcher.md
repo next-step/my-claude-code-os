@@ -1,6 +1,6 @@
 ---
 name: company-news-researcher
-description: 특정 회사에 관련한 최근 뉴스를 웹검색으로 조사해 구조화된 요약으로 돌려준다. analyze-company 스킬이 병렬로 호출하는 수집 전용 서브 에이전트.
+description: 특정 회사에 관련한 최근 뉴스를 웹검색으로 조사해 구조화된 요약으로 돌려준다. morning-briefing 스킬(하루 루프 A단계)이 종목별로 병렬 호출하는 수집 전용 서브 에이전트.
 tools: Read, WebSearch, WebFetch
 ---
 

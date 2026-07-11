@@ -3,7 +3,7 @@
 > 매일 도는 자동 시뮬레이션 루프가 남기고 읽는 기록물의 공통 규칙. 어떤 기록이 '현재 상태'라
 > 제자리 갱신되고, 어떤 기록이 '일어난 사건'이라 append로 박제되는지를 정한다.
 > 출처: docs/interviews/2026-07-08-daily-trading-loop.md (S3·Q7·Q11·Q17·Q20·Q27) + 2026-07-08-os-docs-overhaul.md (Q9 재작성).
-> 소비자: 새 루프 스킬(아침 수집·투자 위원회·모의 시뮬 엔진·주간 회고) — 스킬은 후속 항목에서 신설된다.
+> 소비자: 루프 스킬 — 아침 수집(`morning-briefing`)·투자 위원회(`investment-committee`)·모의 시뮬 엔진(`sim-engine`)·주간 회고(`weekly-retrospect`).
 
 ## 공통 원칙
 

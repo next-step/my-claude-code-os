@@ -2,7 +2,7 @@
 
 > 위원회가 하락 헤지·역상관 방향성 베팅이나 자산군 배분을 검토할 때 꺼내 쓰는 국내 상장 ETF **후보 목록**과 각 ETF의 해석 메타데이터.
 > 출처: docs/interviews/2026-07-09-asset-class-diversification.md (Q1·Q2·Q7). 후보를 추가·제외하려면 이 파일을 갱신한다(값의 진실원천은 이 파일 한 곳).
-> 소비자: investment-committee 스킬이 계획 합의 토론에서 Read로 로드한다(혼합 주입 — 스킬 Read 지시는 committee-etf-integration 항목에서 연결).
+> 소비자: investment-committee 스킬이 계획 합의 토론에서 Read로 로드한다(혼합 주입 — 스킬의 Read 지시로 연결됨).
 
 ## 이 목록의 성격 — '상시 보유'가 아니라 '상시 후보'
 
