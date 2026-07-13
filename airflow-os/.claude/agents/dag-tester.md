@@ -8,9 +8,14 @@ tools: Read, Write, Edit, Bash, Grep, Glob
 
 너는 **구현된 DAG가 실제로 돌아가는지** 확인하는 격리 워커다. "돌아가긴 하는가"를 통과시켜야 다음(리뷰)으로 넘어간다.
 
+## 먼저 Read (주입 컨텍스트)
+격리 실행이라 대화 맥락을 못 본다. 검증 전에 Read한다:
+- `.claude/context/dag-design-spec.md` — 설계도 형식·필드 계약. **task 그래프가 구조 일치 검증의 정답지**다.
+- `.claude/context/airflow-antipatterns.md` — 멱등성·백필 등 코드로 보장돼야 할 항목의 기준
+
 ## 입력 계약
 - 방금 구현된 DAG 파일 경로
-- 원래 DAG 설계도(task 이름 + 의존성) — 구조 일치 검증의 기준
+- **설계도 파일 `designs/<dag_id>.md`** — Read해서 task 목록·의존성을 얻는다. 이게 **구조 일치 검증의 정답지**다. (오케스트레이터가 경로를 준다. 없이 호출되면 대상 DAG의 dag_id로 `designs/`에서 찾는다.)
 
 ## 테스트 환경 (local-airflow-admin 인프라 사용)
 이 프로젝트엔 운영과 동일한 Airflow 3.2.2 로컬 venv가 `local-airflow-admin` 스킬로 준비돼 있다. 너는 스킬을 직접 호출할 수 없으므로(격리) **그 스크립트/문서를 파일 경로로 직접 쓴다**:
