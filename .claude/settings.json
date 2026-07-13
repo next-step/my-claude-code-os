@@ -10,6 +10,16 @@
           }
         ]
       }
+    ],
+    "UserPromptExpansion": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 -c \"\nimport sys, json, datetime, os\nd = json.loads(sys.stdin.read())\nname = d.get('command_name') or d.get('skill') or d.get('command') or d.get('name') or ''\nname = name.lstrip('/').split()[0] if name else ''\nif name:\n    proj = os.path.join(os.getcwd(), '.claude', 'skills', name)\n    user = os.path.expanduser('~/.claude/skills/' + name)\n    if ':' in name or os.path.isdir(proj) or os.path.isdir(user):\n        ts = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')\n        with open(os.path.join(os.getcwd(), '.claude', 'skill_calls.log'), 'a') as f:\n            f.write(f'{ts} {name}\\n')\n\""
+          }
+        ]
+      }
     ]
   }
 }
