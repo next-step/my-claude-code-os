@@ -1,9 +1,9 @@
 ---
-name: retro
-description: airflow-os 작업 회고를 `retros/`에 남기는 스킬 — 한 사이클(설계~승인)이나 OS 구조 개선 뒤 무엇을·왜·배운 점·재사용할 것 기록. "회고 남겨줘 / 회고 써줘 / 이 작업 기록해줘" 또는 /retro.
+name: retrospective
+description: airflow-os 작업 회고를 `learnings/`에 남기는 스킬 — 한 사이클(설계~승인)이나 OS 구조 개선 뒤 무엇을·왜·배운 점·재사용할 것 기록. "회고 남겨줘 / 회고 써줘 / 이 작업 기록해줘" 또는 /retrospective.
 ---
 
-# retro — 회고/기록
+# retrospective — 회고/기록
 
 파이프라인이 한 바퀴 돌 때마다 나온 **결정·트레이드오프·발견**을 축적해, 다음 작업이 같은 고민을 다시 하지 않게 하는 게 목적이다. 회고 자체가 목적이 아니라 **재사용**이 목적이다.
 
@@ -14,12 +14,12 @@ description: airflow-os 작업 회고를 `retros/`에 남기는 스킬 — 한 �
 | `task`           | DAG 작업 한 사이클(설계~승인)을 끝낸 뒤 | 그 DAG 작업의 결정·발견 |
 | `os-improvement` | 스킬·서브에이전트 구조 자체를 고친 뒤     | OS 메타 개선 이력     |
 
-둘 다 `airflow-os/retros/`에 쌓는다. 종류는 파일명과 frontmatter로 구분한다.
+둘 다 `airflow-os/learnings/`에 쌓는다. 종류는 파일명과 frontmatter로 구분한다.
 
 ## 언제 쓰나
 - **작업 사이클(승인)을 끝낸 직후**: 오케스트레이터가 제안하거나 사용자가 요청하면 작성.
 - **OS 구조를 고친 세션 끝**: interview/reviewer/파이프라인 자체를 바꿨을 때.
-- **명시 호출**: `/retro`, "회고 남겨줘".
+- **명시 호출**: `/retrospective`, "회고 남겨줘".
 
 작은 오타 수정·1스텝 변경처럼 남길 게 없으면 굳이 쓰지 않는다. 회고는 "다음에 참고할 가치가 있는 결정/발견이 있었나?"가 기준이다.
 
@@ -31,12 +31,12 @@ description: airflow-os 작업 회고를 `retros/`에 남기는 스킬 — 한 �
    - 예상 못한 발견·안티패턴·개선거리
    - 다음 작업이 참고할 규칙/주의/패턴
 2. **오늘 날짜 확인**: `date +%F` 로 실제 날짜를 얻는다(추정하지 말 것).
-3. **저장**: `airflow-os/retros/` 가 없으면 만들고, 아래 규칙으로 파일 작성.
+3. **저장**: `airflow-os/learnings/` 가 없으면 만들고, 아래 규칙으로 파일 작성.
 
 ## 파일 위치 / 네이밍
-- 폴더: `airflow-os/retros/`
-- task: `retros/<YYYY-MM-DD>-<dag_id>.md`
-- os-improvement: `retros/<YYYY-MM-DD>-os-<주제>.md`
+- 폴더: `airflow-os/learnings/`
+- task: `learnings/<YYYY-MM-DD>-<dag_id>.md`
+- os-improvement: `learnings/<YYYY-MM-DD>-os-<주제>.md`
 
 ## 템플릿
 
