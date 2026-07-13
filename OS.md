@@ -245,12 +245,12 @@ input:  /deploy-notify (파이프라인 이름 지정, 주기 N분 — 기본 3�
 output: PushNotification으로 현재 단계 알림 (매 주기마다)
 ```
 
-**구현 필요 사항:**
+**구현 완료:**
 
-- [ ] AWS CLI 인증 확인 (`codepipeline:GetPipelineState` 권한)
-- [ ] 파이프라인 이름 / 알림 주기(N분) 지정 방식 정의
-- [ ] 스킬 실행 시 `/loop` 자동 트리거 방법 정의
-- [ ] 파이프라인 종료(성공/실패) 감지 시 루프 자동 종료 조건
+- [x] AWS CLI 인증 확인 (`codepipeline:GetPipelineState` 권한) — 사전 검증 1단계에서 단일 호출로 확인
+- [x] 파이프라인 이름 / 알림 주기(N분) 지정 방식 정의 — `/deploy-notify <이름> [N분]` 인자
+- [x] 스킬 실행 시 `/loop` 자동 트리거 — Skill 도구로 `loop`를 직접 호출 (task-impl 랄프 모드의 "안내만 출력하고 종료" 방식과 다르게, 조회 전용이라 자동 시작이 안전하다고 판단)
+- [x] 파이프라인 종료(성공/실패) 감지 시 루프 자동 종료 조건 — 관찰 반복마다 스테이지 상태 판정 후 종료 상태면 `DONE` 출력
 
 **한계 (의도적으로 감수):**
 
@@ -275,7 +275,7 @@ output: PushNotification으로 현재 단계 알림 (매 주기마다)
 | Step 2.9 | `/dev-loop` 분리 — `/dev-test`(테스트+리뷰) + `/dev-pr`(리뷰루프+PR) + `/dev-loop`(오케스트레이터)            | ✅ 완료 |
 | Step 2.10 | `task-impl` 랄프 모드 — `docs/tasks.md` 영속화 + 외부 루프(/loop) 반복 실행                                    | ✅ 완료 |
 | Step 2.11 | `/dev-test` 코드 리뷰 단계 제거 — 어차피 `/dev-pr`에서 반드시 리뷰하므로 `dev-test`는 테스트 통과에만 집중       | ✅ 완료 |
-| Step 3   | `/deploy-notify` 스킬 구현 (실행 시 자동 `/loop` 관찰 + N분마다 단계 알림)                                      | 🔲 예정 |
+| Step 3   | `/deploy-notify` 스킬 구현 (실행 시 자동 `/loop` 관찰 + N분마다 단계 알림)                                      | ✅ 완료 |
 | Step 4   | 배포 명령 감지 훅 자동화                                                                                        | 🔲 예정 |
 | Step 5   | Memory 시스템 구축                                                                                              | 🔲 예정 |
 | Step 6   | CLAUDE.md 고도화 (페르소나, 금지사항 정교화)                                                                    | 🔲 예정 |
