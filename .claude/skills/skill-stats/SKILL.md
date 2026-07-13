@@ -22,8 +22,8 @@ import os
 from collections import defaultdict
 from datetime import datetime
 
-LOG_PATH = os.path.expanduser("~/Documents/my-claude-code-os/.claude/skill_calls.log")
-PROJECT_SKILLS_DIR = os.path.expanduser("~/Documents/my-claude-code-os/.claude/skills")
+LOG_PATH = os.path.join(os.getcwd(), ".claude", "skill_calls.log")
+PROJECT_SKILLS_DIR = os.path.join(os.getcwd(), ".claude", "skills")
 USER_SKILLS_DIR = os.path.expanduser("~/.claude/skills")
 
 if not os.path.exists(LOG_PATH):
