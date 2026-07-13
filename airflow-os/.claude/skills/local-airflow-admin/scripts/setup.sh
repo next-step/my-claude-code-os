@@ -23,4 +23,9 @@ uv pip install --python .venv/bin/python --constraint "${CONSTRAINT_URL}" \
 echo "── 3. 단위 테스트 러너 (pytest, constraint 적용)"
 uv pip install --python .venv/bin/python --constraint "${CONSTRAINT_URL}" pytest
 
+echo "── 4. DAG별 추가 패키지 (작업하며 그때그때 추가된 것)"
+# doris_game_silver_level_design: gspread(스프레드시트), google provider(GoogleBaseHook)
+uv pip install --python .venv/bin/python --constraint "${CONSTRAINT_URL}" \
+    gspread apache-airflow-providers-google
+
 echo "── 완료. 패키지 추가는 SKILL.md의 '패키지 추가' 절 참고."
