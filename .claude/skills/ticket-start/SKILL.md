@@ -103,7 +103,7 @@ Agent 도구로 Explore 서브에이전트를 spawn한다.
 
 ## 4단계 — 작업 브리핑 저장 및 출력
 
-아래 형식으로 브리핑을 작성한 뒤, **`docs/ticket-briefing.md`에 Write로 저장**하고 동일 내용을 채팅에도 출력한다.
+아래 형식으로 브리핑을 작성한 뒤, **`docs/ticket-briefing.md`에 Write로 저장**한다.
 
 `docs/` 디렉터리가 없으면 먼저 `mkdir -p docs`로 생성한다.
 
@@ -129,8 +129,8 @@ Agent 도구로 Explore 서브에이전트를 spawn한다.
 파일 저장 후 채팅 하단에 다음을 추가한다:
 
 ```
-📄 브리핑이 docs/ticket-briefing.md에 저장되었습니다.
-📋 QA 체크리스트가 docs/qa-checklist.md에 생성되었습니다. (/dev-loop에서 자동 실행)
+✅ 브리핑이 docs/ticket-briefing.md에 저장되었습니다.
+✅ QA 체크리스트가 docs/qa-checklist.md에 생성되었습니다. (/dev-loop에서 자동 실행)
 ```
 
 ## 주의사항
