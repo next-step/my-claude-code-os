@@ -4,3 +4,6 @@
 
 # 비공개 실제 장부 (실제 금액·수익률)
 *.private.md
+
+# 외부 repo(parkchu/nextstep-claude-skills) 스킬 심링크 — 추적 안 함
+.claude/skills/nextstep-*
