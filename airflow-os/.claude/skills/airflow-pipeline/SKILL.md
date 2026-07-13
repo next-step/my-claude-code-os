@@ -8,7 +8,7 @@ description: Airflow DAG 신규·수정·리팩터를 설계→구현→테스�
 `OS.md`의 7단계 파이프라인을 조율하는 **진입점**이다. 사람은 요청과 승인만, 나머지 loop는 이 스킬이 워커들을 시켜 돌린다.
 
 ## ⚠️ 스킬 격리 규칙 (반드시 지킴)
-- 이 파이프라인은 **이 프로젝트 로컬 `.claude/` 안의 자산만** 사용한다: 스킬 `interview`·`local-airflow-admin`, 서브에이전트 `dag-builder`/`dag-tester`/`dag-reviewer`.
+- 이 파이프라인은 **이 프로젝트 로컬 `.claude/` 안의 자산만** 사용한다: 스킬 `interview`·`lab`, 서브에이전트 `dag-builder`/`dag-tester`/`dag-reviewer`.
 - **전역(`~/.claude/skills`) 스킬을 호출하지 않는다.** 비슷한 이름의 전역 스킬이 있어도 무시하고 로컬 것만 쓴다.
 - 워커 서브에이전트들은 `Skill` 도구가 없어 다른 스킬을 부르지 못하도록 이미 격리돼 있다.
 
@@ -50,8 +50,8 @@ description: Airflow DAG 신규·수정·리팩터를 설계→구현→테스�
 설계도 **파일 경로 `designs/<dag_id>.md`**(신규) 또는 개선 목록(수정·리팩터)을 dag-builder 서브에이전트에 전달한다. 재검증 루프면 테스터/리뷰어가 돌려보낸 지적을 함께 넘긴다.
 
 ### ③ 테스트 — dag-tester
-구현된 파일 경로 + 설계도 **파일 경로 `designs/<dag_id>.md`**(신규)를 dag-tester에 넘긴다. dag-tester는 `local-airflow-admin`의 `verify.sh`로 파싱 검증한다.
-- **먼저 로컬 env가 준비돼 있어야 한다.** dag-tester가 "env 미구축"으로 반환하면, 여기(메인)서 `local-airflow-admin` 스킬을 실행해 setup한 뒤 ③을 재시도한다(워커는 스킬을 못 부르므로 구축은 오케스트레이터 몫).
+구현된 파일 경로 + 설계도 **파일 경로 `designs/<dag_id>.md`**(신규)를 dag-tester에 넘긴다. dag-tester는 `lab`의 `verify.sh`로 파싱 검증한다.
+- **먼저 로컬 env가 준비돼 있어야 한다.** dag-tester가 "env 미구축"으로 반환하면, 여기(메인)서 `lab` 스킬을 실행해 setup한 뒤 ③을 재시도한다(워커는 스킬을 못 부르므로 구축은 오케스트레이터 몫).
 - **FAIL이면 실패 내역을 그대로 dag-builder에 다시 넘겨 ②로 되돌린다.** PASS까지 반복. 무한루프 방지: 같은 실패가 3회 반복되면 멈추고 사람에게 상황을 보고한다.
 
 ### ④ 리뷰 — dag-reviewer

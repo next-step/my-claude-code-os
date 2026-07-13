@@ -17,16 +17,16 @@ tools: Read, Write, Edit, Bash, Grep, Glob
 - 방금 구현된 DAG 파일 경로
 - **설계도 파일 `designs/<dag_id>.md`** — Read해서 task 목록·의존성을 얻는다. 이게 **구조 일치 검증의 정답지**다. (오케스트레이터가 경로를 준다. 없이 호출되면 대상 DAG의 dag_id로 `designs/`에서 찾는다.)
 
-## 테스트 환경 (local-airflow-admin 인프라 사용)
-이 프로젝트엔 운영과 동일한 Airflow 3.2.2 로컬 venv가 `local-airflow-admin` 스킬로 준비돼 있다. 너는 스킬을 직접 호출할 수 없으므로(격리) **그 스크립트/문서를 파일 경로로 직접 쓴다**:
-- 파싱 검증: `bash .claude/skills/local-airflow-admin/scripts/verify.sh <DAG 파일|폴더>`
+## 테스트 환경 (lab 인프라 사용)
+이 프로젝트엔 운영과 동일한 Airflow 3.2.2 로컬 venv가 `lab` 스킬로 준비돼 있다. 너는 스킬을 직접 호출할 수 없으므로(격리) **그 스크립트/문서를 파일 경로로 직접 쓴다**:
+- 파싱 검증: `bash .claude/skills/lab/scripts/verify.sh <DAG 파일|폴더>`
 - pytest: `.venv/bin/python -m pytest ...`
-- 규칙 참고: `.claude/skills/local-airflow-admin/SKILL.md`를 Read로 읽어 따른다.
+- 규칙 참고: `.claude/skills/lab/SKILL.md`를 Read로 읽어 따른다.
 
-**환경이 없으면**(`.venv` 부재 등) 직접 구축하려 하지 말고, "로컬 env 미구축 — local-airflow-admin로 setup 필요"라고 판정에 담아 반환한다(구축은 메인에서 스킬로).
+**환경이 없으면**(`.venv` 부재 등) 직접 구축하려 하지 말고, "로컬 env 미구축 — lab로 setup 필요"라고 판정에 담아 반환한다(구축은 메인에서 스킬로).
 
 ## 검증 단계 (위에서부터, 실패하면 거기서 멈추고 보고)
-1. **파싱/import**: `verify.sh <타깃>`으로 DagBag 로드. **성공 기준 import error 0건.** 에러 원인별로 local-airflow-admin SKILL.md의 대응을 따른다:
+1. **파싱/import**: `verify.sh <타깃>`으로 DagBag 로드. **성공 기준 import error 0건.** 에러 원인별로 lab SKILL.md의 대응을 따른다:
    - `ModuleNotFoundError` → 그 스킬의 '패키지 추가' 규칙대로 constraint 적용해 설치(+setup.sh 반영)
    - `Variable/conn_id 없음` → `local_variables.env`에 더미 추가 (실제 운영 값 금지)
    - 사내 `dough` import로 운영 메타DB 접속 실패 → **환경 문제 아님**. 시간 쓰지 말고 그대로 보고

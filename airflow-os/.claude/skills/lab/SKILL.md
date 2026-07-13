@@ -1,5 +1,5 @@
 ---
-name: local-airflow-admin
+name: lab
 description: Airflow 3.2.2 로컬 테스트 환경(venv)을 구축·검증·유지보수하는 인프라 스킬. 사용자가 "로컬 환경 구축/재구축", "환경 검증", "DAG 파싱 테스트", "패키지/더미 값 추가"를 요청하거나, DAG 테스트 중 import 에러가 환경 문제로 의심될 때 사용.
 ---
 
@@ -19,7 +19,7 @@ description: Airflow 3.2.2 로컬 테스트 환경(venv)을 구축·검증·유�
 ## 구축 / 재구축
 
 ```bash
-bash .claude/skills/local-airflow-admin/scripts/setup.sh   # Airflow 코어만 설치
+bash .claude/skills/lab/scripts/setup.sh   # Airflow 코어만 설치
 ```
 
 재구축은 `rm -rf .venv` 후 다시 실행. (재구축하면 그동안 추가한 패키지가 사라지므로, 추가한 패키지는 아래 '패키지 추가' 규칙대로 setup.sh에 기록해둘 것.)
@@ -27,7 +27,7 @@ bash .claude/skills/local-airflow-admin/scripts/setup.sh   # Airflow 코어만 �
 ## 검증 (작업 대상 DAG 파싱 체크)
 
 ```bash
-bash .claude/skills/local-airflow-admin/scripts/verify.sh <DAG 파일|폴더>   # 2~3초
+bash .claude/skills/lab/scripts/verify.sh <DAG 파일|폴더>   # 2~3초
 ```
 
 - **성공 기준: import error 0건.**

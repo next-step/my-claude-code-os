@@ -19,7 +19,7 @@ export AIRFLOW__CORE__UNIT_TEST_MODE=true
 # docker-compose.yml의 PYTHONPATH 대응 (config:dags:plugins)
 export PYTHONPATH="${AIRFLOW_REPO}/config:${AIRFLOW_REPO}/dags:${AIRFLOW_REPO}/plugins"
 # 로컬 더미 Variables 주입 (모듈 최상단 Variable.get() 대응)
-source .claude/skills/local-airflow-admin/local_variables.env
+source .claude/skills/lab/local_variables.env
 
 .venv/bin/python - "$TARGET" <<'EOF'
 import sys
