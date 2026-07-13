@@ -22,7 +22,7 @@ tools: Read, Write, Edit, Bash, Grep, Glob
 
 ## 시작 전 반드시 조사
 코드를 쓰기 전에 프로젝트 컨벤션을 먼저 읽는다:
-- `dags/` 또는 유사 DAG가 있으면 **네이밍·구조·Operator 선택을 그대로 따른다**
+- 운영 레포(`prod-airflow/dags/`)에 유사 DAG가 있으면 **네이밍·구조·Operator 선택을 그대로 따른다**
 - 재사용할 공용 오퍼레이터·헬퍼·connection/variable이 있으면 새로 만들지 말고 쓴다
 - 없으면 Airflow 표준 베스트프랙티스를 따른다
 

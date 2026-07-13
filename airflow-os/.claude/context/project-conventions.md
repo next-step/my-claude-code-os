@@ -8,6 +8,7 @@
 
 ## Airflow 3 · TaskFlow
 - `from airflow.sdk import dag, task`, `@dag`/`@task`, 파일 끝에서 `dag_fn()` 인스턴스화.
+- import 경로: `PythonOperator`는 `airflow.providers.standard.operators.python`(구 `airflow.operators.python` deprecated), `DagBag`은 `airflow.dag_processing`(구 `airflow.models.dagbag` deprecated).
 
 ## 네이밍
 - dag_id = `<destination>_<schema>_<table>`
