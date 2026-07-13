@@ -277,6 +277,21 @@ output: Slack 배포 완료 메시지 전송
 
 ---
 
+## 목표 지표 (프로젝트별 루브릭)
+
+**원칙:** 루브릭 기준은 여기(OS.md)에 한 번만 정의한다. 채점은 각 프로젝트에 배포된 스킬(`retrospect`, `skill-stats`)이 **그 프로젝트의 로컬 파일**(`.claude/skill_calls.log`, `docs/tasks.md`, `.claude/review-report.md`, `docs/retrospects/`)만 읽어서 수행한다. 여러 프로젝트를 이 레포로 모아 보는 중앙 집계는 하지 않는다 — 필요해지면 그때 추가.
+
+| 지표 | 측정 소스 (프로젝트 로컬) | 상 (3점) | 중 (2점) | 하 (1점) |
+|---|---|---|---|---|
+| 자동화 커버리지 | `.claude/skill_calls.log` 호출 빈도 | 로드맵 스킬의 80%+ 최근 30일 내 1회 이상 호출 | 50~79% | 50% 미만 |
+| 개입 빈도 | `docs/tasks.md`의 가정/이탈/보류 메모 개수 | 티켓당 평균 2회 이하 | 3~5회 | 6회 이상 |
+| 재작업률 | `.claude/review-report.md` CRITICAL 재시도 횟수 | 평균 1회 이하 | 2회 | 3회 이상 |
+| 반복 실수 감소 | `docs/retrospects/*.md` 신규 반복 패턴 승격 건수 | 티켓당 0건 | 1건 | 2건 이상 |
+
+**채점 시점:** `retrospect` 스킬 실행 시 함께 채점해 `docs/retrospects/scorecard.md`에 누적. 별도 주기(월간 등)를 두지 않는다 — 새 트리거를 만들면 그 자체가 유지보수 대상이 됨.
+
+---
+
 ## 미결 질문 (구현 전 확인 필요)
 
 - [ ] 티켓 관리: Notion이 source of truth인가, Slack인가?
