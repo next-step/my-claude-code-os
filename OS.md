@@ -32,7 +32,7 @@ my-claude-code-os/
     │   ├── dev-pr/      # 리뷰 루프 + 자동 수정 + PR 생성
     │   ├── dev-loop/      # dev-test → dev-pr 오케스트레이터
     │   ├── retrospect/    # 티켓 회고 — 가정 검증 + 규칙 승격 (리포트는 docs/retrospects/ 누적)
-    │   ├── deploy-notify/ # 배포 완료 알림
+    │   ├── deploy-notify/ # 파이프라인 단계 관찰 알림
     │   ├── auto-commit/   # 커밋 자동화 (구현 완료)
     │   └── skill-stats/   # 스킬 사용 통계 (구현 완료)
     ├── skill_calls.log    # 스킬 호출 이력
@@ -231,27 +231,32 @@ output: docs/retrospects/YYYY-MM-DD-<브랜치>.md 저장 (누적)
 
 ### 3. 배포 알림 워크플로 — `/deploy-notify`
 
-**문제:** 배포하고 나서 Slack에 "배포됐어요" 메시지 치고, Notion 티켓 상태 바꾸는 게 귀찮음
+**문제:** CodePipeline이 Build → Approval → Deploy로 넘어가는 동안 콘솔을 계속 들여다보고 있어야 함
 
-**목표:** `/deploy-notify` 한 번으로
+**목표:** `/deploy-notify` 한 번 실행하면 알아서 루프를 돌며 N분마다 현재 파이프라인 단계를 알림 (Slack/Notion 업데이트는 범위 밖)
 
 ```
-input:  /deploy-notify (또는 배포 명령 감지 훅)
+input:  /deploy-notify (파이프라인 이름 지정, 주기 N분 — 기본 3분)
           ↓
-        현재 브랜치 / PR 정보 수집
+        스킬 내부에서 /loop Nm 자동 시작
           ↓
-        연결된 Notion 티켓 조회
+        aws codepipeline get-pipeline-state 주기 조회
           ↓
-output: Slack 배포 완료 메시지 전송
-        + Notion 티켓 상태 "완료" 업데이트
+output: PushNotification으로 현재 단계 알림 (매 주기마다)
 ```
 
 **구현 필요 사항:**
 
-- [ ] Slack MCP 연동 확인
-- [ ] 배포 채널 / 메시지 포맷 정의
-- [ ] Notion 티켓 ↔ PR 연결 규칙 정의 (브랜치 이름 규칙 등)
-- [ ] (옵션) 배포 명령어 감지 훅 설정
+- [ ] AWS CLI 인증 확인 (`codepipeline:GetPipelineState` 권한)
+- [ ] 파이프라인 이름 / 알림 주기(N분) 지정 방식 정의
+- [ ] 스킬 실행 시 `/loop` 자동 트리거 방법 정의
+- [ ] 파이프라인 종료(성공/실패) 감지 시 루프 자동 종료 조건
+
+**한계 (의도적으로 감수):**
+
+- 세션(터미널)이 열려 있는 동안만 동작 — 상시 인프라 아님
+- N분 간격 폴링이라 그만큼 지연 있음
+- 실행한 사람에게만 알림
 
 ---
 
@@ -270,7 +275,7 @@ output: Slack 배포 완료 메시지 전송
 | Step 2.9 | `/dev-loop` 분리 — `/dev-test`(테스트+리뷰) + `/dev-pr`(리뷰루프+PR) + `/dev-loop`(오케스트레이터)            | ✅ 완료 |
 | Step 2.10 | `task-impl` 랄프 모드 — `docs/tasks.md` 영속화 + 외부 루프(/loop) 반복 실행                                    | ✅ 완료 |
 | Step 2.11 | `/dev-test` 코드 리뷰 단계 제거 — 어차피 `/dev-pr`에서 반드시 리뷰하므로 `dev-test`는 테스트 통과에만 집중       | ✅ 완료 |
-| Step 3   | `/deploy-notify` 스킬 구현                                                                                      | 🔲 예정 |
+| Step 3   | `/deploy-notify` 스킬 구현 (실행 시 자동 `/loop` 관찰 + N분마다 단계 알림)                                      | 🔲 예정 |
 | Step 4   | 배포 명령 감지 훅 자동화                                                                                        | 🔲 예정 |
 | Step 5   | Memory 시스템 구축                                                                                              | 🔲 예정 |
 | Step 6   | CLAUDE.md 고도화 (페르소나, 금지사항 정교화)                                                                    | 🔲 예정 |
