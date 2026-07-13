@@ -21,6 +21,7 @@ mcpServers:
 - `BASE_URL`: 접근 가능한 로컬 개발 서버 URL. 누락된 경우 전체 실행을 BLOCKED로 처리하고 보고합니다 — URL을 추측하거나 서버를 직접 시작하려 하지 마세요.
 - `MODE`: `CHECKLIST` 또는 `SMOKE`.
 - `CHECKLIST_PATH` (CHECKLIST 모드 전용): 체크리스트 파일 경로.
+- `RETRY_ITEMS` (CHECKLIST 모드 전용, 선택): 재실행할 테스트 케이스 ID 목록. 존재하면 체크리스트에서 해당 ID 항목만 실행합니다 (수정 후 재검증용).
 - `CHANGED_FILES` (SMOKE 모드 전용): 변경된 UI 파일 경로 목록.
 
 CHECKLIST 모드에서는 Playwright MCP 서버를 사용하여 `{CHECKLIST_PATH}`의 모든 테스트 케이스를 `{BASE_URL}`에 대해 실행합니다. SMOKE 모드에서는 `{CHANGED_FILES}`가 암시하는 페이지/컴포넌트를 `{BASE_URL}`에 대해 스모크 테스트합니다. 완료 후 `.claude/qa-report.md`에 포괄적인 QA 리포트를 작성하고 최종 응답으로 구조화된 요약을 반환합니다("Phase 4: 요약 반환" 참조).
@@ -39,6 +40,7 @@ Playwright MCP 서버에 접근할 수 있습니다. 내비게이션, 클릭, �
 
 **[`MODE: CHECKLIST`]**
 1. `{CHECKLIST_PATH}`를 전체 읽습니다. 모든 테스트 케이스, ID, 설명, 선행 조건, 기대 결과를 파싱합니다.
+   - `RETRY_ITEMS`가 있으면 해당 ID의 케이스만 실행 대상으로 필터링합니다 (선행 조건이 다른 케이스에 의존하면 그 케이스는 선행 조건 설정용으로만 수행하고 판정에는 포함하지 않음). 매칭되는 ID가 하나도 없으면 BLOCKED로 보고합니다.
 2. 전체 테스트 케이스 목록을 파악하고, 체크리스트에 그룹핑이 있으면 기능 영역별로 분류합니다.
 3. 실행 순서를 계획합니다 — 체크리스트가 암시하는 의존성 또는 선행 조건 순서를 준수합니다.
 

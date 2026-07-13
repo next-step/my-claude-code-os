@@ -52,7 +52,6 @@ Skill 도구로 `/dev-pr`을 실행합니다.
 ║   유닛 테스트:    ✅ 통과 (npm test)     ║
 ║   QA 체크리스트: ✅ N/N 통과             ║
 ║   자동 수정 커밋: N회                    ║
-║   코드 리뷰:     ⚠️ CRITICAL N건 발견   ║
 ║ [dev-pr]                                 ║
 ║   코드 리뷰:     ✅ 클린 (N회 수정)     ║
 ║   PR:            ✅ https://github…      ║
