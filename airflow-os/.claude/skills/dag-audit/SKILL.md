@@ -1,6 +1,6 @@
 ---
 name: dag-audit
-description: 전체 파이프라인을 돌리지 않고 기존 Airflow DAG를 독립적으로 리뷰·감사만 하는 스킬. "이 DAG 봐줘 / 안티패턴 점검해줘 / 배포 전 감사 / 코드 리뷰만 해줘" 또는 /dag-audit 으로 호출. dag-reviewer 서브에이전트를 재활용해 컨벤션·Airflow 안티패턴·멱등성/백필 위험을 점검하고 리포트한다. 구현·수정은 하지 않으며, 고칠 게 나오면 airflow-pipeline 수정·리팩터 모드로 이어갈 수 있다.
+description: 기존 Airflow DAG를 진단·리뷰만 하는 읽기 전용 스킬(코드 안 고침). "이 DAG 리팩터해줘 / 개선점 찾아줘 / 안티패턴 점검 / 코드 리뷰만" 또는 /dag-audit. 컨벤션·안티패턴·멱등성/백필 위험을 리포트하고, 고칠 게 나오면 airflow-pipeline으로 넘긴다.
 ---
 
 # dag-audit — 단독 DAG 감사

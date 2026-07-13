@@ -1,6 +1,6 @@
 ---
 name: interview
-description: Airflow(Python)로 데이터 파이프라인/DAG를 새로 만들거나, 기존 DAG를 검토·수정하는 요청을 받았을 때, 요청이 짧거나 모호하면 곧바로 코드를 짜지 말고 착수 전에 짧은 인터뷰로 요구사항을 구체화하고 DAG 설계도(task 이름 + 의존성 그래프)로 합의한 뒤에만 개발에 들어가는 스킬. "DAG 만들어줘 / 이 파이프라인 검토해줘 / 이 DAG 수정해줘 / ~ 적재하는 거 짜줘" 처럼 Airflow 결과물을 요구하지만 소스·목적지·스케줄·적재방식·실패처리가 불명확할 때 proactively 사용. /interview 로 명시 호출도 가능. 트리거: /interview, Airflow DAG/파이프라인을 만들·검토·수정 요청, "airflow python으로 ~". 단, 요청이 이미 구체적이거나(파일·task·기대결과 명시) 오타·로그 한 줄 같은 사소한 1-스텝 수정이면 사용하지 말 것.
+description: 새 Airflow DAG 요청이 모호할 때, 코드 짜기 전 짧은 인터뷰로 요구사항을 구체화해 설계도(task+의존성)로 합의하는 스킬. "만들어줘 / ~ 적재하는 거 짜줘"가 소스·적재방식·스케줄 불명확할 때, 또는 /interview. 이미 구체적이거나 사소한 수정, 기존 DAG 리팩터(→dag-audit)면 안 씀.
 ---
 
 # Interview (Airflow Python 파이프라인 전용)
