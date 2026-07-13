@@ -26,12 +26,12 @@ my-claude-code-os/
     │   ├── code-conventions.md          # 코드 스타일, 네이밍, 패턴 규칙
     │   └── project-domain-detection.md  # 프로젝트 도메인 파악 절차
     ├── skills/            # 스킬 (재사용 가능한 작업 단위)
-    │   ├── interview/     # 모호함 구체화 인터뷰 (기획/기술 모드, 독립 실행)
     │   ├── ticket-start/  # 티켓 시작 워크플로
     │   ├── task-impl/     # 개발 단위 분해 + 구현 + 커밋 루프
-    │   ├── dev-test/      # 테스트 루프 + 자동 수정 + 코드 리뷰
+    │   ├── dev-test/      # 테스트 루프 + 자동 수정
     │   ├── dev-pr/      # 리뷰 루프 + 자동 수정 + PR 생성
     │   ├── dev-loop/      # dev-test → dev-pr 오케스트레이터
+    │   ├── retrospect/    # 티켓 회고 — 가정 검증 + 규칙 승격 (리포트는 docs/retrospects/ 누적)
     │   ├── deploy-notify/ # 배포 완료 알림
     │   ├── auto-commit/   # 커밋 자동화 (구현 완료)
     │   └── skill-stats/   # 스킬 사용 통계 (구현 완료)
@@ -64,34 +64,6 @@ my-claude-code-os/
 ---
 
 ## 자동화 대상 워크플로
-
-### 0. 모호함 구체화 인터뷰 — `/interview`
-
-**문제:** 아이디어나 요구사항이 모호한 상태로 개발을 시작하면 중간에 재작업이 발생함. 파이프라인 자동 트리거가 아니라, 필요할 때 직접 불러 쓰는 독립 도구가 필요함
-
-**목표:** 주제 하나 주면 기획/기술 관점 질문으로 모호함을 구체화
-
-```
-input:  주제/아이디어 설명 (생략 시 docs/ticket-briefing.md 또는 직접 질문)
-          ↓
-        모드 선택 (기획만 | 기술만 | 둘 다)
-          ↓
-        용어 정의 (공통, 항상 실행)
-          ↓
-        [기획 모드] 목표 / 범위 / 정책·규칙 / UX 흐름 / 제약
-        [기술 모드] 인터페이스 / 재사용 / 동작 정의 / 소유권 / 제약 / 검증 방법
-          ↓
-        결정으로 변환 (공통) — 확정된 결정 / 미해결 질문 / 가정 / 다음 액션
-          ↓
-output: docs/interview-spec.md 저장
-        + 기획 위주면 /ticket-start, 구현 범위 명확하면 /task-impl로 안내
-```
-
-**구현 완료:**
-
-- [x] `interview` 스킬 구현 (독립 실행, 기획/기술 모드 분기 + 결정 변환 단계)
-
----
 
 ### 1. 티켓 시작 워크플로 — `/ticket-start`
 
@@ -188,15 +160,14 @@ input:  /dev-test (개발 완료 후 호출)
         테스트 실행 (static-code-tester 에이전트)
         + Playwright QA (qa-checklist.md 기반 또는 diff 기반 스모크)
           ↓
-        실패 시: 자동 수정 → 커밋 → 재실행 (최대 3회 루프)
+        실패 시: 자동 수정 → 커밋 → 재실행 (최대 3회 루프,
+        재실행은 실패 항목만 → 통과 시 전체 1회 최종 검증)
           ↓
-        통과 후: code-reviewer 에이전트로 코드 리뷰 (단발, 수정 없음)
-          ↓
-output: 테스트 결과 + 리뷰 이슈 목록 출력
-        "이슈를 수정하려면 /dev-pr을 실행하세요" 안내
+output: 테스트 결과 출력
+        "코드 리뷰와 PR 생성은 /dev-pr을 실행하세요" 안내
 
 [Phase 2] /dev-pr
-input:  /dev-pr (리뷰 이슈 수정 후 호출)
+input:  /dev-pr (테스트 통과 후 호출)
           ↓
         code-reviewer 에이전트로 새 리뷰 (항상 fresh 실행)
           ↓
@@ -210,15 +181,51 @@ output: PR 생성 (브랜치 push + gh pr create)
 
 [오케스트레이터] /dev-loop
         /dev-test → 성공 시 → /dev-pr 순서 실행
+        (리뷰는 어차피 dev-pr에서 반드시 거치므로 dev-test에서는 빼고 테스트에만 집중)
 ```
 
 **구현 완료:**
 
-- [x] `/dev-test` 스킬 — 테스트 루프 + code-reviewer 단발 리뷰
+- [x] `/dev-test` 스킬 — 테스트 루프 (코드 리뷰는 dev-pr로 이관)
 - [x] `/dev-pr` 스킬 — code-reviewer 루프 + PR 생성
 - [x] `/dev-loop` 오케스트레이터 — dev-test → dev-pr 순차 호출
 - [x] 테스트 실행 명령어 감지 로직 (package.json / Makefile 등)
 - [x] PR 템플릿 감지 및 적용 (프로젝트 템플릿 우선, 없으면 기본 템플릿 폴백)
+
+---
+
+### 2.5. 회고 — `/retrospect`
+
+**문제:** 티켓이 끝나도 가정 검증·반복 실수 정리가 안 됨. 랄프 모드의 가정 메모는 DONE 후 아무도 확인하지 않고, 리뷰 지적은 저장되지 않아 티켓마다 같은 지적이 반복됨
+
+**목표:** 티켓 산출물을 모아 가정을 검증하고, 반복 패턴을 규칙으로 승격
+
+```
+input:  /dev-pr 완료 시 자동 호출 | /retrospect 수동 실행
+          ↓
+        재료 수집 (있는 것만)
+        - docs/tasks.md 메모 (가정/이탈/보류)
+        - docs/ticket-briefing.md, docs/interview-spec.md
+        - .claude/qa-report.md, .claude/review-report.md
+        - docs/retrospects/ 이전 리포트 (반복 패턴 비교 대상)
+          ↓
+        분석
+        - 가정 검증: 사용자에게 맞았는지 확인 (AskUserQuestion)
+        - 보류/이탈 정리: 사람 판단 필요 목록
+        - 반복 패턴 탐지: 이슈 유형 누적 2회 이상 → 규칙 승격 후보
+          ↓
+        규칙 승격 제안 (후보 있을 때만)
+        - 코드 관련 → code-conventions.md / 행동 관련 → CLAUDE.md
+        - 사용자 승인 후에만 append
+          ↓
+output: docs/retrospects/YYYY-MM-DD-<브랜치>.md 저장 (누적)
+        + 다음 액션 목록 (틀린 가정 후속 조치 등)
+```
+
+**구현 완료:**
+
+- [x] `retrospect` 스킬 구현 (재료 수집 → 가정 검증 → 리포트 누적 저장 → 규칙 승격 제안)
+- [x] `dev-pr` v1.1 — 리뷰 결과 `.claude/review-report.md` 영속화 + PR 생성 후 retrospect 자동 호출
 
 ---
 
@@ -253,7 +260,6 @@ output: Slack 배포 완료 메시지 전송
 | 단계     | 내용                                                                                                            | 상태    |
 | -------- | --------------------------------------------------------------------------------------------------------------- | ------- |
 | Step 0   | 기본 인프라 (settings.json, auto-commit, skill-stats)                                                           | ✅ 완료 |
-| Step 0.5 | `/interview` 스킬 구현 (모호함 구체화, 기획/기술 모드 분기)                                                     | ✅ 완료 |
 | Step 1   | `/ticket-start` 스킬 구현                                                                                       | ✅ 완료 |
 | Step 1.5 | `/task-impl` 스킬 구현 (태스크 분해 + 구현 루프 + 단위 커밋)                                                    | ✅ 완료 |
 | Step 2   | `/dev-loop` 스킬 구현 (셀프 리뷰, 테스트, 커밋, PR 자동화)                                                      | ✅ 완료 |
@@ -263,6 +269,7 @@ output: Slack 배포 완료 메시지 전송
 | Step 2.8 | `dev-loop` Playwright QA 실행 — `docs/qa-checklist.md` 기반 체크리스트 순회 + PR 본문 자동 반영                 | ✅ 완료 |
 | Step 2.9 | `/dev-loop` 분리 — `/dev-test`(테스트+리뷰) + `/dev-pr`(리뷰루프+PR) + `/dev-loop`(오케스트레이터)            | ✅ 완료 |
 | Step 2.10 | `task-impl` 랄프 모드 — `docs/tasks.md` 영속화 + 외부 루프(/loop) 반복 실행                                    | ✅ 완료 |
+| Step 2.11 | `/dev-test` 코드 리뷰 단계 제거 — 어차피 `/dev-pr`에서 반드시 리뷰하므로 `dev-test`는 테스트 통과에만 집중       | ✅ 완료 |
 | Step 3   | `/deploy-notify` 스킬 구현                                                                                      | 🔲 예정 |
 | Step 4   | 배포 명령 감지 훅 자동화                                                                                        | 🔲 예정 |
 | Step 5   | Memory 시스템 구축                                                                                              | 🔲 예정 |

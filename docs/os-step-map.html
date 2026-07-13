@@ -1,0 +1,514 @@
+<title>Claude OS 파이프라인 지도 — 사람 · AI · CI</title>
+<style>
+  :root {
+    --bg: #F4F3EE;
+    --surface: #FFFFFF;
+    --ink: #211F1A;
+    --ink-soft: #6C675C;
+    --ink-faint: #948F82;
+    --line: #E1DED3;
+    --spine: #D2CDBE;
+    --band: #EBE8DD;
+
+    --human: #A8461D;
+    --human-bg: #F8ECE1;
+    --human-line: #E4C2A4;
+
+    --ai: #106A5B;
+    --ai-bg: #E3F0EB;
+    --ai-line: #B5D8CC;
+
+    --ci: #423CC4;
+    --ci-bg: #ECEAFB;
+    --ci-line: #C9C5F1;
+
+    --done: #106A5B;
+    --todo: #423CC4;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #15181A;
+      --surface: #1C2023;
+      --ink: #E9E6DD;
+      --ink-soft: #9C978A;
+      --ink-faint: #6E6A5F;
+      --line: #2A2E30;
+      --spine: #34393B;
+      --band: #1B1F21;
+
+      --human: #E28A54;
+      --human-bg: #29211A;
+      --human-line: #4A382A;
+
+      --ai: #47B79E;
+      --ai-bg: #17262A;
+      --ai-line: #244A46;
+
+      --ci: #9A94F0;
+      --ci-bg: #1F2035;
+      --ci-line: #35306A;
+
+      --done: #47B79E;
+      --todo: #9A94F0;
+    }
+  }
+  :root[data-theme="light"] {
+    --bg: #F4F3EE; --surface: #FFFFFF; --ink: #211F1A; --ink-soft: #6C675C; --ink-faint: #948F82;
+    --line: #E1DED3; --spine: #D2CDBE; --band: #EBE8DD;
+    --human: #A8461D; --human-bg: #F8ECE1; --human-line: #E4C2A4;
+    --ai: #106A5B; --ai-bg: #E3F0EB; --ai-line: #B5D8CC;
+    --ci: #423CC4; --ci-bg: #ECEAFB; --ci-line: #C9C5F1;
+    --done: #106A5B; --todo: #423CC4;
+  }
+  :root[data-theme="dark"] {
+    --bg: #15181A; --surface: #1C2023; --ink: #E9E6DD; --ink-soft: #9C978A; --ink-faint: #6E6A5F;
+    --line: #2A2E30; --spine: #34393B; --band: #1B1F21;
+    --human: #E28A54; --human-bg: #29211A; --human-line: #4A382A;
+    --ai: #47B79E; --ai-bg: #17262A; --ai-line: #244A46;
+    --ci: #9A94F0; --ci-bg: #1F2035; --ci-line: #35306A;
+    --done: #47B79E; --todo: #9A94F0;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: "Apple SD Gothic Neo", "Pretendard", "Noto Sans KR", system-ui, sans-serif;
+    line-height: 1.55;
+    margin: 0;
+    padding: 2.75rem 1.25rem 4.5rem;
+  }
+  .wrap { max-width: 68rem; margin: 0 auto; }
+  code, .cmd, .n {
+    font-family: "SF Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+
+  header { margin-bottom: 2.25rem; }
+  .eyebrow {
+    text-transform: uppercase; letter-spacing: 0.14em;
+    font-size: 0.7rem; font-weight: 700; color: var(--ai);
+    margin: 0 0 0.6rem;
+  }
+  h1 {
+    font-size: clamp(1.55rem, 3.6vw, 2.15rem); font-weight: 800;
+    letter-spacing: -0.02em; margin: 0 0 0.65rem; text-wrap: balance;
+  }
+  .sub { color: var(--ink-soft); max-width: 44rem; margin: 0 0 1.4rem; }
+  .sub strong { color: var(--ink); }
+
+  .legend {
+    display: flex; flex-wrap: wrap; gap: 0.6rem;
+  }
+  .chip {
+    display: inline-flex; align-items: center; gap: 0.45rem;
+    border: 1px solid var(--line); border-radius: 999px;
+    background: var(--surface);
+    padding: 0.32rem 0.9rem 0.32rem 0.6rem;
+    font-size: 0.82rem; font-weight: 600;
+  }
+  .chip .dot { width: 0.6rem; height: 0.6rem; border-radius: 50%; flex: none; }
+  .chip small { color: var(--ink-soft); font-weight: 500; }
+  .dot.human { background: var(--human); }
+  .dot.ai { background: var(--ai); }
+  .dot.ci { background: var(--ci); }
+
+  /* Roadmap strip */
+  .roadmap {
+    margin: 1.6rem 0 2.6rem;
+    border: 1px solid var(--line); border-radius: 0.75rem;
+    background: var(--surface);
+    padding: 1rem 1.1rem 1.15rem;
+  }
+  .roadmap-head {
+    display: flex; align-items: baseline; justify-content: space-between;
+    margin-bottom: 0.75rem; gap: 0.75rem; flex-wrap: wrap;
+  }
+  .roadmap-head h2 { font-size: 0.92rem; margin: 0; font-weight: 700; }
+  .roadmap-head span { font-size: 0.76rem; color: var(--ink-faint); }
+  .roadmap-track {
+    display: flex; gap: 0.5rem; overflow-x: auto; padding-bottom: 0.35rem;
+    scrollbar-width: thin;
+  }
+  .rstep {
+    flex: none; min-width: 6.4rem;
+    border: 1px solid var(--line); border-radius: 0.5rem;
+    padding: 0.5rem 0.65rem;
+    background: var(--band);
+  }
+  .rstep .label { font-size: 0.68rem; font-weight: 700; color: var(--ink-faint); letter-spacing: 0.03em; }
+  .rstep .name { font-size: 0.78rem; font-weight: 600; margin: 0.15rem 0 0.3rem; line-height: 1.3; min-height: 2.1em; }
+  .rstep .state { font-size: 0.7rem; font-weight: 700; }
+  .rstep.done { border-color: var(--ai-line); }
+  .rstep.done .state { color: var(--done); }
+  .rstep.todo { border-style: dashed; background: transparent; }
+  .rstep.todo .state { color: var(--todo); }
+
+  /* Pipeline lane header */
+  .lane-head {
+    position: sticky; top: 0; z-index: 5;
+    display: grid; grid-template-columns: 2.4rem 1fr 1fr 1fr; gap: 0.6rem;
+    background: var(--bg);
+    padding: 0.75rem 0 0.6rem;
+    border-bottom: 2px solid var(--line);
+    margin-bottom: 0.25rem;
+  }
+  .lane-head span {
+    font-size: 0.75rem; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.1em; padding-left: 0.15rem;
+  }
+  .lane-head .h { color: var(--human); }
+  .lane-head .a { color: var(--ai); }
+  .lane-head .c { color: var(--ci); }
+  .lane-head em { display: block; font-style: normal; font-weight: 500; letter-spacing: 0; text-transform: none; color: var(--ink-soft); font-size: 0.72rem; }
+
+  section.stage { margin: 0 0 0.4rem; position: relative; }
+  .stage-band {
+    display: flex; align-items: baseline; flex-wrap: wrap; gap: 0.35rem 0.75rem;
+    background: var(--band);
+    border: 1px solid var(--line); border-radius: 0.5rem;
+    padding: 0.6rem 0.95rem;
+    margin: 1.6rem 0 0.85rem;
+  }
+  .stage-band .idx {
+    font-weight: 800; font-size: 0.92rem; color: var(--ink-faint);
+    font-family: "SF Mono", ui-monospace, monospace;
+  }
+  .stage-band .cmd { font-weight: 700; font-size: 0.92rem; color: var(--ai); }
+  .stage-band .name { font-weight: 700; }
+  .stage-band .trigger { flex-basis: 100%; font-size: 0.76rem; color: var(--ink-soft); }
+  .stage-band .status {
+    margin-left: auto; font-size: 0.75rem; font-weight: 600;
+    color: var(--ink-soft);
+  }
+  .stage-band .status.todo { color: var(--ci); }
+
+  .row {
+    display: grid; grid-template-columns: 2.4rem 1fr 1fr 1fr; gap: 0.6rem;
+    margin-bottom: 0.55rem;
+  }
+  .n {
+    align-self: center; text-align: center;
+    font-size: 0.72rem; color: var(--ink-faint);
+  }
+  .cell { min-height: 2.4rem; display: flex; }
+  .cell.empty {
+    background-image: linear-gradient(to bottom, var(--spine) 40%, transparent 40%);
+    background-size: 1px 8px; background-repeat: repeat-y; background-position: center top;
+  }
+  .card {
+    flex: 1; align-self: center;
+    border-radius: 0.55rem;
+    padding: 0.55rem 0.75rem;
+    font-size: 0.85rem;
+    border: 1px solid var(--line);
+    background: var(--surface);
+  }
+  .card b { display: block; font-size: 0.86rem; letter-spacing: -0.01em; }
+  .card span { color: var(--ink-soft); font-size: 0.78rem; }
+  .card.human { background: var(--human-bg); border-color: var(--human-line); border-left: 3px solid var(--human); }
+  .card.ai { background: var(--ai-bg); border-color: var(--ai-line); border-left: 3px solid var(--ai); }
+  .card.ci { background: var(--ci-bg); border-color: var(--ci-line); border-left: 3px solid var(--ci); }
+  .card.ghost { border-style: dashed; background: transparent; }
+  .card.ghost b::after {
+    content: " 예정"; font-size: 0.7rem; font-weight: 600; color: var(--ci);
+  }
+
+  .connector {
+    display: flex; align-items: center; gap: 0.5rem;
+    margin: 0.2rem 0 1.1rem 2.4rem;
+    padding-left: 0.75rem;
+    font-size: 0.76rem; color: var(--ink-faint);
+    border-left: 2px dotted var(--spine);
+  }
+  .connector b { color: var(--ai); font-weight: 700; }
+
+  .actor-tag { display: none; }
+
+  .note {
+    margin: 2.75rem 0 0;
+    display: grid; grid-template-columns: 1.1fr 1fr; gap: 1rem;
+  }
+  .note article {
+    background: var(--surface); border: 1px solid var(--line);
+    border-radius: 0.6rem; padding: 1rem 1.2rem;
+  }
+  .note h2 { font-size: 0.95rem; margin: 0 0 0.5rem; }
+  .note p, .note ul { font-size: 0.85rem; color: var(--ink-soft); margin: 0; }
+  .note ul { padding-left: 1.1rem; }
+  .note li { margin-bottom: 0.3rem; }
+  .note li strong { color: var(--ink); font-weight: 600; }
+  blockquote {
+    margin: 0 0 0.6rem; padding: 0.4rem 0.9rem;
+    border-left: 3px solid var(--ai);
+    font-weight: 600; color: var(--ink); font-size: 0.92rem;
+  }
+
+  @media (max-width: 720px) {
+    .lane-head { display: none; }
+    .row { grid-template-columns: 1.4rem 1fr; }
+    .cell.empty { display: none; }
+    .cell { grid-column: 2; }
+    .actor-tag {
+      display: inline-block; font-size: 0.68rem; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.08em;
+      margin-bottom: 0.15rem;
+    }
+    .card.human .actor-tag { color: var(--human); }
+    .card.ai .actor-tag { color: var(--ai); }
+    .card.ci .actor-tag { color: var(--ci); }
+    .note { grid-template-columns: 1fr; }
+    .connector { margin-left: 0.9rem; }
+  }
+</style>
+
+<div class="wrap">
+  <header>
+    <p class="eyebrow">my-claude-code-os · OS.md 기준 재시각화</p>
+    <h1>Claude OS 파이프라인 지도 — 누가 무엇을 하는가</h1>
+    <p class="sub">티켓이 들어와서 배포 알림까지 흘러가는 전체 흐름을 <strong>사람 · AI · CI</strong> 세 레인으로 분해했습니다.
+    핵심 철학 그대로 — 판단이 필요한 지점만 사람에게 남고, 나머지는 AI 레인에 몰려 있습니다.
+    (interview 스킬은 OS.md 본 루틴에서 제외되어 이 지도에는 포함하지 않았습니다.)</p>
+    <div class="legend">
+      <span class="chip"><span class="dot human"></span>사람 <small>판단·확인 게이트 ×10</small></span>
+      <span class="chip"><span class="dot ai"></span>AI <small>분석·구현·자동화 ×21</small></span>
+      <span class="chip"><span class="dot ci"></span>CI <small>자동 인프라 ×2 (전부 예정)</small></span>
+    </div>
+  </header>
+
+  <div class="roadmap">
+    <div class="roadmap-head">
+      <h2>구현 로드맵 — OS.md 기준</h2>
+      <span>Step 0 → 6 · 완료 10 / 예정 4</span>
+    </div>
+    <div class="roadmap-track">
+      <div class="rstep done"><div class="label">STEP 0</div><div class="name">기본 인프라</div><div class="state">✅ 완료</div></div>
+      <div class="rstep done"><div class="label">STEP 1</div><div class="name">/ticket-start</div><div class="state">✅ 완료</div></div>
+      <div class="rstep done"><div class="label">STEP 1.5</div><div class="name">/task-impl</div><div class="state">✅ 완료</div></div>
+      <div class="rstep done"><div class="label">STEP 2</div><div class="name">/dev-loop</div><div class="state">✅ 완료</div></div>
+      <div class="rstep done"><div class="label">STEP 2.5</div><div class="name">spec-analyzer 분리</div><div class="state">✅ 완료</div></div>
+      <div class="rstep done"><div class="label">STEP 2.6</div><div class="name">PR 템플릿 자동 감지</div><div class="state">✅ 완료</div></div>
+      <div class="rstep done"><div class="label">STEP 2.7</div><div class="name">QA 체크리스트 생성</div><div class="state">✅ 완료</div></div>
+      <div class="rstep done"><div class="label">STEP 2.8</div><div class="name">Playwright QA 실행</div><div class="state">✅ 완료</div></div>
+      <div class="rstep done"><div class="label">STEP 2.9</div><div class="name">dev-test/dev-pr 분리</div><div class="state">✅ 완료</div></div>
+      <div class="rstep done"><div class="label">STEP 2.10</div><div class="name">task-impl 랄프 모드</div><div class="state">✅ 완료</div></div>
+      <div class="rstep todo"><div class="label">STEP 3</div><div class="name">/deploy-notify</div><div class="state">🔲 예정</div></div>
+      <div class="rstep todo"><div class="label">STEP 4</div><div class="name">배포 감지 훅</div><div class="state">🔲 예정</div></div>
+      <div class="rstep todo"><div class="label">STEP 5</div><div class="name">Memory 시스템</div><div class="state">🔲 예정</div></div>
+      <div class="rstep todo"><div class="label">STEP 6</div><div class="name">CLAUDE.md 고도화</div><div class="state">🔲 예정</div></div>
+    </div>
+  </div>
+
+  <div class="lane-head">
+    <span></span>
+    <span class="h">사람<em>판단이 필요한 것</em></span>
+    <span class="a">AI (Claude)<em>귀찮은 것 전부</em></span>
+    <span class="c">CI / 훅<em>이벤트 자동 실행</em></span>
+  </div>
+
+  <!-- Stage 01 -->
+  <section class="stage">
+    <div class="stage-band">
+      <span class="idx">01</span><span class="cmd">/ticket-start</span><span class="name">티켓 시작</span>
+      <span class="status">✅ 구현 완료</span>
+      <span class="trigger">input: Notion URL · Slack URL · 파일 첨부 · 일반 HTTP URL</span>
+    </div>
+    <div class="row"><span class="n">1</span>
+      <div class="cell"><div class="card human"><span class="actor-tag">사람</span><b>기획서 소스 전달</b><span>4가지 소스 중 하나</span></div></div>
+      <div class="cell empty"></div><div class="cell empty"></div>
+    </div>
+    <div class="row"><span class="n">2</span>
+      <div class="cell empty"></div>
+      <div class="cell"><div class="card ai"><span class="actor-tag">AI</span><b>도메인 파악 + 기획서 읽기·분석</b><span>spec-analyzer 에이전트 · MCP/WebFetch 자동 선택</span></div></div>
+      <div class="cell empty"></div>
+    </div>
+    <div class="row"><span class="n">3</span>
+      <div class="cell"><div class="card human"><span class="actor-tag">사람</span><b>정책 결정</b><span>충돌·미정의 항목 답변</span></div></div>
+      <div class="cell"><div class="card ai"><span class="actor-tag">AI</span><b>충돌·미정의 정책 질문</b><span>AskUserQuestion으로 확인 요청</span></div></div>
+      <div class="cell empty"></div>
+    </div>
+    <div class="row"><span class="n">4</span>
+      <div class="cell empty"></div>
+      <div class="cell"><div class="card ai"><span class="actor-tag">AI</span><b>코드베이스 스캔</b><span>Explore 에이전트 → 영향 파일·컴포넌트 목록</span></div></div>
+      <div class="cell empty"></div>
+    </div>
+    <div class="row"><span class="n">5</span>
+      <div class="cell empty"></div>
+      <div class="cell"><div class="card ai"><span class="actor-tag">AI</span><b>브리핑 + 사이드이펙트·QA 체크리스트 저장</b><span>docs/qa-checklist.md → 이후 Playwright QA의 입력</span></div></div>
+      <div class="cell empty"></div>
+    </div>
+  </section>
+
+  <!-- Stage 02 -->
+  <section class="stage">
+    <div class="stage-band">
+      <span class="idx">02</span><span class="cmd">/task-impl</span><span class="name">태스크 분해 + 구현 루프</span>
+      <span class="status">✅ 구현 완료 · 랄프 모드 포함</span>
+      <span class="trigger">input: ticket-start 브리핑 (수정 범위, 영향 파일, 사이드 이펙트)</span>
+    </div>
+    <div class="row"><span class="n">1</span>
+      <div class="cell empty"></div>
+      <div class="cell"><div class="card ai"><span class="actor-tag">AI</span><b>태스크 분해</b><span>기능·레이어·파일 단위 + 의존성 순서</span></div></div>
+      <div class="cell empty"></div>
+    </div>
+    <div class="row"><span class="n">2</span>
+      <div class="cell"><div class="card human"><span class="actor-tag">사람</span><b>태스크 목록 확정</b><span>수정 · 추가 · 순서 변경</span></div></div>
+      <div class="cell empty"></div><div class="cell empty"></div>
+    </div>
+    <div class="row"><span class="n">3</span>
+      <div class="cell empty"></div>
+      <div class="cell"><div class="card ai"><span class="actor-tag">AI</span><b>tasks.md 저장 → 태스크별 구현</b><span>직접 실행 · 병렬 위임 · 랄프 모드(/loop 반복)</span></div></div>
+      <div class="cell empty"></div>
+    </div>
+    <div class="row"><span class="n">4</span>
+      <div class="cell"><div class="card human"><span class="actor-tag">사람</span><b>태스크별 결과 검토</b><span>랄프 모드에선 가정 기록으로 대체</span></div></div>
+      <div class="cell empty"></div><div class="cell empty"></div>
+    </div>
+    <div class="row"><span class="n">5</span>
+      <div class="cell empty"></div>
+      <div class="cell"><div class="card ai"><span class="actor-tag">AI</span><b>auto-commit</b><span>태스크 ↔ 커밋 SHA 매핑 기록</span></div></div>
+      <div class="cell empty"></div>
+    </div>
+    <div class="connector">랄프 모드 — <b>반복마다 새 컨텍스트</b>에서 태스크 1개만 구현·커밋·체크. 재실행은 실패 항목만, 전부 통과 시 DONE으로 정지.</div>
+  </section>
+
+  <!-- Stage 03 -->
+  <section class="stage">
+    <div class="stage-band">
+      <span class="idx">03</span><span class="cmd">/dev-test</span><span class="name">테스트 루프</span>
+      <span class="status">✅ 구현 완료</span>
+    </div>
+    <div class="row"><span class="n">1</span>
+      <div class="cell"><div class="card human"><span class="actor-tag">사람</span><b>/dev-test 호출</b><span>개발 완료 시점 판단</span></div></div>
+      <div class="cell empty"></div><div class="cell empty"></div>
+    </div>
+    <div class="row"><span class="n">2</span>
+      <div class="cell empty"></div>
+      <div class="cell"><div class="card ai"><span class="actor-tag">AI</span><b>테스트 + Playwright QA</b><span>static-code-tester · playwright-qa-tester 에이전트</span></div></div>
+      <div class="cell empty"></div>
+    </div>
+    <div class="row"><span class="n">3</span>
+      <div class="cell empty"></div>
+      <div class="cell"><div class="card ai"><span class="actor-tag">AI</span><b>실패 시: 수정 → 커밋 → 재실행</b><span>최대 3회, 재실행은 실패 항목만 → 통과 시 전체 1회 최종검증</span></div></div>
+      <div class="cell empty"></div>
+    </div>
+    <div class="row"><span class="n">4</span>
+      <div class="cell empty"></div>
+      <div class="cell"><div class="card ai"><span class="actor-tag">AI</span><b>코드 리뷰 (단발)</b><span>code-reviewer 에이전트 · 수정 없이 이슈만 출력</span></div></div>
+      <div class="cell empty"></div>
+    </div>
+    <div class="row"><span class="n">5</span>
+      <div class="cell"><div class="card human"><span class="actor-tag">사람</span><b>리뷰 이슈 확인 → /dev-pr 진행 판단</b><span>수정 여부와 시점 결정</span></div></div>
+      <div class="cell empty"></div><div class="cell empty"></div>
+    </div>
+  </section>
+
+  <!-- Stage 04 -->
+  <section class="stage">
+    <div class="stage-band">
+      <span class="idx">04</span><span class="cmd">/dev-pr</span><span class="name">리뷰 루프 + PR</span>
+      <span class="status">✅ 구현 완료 · /dev-loop이 03→04 오케스트레이션</span>
+    </div>
+    <div class="row"><span class="n">1</span>
+      <div class="cell empty"></div>
+      <div class="cell"><div class="card ai"><span class="actor-tag">AI</span><b>fresh 리뷰 → CRITICAL 자동 수정 루프</b><span>수정 → 커밋 → 재리뷰, 최대 3회</span></div></div>
+      <div class="cell empty"></div>
+    </div>
+    <div class="row"><span class="n">2</span>
+      <div class="cell empty"></div>
+      <div class="cell"><div class="card ai"><span class="actor-tag">AI</span><b>push + gh pr create</b><span>PR 템플릿 감지 · review-report.md 저장 · QA 결과 본문 반영</span></div></div>
+      <div class="cell empty"></div>
+    </div>
+    <div class="row"><span class="n">3</span>
+      <div class="cell empty"></div><div class="cell empty"></div>
+      <div class="cell"><div class="card ci ghost"><span class="actor-tag">CI</span><b>PR 체크 실행</b><span>OS.md에 미정의 — 배포 방식 미결 질문과 연결</span></div></div>
+    </div>
+    <div class="row"><span class="n">4</span>
+      <div class="cell"><div class="card human"><span class="actor-tag">사람</span><b>PR 최종 리뷰 · 머지</b><span>코드에 대한 최종 책임은 사람</span></div></div>
+      <div class="cell empty"></div><div class="cell empty"></div>
+    </div>
+    <div class="connector">PR 생성 완료 시 <b>retrospect 자동 호출</b> → 05 스테이지로 이어짐</div>
+  </section>
+
+  <!-- Stage 05 -->
+  <section class="stage">
+    <div class="stage-band">
+      <span class="idx">05</span><span class="cmd">/retrospect</span><span class="name">회고</span>
+      <span class="status">✅ 구현 완료</span>
+      <span class="trigger">input: /dev-pr 완료 시 자동 호출 · /retrospect 수동 실행</span>
+    </div>
+    <div class="row"><span class="n">1</span>
+      <div class="cell empty"></div>
+      <div class="cell"><div class="card ai"><span class="actor-tag">AI</span><b>재료 수집</b><span>tasks.md 메모(가정/이탈/보류), briefing, QA·review 리포트, 이전 회고</span></div></div>
+      <div class="cell empty"></div>
+    </div>
+    <div class="row"><span class="n">2</span>
+      <div class="cell"><div class="card human"><span class="actor-tag">사람</span><b>가정이 맞았는지 답변</b><span>실제 결과와 비교 확인</span></div></div>
+      <div class="cell"><div class="card ai"><span class="actor-tag">AI</span><b>가정 검증 질문</b><span>AskUserQuestion으로 하나씩 확인</span></div></div>
+      <div class="cell empty"></div>
+    </div>
+    <div class="row"><span class="n">3</span>
+      <div class="cell empty"></div>
+      <div class="cell"><div class="card ai"><span class="actor-tag">AI</span><b>보류·이탈 정리 + 반복 패턴 탐지</b><span>이슈 유형 누적 2회 이상 → 규칙 승격 후보</span></div></div>
+      <div class="cell empty"></div>
+    </div>
+    <div class="row"><span class="n">4</span>
+      <div class="cell empty"></div>
+      <div class="cell"><div class="card ai"><span class="actor-tag">AI</span><b>규칙 승격 제안 초안</b><span>후보 있을 때만 — code-conventions.md / CLAUDE.md 대상</span></div></div>
+      <div class="cell empty"></div>
+    </div>
+    <div class="row"><span class="n">5</span>
+      <div class="cell"><div class="card human"><span class="actor-tag">사람</span><b>규칙 승격 승인 여부 결정</b><span>승인 후에만 문서에 append</span></div></div>
+      <div class="cell empty"></div><div class="cell empty"></div>
+    </div>
+    <div class="row"><span class="n">6</span>
+      <div class="cell empty"></div>
+      <div class="cell"><div class="card ai"><span class="actor-tag">AI</span><b>리포트 저장 + 다음 액션 출력</b><span>docs/retrospects/YYYY-MM-DD-브랜치.md (누적)</span></div></div>
+      <div class="cell empty"></div>
+    </div>
+  </section>
+
+  <!-- Stage 06 -->
+  <section class="stage">
+    <div class="stage-band">
+      <span class="idx">06</span><span class="cmd">/deploy-notify</span><span class="name">배포 알림</span>
+      <span class="status todo">🔲 Step 3–4 예정</span>
+    </div>
+    <div class="row"><span class="n">1</span>
+      <div class="cell"><div class="card human"><span class="actor-tag">사람</span><b>배포 실행</b><span>미결: 터미널? CI/CD? 플랫폼?</span></div></div>
+      <div class="cell empty"></div>
+      <div class="cell"><div class="card ci ghost"><span class="actor-tag">CI</span><b>배포 감지 훅</b><span>Step 4 — 배포 명령 감지 시 자동 트리거</span></div></div>
+    </div>
+    <div class="row"><span class="n">2</span>
+      <div class="cell empty"></div>
+      <div class="cell"><div class="card ai"><span class="actor-tag">AI</span><b>브랜치·PR·Notion 티켓 정보 수집</b><span>브랜치 이름 규칙으로 티켓 연결 (규칙 미정)</span></div></div>
+      <div class="cell empty"></div>
+    </div>
+    <div class="row"><span class="n">3</span>
+      <div class="cell empty"></div>
+      <div class="cell"><div class="card ai"><span class="actor-tag">AI</span><b>Slack 배포 알림 + Notion 상태 "완료"</b><span>Slack·Notion MCP — 채널·필드명 미결</span></div></div>
+      <div class="cell empty"></div>
+    </div>
+  </section>
+
+  <div class="note">
+    <article>
+      <h2>사람에게 남은 것 = 판단 게이트 6종</h2>
+      <blockquote>"귀찮은 건 Claude가, 판단이 필요한 건 내가"</blockquote>
+      <ul>
+        <li><strong>정책 결정</strong> — 기획서 충돌·미정의 정책 확정</li>
+        <li><strong>계획 승인</strong> — 태스크 목록 확정</li>
+        <li><strong>결과 검토</strong> — 태스크별 구현 확인</li>
+        <li><strong>진행 판단</strong> — /dev-test 호출, /dev-pr 진입 결정</li>
+        <li><strong>회고 검증</strong> — 가정 적중 여부 확인, 규칙 승격 승인</li>
+        <li><strong>최종 책임</strong> — PR 머지</li>
+      </ul>
+    </article>
+    <article>
+      <h2>CI 레인이 비어 있는 이유</h2>
+      <p>현재 OS는 <strong>로컬 에이전트 중심</strong>으로 설계되어 CI 항목 2개가 전부 점선(예정)입니다.
+      OS.md의 미결 질문 — 배포 방식(터미널 vs CI/CD), Slack 채널명, Notion 상태 필드명, 티켓↔PR 연결 규칙 —
+      이 확정되어야 Step 3(deploy-notify)과 Step 4(배포 감지 훅)에서 CI 레인이 채워집니다.
+      PR 체크(테스트·린트) 역시 지금은 AI가 로컬에서 대신하고 있는 영역입니다.</p>
+    </article>
+  </div>
+</div>
