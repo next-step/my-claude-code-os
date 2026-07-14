@@ -28,3 +28,6 @@ include = ["app*"]
 testpaths = ["tests"]
 # 설치 없이도 app 패키지를 import 할 수 있도록 프로젝트 루트를 경로에 추가
 pythonpath = ["."]
+markers = [
+    "e2e: 실서버(uvicorn 서브프로세스)를 띄우는 느린 종단간 테스트 (제외: -m 'not e2e')",
+]
