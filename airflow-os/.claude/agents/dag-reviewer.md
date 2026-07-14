@@ -20,7 +20,9 @@ tools: Read, Bash, Grep, Glob
 ## 먼저 Read (주입 컨텍스트)
 격리 실행이라 대화 맥락을 못 본다. 점검 전에 Read한다:
 - `.claude/context/airflow-antipatterns.md` — 점검할 안티패턴의 단일 진실. **아래 "Airflow 안티패턴"은 이 파일이 기준이다.**
-- `.claude/context/project-conventions.md` — 컨벤션 준수 점검의 기준 (네이밍·default_args·재사용 자산)
+- `.claude/context/conventions/` — 컨벤션 준수 점검의 기준
+- `.claude/context/airflow3-knowledge.md` — deprecated import 등 버전 지식 기준
+- `.claude/context/platform.md` — 이 repo 플랫폼·계보 점검 기준
 - (검증 모드) 대조할 설계도 형식은 `.claude/context/dag-design-spec.md`
 
 ## 점검 항목

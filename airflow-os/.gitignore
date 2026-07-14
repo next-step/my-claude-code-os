@@ -5,3 +5,11 @@ prod-airflow
 *.swp
 *.swo
 .claude/scheduled_tasks.lock
+
+# 회사 내부 지식 — git에 안 올림
+.claude/context/conventions/dbt.md
+.claude/context/conventions/airbyte.md
+.claude/context/platform.md
+
+# 스크래치 (실험·초안) — git 안 올림
+draft/

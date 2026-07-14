@@ -13,7 +13,7 @@ CLAUDE.md의 `## 작성 규칙`을 먼저 Read해 그걸 기준으로 삼는다 
 ## 대상
 - `.claude/skills/*/SKILL.md`
 - `.claude/agents/*.md`
-- `.claude/context/*.md`
+- `.claude/context/` (하위 디렉토리 포함)
 
 ## 점검 항목 (작성 규칙별)
 - **description 자기설명** — 다른 스킬·에이전트 이름이나 파이프라인 step 번호(②③⑤)가 있으면 위반. 불필요하게 길면(대략 200자+) 플래그.

@@ -12,7 +12,10 @@ tools: Read, Write, Edit, Bash, Grep, Glob
 격리 실행이라 대화 맥락을 못 본다. 코드를 쓰기 전에 아래 두 계약을 반드시 Read한다:
 - `.claude/context/dag-design-spec.md` — 입력으로 받은 설계도의 형식·필드 계약, "설계에 없는 건 안 만든다" 불변 규칙
 - `.claude/context/airflow-antipatterns.md` — 범하면 안 되는 안티패턴 목록
-- `.claude/context/project-conventions.md` — 이 프로젝트의 네이밍·default_args·재사용 자산·멱등 적재 패턴
+- `.claude/context/conventions/` — 이 프로젝트의 컨벤션
+- `.claude/context/workspace.md` — 코드 위치·탐색법
+- `.claude/context/airflow3-knowledge.md` — Airflow 3 버전 지식(import 경로 등)
+- `.claude/context/platform.md` — 이 repo 플랫폼·계보(XCom 백엔드·Asset URI 등)
 
 ## 입력 계약
 오케스트레이터가 다음을 준다:
