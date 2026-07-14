@@ -76,6 +76,37 @@ Use a fine-tuned checkpoint (local dir or HF id) if you have one:
 python main.py --mode gen-instructions --model /path/to/recipegpt-124m
 ```
 
+### (C) REAL recipes now — `--format recipenlg`
+
+The paper's own RecipeGPT (Recipe1M) checkpoint was **never released**, so base
+`gpt2` only emits generic text. To get **actual recipe output**, drive a public
+GPT-2 that IS fine-tuned on recipes — same architecture + special-token
+multi-field idea, different corpus (RecipeNLG), **labeled** as a real stand-in:
+
+```bash
+pip install -r requirements.txt      # first run downloads the model (~500MB)
+python main.py --mode gen-instructions --format recipenlg \
+  --ingredients "chicken breast" "soy sauce" "honey" "garlic" "ginger"
+```
+
+Real verified output (`pratultandon/recipe-nlg-gpt2`, CPU):
+
+```
+TITLE: Chicken Stir-Fry
+INGREDIENTS: 1 lb chicken breast cut into strips · 3 tbsp soy sauce · 2 tbsp honey
+             · 2 garlic cloves minced · 1 tsp ginger grated
+INSTRUCTIONS:
+  1. Mix together all ingredients.
+  2. Marinate chicken strips for 1 hour.
+  3. Grill on outdoor grill or in skillet until cooked through.
+```
+
+`recipenlg.py` builds this model's native token format
+(`<RECIPE_START> <INPUT_START> … <INPUT_END>`), runs real GPT-2 inference, and
+parses the output back into title / ingredients / instructions. It is **not** the
+paper's exact checkpoint — it is a faithful, on-topic, honestly-labeled stand-in
+for the unreleased Recipe1M weights.
+
 ---
 
 ## Files
