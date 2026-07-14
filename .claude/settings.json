@@ -11,6 +11,18 @@
         ]
       }
     ],
+    "PreToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 /Users/kangminseong/repository/my-claude-code-os/.claude/hooks/inject-policy-context.py",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
     "PostToolUse": [
       {
         "matcher": "Agent|Write|Edit|Bash",
@@ -31,6 +43,12 @@
             "command": "bash /Users/kangminseong/repository/my-claude-code-os/.claude/hooks/auto-commit.sh",
             "timeout": 30,
             "statusMessage": "변경사항 자동 커밋 중..."
+          },
+          {
+            "type": "command",
+            "command": "python3 /Users/kangminseong/repository/my-claude-code-os/.claude/hooks/retrospect.py",
+            "timeout": 15,
+            "statusMessage": "어제 세션 회고 중..."
           }
         ]
       }

@@ -16,7 +16,7 @@ tool_name = payload.get("tool_name", "")
 tool_input = payload.get("tool_input", {})
 
 if tool_name not in {"Write", "Edit"}:
-    sys.exit(0)ㄷ
+    sys.exit(0)
 
 file_path = tool_input.get("file_path", "")
 if "src/main/java" not in file_path or not file_path.endswith(".java"):
