@@ -67,6 +67,43 @@ def cmd_generate(args, mode):
     ingredients = args.ingredients or (s["ingredients"] if mode == "gen-instructions" else None)
     instructions = args.instructions or (s["instructions"] if mode == "gen-ingredients" else None)
 
+    # --format recipenlg: drive a PUBLIC recipe-fine-tuned GPT-2 that emits REAL
+    # recipes (the paper's own Recipe1M checkpoint was never released). Different
+    # checkpoint/corpus than the paper — same GPT-2 architecture + special-token
+    # multi-field idea — labeled as a real, on-topic stand-in.
+    if getattr(args, "format", "recipegpt") == "recipenlg":
+        import recipenlg
+        model = args.model if args.model != "gpt2" else recipenlg.DEFAULT_MODEL
+        ings = multifield.normalize_ingredients(ingredients or [])
+        print("=" * 72)
+        print(f"MODE: {mode}   FORMAT: recipenlg   MODEL: {model}")
+        print("=" * 72)
+        print(f"INPUT INGREDIENTS: {ings}")
+        print("-" * 72)
+        print("Running REAL fine-tuned GPT-2 recipe generation...")
+        r = recipenlg.generate(
+            ings, model_name=model, seed=args.seed,
+            temperature=(args.temperature if args.temperature != 1.0 else 0.7),
+            top_p=args.top_p)
+        print(f"\nTITLE: {r['title']}")
+        print("INGREDIENTS:")
+        for x in r["ingredients"]:
+            print(f"  - {x}")
+        print("INSTRUCTIONS:")
+        for i, step in enumerate(r["instructions"], 1):
+            print(f"  {i}. {step}")
+        print("\n[i] REAL fine-tuned weights: pratultandon/recipe-nlg-gpt2 (RecipeNLG).")
+        print("    NOT the paper's exact RecipeGPT/Recipe1M checkpoint (unreleased) —")
+        print("    same GPT-2 arch + special-token multi-field idea, different corpus.")
+        if r["instructions"]:
+            joined = " ".join(r["instructions"])
+            jac = metrics.jaccard_consistency(joined, ings)
+            hl = metrics.highlight_overlap(joined, ings)
+            print("\nEVALUATION MODULE (live, on the generated recipe):")
+            print(f"  ingredient coverage: {hl['coverage']:.2f}  used={hl['used']}")
+            print(f"  Jaccard(directions vs input ingredients): {jac['jaccard']:.3f}")
+        return 0
+
     print("=" * 72)
     print(f"MODE: {mode}   MODEL: {args.model}")
     print("=" * 72)
@@ -193,6 +230,10 @@ def build_parser():
     p.add_argument("--ref-instructions", default=None, dest="ref_instructions")
     p.add_argument("--k", type=int, default=3, help="F1@k truncation (paper k=3)")
     # generation params
+    p.add_argument("--format", default="recipegpt", choices=["recipegpt", "recipenlg"],
+                   help="recipegpt = paper's multi-field format on --model (base gpt2 = stand-in); "
+                        "recipenlg = a PUBLIC recipe-fine-tuned GPT-2 (pratultandon/recipe-nlg-gpt2) "
+                        "that emits REAL recipes (different checkpoint than the paper's, labeled)")
     p.add_argument("--model", default="gpt2",
                    help="HF model id or local checkpoint dir (default: gpt2 = STAND-IN weights)")
     p.add_argument("--seed", type=int, default=0)
