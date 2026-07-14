@@ -1,0 +1,8 @@
+token	hex	용도
+ink	#1a1a19	본문 텍스트, 제목
+muted	#6b6a61	보조 텍스트, 클러스터 라벨, 도메인 외 자산 라벨
+line	#c9c8bf	노드·클러스터 테두리
+edge	#a3a299	엣지 (테두리보다 한 단계 진하게 — line과 같으면 흐름이 안 읽힘)
+cluster-bg	#f4f4f1	클러스터 배경
+node-bg	#ffffff	노드 배경
+accent	#2a78d6	단일 강조 (꼭 필요할 때 하나만; 기본은 무채색)

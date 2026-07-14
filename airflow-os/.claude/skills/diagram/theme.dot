@@ -1,0 +1,7 @@
+// 모든 다이어그램 공통 테마. DOT 파일 앞부분에 이 내용을 그대로 붙여 넣는다 (graphviz엔 include가 없다).
+// 색 값은 palette.tsv의 토큰과 일치해야 한다. .dot에 새 hex를 직접 만들지 말 것.
+  graph [fontname="Apple SD Gothic Neo", splines=line, rankdir=LR,
+         bgcolor="white", fontcolor="#1a1a19"];
+  node [fontname="Apple SD Gothic Neo", shape=box, style="filled",
+        fillcolor="#ffffff", color="#c9c8bf", fontcolor="#1a1a19", penwidth=1];
+  edge [color="#a3a299", fontname="Apple SD Gothic Neo", fontcolor="#6b6a61", arrowsize=0.5];
