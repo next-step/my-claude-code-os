@@ -110,4 +110,30 @@ Setup → Triage(1회) → ┌─ Build(병렬 컴포넌트 N개) → Merge(단�
 - 편집 stand-in에 캔버스 상시 `[경량 STAND-IN]` 워터마크 노출(배너 접힘 시 오해 방지).
 - DMD 학습 하이퍼파라미터(`real_score/fake_score_num_frame_per_block=21`, `dfake_gen_update_ratio=5`)도 증류 패널에 보강.
 
+## Run #3 — must_fix 반영 (threshold 92) · **95/100 PASS** (클린 실행)
+
+Run #2의 must_fix를 반영해 재실행. **9 에이전트·오류 0·~45분**(지난번 야간 API 장애 없이 정상).
+
+### must_fix 3건 모두 반영 (검증됨)
+- **상시 `[경량 STAND-IN]` 워터마크** — 캔버스 위 상시 노출(41곳). 배너 접혀도 '확산 백본 경량 대체' 오해 방지.
+- **실행 견고성 + 자체 self-test** — `<script>`별 try/catch 방어(48곳) + 페이지 내 미니콘솔 self-test(113곳)로 file:// 더블클릭 시 초기화 OK/에러를 스스로 표시(정적 리뷰 한계 보완).
+- **DMD 학습 하이퍼파라미터** — `real_score/fake_score_num_frame_per_block=21`, `dfake_gen_update_ratio=5` 등 증류 패널 보강.
+
+### 실제 편집기 기능 후퇴 없음
+`editTile`·`computeL2`·`kthTau`·`streamRun`·`copyTile`·`genFrame`·`createElement('video')`+`drawImage`·`performance.now` 전부 유지. 7개 `<script>` 구문 검사 통과, 원격 로더 0, 167KB.
+
+### 최종 채점 (95/100)
+| 축 | Run #2 | Run #3 |
+|---|---|---|
+| 실제 동작 구현 | 23/25 | **24/25** ↑ |
+| 실제 코드 대조 | 20/20 | 19/20 |
+| 방법 충실도 | 14/15 | 14/15 |
+| 지표 재현 | 14/15 | 14/15 |
+| 실행 가능성 | 14/15 | 14/15 |
+| 정직성 | 10/10 | 10/10 |
+
+### 남은 개선점(must_fix — 이제 미세 폴리시)
+- 편집기의 rank 정규화 ↔ 레포 min-max 정규화 차이를 화면 라벨/툴팁에 명시하거나 min-max 토글 추가(현재 REPRODUCE.md에만 문서화).
+- KV 캐시+sink token·롤링 eviction을 로그 텍스트가 아닌 **실제 상태 배열 시각화**로(개념 반영은 정확, method_fidelity 만점 근접용).
+
 > 원본 코드를 직접 받아 비교하려면 `liveedit-official/`(공식 레포 클론)와 `liveedit-official/RUN-GUIDE.md` 참고.

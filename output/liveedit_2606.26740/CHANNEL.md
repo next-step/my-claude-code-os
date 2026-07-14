@@ -69,3 +69,13 @@ User study 재현 시 현재 보고값은 전체 품질 top-3 선호율 **95.8%(
   - 전체(21 latent-frame) = 21 × 1560 = **32,760 tokens**.
   - `adaptive_patch_ratio:0.3` → 상위 30% keep = 1560 × 0.3 ≈ **468 tokens 유지 / ~1092 prune (per latent-frame)**, 즉 ~70% 프루닝.
 - 결론: 그리드 각주의 "2×2 가정 → 30×52=1560 tokens/latent-frame" **추정치를 확정값으로 교체**해도 된다. (chunk = num_frame_per_block 3 latent-frame이므로 chunk당 3×1560=4680 tokens 기준으로도 표기 가능.)
+
+---
+
+## S1 [code-run 상태] (RESOLVED — 이번 병합 반영 완료)
+Q1–Q6 답변(A1·A2·A3·A4·A5·A6)을 이번 병합본 `app/index.html` 에 모두 반영했다. 신규 OPEN 질문 없음(재현에 필요한 값은 정본·코드에서 전부 확정됨).
+- A1(스케줄) → `denoising_step_list=[1000,750,500,250]+warp`, 논문 {0,250,500,750}=동일집합 오름차순으로 라벨.
+- A2/A3/A5(미보고) → baseline 개별 VBench·user study 축별·W/O 캐시 FPS/지연을 지어내지 않고 "논문 미보고"로 표기.
+- A4(79ms) → 12.66 FPS=1/0.079 항등에 따라 프레임당 amortized 로 정합화 + ✦각주.
+- A6(격자) → patch(1,2,2)→30×52=1560 tok/latent-frame 확정값으로 반영, ③ 히트맵 52×30 = 1560 타일.
+- 병합 중 자체 해소: (a) `LESelfTest` 콜러블 vs `.log` 계약 충돌 → 통합 부트스트랩으로 해소, (b) τ 프루닝 정량 버그(min-max 치우침 → 슬라이더 표현 불가) → 순위 정규화로 τ=keep-fraction 동작(prune 30/50/70/90% 정합). 실제 실행(jsdom) self-test: 6/6 init OK · uncaught 0 · 콘솔 에러 0.
