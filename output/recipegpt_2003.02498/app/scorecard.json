@@ -1,0 +1,67 @@
+{
+  "slug": "recipegpt_2003.02498",
+  "iteration": 1,
+  "total": 89,
+  "threshold": 85,
+  "verdict": "PASS",
+  "medium": "terminal",
+  "criteria": {
+    "functional_reproduction": {
+      "score": 23,
+      "max": 25,
+      "notes": "EXECUTED in this env (Python 3.12, torch 2.4.1+cpu, transformers 4.44.2 all present). `python main.py --mode evaluate` runs pure-stdlib and prints REAL computed metrics on real inputs (F1@3=0.444, BLEU=22.721, BP=0.457, ROUGE-L=0.595, NTED=0.344 with edit_distance=18.58 nodes_a=20 nodes_b=34) — genuinely computed, no hardcoding. `python main.py --mode gen-ingredients` ran a REAL GPT-2 forward pass on CPU and produced novel neural text ('Add 1 cup soy sauce, 1/3 cup corn syrup...') conditioned on the verbatim multi-field prompt, then ran the live F1 mini-eval. Core method (bidirectional multi-field conditional generation + Zhang-Shasha NTED) is real code, not mockup. -2: the flagship fine-tuned RecipeGPT weights are unavailable (authors never released), so generation uses base gpt2 (honestly labeled STAND-IN); output is generic, not on-topic recipes."
+    },
+    "repo_fidelity": {
+      "score": 17,
+      "max": 20,
+      "notes": "Verified against real repo source (github.com/LARC-CMU-SMU/RecipeGPT-exp, master) via WebFetch. MATCHES: (1) field markers <start-title>/<end-title>/<start-directions>/<end-directions>/<start-ingredients> are VERBATIM from data/recipe1M_example/test/X/1264i.txt; (2) ingredient F1 is set-based P=inter/len(pred), R=inter/len(true), F1=2PR/(P+R) — exact match to utils/metrics.py; (3) post-processing text.split('<')[0] matches conditional_gen_web.py; (4) temperature=1, top_k=0 match; (5) repo tree structure (utils/, training/gpt-2/src/, data/recipe1M_example, analysis notebooks) matches. MISMATCH: app/REPRODUCE.md item 4 claims top_p=0.9 'from conditional_gen_web.py defaults', but the repo's conditional_gen_web.py default is top_p=0.0 (nucleus off) — top_p=0.9 is a chosen value, not a repo default. -3 for that mislabel."
+    },
+    "method_fidelity": {
+      "score": 13,
+      "max": 15,
+      "notes": "Bidirectional two-mode conditional generation correctly reflected; prompt field ordering matches the repo example files (i-files = title/directions/open-ingredients; d-files = title/ingredients/open-directions). NTED = Zhang-Shasha ordered-tree edit distance normalized by (nodes_a+nodes_b), matching utils/evaluation.py norm_dist concept. -2: NTED node relabel cost is a token-string-similarity STAND-IN for the repo's word2vec cosine, and root-noun extraction is rule-based vs spaCy — both labeled but change metric magnitudes."
+    },
+    "metric_fidelity": {
+      "score": 12,
+      "max": 15,
+      "notes": "All paper-reported values present and shown side-by-side with this-run computed values: F1 0.76, avg-ingredients 7.8, BLEU 8.34, BP 0.71, ROUGE-L 0.36, NTED 0.52, PPL 3.70, Jaccard gen 0.53/human 0.49 (PAPER dict in main.py, printed as 'paper (124M)' column). Honestly notes single-example runs differ from full-test-set values. -3: because fine-tuned weights are unavailable the app cannot actually REPRODUCE the paper's test-set numbers — paper values are display/reference only, not regenerated (an honest, unavoidable cap, not a fabrication)."
+    },
+    "runnability": {
+      "score": 15,
+      "max": 15,
+      "notes": "requirements.txt pins torch==2.4.1, transformers==4.44.2 and bounds the rest. Clear entry point (main.py, --mode required). run.sh + run.ps1 both work and gate heavy deps behind --gen/-Gen. Evaluate mode needs zero third-party deps (pure stdlib). Runs with no args via built-in sample_recipes.json. README copy-paste commands verified accurate. All confirmed by actually executing evaluate and gen-ingredients here."
+    },
+    "honesty": {
+      "score": 9,
+      "max": 10,
+      "notes": "Excellent REAL vs STAND-IN vs OMITTED tabulation in REPRODUCE.md and README; runtime prints a STAND-IN WEIGHTS notice; paper numbers labeled 'reported'; omitted items (ElasticSearch NN retrieval, full 904k Recipe1M) declared, not faked. No fake logs. -1: top_p=0.9 mislabeled as a repo default (see repo_fidelity)."
+    }
+  },
+  "functional_checks": [
+    { "capability": "Evaluation module runs on real inputs (pure stdlib, no deps)", "works": true, "evidence": "Ran `python main.py --mode evaluate`: printed real computed F1@3=0.444, BLEU=22.721, BP=0.457, ROUGE-L=0.595, NTED=0.344 (edit_distance=18.58, nodes_a=20, nodes_b=34), Jaccard=0.429, highlight used=6/missing=0. Values are input-derived, not hardcoded." },
+    { "capability": "Real GPT-2 autoregressive bidirectional generation", "works": true, "evidence": "Ran `python main.py --mode gen-ingredients --max-new-tokens 40`: transformers loaded cached gpt2, ran a real CPU forward pass, emitted novel text conditioned on the verbatim <start-title>..<start-ingredients> prompt. torch 2.4.1+cpu / transformers 4.44.2 confirmed importable." },
+    { "capability": "NTED via real Zhang-Shasha tree edit distance", "works": true, "evidence": "metrics.zhang_shasha implements the 1989 ordered-tree ES algorithm (keyroots, leftmost-leaf-descendants, forest DP); nted() normalizes by (nodes_a+nodes_b). Real algorithm, not a lookup." },
+    { "capability": "Fine-tuned RecipeGPT weights", "works": false, "evidence": "Authors never released the Recipe1M fine-tuned checkpoint; app uses base gpt2 as a clearly-labeled STAND-IN. Generated text is generic, not recipe-tuned. --model accepts a real checkpoint dir to close the gap." },
+    { "capability": "ElasticSearch nearest-neighbor similar-recipe retrieval", "works": false, "evidence": "OMITTED (labeled in REPRODUCE.md item 13) — needs the full Recipe1M index; not implemented." }
+  ],
+  "repo_checks": [
+    { "claim": "Field markers <start-title>/<end-title>/<start-directions>/<end-directions>/<start-ingredients>", "repo_value": "<start-title>tapenade <end-title> <start-directions>...<end-directions> <start-ingredients>", "file": "data/recipe1M_example/test/X/1264i.txt", "match": true },
+    { "claim": "Ingredient F1 = set-based P=inter/len(pred), R=inter/len(true), F1=2PR/(P+R)", "repo_value": "len(set(y_true)&set(y_pred))/len(set(y_pred)); .../len(set(y_true)); 2*p*r/(p+r)", "file": "utils/metrics.py", "match": true },
+    { "claim": "Post-process generated text by cutting at first '<'", "repo_value": "text.replace('\\n','').split('<')[0]  # 'not interested in words after <'", "file": "training/gpt-2/src/conditional_gen_web.py", "match": true },
+    { "claim": "Decoding temperature=1, top_k=0", "repo_value": "temperature=1, top_k=0 (no restriction)", "file": "training/gpt-2/src/conditional_gen_web.py", "match": true },
+    { "claim": "Decoding top_p=0.9 'from conditional_gen_web.py defaults'", "repo_value": "top_p=0.0 (nucleus off by default; overrides top_k only when >0)", "file": "training/gpt-2/src/conditional_gen_web.py", "match": false },
+    { "claim": "Repo has utils/ eval modules, training/gpt-2/src, data/recipe1M_example, analysis notebooks", "repo_value": "utils/, training/gpt-2/, common/, analysis/ (nb 1-11), data/recipe1M_example/test/{X,y}", "file": "repo tree", "match": true },
+    { "claim": "BLEU computed via Moses multi-bleu.perl (not in utils/metrics.py)", "repo_value": "utils/metrics.py contains no BLEU; repo attributes BLEU to analysis/multi-bleu.perl", "file": "utils/metrics.py", "match": true }
+  ],
+  "must_fix": [
+    "Fix top_p attribution: REPRODUCE.md item 4 and generate.py DEFAULTS present top_p=0.9 as 'conditional_gen_web.py defaults', but the repo default is top_p=0.0. Relabel top_p=0.9 as a chosen nucleus value (not a repo default), or set it to 0.0 to match the repo verbatim.",
+    "metric_fidelity is capped because the paper's test-set numbers cannot be regenerated without the (unreleased) fine-tuned weights. Add a short fine-tune recipe/script pointer (train_ppl_pickle.py path, lr 1e-4, batch 8, 512 tok) so a user can produce a checkpoint and move the 'paper' column from reference-only to reproduced.",
+    "Optional: gate the real-NLP path behind an extra (spaCy noun-chunk heads + gensim word2vec cosine for NTED cost) so method_fidelity stand-ins can be turned off for a higher-fidelity run."
+  ],
+  "learned": [
+    "Repo-verified verbatim: RecipeGPT field markers (<start-title> etc.), the set-based ingredient-F1 formula (utils/metrics.py), and the split('<')[0] post-processing all match the app exactly — high repo fidelity.",
+    "The RecipeGPT fine-tuned checkpoint was never publicly released, so ANY faithful reproduction is capped on metric reproduction and on-topic generation regardless of build quality; the honest move (base gpt2 + STAND-IN label + real pipeline) is what this app does.",
+    "This environment DOES have torch 2.4.1+cpu and transformers 4.44.2 installed with gpt2 weights cached — real GPT-2 CPU inference runs here, so generation claims are executable-verified, not just runnable-by-structure.",
+    "Watch attribution precision: conditional_gen_web.py's top_p default is 0.0, not 0.9 — decoding values claimed 'from repo defaults' must be checked against the actual source default, not a plausible common value."
+  ]
+}

@@ -218,9 +218,12 @@ return {
   passed,
   iterations: history,
   final_total: last ? last.total : null,
-  app: rel('index.html'),
+  medium: MEDIUM,
+  app: MEDIUM === 'terminal' ? `output/${SLUG}/app/ (README의 복붙 명령으로 실행)` : rel('index.html'),
   scorecard: rel('scorecard.json'),
   learnings: rel('LEARNINGS.md'),
   channel: `output/${SLUG}/CHANNEL.md`,
-  open: `output/${SLUG}/app/index.html 를 더블클릭해서 여세요.`,
+  open: MEDIUM === 'terminal'
+    ? `cd output/${SLUG}/app && (pip install -r requirements.txt 후) python main.py --mode evaluate 등으로 실행 — README 참고.`
+    : `output/${SLUG}/app/index.html 를 더블클릭해서 여세요.`,
 }
