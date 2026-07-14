@@ -42,9 +42,20 @@
 - **12.66 FPS · 79 ms** — 공식 저장소 코드에 없는 **논문 본문 전용 수치** → [논문 보고값]으로만 라벨, code attribution 금지(CHANNEL A4).
 - **실측 절대 FPS/ms** — 브라우저 경량 편집 stand-in 의 마스크 캐시 부기 시간이며 GPU 확산 추론이 아님 → 논문 절대치와 직접 비교하지 않고 **메커니즘·상대 speedup**을 정합점으로 라벨.
 
+## 자체 self-test 근거 (must_fix #1 — 실제 실행 견고성, 정적 코드리뷰 아님)
+이번 병합본은 **실제 DOM 실행**(headless jsdom, canvas 2D 컨텍스트 스텁)으로 로드해 자가검증했으며, 페이지의 self-test 하니스가 다음을 **스스로 출력**한다(사용자는 `file://` 더블클릭 후 상단 "콘솔 로그 스트림 · self-test" 배지와 우하단 미니 패널에서 동일 결과를 눈으로 확인).
+- **미처리(uncaught) 오류 0건** — `window.onerror`/`unhandledrejection` 를 최상단(첫 스크립트)에서 설치해 6개 컴포넌트의 초기화 오류를 포착. 실행 결과 uncaught = **0**.
+- **6/6 컴포넌트 초기화 OK** — 페이지 배지: **`6/6 init OK · uncaught 0 · 콘솔 에러 0 (PASS)`**. probe 요약: `self-test 요약: 6/6 구성요소 OK · uncaught 오류 0 → 콘솔 에러 0 · 실행 견고성 PASS`.
+- **컴포넌트별 self-test 배지**: `ledist-selftest = ✓ 초기화 OK` · `lebench-selftest = 초기화 OK · 막대6·Stage3·ablation2·칩15` · `le2SelfTest = 초기화 OK ✓ · file:// 콘솔 에러 0 — ✓ DOM(21/21) · ✓ canvas 2D ctx · ✓ editTile 픽셀연산 · ✓ L2²(1560 tok) finite · ✓ kthTau∈[0,1]=0.70 · ✓ prune≈70% @top-30%(70%)`.
+- 전역 노출 확인: `LEApp`·`LEDIST`·`LEBench`·`LE3STRM` 정의됨, `LESelfTest` 는 **콜러블 + `.log` 동시 지원**(아래 병합 충돌 해소 참조).
+
+## 병합 시 해소한 충돌·버그 (이번 루프)
+1. **`window.LESelfTest` 계약 충돌** — part0 는 `LESelfTest(name,ok,msg)`(콜러블), part2 는 `LESelfTest.log(...)`(객체)로 사용해 로드 순서에 따라 한쪽이 `TypeError`로 깨졌다. → **두 계약을 모두 만족하는 통합 부트스트랩**(콜러블 함수 + `.log`/`.register`/`._queue`)을 첫 `<script>`로 선언해 양쪽 `||` 가드가 이를 재사용하도록 해소.
+2. **τ 프루닝 정량 버그(기능 후퇴 방지)** — `computeImp` 의 min-max 정규화가 극단 치우친 분포(배경 L2²≈0, 편집 blob≈큰값)를 만들어 kthvalue τ≈0.0009 가 됐고, τ 슬라이더 `step=0.01` 이 이를 표현 못 해 **"논문 기준 τ" 버튼이 prune 0%** 를 냈다(R1 관찰 실패 위험). → **순위(rank) 정규화**(raw importance 에 단조 → 상위 30% keep 집합 불변)로 교체해 τ 가 keep-fraction 로 직접 동작: **τ 0.30→0.50→0.70→0.90 이 실측 prune 30%→50%→70%→90%**, "논문 기준 τ" = **prune 70%** 로 정합(위 le2 self-test로 확증).
+
 ## 자급식 검증 (이번 병합에서 확인)
-- 외부 리소스 로더(`src=`(non-data)/`url(http)`/`@import`/`fetch`/`XHR`/`WebSocket`/`<link>`/`integrity`/`importScripts`) **0건**(정규식 스캔). `http(s)` 등장은 정직성 배너·푸터의 **공식 레포/프로젝트/arXiv 앵커 링크(4건)뿐** — `target=_blank`, 클릭 전 네트워크 요청 없음.
+- 외부 리소스 로더(`src=`(non-data)/`url(http)`/`@import`/`fetch`/`XHR`/`WebSocket`/`<link>`/`integrity`/`importScripts`) **0건**(정규식 스캔). `http(s)` 등장은 정직성 배너·푸터의 **공식 레포/프로젝트/arXiv 앵커 링크(3종)뿐** — `target=_blank`, 클릭 전 네트워크 요청 없음.
 - 입력은 **절차적 canvas 생성** 또는 **`URL.createObjectURL`(로컬 영상, 네트워크 아님, 2건)**만 사용.
-- 인라인 `<script>` **6개**(part3-A · part0 · part1 · part2 · part3-B · part3-C) 전부 `node new Function` 구문 검사 통과. CSS는 통합 `<style>` 1개(네임스페이스 `--le-`/`ledist-`/`lebench-`/`le2-` 분리, 선택자 충돌 0). 태그 균형 확인(section 10/10 · main 1/1 · div 161/161).
-- 모든 시각물은 Canvas 2D + DOM + 타입드어레이로 로컬 렌더/계산 → `file://` 더블클릭 실행에서 콘솔 에러 없이 동작.
-- `/score` 관찰 포인트: (1) ③ τ 슬라이더 → 히트맵·실측 prune% 즉시 변화, (2) ③ W/O Cache → 전량 재계산·실측 ms↑·speedup≈1×, (3) ③ ▶ 실행 → chunk-by-chunk 콘솔 + 편집 결과 스트리밍 + 실측 FPS/speedup, (4) `--save_mask` → 재계산/재사용 오버레이, (5) ⓪ chunk/step 슬라이더 → 실측 throughput 변화.
+- 인라인 `<script>` **7개**(통합 self-test 부트스트랩 · part3-A · part0 · part2 · part1 · part3-B · part3-C) 전부 `node new Function` 구문 검사 통과(0 오류). CSS는 통합 `<style>` 1개(네임스페이스 `--le-`/`ledist-`/`lebench-`/`le2-` 분리, 선택자 충돌 0). 태그 균형 확인(`<section>` 11/11 · `<main>` 1/1 · `<canvas>` 5/5 · `<style>` 1/1). 핵심 id(`ledist-root`·`lebench-root`·`le2Root`·`le-strm-canvas` 등) 중복 0(각 x1). 잔여 placeholder(`le-slot-ph` div) 0.
+- 모든 시각물은 Canvas 2D + DOM + 타입드어레이로 로컬 렌더/계산 → `file://` 더블클릭 실행에서 콘솔 에러 없이 동작(위 self-test로 확증).
+- `/score` 관찰 포인트: (1) ③ τ 슬라이더 → 히트맵·실측 prune% 즉시·매끄럽게 변화(30/50/70/90%), (2) ③ W/O Cache → 전량 재계산·실측 ms↑·speedup≈1×, (3) ③ ▶ 실행 → chunk-by-chunk 콘솔 + 편집 결과 스트리밍 + 실측 FPS/speedup, (4) `--save_mask` → 재계산/재사용 오버레이, (5) ⓪ chunk/step/τ 슬라이더 → 실측 throughput·prune 변화, (6) 상단 self-test 배지 = `6/6 init OK · 콘솔 에러 0 (PASS)`.
