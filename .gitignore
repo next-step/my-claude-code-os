@@ -9,3 +9,6 @@ img.png
 
 # 커버리지 아티팩트
 .coverage
+
+# 회고 게이트 로컬 마커
+.claude/.retro-gate-marker

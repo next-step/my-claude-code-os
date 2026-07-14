@@ -19,6 +19,11 @@
             "type": "command",
             "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/enforce-pr-template.sh\"",
             "statusMessage": "PR 템플릿 강제 검사..."
+          },
+          {
+            "type": "command",
+            "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/enforce-retro-gate.sh\"",
+            "statusMessage": "회고 게이트 검사(push)..."
           }
         ]
       },
