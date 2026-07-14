@@ -34,7 +34,6 @@ PRD·Plan 작성은 각 단계 스킬(`/prd`, `/plan`)이 하고, 흐름 강제�
 기능 설명에서 slug를 정한 뒤, 어느 단계까지 왔는지 산출물 존재로 파악한다.
 
 ```bash
-test -f docs/requirements/<slug>.md && echo REQ
 test -f docs/prd/<slug>.md && echo PRD
 test -f docs/plan/<slug>.md && echo PLAN
 ```
@@ -49,10 +48,10 @@ test -f docs/plan/<slug>.md && echo PLAN
 ```
 🗺️ <기능 이름> 개발 흐름
 
-① 요구사항·PRD   [✅ / ▶ / ⬜]   → /prd
-② Plan(설계)      [✅ / ▶ / ⬜]   → /plan
-③ 구현            [✅ / ▶ / ⬜]   → /impl (구현↔검증 루프)
-④ 마무리          [⬜]            /commit · /push
+① 무엇 (요구사항 수집·PRD)  [✅ / ▶ / ⬜]   → /prd (수집→PRD, /interview 선택)
+② 어떻게 (Plan 설계)         [✅ / ▶ / ⬜]   → /plan
+③ 구현                       [✅ / ▶ / ⬜]   → /impl (구현↔검증 루프)
+④ 마무리                     [⬜]            /commit · /push
 (게이트=사람 검토는 ①·② 각 단계 끝에 내장 — 별도 번호 없음)
 ```
 
@@ -62,7 +61,7 @@ test -f docs/plan/<slug>.md && echo PLAN
 
 | 현재 상태 | 다음 동작 |
 |-----------|-----------|
-| PRD 없음 | `/prd` 실행 (요구사항→PRD) |
+| PRD 없음 | `/prd` 실행 (요구사항 수집 → PRD, 필요시 /interview) |
 | PRD 있음, Plan 없음 | `/plan` 실행 (PRD→설계) |
 | PRD·Plan 둘 다 있음 | `/impl` 실행 (구현↔검증 루프) — Plan이 승인된 상태인지 먼저 확인 |
 

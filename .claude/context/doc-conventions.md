@@ -7,20 +7,18 @@
 ## docs/ 지도 (어떤 문서가 어디에)
 
 ```
-docs/requirements/<slug>.md   사람이 직접 채우는 원재료 (→ /prd·/interview 입력)
-docs/prd/<slug>.md            확정된 PRD (문제·목표·시나리오·범위밖·제약)
-docs/plan/<slug>.md           구현 Plan (재활용 지도 → 직접 구현 → 테스트 전략)
+docs/prd/<slug>.md            ① "무엇" — /prd 가 수집(러프 초안·/interview 씨앗)부터 정제·확정까지 (문제·목표·시나리오·범위밖·제약)
+docs/plan/<slug>.md           ② "어떻게" — 구현 Plan (재활용 지도 → 직접 구현 → 테스트 전략)
 docs/domain/<slug>.md         서비스 도메인의 정체·경계·관계 (/domain 이 유지)
 docs/diagrams/<name>.{html,png}  도식 소스(HTML)와 검증된 산출물(PNG)
 ```
 
 - **파일명 = 기능 slug** (kebab-case, 한 기능은 단계별로 같은 slug). 예: `signup-login-api.md`.
-- 한 기능이 흐름을 따라 `requirements → prd → plan` 세 폴더에 **같은 이름**으로 쌓인다.
+- 한 기능이 흐름을 따라 `prd → plan` 두 폴더에 **같은 이름**으로 쌓인다. (요구사항은 별도 폴더 없이 `/prd`가 `docs/prd/`에서 수집→정제한다.)
 
 ## 문서별 틀 (있는 걸 따르고, 새 틀을 만들지 않는다)
 
-- **requirements**: 사람이 채우는 문서. 빈칸 허용(모르면 비움 → PRD가 "확인 필요"로 승계). AI가 대신 채우지 않는다.
-- **PRD**: `## 문제 / 목표 / 사용자 시나리오 / 범위 밖 / 제약·조건`. 실패는 **상태코드 + `errorCode`**까지 명시.
+- **PRD**: `## 문제 / 목표 / 사용자 시나리오 / 범위 밖 / 제약·조건 / 열린 질문`. 실패는 **상태코드 + `errorCode`**까지 명시. (요구사항 수집 재료를 `/prd`가 이 형식으로 정제 — 별도 requirements 파일 없음. `/interview` 수집 씨앗은 정제 전 임시 원재료다.)
 - **Plan**: `## 재활용할 기존 코드` → `## 직접 구현이 필요한 부분` → 테스트 전략. **재활용 조사 결과를 먼저** 적는다(새로 짜기 전 기존부터).
 - **domain**: 정체·경계·관계만. 소스 구조(=/init 몫)는 다루지 않는다.
 
