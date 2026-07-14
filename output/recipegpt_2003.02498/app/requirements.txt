@@ -1,0 +1,14 @@
+# RecipeGPT CLI — pinned dependencies (Python 3.9–3.12)
+#
+# The EVALUATION module (main.py --mode evaluate, metrics.py, multifield.py)
+# needs NOTHING below — it is pure standard library. Install these only for the
+# REAL GPT-2 generation modes (gen-instructions / gen-ingredients).
+#
+# CPU-only works. First run downloads the gpt2 weights (~500 MB) from HuggingFace.
+
+torch==2.4.1
+transformers==4.44.2
+safetensors>=0.4.3,<0.5
+huggingface-hub>=0.24,<0.26
+tokenizers>=0.19,<0.20
+regex>=2024.5.15
