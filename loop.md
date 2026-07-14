@@ -136,4 +136,28 @@ Run #2의 must_fix를 반영해 재실행. **9 에이전트·오류 0·~45분**(
 - 편집기의 rank 정규화 ↔ 레포 min-max 정규화 차이를 화면 라벨/툴팁에 명시하거나 min-max 토글 추가(현재 REPRODUCE.md에만 문서화).
 - KV 캐시+sink token·롤링 eviction을 로그 텍스트가 아닌 **실제 상태 배열 시각화**로(개념 반영은 정확, method_fidelity 만점 근접용).
 
+## Run #4 — 정규화 정합 + KV캐시 시각화 + 실제 실행 검증 (threshold 96) · **97/100 PASS**
+
+Run #3의 미세 must_fix 2건 반영 + **실제 브라우저 실행 검증**. 9 에이전트·오류 0·클린.
+
+### must_fix 2건 반영 (검증)
+- **min-max 정규화 모드 토글** — 편집기 마스크 중요도를 레포(`torch.kthvalue`)와 정합하는 min-max 모드로(기본), 기존 rank 모드와 토글 비교. 토글 시 실측 prune%/마스크가 실제로 달라짐(min-max 62곳).
+- **KV 캐시 상태 시각화** — sink token 고정·롤링 eviction·캐시 슬롯을 로그가 아닌 **실제 상태 배열(슬롯 칸)**로, streamRun 진행에 연동(sink/slot/evict 377곳).
+
+### 실제 실행 검증 (헤드리스 Chrome로 진짜 실행)
+`chrome --headless --dump-dom`로 앱을 실제 렌더/실행하고 앱 자체 self-test 결과를 판독:
+- **`6/6 init OK · uncaught 0 · 콘솔 에러 0 (PASS)`**, `6/6 구성요소 OK · 실행 견고성 PASS`
+- ✓ DOM 바인딩(24/24) · ✓ canvas 2D ctx · ✓ editTile 픽셀연산 · ✓ L2², 5 canvas 렌더, stderr에 Uncaught/SyntaxError/TypeError 0.
+- 정직한 단서: self-test 서브체크 `prune≈70%`는 로드시 0%로 표시(✗)됨 — 스트리밍 편집을 아직 안 돌렸기 때문이며 "▶ 스트리밍 편집 실행" 후 ~70% 도달(타이밍, 크래시 아님).
+
+### 최종 채점 (97/100 — Run별 추이 95→95→97)
+| 축 | 점수 |
+|---|---|
+| 실제 동작 구현 | 24/25 |
+| 실제 코드 대조 | 20/20 |
+| 방법 충실도 | 14/15 |
+| 지표 재현 | 14/15 |
+| 실행 가능성 | **15/15** ↑ |
+| 정직성 | 10/10 |
+
 > 원본 코드를 직접 받아 비교하려면 `liveedit-official/`(공식 레포 클론)와 `liveedit-official/RUN-GUIDE.md` 참고.

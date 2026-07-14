@@ -1,7 +1,8 @@
 # REPRODUCE — LiveEdit (arXiv:2606.26740) 클릭 실행형 재현 앱
 
 > 대상 앱: `output/liveedit_2606.26740/app/index.html` (단일·자급식·더블클릭 실행, 외부 요청 0, 콘솔 에러 0).
-> **실제 동작 데모.** 논문의 핵심 알고리즘(AR-지향 마스크 캐시 · chunk=3 인과 스트리밍 · ~70% 토큰 프루닝)을 브라우저에서 **실제로 계산**합니다. 화면 수치는 **[실측]**(브라우저가 `performance.now()`로 직접 측정 — 캐시·τ·chunk·step 변경 시 실제로 변함)과 **[논문 보고값]**(정본 `01_analysis.md` §6; 12.66 FPS·79 ms 등은 **공식 저장소에 없는 논문 전용 수치**)으로 라벨 분리됩니다. 확산 백본(Wan2.1-T2V-1.3B) 가중치만 브라우저 불가 → **경량 편집 stand-in**(주황영역 teal 리컬러 + 3×3 필터)으로 대체(라벨). 지어낸 값은 없습니다.
+> **실제 동작 데모.** 논문의 핵심 알고리즘(AR-지향 마스크 캐시 · chunk=3 인과 스트리밍 · ~70% 토큰 프루닝 · KV 캐시 sink+롤링 eviction)을 브라우저에서 **실제로 계산·시각화**합니다. 화면 수치는 **[실측]**(브라우저가 `performance.now()`로 직접 측정 — 캐시·τ·정규화 모드·chunk·step·KV window 변경 시 실제로 변함) · **[상태]**(KV 캐시 점유·eviction 등 스트리밍 상태 배열에서 파생) · **[논문 보고값]**(정본 `01_analysis.md` §6; 12.66 FPS·79 ms 등은 **공식 저장소에 없는 논문 전용 수치**)으로 라벨 분리됩니다. 확산 백본(Wan2.1-T2V-1.3B) 가중치만 브라우저 불가 → **경량 편집 stand-in**(주황영역 teal 리컬러 + 3×3 필터)으로 대체(라벨). 지어낸 값은 없습니다.
+> **이번 루프 반영(직전 scorecard must_fix 2건):** (1) ③ 편집기에 **중요도 정규화 모드 토글**(min-max=레포 정합·기본 / rank=탐색용) — 같은 τ에서 두 모드 실측 prune%/마스크가 실제로 달라짐(R18). (2) **KV 캐시 + sink token + 롤링 eviction 을 실제 상태 배열(슬롯 칸 배열)로 시각화** — ⓪ 스트리밍·① 증류·③ 편집기 모두 스트리밍 상태에 동기(R19).
 > 공식 코드 저장소(확인됨): https://github.com/cp-cp/LiveEdit · 프로젝트: https://live-edit.github.io · arXiv: https://arxiv.org/abs/2606.26740
 
 ## 앱 구성 (병합된 4개 조각 → 단일 파일)
@@ -32,6 +33,8 @@
 | R15 | 3단계 증류 학습량 | **9K+20K+10K = 39K steps · lr 1e-5 · batch 8** | §4·§8 | 논문 보고값 | ① 총 학습 배지 · 매핑표 |
 | R16 | 베이스/하드웨어/데이터 | **Wan2.1-T2V-1.3B · A100×8 · AdamW** · 벤치 120 / 학습 20K 쌍 | §6·§8 | 논문 보고값 | 매핑표 |
 | R17 | 기타 config | `internal_pruning_steps=[1,2]` · `timestep_shift=5.0` · `guidance_scale=3.0` · `num_frames=81` | 04_code §5 | **코드 확정** | 배너 칩 · ② 설정 칩 · 매핑표 |
+| R18 | ③ 중요도 정규화 모드 토글 | **min-max**(레포 정합·기본) `(diff−min)/(max−min+1e-8)` + `kthvalue` / **rank**(탐색용, τ=keep-fraction) | `pipeline/causal_inference.py:_compute_mask_from_generated` / CHANNEL·scorecard must_fix#1 | **[실측]**(같은 τ=0.5에서 minmax ≠ rank prune%; 두 모드 kthTau 모두 ~70% prune) | ③ min-max↔rank 토글 → pill·툴팁·콘솔에 "레포 식과 다름" 명시, 실측 prune% 실제로 변화 |
+| R19 | ⓪/①/③ KV 캐시 상태 배열 | **sink token 고정 + 롤링 eviction** (chunk 단위 갱신) | §4·§6 개념 · 04_code §3 `mm_inference.py`·`causal_model.py` / must_fix#2 | **[상태]**(슬롯 칸 배열, 스트리밍 상태에 동기 · window 크기 illustrative) | ⓪ 캔버스 KV 타임라인+물리 슬롯 · ① `ledist-kvtrack` 21슬롯(eviction self-check) · ③ `le2KvStrip`(window/sink 슬라이더) |
 
 ## 정직성 · 미보고 표기 (지어내지 않음)
 - **W/O 캐시의 FPS·지연** — 논문 미보고 → ③에서 캐시 OFF 시 "논문 미보고"로 표기하고 **실측 상대 speedup**만 관찰(CHANNEL A5).
@@ -49,9 +52,11 @@
 - **컴포넌트별 self-test 배지**: `ledist-selftest = ✓ 초기화 OK` · `lebench-selftest = 초기화 OK · 막대6·Stage3·ablation2·칩15` · `le2SelfTest = 초기화 OK ✓ · file:// 콘솔 에러 0 — ✓ DOM(21/21) · ✓ canvas 2D ctx · ✓ editTile 픽셀연산 · ✓ L2²(1560 tok) finite · ✓ kthTau∈[0,1]=0.70 · ✓ prune≈70% @top-30%(70%)`.
 - 전역 노출 확인: `LEApp`·`LEDIST`·`LEBench`·`LE3STRM` 정의됨, `LESelfTest` 는 **콜러블 + `.log` 동시 지원**(아래 병합 충돌 해소 참조).
 
-## 병합 시 해소한 충돌·버그 (이번 루프)
-1. **`window.LESelfTest` 계약 충돌** — part0 는 `LESelfTest(name,ok,msg)`(콜러블), part2 는 `LESelfTest.log(...)`(객체)로 사용해 로드 순서에 따라 한쪽이 `TypeError`로 깨졌다. → **두 계약을 모두 만족하는 통합 부트스트랩**(콜러블 함수 + `.log`/`.register`/`._queue`)을 첫 `<script>`로 선언해 양쪽 `||` 가드가 이를 재사용하도록 해소.
-2. **τ 프루닝 정량 버그(기능 후퇴 방지)** — `computeImp` 의 min-max 정규화가 극단 치우친 분포(배경 L2²≈0, 편집 blob≈큰값)를 만들어 kthvalue τ≈0.0009 가 됐고, τ 슬라이더 `step=0.01` 이 이를 표현 못 해 **"논문 기준 τ" 버튼이 prune 0%** 를 냈다(R1 관찰 실패 위험). → **순위(rank) 정규화**(raw importance 에 단조 → 상위 30% keep 집합 불변)로 교체해 τ 가 keep-fraction 로 직접 동작: **τ 0.30→0.50→0.70→0.90 이 실측 prune 30%→50%→70%→90%**, "논문 기준 τ" = **prune 70%** 로 정합(위 le2 self-test로 확증).
+## 병합 시 해소한 충돌·버그 (이번 루프 — 4 조각 `_build/part0–3.md` → 단일 `index.html`)
+1. **`window.LESelfTest` 계약 충돌** — part0 는 `LESelfTest(name,ok,msg)`(콜러블), part2/le2 는 `LESelfTest.log(...)`(객체)로 사용해 로드 순서에 따라 한쪽이 `TypeError`로 깨질 수 있다. → part3 의 **통합 부트스트랩**(콜러블 함수 + `.log`/`.register`/`._queue` + `#le-selftest` 패널 렌더)을 **첫 `<script>`로 1회만** 선언하고, part0 조각에 중복 포함돼 있던 부트스트랩 `<script>` 는 병합 시 **제거**(idempotent 가드로 무해하나 중복 제거). 양쪽 `||` 가드가 통합본을 재사용.
+2. **정규화 모드 정합(must_fix#1) 반영** — ③ 편집기(le2)가 `computeRaw`(L2²)+`normArr(mode)` 로 분리되어 **min-max(레포 정합·기본)** 과 **rank(탐색용)** 두 모드를 실제 계산. min-max 기본 시 τ 는 `kthTau`(torch.kthvalue 상위 30% keep)로 정합(~70% prune), 화면 pill·툴팁·콘솔·설명문에 "rank 는 레포 식과 다름" 명시. 두 모드 keep-set 은 단조성으로 동일하나 같은 τ 에서 실측 prune% 는 실제로 다름(self-test 로 확증).
+3. **KV 캐시 상태 배열(must_fix#2) 반영** — 로그 텍스트 → **실제 슬롯 칸 배열**. ⓪(`le-strm` 캔버스: per-frame 타임라인 + 물리 슬롯) · ①(`ledist-kvtrack` 21 latent-frame 슬롯, `kvAdmit`/eviction self-check) · ③(`le2KvStrip`, window/sink 슬라이더)에서 sink 고정 + 롤링 eviction 을 스트리밍 상태에 동기.
+4. **병합 검증** — 인라인 `<script>` **7개**(통합 self-test 부트스트랩 · part3-A/B/C · part2 lebench · part1 le2 · part0 ledist) 전부 node `new Function` 구문검사 통과(0 오류). `<style>` **4개**(part3/part0/part2/part1 네임스페이스 분리). 외부 로더(`src`(non-data)/`fetch`/`XHR`/`WebSocket`/`@import`/`<link>`/`url(http)`/`integrity`/`importScripts`) **0건**, http(s) 등장은 배너·푸터 앵커(arXiv·프로젝트·github ×2, `target=_blank`)뿐. **중복 id 0건**(136 id 전수 검사), `<html>`·`<main>`·`<head>`·`<body>` 태그 균형 OK, 핵심 id(각 컴포넌트 root·마스터 버튼·정규화 토글·KV 슬롯) 각 1개.
 
 ## 자급식 검증 (이번 병합에서 확인)
 - 외부 리소스 로더(`src=`(non-data)/`url(http)`/`@import`/`fetch`/`XHR`/`WebSocket`/`<link>`/`integrity`/`importScripts`) **0건**(정규식 스캔). `http(s)` 등장은 정직성 배너·푸터의 **공식 레포/프로젝트/arXiv 앵커 링크(3종)뿐** — `target=_blank`, 클릭 전 네트워크 요청 없음.
