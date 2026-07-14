@@ -6,34 +6,35 @@
 
 ## 핵심 흐름
 
-```
-세션 중 아무 턴 종료
-        ↓
-   Stop 훅 실행
-        ↓
-.last-retrospected-through 읽기
-        ↓
-  어제 <= 마지막 회고? ──YES──→ 즉시 종료 (0.01초)
-        │
-       NO
-        ↓
-미회고 날짜 목록 생성
-(last+1 ~ yesterday)
-        ↓
-  각 날짜별 로그 파일 확인
-  sessions/YYYY-MM-DD.jsonl
-  prompts/YYYY-MM-DD.jsonl
-        ↓
-  파일 없는 날 → 스킵
-  파일 있는 날 → 분석
-   · 도구 호출 통계
-   · 수정 파일 목록
-   · 에이전트 호출 내역
-   · 작업 프롬프트
-        ↓
-  lessons.md 에 누적 추가
-        ↓
-.last-retrospected-through 업데이트
+```mermaid
+flowchart TD
+    A([세션 중 Claude 응답 완료]) --> B
+
+    B["⚙️ Stop 훅 실행\nretrospect.py"]
+    B --> C[".last-retrospected-through 읽기"]
+    C --> D{"어제 ≤ 마지막 회고?"}
+
+    D -->|YES| E([즉시 종료 0.01초])
+    D -->|NO| F["미회고 날짜 목록 생성\nlast+1 ~ yesterday"]
+
+    F --> G["각 날짜 순회"]
+    G --> H{"로그 파일 존재?\nsessions/ · prompts/"}
+
+    H -->|없음| I[스킵]
+    H -->|있음| J["분석\n도구 호출 통계\n수정 파일 목록\n에이전트 호출\n작업 프롬프트"]
+
+    J --> K[("📄 lessons.md\n회고 항목 추가")]
+
+    I --> L{"다음 날짜?"}
+    K --> L
+
+    L -->|있음| G
+    L -->|없음| M[".last-retrospected-through\n= yesterday 저장"]
+    M --> N([완료])
+
+    style K fill:#d4f1c4,stroke:#5a9e4b
+    style E fill:#f0f0f0,stroke:#999
+    style N fill:#cce5ff,stroke:#4a90d9
 ```
 
 ---
