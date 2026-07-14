@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>/coverage 시스템 루프 — 흐름</title>
+<style>
+  :root{
+    --ink:#1f2937; --muted:#6b7280; --line:#e5e7eb;
+    --blue:#2563eb; --blue-bg:#eff6ff;
+    --green:#059669; --green-bg:#ecfdf5;
+    --orange:#c2410c; --orange-bg:#fff7ed;
+    --gate:#ca8a04; --gate-bg:#fef9c3;
+    --gray:#475569; --gray-bg:#f8fafc;
+    --loop:#6366f1;
+  }
+  *{box-sizing:border-box;}
+  body{font-family:-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;color:var(--ink);
+       background:#fff;margin:0;padding:28px 34px;width:1000px;}
+  h1{font-size:22px;margin:0 0 4px;}
+  h1 .tag{font-size:12px;font-weight:800;color:var(--loop);background:#eef2ff;border:1px solid #c7d2fe;
+          border-radius:999px;padding:3px 10px;vertical-align:middle;margin-left:8px;}
+  .sub{color:var(--muted);font-size:13px;margin:0 0 6px;line-height:1.5;}
+  .sub b{color:var(--ink);}
+  .key{margin:10px 0 14px;background:#f5f3ff;border:1px solid #ddd6fe;border-left:5px solid var(--loop);
+       border-radius:10px;padding:10px 14px;font-size:12.5px;line-height:1.5;color:#4338ca;}
+  .band{margin-top:14px;background:var(--orange-bg);border:1px solid #fed7aa;border-left:5px solid var(--orange);
+        border-radius:12px;padding:12px 16px;}
+  .band .bh{font-weight:800;font-size:13.5px;color:#9a3412;margin-bottom:10px;}
+  .band .bh span{font-weight:700;color:#c2410c;font-size:11.5px;}
+  .guards{display:grid;grid-template-columns:1fr 1fr;gap:9px;}
+  .guard{background:#fff;border:1px solid #fdba74;border-radius:9px;padding:8px 11px;font-size:12px;line-height:1.35;}
+  .guard .gt{font-weight:800;color:#9a3412;}
+  .guard .gd{color:#7c2d12;}
+  .guard.esc{border-color:#fca5a5;}
+  .guard.esc .gt{color:#b91c1c;}
+  .legend{margin-top:16px;border-top:1px solid var(--line);padding-top:12px;display:flex;gap:18px;flex-wrap:wrap;font-size:12px;color:var(--muted);}
+  .legend b{color:var(--ink);}
+  .sw{display:inline-block;width:12px;height:12px;border-radius:3px;border:1px solid;vertical-align:middle;margin-right:5px;}
+</style>
+</head>
+<body>
+  <h1>/coverage 시스템 루프 <span class="tag">랄프 루프 · 커버리지 전용</span></h1>
+  <p class="sub"><b>app/ 코드를 기준으로 테스트를 보태, 커버리지가 목표에 닿을 때까지 사람 개입 없이 반복(수렴)</b>하는 저위험 grind 트랙</p>
+  <div class="key">💡 <b>지표(커버리지 %)가 매 라운드 값싸게·객관적으로 재지므로 무인 반복이 가능하다.</b> 무인의 안전은 전적으로 <b>예산 상한 · 게이밍 방지 · 서킷브레이커</b>의 3중 방어에서 나온다.</div>
+
+  <svg viewBox="0 0 1000 648" width="100%" xmlns="http://www.w3.org/2000/svg"
+       font-family="-apple-system,'Apple SD Gothic Neo','Malgun Gothic',sans-serif">
+    <defs>
+      <marker id="ag" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7.5" markerHeight="7.5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#94a3b8"/></marker>
+      <marker id="aok" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7.5" markerHeight="7.5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#059669"/></marker>
+      <marker id="astop" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7.5" markerHeight="7.5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#c2410c"/></marker>
+      <marker id="aloop" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#6366f1"/></marker>
+    </defs>
+    <style>
+      text{fill:#1f2937;}
+      .t{font-size:13px;font-weight:800;}
+      .s{font-size:10.5px;font-weight:600;fill:#6b7280;}
+      .lab{font-size:11.5px;font-weight:800;}
+      .e{stroke:#94a3b8;stroke-width:1.7;fill:none;}
+    </style>
+
+    <!-- preflight -->
+    <rect x="290" y="14" width="420" height="52" rx="10" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.5"/>
+    <text class="t" x="500" y="37" text-anchor="middle" fill="#475569">[준비] preflight — 하나라도 안 맞으면 멈춤</text>
+    <text class="s" x="500" y="55" text-anchor="middle">pytest-cov 설치 · 워킹트리 clean · 작업 브랜치 · baseline 확보</text>
+    <path class="e" d="M500,66 V94" marker-end="url(#ag)"/>
+
+    <!-- 1. 측정 -->
+    <rect x="350" y="96" width="300" height="52" rx="10" fill="#eff6ff" stroke="#2563eb" stroke-width="1.6"/>
+    <text class="t" x="500" y="119" text-anchor="middle" fill="#2563eb">1. 측정 — pytest --cov=app</text>
+    <text class="s" x="500" y="137" text-anchor="middle">커버리지 % 파싱 · 덜 덮인 지점 식별</text>
+    <path class="e" d="M500,148 V172" marker-end="url(#ag)"/>
+
+    <!-- D1: 목표 달성? -->
+    <polygon points="500,172 584,208 500,244 416,208" fill="#fef9c3" stroke="#ca8a04" stroke-width="1.6"/>
+    <text class="t" x="500" y="213" text-anchor="middle" fill="#a16207" font-size="12.5">목표 달성?</text>
+    <!-- 예 → 종료 -->
+    <path class="e" d="M584,208 H720" stroke="#059669" marker-end="url(#aok)"/>
+    <text class="lab" x="648" y="200" fill="#059669">예</text>
+    <rect x="722" y="184" width="256" height="48" rx="10" fill="#ecfdf5" stroke="#059669" stroke-width="1.5"/>
+    <text class="t" x="736" y="205" fill="#059669">✅ 종료 — 목표 달성</text>
+    <text class="s" x="736" y="222">커버리지 추이·감사 로그 보고 · 자동 푸시 금지</text>
+    <!-- 아니오 ↓ -->
+    <path class="e" d="M500,244 V270" marker-end="url(#ag)"/>
+    <text class="lab" x="512" y="262" fill="#6b7280">아니오</text>
+
+    <!-- 2. 테스트 추가 -->
+    <rect x="350" y="272" width="300" height="52" rx="10" fill="#ecfdf5" stroke="#059669" stroke-width="1.6"/>
+    <text class="t" x="500" y="295" text-anchor="middle" fill="#059669">2. 테스트 추가 — tests/ 에만</text>
+    <text class="s" x="500" y="313" text-anchor="middle">app/ 프로덕션 로직은 손대지 않음</text>
+    <path class="e" d="M500,324 V348" marker-end="url(#ag)"/>
+
+    <!-- 3. 라운드 검증 -->
+    <rect x="292" y="350" width="416" height="70" rx="10" fill="#eff6ff" stroke="#2563eb" stroke-width="1.6"/>
+    <text class="t" x="500" y="372" text-anchor="middle" fill="#2563eb">3. 라운드 검증 — 진척 인정 3조건 동시충족</text>
+    <text class="s" x="500" y="391" text-anchor="middle" font-size="11">① 전체 테스트 그린      ② 커버리지 상승</text>
+    <text class="s" x="500" y="408" text-anchor="middle" font-size="11">③ reviewer 스팟체크 통과 (빈·무어서션 테스트 = 게이밍 차단)</text>
+    <path class="e" d="M500,420 V446" marker-end="url(#ag)"/>
+
+    <!-- D2: 진척 인정? -->
+    <polygon points="500,446 586,480 500,514 414,480" fill="#fef9c3" stroke="#ca8a04" stroke-width="1.6"/>
+    <text class="t" x="500" y="485" text-anchor="middle" fill="#a16207" font-size="12.5">진척 인정?</text>
+    <!-- 예 → 체크포인트 -->
+    <path class="e" d="M456,497 H360 V526" stroke="#059669" marker-end="url(#aok)"/>
+    <text class="lab" x="405" y="512" fill="#059669">예</text>
+    <rect x="250" y="528" width="220" height="50" rx="10" fill="#ecfdf5" stroke="#059669" stroke-width="1.6"/>
+    <text class="t" x="360" y="550" text-anchor="middle" fill="#059669">4. 체크포인트</text>
+    <text class="s" x="360" y="567" text-anchor="middle">진척 → 로컬 커밋</text>
+    <!-- 아니오 → 롤백 -->
+    <path class="e" d="M544,497 H640 V526" stroke="#c2410c" marker-end="url(#astop)"/>
+    <text class="lab" x="556" y="512" fill="#c2410c">아니오</text>
+    <text class="s" x="592" y="470" fill="#c2410c" font-weight="700">후퇴·게이밍</text>
+    <rect x="530" y="528" width="220" height="50" rx="10" fill="#fff7ed" stroke="#c2410c" stroke-width="1.6"/>
+    <text class="t" x="640" y="550" text-anchor="middle" fill="#c2410c">롤백</text>
+    <text class="s" x="640" y="567" text-anchor="middle">그 라운드 되돌림</text>
+
+    <!-- loop-back: 체크포인트·롤백 → 다시 1.측정 -->
+    <path d="M360,578 V606" fill="none" stroke="#6366f1" stroke-width="1.7" stroke-dasharray="6 4"/>
+    <path d="M640,578 V606" fill="none" stroke="#6366f1" stroke-width="1.7" stroke-dasharray="6 4"/>
+    <path d="M640,606 H90 V122 H348" fill="none" stroke="#6366f1" stroke-width="1.7" stroke-dasharray="6 4" marker-end="url(#aloop)"/>
+    <path d="M360,606 H90" fill="none" stroke="#6366f1" stroke-width="1.7" stroke-dasharray="6 4"/>
+    <text class="lab" x="150" y="600" fill="#6366f1">↺ 다음 라운드 — 다시 1. 측정으로</text>
+  </svg>
+
+  <!-- 안전판 밴드 -->
+  <div class="band">
+    <div class="bh">🛡 안전판 — 무인의 안전은 여기서 나온다 &nbsp;<span>· 매 라운드 끝 점검 → 걸리면 루프 탈출·중단·사람</span></div>
+    <div class="guards">
+      <div class="guard"><span class="gt">⏱ 예산 상한</span> <span class="gd">— 최대 8라운드 / 30분 (+토큰). 하나라도 닿으면 즉시 중단·보고</span></div>
+      <div class="guard"><span class="gt">🚧 진척 없음 가드</span> <span class="gd">— 커버리지가 K=2라운드 연속 상승 없으면 “막힘”으로 중단</span></div>
+      <div class="guard"><span class="gt">⛓ 서킷브레이커</span> <span class="gd">— 변경이 tests/ 밖(app 로직·스키마·설정)으로 번지면 자동 중단 → 사람</span></div>
+      <div class="guard esc"><span class="gt">↑ 에스컬레이션</span> <span class="gd">— 테스트만으로 커버리지가 안 오르면 설계문제로 /plan·/impl (게이트 경로)</span></div>
+    </div>
+  </div>
+
+  <!-- 범례 -->
+  <div class="legend">
+    <span><span class="sw" style="background:var(--blue-bg);border-color:#bfdbfe"></span><b>측정 · 검증</b></span>
+    <span><span class="sw" style="background:var(--green-bg);border-color:#a7f3d0"></span><b>변경 · 체크포인트 · 달성</b></span>
+    <span><span class="sw" style="background:var(--orange-bg);border-color:#fed7aa"></span><b>롤백 · 중단 · 안전판</b></span>
+    <span><span class="sw" style="background:var(--gate-bg);border-color:#fde047"></span><b>결정(분기)</b></span>
+    <span><span class="sw" style="background:#eef2ff;border-color:#c7d2fe"></span><b style="color:#4f46e5">↺ 루프백</b> 다음 라운드</span>
+    <span><span class="sw" style="background:var(--gray-bg);border-color:#cbd5e1"></span><b>준비(preflight)</b></span>
+  </div>
+</body>
+</html>
