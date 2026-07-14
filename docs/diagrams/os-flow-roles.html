@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>OS 개발 흐름 — 사람 vs AI</title>
+<style>
+  :root{ --ink:#1f2937; --muted:#6b7280; --line:#e5e7eb; }
+  *{box-sizing:border-box;}
+  body{font-family:-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;color:var(--ink);
+       background:#fff;margin:0;padding:26px 30px;width:2960px;}
+  h1{font-size:25px;margin:0 0 5px;}
+  .sub{color:var(--muted);font-size:14px;margin:0 0 14px;line-height:1.55;}
+  .sub b.h{color:#db2777;} .sub b.a{color:#2563eb;}
+  .legend{margin-top:16px;border-top:1px solid var(--line);padding-top:13px;
+          display:flex;gap:22px;flex-wrap:wrap;font-size:13.5px;color:var(--muted);align-items:center;}
+  .legend b{color:var(--ink);}
+  .sw{display:inline-block;width:13px;height:13px;border-radius:3px;border:1px solid;vertical-align:-1px;margin-right:6px;}
+  .ln{display:inline-block;width:24px;height:0;border-top:2.5px dashed;vertical-align:4px;margin-right:6px;}
+</style>
+</head>
+<body>
+<h1>OS 개발 흐름 — 누가 하는가 (사람 · AI)</h1>
+<p class="sub">
+  가로 = 단계 진행 ① 요구사항 → ② 설계 → ③ 구현 → ④ 마무리 · 세로 = 역할 레인(<b class="h">사람</b> 위 / <b class="a">AI</b> 아래)<br>
+  화살표가 레인을 오르내리는 지점이 <b>주고받음(handoff)</b> — <b>게이트</b>는 사람이 멈춰 세우는 곳이고, 되돌아가는 화살표는 위·아래 채널로 뺐다.
+</p>
+
+<svg width="2900" height="670" viewBox="0 0 2960 670" xmlns="http://www.w3.org/2000/svg"
+     font-family="-apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif">
+  <defs>
+    <marker id="ah" markerWidth="9" markerHeight="9" refX="7.5" refY="3.2" orient="auto">
+      <path d="M0,0 L7.5,3.2 L0,6.4 Z" fill="#94a3b8"/></marker>
+    <marker id="ah-ok" markerWidth="9" markerHeight="9" refX="7.5" refY="3.2" orient="auto">
+      <path d="M0,0 L7.5,3.2 L0,6.4 Z" fill="#059669"/></marker>
+    <marker id="ah-loop" markerWidth="9" markerHeight="9" refX="7.5" refY="3.2" orient="auto">
+      <path d="M0,0 L7.5,3.2 L0,6.4 Z" fill="#6366f1"/></marker>
+    <marker id="ah-esc" markerWidth="9" markerHeight="9" refX="7.5" refY="3.2" orient="auto">
+      <path d="M0,0 L7.5,3.2 L0,6.4 Z" fill="#ea580c"/></marker>
+    <marker id="ah-fb" markerWidth="9" markerHeight="9" refX="7.5" refY="3.2" orient="auto">
+      <path d="M0,0 L7.5,3.2 L0,6.4 Z" fill="#db2777"/></marker>
+    <style>
+      .nt{font-size:14.5px;font-weight:800;}
+      .ns{font-size:11px;fill:#6b7280;font-weight:600;}
+      .al{font-size:12px;font-weight:800;paint-order:stroke;stroke:#fff;stroke-width:5px;stroke-linejoin:round;}
+      .als{font-size:10.5px;font-weight:700;paint-order:stroke;stroke:#fff;stroke-width:5px;stroke-linejoin:round;}
+      .bar{font-size:14px;font-weight:800;fill:#0f766e;}
+      .lane{font-size:14px;font-weight:800;}
+    </style>
+  </defs>
+
+  <!-- stage bars -->
+  <rect x="60"   y="58" width="945" height="32" rx="8" fill="#ccfbf1"/>
+  <text class="bar" x="532"  y="80" text-anchor="middle">① 요구사항 · /prd</text>
+  <rect x="1015" y="58" width="370" height="32" rx="8" fill="#ccfbf1"/>
+  <text class="bar" x="1200" y="80" text-anchor="middle">② 설계 · /plan</text>
+  <rect x="1395" y="58" width="555" height="32" rx="8" fill="#ccfbf1"/>
+  <text class="bar" x="1672" y="80" text-anchor="middle">③ 구현 · /impl</text>
+  <rect x="1960" y="58" width="940" height="32" rx="8" fill="#ccfbf1"/>
+  <text class="bar" x="2430" y="80" text-anchor="middle">④ 마무리 (회고 → PR)</text>
+
+  <!-- lanes -->
+  <rect x="60" y="148" width="2840" height="150" rx="12" fill="#fef6fa"/>
+  <rect x="60" y="320" width="2840" height="180" rx="12" fill="#f6faff"/>
+  <line x1="60" y1="309" x2="2900" y2="309" stroke="#e5e7eb" stroke-width="1.5" stroke-dasharray="6 5"/>
+
+  <rect x="8" y="148" width="44" height="150" rx="9" fill="#fdf2f8" stroke="#f9a8d4"/>
+  <text class="lane" transform="translate(32,223) rotate(-90)" text-anchor="middle" fill="#db2777">사람</text>
+  <rect x="8" y="320" width="44" height="180" rx="9" fill="#eff6ff" stroke="#bfdbfe"/>
+  <text class="lane" transform="translate(32,410) rotate(-90)" text-anchor="middle" fill="#2563eb">AI (클로드)</text>
+
+  <!-- ============ ARROWS ============ -->
+  <g fill="none" stroke="#94a3b8" stroke-width="2.2">
+    <path d="M150,252 V309 H308 V376" marker-end="url(#ah)"/>
+    <path d="M372,380 V309 H498 V256" marker-end="url(#ah)"/>
+    <path d="M562,252 V309 H688 V376" marker-end="url(#ah)"/>
+    <path d="M752,380 V309 H878 V252" marker-end="url(#ah)"/>
+    <path d="M1132,380 V309 H1258 V252" marker-end="url(#ah)"/>
+    <path d="M1558,411 H1584" marker-end="url(#ah)"/>
+    <path d="M1748,411 H1770" marker-end="url(#ah)"/>
+    <path d="M2128,411 H2154" marker-end="url(#ah)"/>
+    <path d="M2272,380 V309 H2398 V256" marker-end="url(#ah)"/>
+    <path d="M2462,252 V309 H2588 V376" marker-end="url(#ah)"/>
+    <path d="M2652,380 V309 H2778 V256" marker-end="url(#ah)"/>
+  </g>
+
+  <!-- pass arrows -->
+  <g fill="none" stroke="#059669" stroke-width="2.6">
+    <path d="M942,255 V309 H1068 V376" marker-end="url(#ah-ok)"/>
+    <path d="M1322,255 V309 H1448 V376" marker-end="url(#ah-ok)"/>
+    <path d="M1942,411 H1964" marker-end="url(#ah-ok)"/>
+  </g>
+  <text class="al" x="1005" y="303" text-anchor="middle" fill="#059669">확정 ✓</text>
+  <text class="al" x="1385" y="303" text-anchor="middle" fill="#059669">승인 ✓ — 통과 전 구현 금지</text>
+  <text class="al" x="1953" y="352" text-anchor="middle" fill="#059669">통과 ✓</text>
+
+  <!-- loop-backs -->
+  <g fill="none" stroke="#6366f1" stroke-width="2.3" stroke-dasharray="7 4">
+    <path d="M910,255 V548 H720 V446" marker-end="url(#ah-loop)"/>
+    <path d="M1290,255 V548 H1070 V446" marker-end="url(#ah-loop)"/>
+    <path d="M1860,455 V548 H1512 V446" marker-end="url(#ah-loop)"/>
+  </g>
+  <text class="al"  x="800" y="566" text-anchor="middle" fill="#6366f1">↺ 수정 요청</text>
+  <text class="als" x="800" y="582" text-anchor="middle" fill="#6366f1">PRD 다시 쓰기</text>
+  <text class="al"  x="1165" y="566" text-anchor="middle" fill="#6366f1">↺ 수정 요청</text>
+  <text class="als" x="1165" y="582" text-anchor="middle" fill="#6366f1">설계 다시 하기</text>
+  <text class="al"  x="1686" y="566" text-anchor="middle" fill="#6366f1">↺ 구현결함</text>
+  <text class="als" x="1686" y="582" text-anchor="middle" fill="#6366f1">미충족 항목만 고쳐 재구현</text>
+
+  <!-- escalation -->
+  <g fill="none" stroke="#ea580c" stroke-width="2.3" stroke-dasharray="7 4">
+    <path d="M1819,433 V612 H1130 V446" marker-end="url(#ah-esc)"/>
+  </g>
+  <text class="al" x="1445" y="630" text-anchor="middle" fill="#ea580c">↑ 설계문제 — ② 설계로 에스컬레이션 (루프 탈출)</text>
+
+  <!-- human review feedback -->
+  <g fill="none" stroke="#db2777" stroke-width="2.3" stroke-dasharray="7 4">
+    <path d="M2810,190 V126 H1500 V376" marker-end="url(#ah-fb)"/>
+  </g>
+  <text class="al" x="2100" y="118" text-anchor="middle" fill="#db2777">↺ 리뷰 피드백 — 고쳐서 다시 푸시</text>
+
+  <!-- ============ NODES ============ -->
+  <!-- ① -->
+  <g><rect x="72" y="190" width="156" height="62" rx="11" fill="#fdf2f8" stroke="#f9a8d4" stroke-width="1.5"/>
+    <text class="nt" x="150" y="216" text-anchor="middle" fill="#db2777">기능 요청</text>
+    <text class="ns" x="150" y="234" text-anchor="middle">"이런 걸 만들자"</text></g>
+  <g><rect x="262" y="380" width="156" height="62" rx="11" fill="#eff6ff" stroke="#bfdbfe" stroke-width="1.5"/>
+    <text class="nt" x="340" y="406" text-anchor="middle" fill="#2563eb">/interview</text>
+    <text class="ns" x="340" y="424" text-anchor="middle">한 번에 하나씩 질문</text></g>
+  <g><rect x="452" y="190" width="156" height="62" rx="11" fill="#fdf2f8" stroke="#f9a8d4" stroke-width="1.5"/>
+    <text class="nt" x="530" y="216" text-anchor="middle" fill="#db2777">답변 · 확인</text>
+    <text class="ns" x="530" y="234" text-anchor="middle">requirements.md 합의</text></g>
+  <g><rect x="642" y="380" width="156" height="62" rx="11" fill="#eff6ff" stroke="#bfdbfe" stroke-width="1.5"/>
+    <text class="nt" x="720" y="406" text-anchor="middle" fill="#2563eb">/prd</text>
+    <text class="ns" x="720" y="424" text-anchor="middle">PRD 작성 · reviewer 반박</text></g>
+  <g><rect x="824" y="187" width="172" height="68" rx="11" fill="#fef9c3" stroke="#fde047" stroke-width="2.2"/>
+    <text class="nt" x="910" y="211" text-anchor="middle" fill="#ca8a04">확정 게이트</text>
+    <text class="ns" x="910" y="228" text-anchor="middle" fill="#a16207">사람 검토 · 멈춤 지점</text>
+    <text class="ns" x="910" y="244" text-anchor="middle" fill="#a16207">"무엇을·왜"가 맞나?</text></g>
+
+  <!-- ② -->
+  <g><rect x="1022" y="380" width="156" height="62" rx="11" fill="#eff6ff" stroke="#bfdbfe" stroke-width="1.5"/>
+    <text class="nt" x="1100" y="406" text-anchor="middle" fill="#2563eb">/plan</text>
+    <text class="ns" x="1100" y="424" text-anchor="middle">재활용 스캔 → 설계</text></g>
+  <g><rect x="1204" y="187" width="172" height="68" rx="11" fill="#fef9c3" stroke="#fde047" stroke-width="2.2"/>
+    <text class="nt" x="1290" y="211" text-anchor="middle" fill="#ca8a04">승인 게이트</text>
+    <text class="ns" x="1290" y="228" text-anchor="middle" fill="#a16207">사람 검토 · 멈춤 지점</text>
+    <text class="ns" x="1290" y="244" text-anchor="middle" fill="#a16207">"어떻게"가 맞나?</text></g>
+
+  <!-- ③ -->
+  <g><rect x="1402" y="380" width="156" height="62" rx="11" fill="#eff6ff" stroke="#bfdbfe" stroke-width="1.5"/>
+    <text class="nt" x="1480" y="406" text-anchor="middle" fill="#2563eb">/impl</text>
+    <text class="ns" x="1480" y="424" text-anchor="middle">구현 + 테스트(필수)</text></g>
+  <g><rect x="1592" y="380" width="156" height="62" rx="11" fill="#eff6ff" stroke="#bfdbfe" stroke-width="1.5"/>
+    <text class="nt" x="1670" y="406" text-anchor="middle" fill="#2563eb">/verify</text>
+    <text class="ns" x="1670" y="424" text-anchor="middle">테스트 · 기준 대조</text></g>
+  <g><path d="M1860,367 L1942,411 L1860,455 L1778,411 Z" fill="#f5f3ff" stroke="#c4b5fd" stroke-width="2.2"/>
+    <text class="nt" x="1860" y="408" text-anchor="middle" fill="#7c3aed">판정</text>
+    <text class="ns" x="1860" y="424" text-anchor="middle">3갈래</text></g>
+
+  <!-- ④ -->
+  <g><rect x="1972" y="380" width="156" height="62" rx="11" fill="#eff6ff" stroke="#bfdbfe" stroke-width="1.5"/>
+    <text class="nt" x="2050" y="406" text-anchor="middle" fill="#2563eb">/commit</text>
+    <text class="ns" x="2050" y="424" text-anchor="middle">의미 단위 로컬 커밋</text></g>
+  <g><rect x="2162" y="380" width="156" height="62" rx="11" fill="#eff6ff" stroke="#bfdbfe" stroke-width="1.5"/>
+    <text class="nt" x="2240" y="401" text-anchor="middle" fill="#2563eb">/retro</text>
+    <text class="ns" x="2240" y="418" text-anchor="middle">세션 회고 — 스킬·도메인</text>
+    <text class="ns" x="2240" y="433" text-anchor="middle">개선 제안(파일 안 만듦)</text></g>
+  <g><rect x="2344" y="187" width="172" height="68" rx="11" fill="#fef9c3" stroke="#fde047" stroke-width="2.2"/>
+    <text class="nt" x="2430" y="211" text-anchor="middle" fill="#ca8a04">회고 제안 검토</text>
+    <text class="ns" x="2430" y="228" text-anchor="middle" fill="#a16207">사람 검토 · 멈춤 지점</text>
+    <text class="ns" x="2430" y="244" text-anchor="middle" fill="#a16207">반영은 /quick · /domain</text></g>
+  <g><rect x="2542" y="380" width="156" height="62" rx="11" fill="#eff6ff" stroke="#bfdbfe" stroke-width="1.5"/>
+    <text class="nt" x="2620" y="406" text-anchor="middle" fill="#2563eb">/pr</text>
+    <text class="ns" x="2620" y="424" text-anchor="middle">커밋 분석 → PR 본문</text></g>
+  <g><rect x="2732" y="190" width="156" height="62" rx="11" fill="#fdf2f8" stroke="#f9a8d4" stroke-width="1.5"/>
+    <text class="nt" x="2810" y="211" text-anchor="middle" fill="#db2777">푸시 · PR</text>
+    <text class="ns" x="2810" y="228" text-anchor="middle">확인 후 생성 · 리뷰</text>
+    <text class="ns" x="2810" y="244" text-anchor="middle">승인되면 merge</text></g>
+</svg>
+
+<div class="legend">
+  <span><i class="sw" style="background:#fdf2f8;border-color:#f9a8d4"></i><b>사람</b> 요청 · 답변 · 게이트 · merge</span>
+  <span><i class="sw" style="background:#eff6ff;border-color:#bfdbfe"></i><b>AI</b> 스킬 실행(문서 · 구현 · 검증 · 회고)</span>
+  <span><i class="sw" style="background:#fef9c3;border-color:#fde047"></i><b>사람 검토 게이트</b> 통과해야 다음</span>
+  <span><i class="sw" style="background:#f5f3ff;border-color:#c4b5fd"></i><b>AI 판정</b> 3갈래 분기</span>
+  <span><i class="ln" style="border-color:#059669"></i><b>통과</b></span>
+  <span><i class="ln" style="border-color:#6366f1"></i><b>루프백</b> 다시 하기</span>
+  <span><i class="ln" style="border-color:#ea580c"></i><b>에스컬레이션</b> 위 단계로</span>
+  <span><i class="ln" style="border-color:#db2777"></i><b>사람 피드백</b></span>
+</div>
+</body>
+</html>
