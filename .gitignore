@@ -22,3 +22,4 @@ Thumbs.db
 
 # 사용자가 직접 실행/비교할 원본 공식 레포 클론(로컬 전용, 커밋 제외)
 liveedit-official/
+recipegpt-official/
