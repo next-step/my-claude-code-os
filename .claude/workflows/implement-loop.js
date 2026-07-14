@@ -31,6 +31,9 @@ const MAX_PARALLEL = (isObj && ARGS.maxParallel) || 4
 // to apply). Appended to every build prompt and surfaced to score. Empty = none.
 const NOTES = (isObj && ARGS.notes) || ''
 const NOTE = NOTES ? `\n\n[이번 실행 반영 지침 — 최우선]\n${NOTES}` : ''
+// 구현 매체: 'terminal' = 실제 실행되는 CLI/서버 프로젝트(모델·컴퓨트 태스크 기본),
+//           'html' = 순수 클라이언트사이드 알고리즘일 때 자급식 실행 HTML.
+const MEDIUM = ((isObj && ARGS.medium) || 'html').toLowerCase()
 
 const SK = (n) => `${ROOT}/.claude/skills/${n}/SKILL.md`
 const OUTDIR = `${ROOT}/output/${SLUG}`
@@ -96,6 +99,19 @@ log(`빌드 에이전트×${components.length} ${components.length > 1 ? '(병�
 // loop.txt(추가 요구): "각 루프도 적정 에이전트 수를 판단해 병렬처리". N>1이면 컴포넌트별
 // 병렬 빌더가 조각을 쓰고, 병합 에이전트가 하나의 자급식 index.html로 조립한다.
 async function buildStage(i, prior) {
+  // 터미널 매체: 단일 빌드로 실제 실행되는 runnable 프로젝트를 만든다(HTML 조각 병합 없음).
+  if (MEDIUM === 'terminal') {
+    return agent(
+      `작업 디렉토리 ${ROOT}. ${SK('code-run')} 를 Read로 읽고 그 절차대로, 논문 ${SLUG} 의 **터미널에서 실제 실행되는 runnable 프로젝트**를 ${APP}/ 아래에 만들어라(개선하라).
+${prior}
+입력: ${OUTDIR}/01_analysis.md(방법·태스크·지표 정본), ${OUTDIR}/04_code.md(진입점·의존성·실구현 가능 범위).
+산출: ${APP}/ 아래 — 진입 스크립트(예: main.py/cli.py)+핵심 구현 모듈+**버전 고정 requirements**(또는 package.json)+run.ps1/run.sh+README(복붙 설치→실행 명령·예시 입출력)+작은 샘플 입력(인자 없이도 동작). 그리고 ${OUTDIR}/05_run.md(실행 가이드)와 ${P('REPRODUCE.md')}(무엇을 실제 구현/실행했나 ↔ 논문 근거).
+논문의 방법을 **실제 코드로 구현**하라(가능하면 실제 라이브러리/모델/알고리즘 호출; 시각화·대시보드가 목표 아님). 정말 못 구하는 부분(독점 가중치 등)만 라벨된 stand-in으로 두고 명시. 하드코딩된 결과·가짜 로그 금지.
+이 환경에서 런타임이 되면 직접 실행해 로그를 남기고, 안 되면(스텁 python 등) 복붙 명령 + '사용자 실행 필요/미실행'으로 정직하게 표기.
+끝나면 진입점 경로 + 복붙 실행 명령을 반환.` + CH + NOTE,
+      { phase: `Iter${i}:build`, label: `build#${i}`, ...M }
+    )
+  }
   if (components.length <= 1) {
     return agent(
       `작업 디렉토리 ${ROOT}. ${SK('code-run')} 를 Read로 읽고 그 절차대로 논문 ${SLUG} 의 클릭 실행형 재현 프로그램을 만들어라(개선하라).
@@ -157,10 +173,12 @@ ${CHANNEL} 를 Read로 읽어라(없으면 이번엔 할 일 없음). '[code-run
 
   // score (독립 컨텍스트) — scorecard.json/md 기록 + 구조화 verdict 반환
   const score = await agent(
-    `작업 디렉토리 ${ROOT}. ${SK('score')} 를 Read로 읽고 그 기준(총 100점, **6축 — 최우선 축은 실제 동작 구현(functional_reproduction, 25점), 실제 코드 대조(repo_fidelity, 20점) 포함**)에 따라 논문 ${SLUG} 의 재현 프로그램 ${P('index.html')} 를 채점하라.
-임계값 threshold=${THRESHOLD}. 현재 iteration=${i}.
-**실제 동작 검증(최우선)**: index.html의 JS 로직을 읽어 논문 태스크(예: 동영상 편집)와 핵심 알고리즘(예: AR 마스크 캐시)이 하드코딩/애니메이션이 아니라 **실제 계산으로 구현**됐는지, 컨트롤이 실측 지표를 실제로 바꾸는지 확인하고 functional_checks에 남겨라.
-정본은 ${OUTDIR}/01_analysis.md 의 논문 보고값이며, ${P('REPRODUCE.md')} 주장과 앱 실제를 대조하라. 자급식 여부는 index.html 안 외부 http/src/cdn/fetch 참조로 검사(로컬 파일 입력 File/createObjectURL은 허용).
+    `작업 디렉토리 ${ROOT}. ${SK('score')} 를 Read로 읽고 그 기준(총 100점, **6축 — 최우선 축은 실제 실행 구현(functional_reproduction, 25점), 실제 코드 대조(repo_fidelity, 20점) 포함**)에 따라 논문 ${SLUG} 의 산출물(${MEDIUM === 'terminal' ? `${APP}/ 아래 runnable 프로젝트 파일들` : P('index.html')})을 채점하라.
+임계값 threshold=${THRESHOLD}. 현재 iteration=${i}. 구현 매체=${MEDIUM}.
+**실제 실행 검증(최우선)**: ${MEDIUM === 'terminal'
+      ? `${APP}/ 의 진입 스크립트·핵심 모듈 코드를 Read로 읽어, 논문 태스크와 방법이 하드코딩/가짜로그가 아니라 **실제 코드로 구현**됐는지, 복붙 명령으로 실행 시 실제 출력이 나오는 구조인지(의존성 고정·진입점·샘플 입력) 확인하고 functional_checks에 남겨라. 이 환경 런타임이 되면 실제 실행해 확인, 안 되면 runnable 구조로 판정하되 미실행 명시.`
+      : `index.html의 JS 로직을 읽어 논문 태스크와 핵심 알고리즘이 하드코딩/애니메이션이 아니라 **실제 계산으로 구현**됐는지 확인하고 functional_checks에 남겨라.`}
+정본은 ${OUTDIR}/01_analysis.md 이며, ${P('REPRODUCE.md')} 주장과 실제 코드를 대조하라. 실행 가능성은 ${MEDIUM === 'terminal' ? `requirements 버전 고정·진입점·run.*/README 명령·샘플 입력` : `index.html 자급식(외부 http/src/cdn/fetch 참조 검사)`}으로 판정.
 **실제 코드 대조(repo_fidelity)**: 공식 저장소 URL(${OUTDIR}/01_analysis.md §8·${OUTDIR}/04_code.md·${P('REPRODUCE.md')}에서 확인)을 찾아, WebFetch로 레포 실제 소스(config yaml·진입 스크립트·추론 파이프라인·모델 소스)를 직접 읽어 앱이 주장한 코드 수준 값(예: chunk 크기·denoise step 리스트·prune 비율·마스크 식·베이스 모델)을 하나씩 검증하라. 필요하면 먼저 ToolSearch로 'select:WebFetch'를 로드. 대조 결과는 scorecard.json의 repo_checks에 파일·실제값·일치여부로 남겨라. WebFetch가 불가하면 그 사실을 명시하고 이 축을 추정으로 채우지 말 것.
 ${P('scorecard.json')}(iteration=${i}, threshold=${THRESHOLD} 기입)와 ${P('scorecard.md')} 를 Write로 저장하고, 구조화 결과(total/verdict/must_fix/learned)를 반환.`,
     { phase: `Iter${i}:score`, label: `score#${i}`, schema: SCORE_SCHEMA, ...M }
