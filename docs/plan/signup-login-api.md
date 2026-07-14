@@ -1,5 +1,7 @@
 # Plan — 회원가입·로그인 API (FastAPI)
 
+> 상태: 구현됨 · 2026-07 (스냅샷 — 최신화 안 함)
+
 ## 재활용할 기존 코드 (지도 기반)
 
 이 저장소는 애플리케이션 소스 코드가 **0개**인 문서·스킬 기반 "개발 OS"다(`README.md`, `OS.md`, `.claude/skills/*/SKILL.md`, `docs/`). `.py` 파일·`pyproject.toml`·`requirements*.txt`·테스트 러너가 전무하고, FastAPI/JWT/SQLite/DB 관련 코드도 전혀 없다(`find . -name "*.py"` → 0건 확인). 따라서 **재활용할 기존 비즈니스 로직은 없으며, 전부 신규 구현**이다. 재활용 대상은 코드가 아니라 이 OS의 규약·패턴이다.
