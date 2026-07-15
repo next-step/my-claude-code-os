@@ -96,9 +96,14 @@ flowchart LR
 | classifier-agent | ✅ | | | | |
 | telegram-agent | | | | | ✅ |
 | state-sync-writer | | | | ✅ | |
+| state-scanner | | | | ✅ | |
 
 > `security.md`는 🔴 Eager라 표의 ✅가 없어도 모든 소비자 컨텍스트에 이미 존재한다. `remind`·
 > `telegram-agent`가 명시적으로도 거는 건, 자격증명을 직접 만지는 경로라 강조하기 위함.
+>
+> `state-scanner`는 `sync-readme` 스킬이 위임해 스캔·비교를 수행하는 공유 에이전트다. `sync-readme`
+> 자체는 정본을 직접 Read하지 않고 `state-scanner`에 위임하므로, 직접 참조 주체인 `state-scanner`만
+> 표에 오른다(정본 참조는 `design-principles.md` 1종).
 >
 > 이 표는 실물에서 재확인할 수 있다:
 > `grep -roE "\.claude/context/[a-z-]+\.md" .claude/skills/`

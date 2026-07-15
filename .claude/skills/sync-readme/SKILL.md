@@ -30,52 +30,59 @@ allowed-tools: Read Glob Bash Agent
 > 읽는 것과 같은 철학.)
 >
 > **오케스트레이터 패턴 포인트**
-> 이 스킬은 "무엇을 어떤 순서로"만 정한다. ① 사실 수집(Bash/Read)과
+> 이 스킬은 "무엇을 어떤 순서로"만 정한다. ① 사실 수집·비교(scanner 에이전트 위임)와
 > ② 실제 문서 작성(writer 에이전트 위임)을 분리한다.
+> **메인은 스캔 원자료(디렉터리 트리·README 전문)를 흡수하지 않는다** — 두 서브에이전트가
+> 각자 컨텍스트에서 흡수하고, 메인엔 압축된 사실·불일치·요약만 오간다.
 
-### Step 1: 현재 프로젝트 상태 스캔 (사실 수집)
+### Step 1: state-scanner 공유 에이전트에 스캔·비교 위임
 
-아래를 실행해 README가 반영해야 할 **실제 사실**을 모은다.
+`_shared/state-scanner` 공유 서브에이전트에 위임한다. Agent 도구를 호출하며 아래 입력 계약을
+채워 전달한다. 스캐너가 **자기 컨텍스트에서** 파일시스템을 스캔하고 README를 직접 읽어,
+메인에는 *압축된 사실 + 불일치 목록만* 반환한다. (README 13KB 전문·트리 전문이 메인에 안 쌓인다.)
 
-```bash
-echo "=== 스킬 목록 + 각 description ===" && \
-for f in .claude/skills/*/SKILL.md; do
-  name=$(awk -F': ' '/^name:/{print $2; exit}' "$f")
-  desc=$(awk -F': ' '/^description:/{print $2; exit}' "$f")
-  printf -- "- /%s — %s\n" "$name" "$desc"
-done && \
-echo "" && echo "=== _shared / 로컬 에이전트 파일 ===" && \
-ls -1 .claude/skills/_shared/*.md 2>/dev/null && \
-find .claude/skills -name '_*.md' 2>/dev/null && \
-echo "" && echo "=== 디렉터리 구조 ===" && \
-( command -v tree >/dev/null && tree -a -I '.git' .claude || find .claude -not -path '*/.git/*' | sort )
-```
+- **스캔 지시**: 아래 Bash 레시피로 실제 사실을 수집하라고 전달한다.
 
-> data/ 같은 비밀값 파일은 **존재 여부만** 확인하고, 토큰 등 내용은 README에 절대 옮기지 않는다.
+  ```bash
+  echo "=== 스킬 목록 + 각 description ===" && \
+  for f in .claude/skills/*/SKILL.md; do
+    name=$(awk -F': ' '/^name:/{print $2; exit}' "$f")
+    desc=$(awk -F': ' '/^description:/{print $2; exit}' "$f")
+    printf -- "- /%s — %s\n" "$name" "$desc"
+  done && \
+  echo "" && echo "=== _shared / 로컬 에이전트 파일 ===" && \
+  ls -1 .claude/skills/_shared/*.md 2>/dev/null && \
+  find .claude/skills -name '_*.md' 2>/dev/null && \
+  echo "" && echo "=== 디렉터리 구조 ===" && \
+  ( command -v tree >/dev/null && tree -a -I '.git' .claude || find .claude -not -path '*/.git/*' | sort )
+  ```
 
-### Step 2: 현재 README 읽기
+- **비교 대상 파일 경로**: `README.md`
+- **도메인 특화 관심사**: 스킬 표, "에이전트 종류" 표, "디렉터리 구조" 트리, 빠른 시작 예시,
+  상태 흐름 다이어그램 — 이들이 실제와 어긋나는지 중점 확인
+- data/ 같은 비밀값 파일은 **존재 여부만** 확인하고, 토큰 등 내용은 절대 반환하지 않는다.
 
-Read `README.md` 를 읽어, Step 1의 사실과 **어긋나는 부분**을 식별한다.
-주로 갱신 대상은: 스킬 표, "에이전트 종류" 표, "디렉터리 구조" 트리, 빠른 시작 예시,
-상태 흐름 다이어그램.
+> **읽기 전용 위임이 안전한 이유**: 스캐너는 사실을 수집·비교만 하고 문서를 고치지 않는다
+> (Edit/Write 금지). 실제 갱신은 Step 2의 writer가 맡아, "수집 → 작성" 책임이 서로 다른
+> 컨텍스트로 완전히 갈린다.
 
-### Step 3: state-sync-writer 공유 에이전트에 갱신 위임
+### Step 2: state-sync-writer 공유 에이전트에 갱신 위임
 
 `_shared/state-sync-writer` 공유 서브에이전트에 위임한다.
 Agent 도구를 호출하며 아래 입력 계약을 채워 전달한다.
 
 - **산출물 종류**: "README 문서"
 - **대상 파일 경로**: `README.md`
-- **스캔된 실제 사실**: Step 1 스캔 결과 전체
-- **갱신해야 할 불일치/빈틈 목록**: Step 2에서 찾은 불일치 목록
+- **스캔된 실제 사실**: Step 1에서 **스캐너가 반환한 "스캔된 실제 사실" 블록**
+- **갱신해야 할 불일치/빈틈 목록**: Step 1에서 **스캐너가 반환한 "불일치 목록" 블록**
 - **도메인 특화 제약 (README 전용)**:
   - 기존 README의 **구성·말투·한국어 톤을 유지**한다 (전면 재작성 금지, 어긋난 부분만 고친다)
-  - 스킬 표·에이전트 표·디렉터리 트리는 Step 1 사실 그대로 반영
+  - 스킬 표·에이전트 표·디렉터리 트리는 스캐너가 반환한 사실 그대로 반영
   - 새로 추가된 스킬은 표와 디렉터리 트리 양쪽에 빠짐없이 등록
   - 사라진 스킬/파일은 문서에서 제거
   - 비밀값(토큰·ID 등)은 절대 본문에 쓰지 않는다
 
-### Step 4: 결과 확인
+### Step 3: 결과 확인
 
 갱신 후 `git diff README.md`로 변경분을 사용자에게 보여준다.
 커밋은 사용자가 원할 때만 한다. (이 OS의 커밋은 사용자 결정 사항)
@@ -85,9 +92,14 @@ Agent 도구를 호출하며 아래 입력 계약을 채워 전달한다.
 ## 설계 노트 — 왜 이렇게 만들었나
 
 - **AI 협업 학습 포인트**: "문서 최신화"는 두 가지 다른 일(사실 수집 + 글쓰기)의
-  합성이다. 한 컨텍스트에서 다 하면 사실 확인이 흐려지므로, 수집은 결정적인
-  Bash/Read로, 글쓰기는 전문 에이전트로 **역할을 쪼갰다**.
+  합성이다. 한 컨텍스트에서 다 하면 사실 확인이 흐려지므로, 수집은 scanner 에이전트로,
+  글쓰기는 writer 에이전트로 **역할을 쪼갰다**.
+- **컨텍스트 최적화 포인트 — 메인을 가볍게**: 서브에이전트는 컨텍스트가 독립적이다.
+  스캔(디렉터리 트리)과 README 전문(13KB) 읽기를 메인에서 하면 그 원자료가 세션 내내
+  메인 창에 쌓인다. 이를 scanner에 위임하면 메인은 **압축된 사실·불일치 목록**(수백 토큰)만
+  받는다 — 큰 검색·리뷰의 토큰을 서브에이전트가 흡수하고 메인엔 결론만 반환하는 원리.
 - README가 곧 이 레포의 "사용 설명서"이자 OS 설계의 거울이므로, 새 스킬을
   추가할 때마다 `/sync-readme` 한 번이면 문서가 따라오도록 한 것이 목적이다.
-- **글쓰기는 공유 서브에이전트로**: 갱신 단계는 `_shared/state-sync-writer` 공유 서브에이전트로 추출해
-  sync-readme와 sync-test([[sync-test]])가 재사용한다. ([[state-sync-writer]])
+- **수집·글쓰기 모두 공유 서브에이전트로**: 수집은 `_shared/state-scanner`([[state-scanner]]),
+  갱신은 `_shared/state-sync-writer`([[state-sync-writer]])로 추출해 sync-readme와
+  sync-test([[sync-test]])가 함께 재사용한다.
