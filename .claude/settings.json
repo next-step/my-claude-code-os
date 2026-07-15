@@ -7,6 +7,11 @@
             "type": "command",
             "command": "python3 /Users/kangminseong/repository/my-claude-code-os/.claude/hooks/log-prompt.py",
             "timeout": 5
+          },
+          {
+            "type": "command",
+            "command": "python3 /Users/kangminseong/repository/my-claude-code-os/.claude/hooks/inject-lessons-context.py",
+            "timeout": 5
           }
         ]
       }

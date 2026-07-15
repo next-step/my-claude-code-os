@@ -19,8 +19,14 @@ try:
 except Exception:
     sys.exit(0)
 
+import re
+
 text = p.get("prompt", "").strip()
 if not text or text.startswith("/"):
+    sys.exit(0)
+
+# 시스템 태그로 시작하는 노이즈 프롬프트 스킵
+if re.match(r"^<(task-notification|command-name|local-command|system-reminder)", text):
     sys.exit(0)
 
 now = datetime.now()

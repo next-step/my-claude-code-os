@@ -64,16 +64,19 @@ def analyze(target: date) -> dict:
     health = (agent_rate + work_rate) / 2
     grade = "A" if health > 0.25 else "B" if health >= 0.15 else "C"
 
+    files = sorted(files_modified)
     return {
         "total": total,
         "ops": dict(ops),
-        "files": sorted(files_modified),
+        "files": files[:10],
+        "files_total": len(files),
         "agents": agents[:3],
         "prompts": prompts[:4],
         "agent_rate": agent_rate,
         "work_rate": work_rate,
         "health": health,
         "grade": grade,
+        "metrics_valid": total >= 10,  # 10건 미만은 지표 신뢰 불가
     }
 
 
@@ -88,7 +91,9 @@ def format_entry(target: date, s: dict) -> str:
     lines.append(f"**도구 호출** {s['total']}건 ({ops_str})")
 
     if s["files"]:
-        lines.append(f"**수정 파일** {', '.join(s['files'])}")
+        file_str = ", ".join(s["files"])
+        suffix = f" 외 {s['files_total'] - 10}개" if s["files_total"] > 10 else ""
+        lines.append(f"**수정 파일** {file_str}{suffix}")
 
     if s["agents"]:
         lines.append(f"**에이전트** {'; '.join(s['agents'])}")
@@ -98,10 +103,13 @@ def format_entry(target: date, s: dict) -> str:
         for p in s["prompts"]:
             lines.append(f"- {p}")
 
-    lines.append(
-        f"**건강도** `{s['health']:.2f}` Grade **{s['grade']}**"
-        f"  (에이전트 {s['agent_rate']:.1%} · 집중도 {s['work_rate']:.1%})"
-    )
+    if s["metrics_valid"]:
+        lines.append(
+            f"**건강도** `{s['health']:.2f}` Grade **{s['grade']}**"
+            f"  (에이전트 {s['agent_rate']:.1%} · 집중도 {s['work_rate']:.1%})"
+        )
+    else:
+        lines.append(f"**건강도** 측정 불가 (호출 {s['total']}건 — 기준 미달)")
     lines.append("\n---")
     return "\n".join(lines)
 
@@ -194,7 +202,7 @@ def seed_historical_metrics() -> None:
             continue
         seen.add(d)
         s = analyze(d)
-        if s["total"] > 0:
+        if s["total"] > 0 and s["metrics_valid"]:
             append_metrics(d, s)
 
     for f in sorted(PROMPTS_DIR.glob("*.jsonl")):
@@ -206,7 +214,7 @@ def seed_historical_metrics() -> None:
             continue
         seen.add(d)
         s = analyze(d)
-        if s["total"] > 0:
+        if s["total"] > 0 and s["metrics_valid"]:
             append_metrics(d, s)
 
 
@@ -244,7 +252,7 @@ for d in pending:
     entry = format_entry(d, s)
     with LESSONS_FILE.open("a", encoding="utf-8") as f:
         f.write(entry + "\n")
-    if s["total"] > 0:
+    if s["total"] > 0 and s["metrics_valid"]:
         append_metrics(d, s)
 
 MARKER_FILE.write_text(str(yesterday), encoding="utf-8")
