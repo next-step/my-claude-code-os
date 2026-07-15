@@ -9,9 +9,11 @@ utils/evaluation.py, analysis/multi-bleu.perl):
                      Supports F1@k (truncate predicted ingredient set to top-k).
   * bleu           — Moses multi-bleu style corpus BLEU (up to 4-gram) + brevity penalty.
   * rouge_l        — LCS-based ROUGE-L F-measure.
-  * nted           — Normalized Tree Edit Distance: parse instructions into an
-                     (action-node / ingredient-leaf) tree, run Zhang-Shasha tree
-                     edit distance, normalize by (nodes_a + nodes_b) (utils/tree.py).
+  * nted           — Normalized Tree Edit Distance: parse instructions into a
+                     vertical action-spine tree (each action the leftmost child of
+                     the previous, ingredient leaves attached), matching repo
+                     utils/tree.py build_tree, run Zhang-Shasha tree edit distance,
+                     normalize by (nodes_a + nodes_b) (utils/evaluation.py).
   * jaccard_consistency — root-noun overlap between generated instructions and
                      input ingredients (paper's field-consistency Jaccard).
   * highlight_overlap — root-noun ingredient highlighting (utils/spacy_func.py).
@@ -53,6 +55,24 @@ _IRREGULAR = {
     "chilies": "chili", "chillies": "chili",
 }
 
+# ---------------------------------------------------------------------------
+# Optional HIGH-FIDELITY backend (real spaCy noun-chunks + gensim word2vec).
+# Injected by main.py --real-nlp via set_nlp_backend(); None => rule-based STAND-IN.
+# ---------------------------------------------------------------------------
+_NOUNS_BACKEND = None   # object with .ingredient_nouns / .text_nouns / .lemmatize
+_COST_BACKEND = None    # object with .cost(label_a, label_b)
+
+
+def set_nlp_backend(nouns_backend=None, cost_backend=None):
+    """Enable the real-NLP path. Pass None,None to revert to the stand-ins."""
+    global _NOUNS_BACKEND, _COST_BACKEND
+    _NOUNS_BACKEND = nouns_backend
+    _COST_BACKEND = cost_backend
+
+
+def using_real_nlp():
+    return _NOUNS_BACKEND is not None or _COST_BACKEND is not None
+
 
 def lemmatize(word: str) -> str:
     """Very small rule-based lemmatizer (STAND-IN for spaCy lemmatization)."""
@@ -79,7 +99,10 @@ def ingredient_nouns(items):
     Root noun per ingredient LINE (head-noun heuristic: last content token).
     STAND-IN for utils/spacy_func.py (spaCy noun-chunk head + lemmatize).
     e.g. "1 cup pitted black olives" -> "olive".
+    Uses the REAL spaCy backend instead when --real-nlp is active.
     """
+    if _NOUNS_BACKEND is not None:
+        return _NOUNS_BACKEND.ingredient_nouns(list(items))
     nouns = set()
     for item in items:
         content = _content_tokens(item)
@@ -92,7 +115,10 @@ def text_nouns(text):
     """
     All root nouns mentioned in FREE TEXT (e.g. instructions): every content
     token, lemmatized, stopwords removed. STAND-IN for spaCy noun extraction.
+    Uses the REAL spaCy noun-chunk backend instead when --real-nlp is active.
     """
+    if _NOUNS_BACKEND is not None:
+        return _NOUNS_BACKEND.text_nouns(text)
     return set(_content_tokens(text))
 
 
@@ -110,6 +136,17 @@ def root_nouns(text):
 # ---------------------------------------------------------------------------
 # Ingredient F1 (utils/metrics.py) — set precision/recall/f1, with F1@k
 # ---------------------------------------------------------------------------
+
+def split_ingredient_items(text):
+    """
+    Split a generated ingredient field into individual items (for counting the
+    avg number of generated ingredients, paper avg = 7.8). Accepts a list or a
+    string delimited by newlines / ';' / ',' / '|'.
+    """
+    if isinstance(text, (list, tuple)):
+        return [str(i).strip() for i in text if str(i).strip()]
+    return [p.strip() for p in re.split(r"[\n;,|]+", text or "") if p.strip()]
+
 
 def ingredient_f1(pred, ref, k=None):
     """
@@ -248,22 +285,47 @@ class Node:
 
 def instr_tree(instructions):
     """
-    Parse instructions into a tree (utils/tree.py: instr_tree):
-      ROOT -> [step-action nodes] -> [ingredient/noun leaves]
+    Parse instructions into a tree, matching repo utils/tree.py build_tree:
+    action nodes form a VERTICAL SPINE (each subsequent action is inserted as
+    the LEFTMOST child of the previous action, repo `addkid(..., before=True)`),
+    with that action's ingredient/noun leaves as the remaining children. The
+    FIRST action node is the tree root (there is no synthetic ROOT node).
+
+        action_0
+        ├─ action_1
+        │  ├─ action_2
+        │  │  └─ (leaves of action_2)
+        │  └─ (leaves of action_1)
+        └─ (leaves of action_0)
+
     Action node label = first verb-like token (lemmatized) of the step.
     Leaves = root nouns mentioned in the step.
-    STAND-IN for spaCy dependency parse; structure matches the paper.
+    STAND-IN for spaCy dependency parse; TOPOLOGY now matches repo build_tree
+    (the previous flat siblings-under-ROOT form deviated from the repo).
     """
     steps = [s for s in re.split(r"[.;\n]+", instructions) if s.strip()]
-    root = Node("ROOT")
+    parsed = []
     for step in steps:
         toks = _WORD.findall(step.lower())
         if not toks:
             continue
-        action = lemmatize(toks[0])  # imperative verb heads a cooking step
+        # imperative verb heads a cooking step (real spaCy lemma when --real-nlp)
+        action = (_NOUNS_BACKEND.lemmatize(toks[0])
+                  if _NOUNS_BACKEND is not None else lemmatize(toks[0]))
         nouns = root_nouns(step)
         leaves = [Node(n) for n in sorted(nouns)]
-        root.children.append(Node(action, leaves))
+        parsed.append((action, leaves))
+    if not parsed:
+        return Node("ROOT")
+    # First action = root; chain the rest vertically as leftmost children
+    # (repo build_tree: myroot.addkid(next_action, before=True); descend).
+    action0, leaves0 = parsed[0]
+    root = Node(action0, list(leaves0))
+    cur = root
+    for action, leaves in parsed[1:]:
+        nxt = Node(action, list(leaves))
+        cur.children.insert(0, nxt)   # before=True -> leftmost child (action spine)
+        cur = nxt
     return root
 
 
@@ -273,11 +335,15 @@ def _count_nodes(node):
 
 def _update_cost(a, b):
     """
-    Node relabel cost. STAND-IN for word2vec cosine: token-level string
-    similarity (0 identical, up to 1 fully different).
+    Node relabel cost for the tree-edit distance (utils/tree.py update_cost).
+    Repo uses 1 - word2vec_cosine. When --real-nlp is active we call the REAL
+    gensim word2vec backend; otherwise a token-level string-similarity STAND-IN
+    (0 identical, up to 1 fully different).
     """
     if a == b:
         return 0.0
+    if _COST_BACKEND is not None:
+        return _COST_BACKEND.cost(a, b)
     sa, sb = set(a), set(b)
     if not sa and not sb:
         return 0.0

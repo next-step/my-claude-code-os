@@ -1,11 +1,14 @@
 """
 recipenlg.py — REAL recipe generation using a PUBLIC fine-tuned GPT-2.
 
-The paper's own RecipeGPT (Recipe1M) fine-tuned checkpoint was never publicly
-released (the official repo LARC-CMU-SMU/RecipeGPT-exp ships training code +
-TensorFlow checkpoints like `model-633000`, not downloadable weights). To get
-ACTUAL recipe-quality output — not the generic text base gpt2 produces — this
-adapter drives a publicly hosted GPT-2 that IS fine-tuned on recipes:
+The paper's own RecipeGPT (Recipe1M) fine-tuned checkpoint was released only as a
+TensorFlow checkpoint on the authors' OneDrive (the official repo
+LARC-CMU-SMU/RecipeGPT-exp README links a download under `training/gpt-2/models/`,
+e.g. `model-633000`) — it is NOT directly HF-loadable, so this app can't load it as
+a stand-alone HF model without conversion (see `convert_checkpoint.py`). To get
+ACTUAL recipe-quality output out of the box — not the generic text base gpt2
+produces — this adapter instead drives a publicly hosted GPT-2 already on HF that IS
+fine-tuned on recipes:
 
     pratultandon/recipe-nlg-gpt2   (GPT-2 124M fine-tuned on RecipeNLG,
                                     a Recipe1M-derived corpus)
@@ -14,7 +17,8 @@ HONESTY: this is a DIFFERENT checkpoint than the paper's RecipeGPT — same
 architecture (GPT-2 124M), same idea (special-token multi-field recipe
 generation), different training corpus (RecipeNLG vs Recipe1M) and different
 field-token scheme. It is a faithful, real, on-topic stand-in for the paper's
-unreleased weights — labeled as such.
+RecipeGPT weights, which are released only as a TensorFlow checkpoint on OneDrive
+(not directly HF-loadable — see convert_checkpoint.py) — labeled as such.
 
 This model's native format (from its model card):
   <RECIPE_START> <INPUT_START> ing1 <NEXT_INPUT> ing2 <INPUT_END>
