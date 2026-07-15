@@ -13,9 +13,15 @@
 # ─────────────────────────────────────────────────────────────
 set -euo pipefail
 
-LABEL="com.joy.telegram-listener"
+# Label은 install.sh가 만드는 것과 동일하게 로그인 사용자명 기준으로 계산한다.
+# (com.<user>.telegram-listener) — 하드코딩하면 다른 PC에서 kickstart 대상이 어긋난다.
+LABEL="com.$(id -un).telegram-listener"
 TARGET_FILE="telegram-listener.sh"
-LOG="/Users/joy/IdeaProjects/work/my-claude-code-os/.claude/data/telegram-listener.log"
+
+# 스크립트 자기 위치 기준으로 프로젝트 루트(.claude/hooks → ../..)를 잡는다.
+# 절대경로를 박지 않아 다른 환경/경로에서도 그대로 동작한다.
+PROJECT_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
+LOG="$PROJECT_ROOT/.claude/data/telegram-listener.log"
 
 # stdin(JSON)에서 편집된 파일 경로를 추출. jq 실패해도 훅이 죽지 않게 방어.
 payload="$(cat)"

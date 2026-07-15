@@ -115,7 +115,8 @@
 .claude/
 ├── OS.md                          # 시스템 설계 문서 (원칙·흐름·스키마)
 ├── launchd/
-│   └── com.joy.telegram-listener.plist  # launchd 설정: telegram-listener 상시 실행 + 자동 재시작
+│   ├── install.sh                 # 세션 밖 자동화 설치: 현재 clone 경로/사용자명으로 plist·crontab 생성
+│   └── uninstall.sh               # 위 설치 되돌리기 (데몬 언로드·plist 삭제·crontab 정리)
 ├── skills/
 │   ├── capture/SKILL.md           # /capture 오케스트레이터
 │   ├── done/SKILL.md              # /done 오케스트레이터
@@ -154,12 +155,21 @@
 - 자격증명은 `.claude/data/notion.json`(토큰·DB ID)에서 읽으며, 이 파일은 `.gitignore`로 커밋에서 제외된다.
 - 스킬·오케스트레이터는 저장소 종류를 모른다. 저장 방식이 바뀌어도 `notion.sh` 스크립트만 교체하면 되도록 설계되어 있다. (실제로 로컬 JSON Mock → Notion API 전환을 스킬 수정 없이 완료)
 
-## 자동 리마인더 등록
+## 세션 밖 자동화 설치 (clone 후 1회)
 
-`/remind`를 매일 저녁 자동 실행하려면 스케줄을 등록한다.
+`telegram-listener`(launchd 상시 데몬)와 `remind-cron`(crontab 매일 17:00)은
+세션 밖에서 도는 자동화라 **각 PC에 등록**이 필요하다. launchd·crontab은 모두
+절대경로를 요구(상대경로 미지원)하므로, 경로를 레포에 박지 않고 **설치 스크립트가
+현재 clone 위치와 로그인 사용자명을 채워 넣는** 방식으로 이식성을 확보한다.
 
+```bash
+# 저장소를 clone 받은 뒤, 프로젝트 루트에서 1회 실행
+.claude/launchd/install.sh     # plist를 ~/Library/LaunchAgents에 생성·로드 + crontab 등록
 ```
-/schedule "/remind" 매일 17:00
-```
+
+- `install.sh`는 현재 경로(`$(pwd)`)와 사용자명(`id -un`)으로 `com.<user>.telegram-listener`
+  plist를 만들어 로드하고, 매일 17:00 `remind-cron` crontab을 등록한다. 여러 번 실행해도 안전(멱등).
+- 데몬이 실제로 동작하려면 `.claude/data/telegram.json`(봇 토큰·내 chat_id)이 있어야 한다.
+- 되돌리려면 `.claude/launchd/uninstall.sh`.
 
 알럿은 텔레그램으로 발송되며, 2일 이상 방치된 항목은 `⚠️` 강조로 별도 표시된다.
