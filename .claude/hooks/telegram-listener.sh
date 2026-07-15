@@ -141,6 +141,14 @@ ${cout}"
       out=$(.claude/skills/_shared/list-view.sh ${args:+"$args"} 2>&1)
       rc=$?
       ;;
+    /capture)
+      # 결정론적 캡처 — claude -p(콜드 스타트 ~10초)를 우회하고 분류→저장→노티스를
+      # 순수 bash 로 처리(~0.03초). /list 와 같은 패턴. capture.sh 가 사전 분류 후
+      # 로컬 outbox 에 즉시 저장하고 Notion 동기는 백그라운드로 던지므로, 노티스까지
+      # 네트워크 왕복이 없다. (인자는 위 no_arg 검사에서 이미 비어있지 않음을 보장)
+      out=$(.claude/skills/_shared/capture.sh "$args" 2>&1)
+      rc=$?
+      ;;
     *)
       # AskUserQuestion 차단 + stdin 프롬프트: 위 "이어가기"와 같은 이유.
       # /plan 등 인터뷰형 스킬이 블로킹 없이 질문을 텍스트로 돌려주게 한다.
