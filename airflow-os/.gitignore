@@ -11,5 +11,7 @@ prod-airflow
 .claude/context/conventions/airbyte.md
 .claude/context/platform.md
 
-# 스크래치 (실험·초안) — git 안 올림
-draft/
+# A/B 재료(fixture) — 회사 컨벤션이 드러나 git 안 올림 (방법론 protocol/design은 올림)
+ab/answer-key.md
+ab/sample-dag.py
+ab/results.md
