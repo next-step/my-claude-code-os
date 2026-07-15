@@ -21,12 +21,13 @@ else
   echo "· plist 없음 (이미 제거됨): $PLIST"
 fi
 
-# crontab에서 remind-cron 라인 제거 (남은 항목은 유지).
-if crontab -l 2>/dev/null | grep -q 'remind-cron.sh'; then
-  ( crontab -l 2>/dev/null | grep -v 'remind-cron.sh' || true ) | crontab -
-  echo "✓ crontab에서 remind-cron 제거"
+# crontab에서 우리 크론 4종(remind·flush·watchdog·digest) 라인 제거 (남은 항목은 유지).
+if crontab -l 2>/dev/null | grep -qE 'remind-cron.sh|flush-cron.sh|watchdog-cron.sh|digest-cron.sh'; then
+  ( crontab -l 2>/dev/null \
+      | grep -v -e 'remind-cron.sh' -e 'flush-cron.sh' -e 'watchdog-cron.sh' -e 'digest-cron.sh' || true ) | crontab -
+  echo "✓ crontab에서 remind·flush·watchdog·digest 크론 제거"
 else
-  echo "· crontab에 remind-cron 항목 없음"
+  echo "· crontab에 우리 크론 항목 없음"
 fi
 
 echo "제거 완료."

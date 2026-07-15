@@ -24,3 +24,9 @@
 .claude/data/clarified-specs.json
 .claude/data/cache/
 .claude/data/outbox/
+
+# 시스템 루프 런타임 상태·로그 (로컬 전용 — 커밋 금지)
+.claude/data/watchdog-state.txt
+.claude/data/watchdog.log
+.claude/data/flush-cron.log
+.claude/data/digest-cron.log

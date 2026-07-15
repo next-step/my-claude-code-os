@@ -14,6 +14,7 @@
 | `.claude/data/telegram-listener.log` | 리스너 로그 (로컬 런타임) |
 | `.claude/data/cache/`, `.claude/data/outbox/` | 사용자 개인 할일 데이터·로컬 캐시 |
 | `.claude/skill-invocations.log` | 스킬 호출 로그 (로컬 런타임) |
+| `.claude/data/watchdog-state.txt`·`watchdog.log`·`flush-cron.log`·`digest-cron.log` | 시스템 루프(감시·flush·집계) 런타임 상태·로그 |
 
 이 목록은 `.gitignore`와 일치해야 한다. 새 비밀값 파일을 추가하면 **양쪽을 함께 갱신**한다.
 

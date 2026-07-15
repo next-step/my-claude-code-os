@@ -28,14 +28,21 @@ PLIST="$LA_DIR/${LABEL}.plist"
 LISTENER="$PROJECT_ROOT/.claude/hooks/telegram-listener.sh"
 LOG="$PROJECT_ROOT/.claude/data/telegram-listener.log"
 CRON_SCRIPT="$PROJECT_ROOT/.claude/hooks/remind-cron.sh"
+FLUSH_CRON="$PROJECT_ROOT/.claude/hooks/flush-cron.sh"
+WATCHDOG_CRON="$PROJECT_ROOT/.claude/hooks/watchdog-cron.sh"
+DIGEST_CRON="$PROJECT_ROOT/.claude/hooks/digest-cron.sh"
 
 echo "▶ 프로젝트 루트: $PROJECT_ROOT"
 echo "▶ launchd Label: $LABEL"
 
 # ── 사전 점검 ───────────────────────────────────────────────
-[ -f "$LISTENER" ]    || { echo "✗ 리스너 스크립트 없음: $LISTENER"; exit 1; }
-[ -f "$CRON_SCRIPT" ] || { echo "✗ remind-cron 스크립트 없음: $CRON_SCRIPT"; exit 1; }
-chmod +x "$LISTENER" "$CRON_SCRIPT" "$PROJECT_ROOT/.claude/hooks/restart-listener-on-change.sh" 2>/dev/null || true
+[ -f "$LISTENER" ]     || { echo "✗ 리스너 스크립트 없음: $LISTENER"; exit 1; }
+[ -f "$CRON_SCRIPT" ]  || { echo "✗ remind-cron 스크립트 없음: $CRON_SCRIPT"; exit 1; }
+[ -f "$FLUSH_CRON" ]   || { echo "✗ flush-cron 스크립트 없음: $FLUSH_CRON"; exit 1; }
+[ -f "$WATCHDOG_CRON" ]|| { echo "✗ watchdog-cron 스크립트 없음: $WATCHDOG_CRON"; exit 1; }
+[ -f "$DIGEST_CRON" ]  || { echo "✗ digest-cron 스크립트 없음: $DIGEST_CRON"; exit 1; }
+chmod +x "$LISTENER" "$CRON_SCRIPT" "$FLUSH_CRON" "$WATCHDOG_CRON" "$DIGEST_CRON" \
+  "$PROJECT_ROOT/.claude/hooks/restart-listener-on-change.sh" 2>/dev/null || true
 
 # 로그/데이터 디렉토리 보장 (launchd가 로그 파일을 열 수 있어야 함).
 mkdir -p "$PROJECT_ROOT/.claude/data" "$LA_DIR"
@@ -96,13 +103,23 @@ launchctl enable "gui/${UID_NUM}/${LABEL}" 2>/dev/null || true
 echo "✓ launchd 데몬 로드 완료 (com.${USER_NAME}.telegram-listener)"
 
 # ── 3) crontab 등록 (멱등) ──────────────────────────────────
-# 기존 remind-cron.sh 라인을 제거한 뒤 현재 경로로 새로 추가한다.
-CRON_LINE="0 17 * * * ${CRON_SCRIPT} 2>&1 | logger -t claude-remind"
-( crontab -l 2>/dev/null | grep -v 'remind-cron.sh' || true; echo "$CRON_LINE" ) | crontab -
-echo "✓ crontab 등록: 매일 17:00 → remind-cron.sh"
+# 우리 크론 4종의 기존 라인을 모두 제거한 뒤 현재 경로로 새로 추가한다.
+#   remind  (매일 17:00)      — 미처리 draft 알럿
+#   flush   (15분마다)         — outbox 재동기 조정 루프
+#   watchdog(10분마다)         — telegram-listener 데몬 감시·자동 재시작
+#   digest  (매주 일요일 20:00) — 할일 현황 주간 집계 발송
+REMIND_LINE="0 17 * * * ${CRON_SCRIPT} 2>&1 | logger -t claude-remind"
+FLUSH_LINE="*/15 * * * * ${FLUSH_CRON} 2>&1 | logger -t claude-flush"
+WATCHDOG_LINE="*/10 * * * * ${WATCHDOG_CRON} 2>&1 | logger -t claude-watchdog"
+DIGEST_LINE="0 20 * * 0 ${DIGEST_CRON} 2>&1 | logger -t claude-digest"
+( crontab -l 2>/dev/null \
+    | grep -v -e 'remind-cron.sh' -e 'flush-cron.sh' -e 'watchdog-cron.sh' -e 'digest-cron.sh' || true
+  echo "$REMIND_LINE"; echo "$FLUSH_LINE"; echo "$WATCHDOG_LINE"; echo "$DIGEST_LINE"
+) | crontab -
+echo "✓ crontab 등록: remind(매일 17:00) · flush(15분) · watchdog(10분) · digest(일 20:00)"
 
 echo ""
 echo "설치 완료. 상태 확인:"
 echo "  launchctl print gui/${UID_NUM}/${LABEL} | head"
-echo "  crontab -l | grep remind-cron"
+echo "  crontab -l | grep -E 'remind|flush|watchdog|digest'-cron"
 echo "제거하려면: .claude/launchd/uninstall.sh"

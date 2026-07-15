@@ -16,6 +16,8 @@ set -uo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 HOOK="$ROOT/.claude/hooks/log-skill-invocation.sh"
 REPORT="$ROOT/.claude/skills/_shared/usage-report.sh"
+DIGEST="$ROOT/.claude/skills/_shared/digest-report.sh"
+SEND="$ROOT/.claude/skills/_shared/telegram-send.sh"
 
 pass=0; fail=0
 ok(){ printf '  \033[32m✓\033[0m %s\n' "$1"; pass=$((pass+1)); }
@@ -75,6 +77,37 @@ grep -qE '/done'                <<<"$out" && ok "유휴: 호출 없는 /done 표
 out="$(SKILL_LOG="$LOG" bash "$REPORT")"; rc=$?
 grep -q "아직 기록된 스킬 호출이 없어요" <<<"$out" && [[ "$rc" -eq 0 ]] \
   && ok "빈 로그 → 안내·exit0" || ng "빈 로그 처리 오류 (rc=$rc)"
+
+echo ""
+echo "── digest-report.sh (집계) ──"
+
+# 픽스처: draft 2(하나는 5일 전=방치) / planned 1 / done 2, 업무 2건
+DFIX="$TMP/items.json"
+cat > "$DFIX" <<'EOF'
+[
+ {"id":"1","title":"세미나 신청","category":"스터디","status":"draft","captured_at":"2026-07-10 09:00:00"},
+ {"id":"2","title":"장보기","category":"일상","status":"draft","captured_at":"2026-07-14 09:00:00"},
+ {"id":"3","title":"리포트","category":"업무","status":"planned","captured_at":"2026-07-12 09:00:00"},
+ {"id":"4","title":"운동","category":"건강","status":"done","captured_at":"2026-07-11 09:00:00"},
+ {"id":"5","title":"코드리뷰","category":"업무","status":"done","captured_at":"2026-07-13 09:00:00"}
+]
+EOF
+out="$(ITEMS_JSON_FILE="$DFIX" bash "$DIGEST")"
+grep -qE '전체 5개'                 <<<"$out" && ok "집계: 전체 5개"           || ng "집계 총계 오류"
+grep -qE 'draft 2 · 📅 planned 1 · ✅ done 2' <<<"$out" && ok "집계: 상태 분포 정확" || ng "상태 분포 오류"
+grep -qE '업무 2개'                 <<<"$out" && ok "집계: 카테고리 분포(업무 2개)" || ng "카테고리 분포 오류"
+grep -qE '세미나 신청 \(5일 전 캡처\)' <<<"$out" && ok "집계: 2일+ 방치 draft 강조"  || ng "방치 draft 판정 오류"
+
+# 빈 항목 → 안내·정상 종료
+echo '[]' > "$DFIX"
+out="$(ITEMS_JSON_FILE="$DFIX" bash "$DIGEST")"; rc=$?
+grep -q "아직 등록된 할일이 없어요" <<<"$out" && [[ "$rc" -eq 0 ]] && ok "빈 항목 → 안내·exit0" || ng "빈 항목 처리 오류"
+
+echo ""
+echo "── telegram-send.sh (가드) ──"
+# 빈 메시지 → 값 노출 없이 실패(exit1). 자격증명 검사 이전 단계라 네트워크 미접촉.
+printf '' | bash "$SEND" >/dev/null 2>&1; rc=$?
+[[ "$rc" -eq 1 ]] && ok "빈 메시지 → exit1 (발송 안 함)" || ng "빈 메시지 가드 오류 (rc=$rc)"
 
 echo ""
 echo "────────────────────────────────────────────────"

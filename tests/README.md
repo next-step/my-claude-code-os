@@ -76,12 +76,18 @@
 - 그 외(명령·질문·슬래시·무관·빈입력) → **침묵**
 
 ### L2 — 순수 셸 스크립트 단위 테스트 (`unit-scripts.sh`)
-자기 관찰 루프를 이루는 두 셸 스크립트는 외부 의존(네트워크·데몬·`claude`)이 없어
-`detect-todo.js` 처럼 결정적으로 검증할 수 있다. 실데이터를 건드리지 않으려고 두
-스크립트가 지원하는 `SKILL_LOG` 환경변수로 임시 로그를 주입해 계약을 확인한다:
+외부 의존(네트워크·데몬·`claude`)이 없는 결정적 셸 스크립트들은 `detect-todo.js` 처럼
+검증할 수 있다. 실데이터·네트워크를 건드리지 않으려고 각 스크립트가 지원하는 주입용
+환경변수(`SKILL_LOG`·`ITEMS_JSON_FILE`)로 임시 픽스처를 넣어 계약을 확인한다:
 - `log-skill-invocation.sh`(write) — Skill 호출 → `#N 스킬명` append·카운터 증가,
   비-Skill 호출 → 무기록·exit0, 네임스페이스 스킬명 보존
 - `usage-report.sh`(read) — 빈도·연쇄(`capture → plan`)·유휴 스킬 집계, 빈 로그 안내
+- `digest-report.sh`(집계) — 상태 분포·카테고리 분포·2일+ 방치 draft 강조, 빈 항목 안내
+- `telegram-send.sh`(발송 가드) — 빈 메시지는 값 노출 없이 exit1 (네트워크 미접촉)
+
+> cron 훅(`flush-cron`·`watchdog-cron`·`digest-cron`)과 `telegram-send` 의 실제 발송
+> 경로는 launchd·네트워크·자격증명 의존이라 단위 대상이 아니다 — L1 문법 검사로만
+> 커버하고, 동작은 설치 후 통합에서 확인한다.
 
 ### L3 — headless 통합 스모크 (`smoke.sh`)
 1. 고유 마커 제목으로 `claude -p "/capture <marker>"` 를 실제 실행
