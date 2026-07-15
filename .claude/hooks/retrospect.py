@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 """
 Stop 훅 — 어제까지의 미회고 세션 로그를 분석해 lessons.md에 누적.
-하루 첫 Stop 이벤트에서만 실행되며, 마지막 회고 날짜를 파일로 추적한다.
+건강도 지표(에이전트 활용률 + 작업 집중도)를 계산해 추세를 추적한다.
 """
 import json
+import re
 import sys
 from collections import Counter
 from datetime import date, timedelta
@@ -16,6 +17,7 @@ SESSIONS_DIR = LOGS_DIR / "sessions"
 PROMPTS_DIR = LOGS_DIR / "prompts"
 MARKER_FILE = LOGS_DIR / ".last-retrospected-through"
 LESSONS_FILE = CLAUDE_DIR / "lessons.md"
+METRICS_FILE = LOGS_DIR / "retrospect-metrics.jsonl"
 
 
 def get_last_retrospected() -> date:
@@ -24,7 +26,6 @@ def get_last_retrospected() -> date:
             return date.fromisoformat(MARKER_FILE.read_text().strip())
         except Exception:
             pass
-    # 마커 없으면 30일 전부터 시작
     return date.today() - timedelta(days=30)
 
 
@@ -57,12 +58,22 @@ def analyze(target: date) -> dict:
             except Exception:
                 pass
 
+    total = sum(ops.values())
+    agent_rate = ops.get("agent", 0) / total if total > 0 else 0.0
+    work_rate = (ops.get("edit", 0) + ops.get("write", 0)) / total if total > 0 else 0.0
+    health = (agent_rate + work_rate) / 2
+    grade = "A" if health > 0.25 else "B" if health >= 0.15 else "C"
+
     return {
-        "total": sum(ops.values()),
+        "total": total,
         "ops": dict(ops),
         "files": sorted(files_modified),
         "agents": agents[:3],
         "prompts": prompts[:4],
+        "agent_rate": agent_rate,
+        "work_rate": work_rate,
+        "health": health,
+        "grade": grade,
     }
 
 
@@ -87,16 +98,127 @@ def format_entry(target: date, s: dict) -> str:
         for p in s["prompts"]:
             lines.append(f"- {p}")
 
+    lines.append(
+        f"**건강도** `{s['health']:.2f}` Grade **{s['grade']}**"
+        f"  (에이전트 {s['agent_rate']:.1%} · 집중도 {s['work_rate']:.1%})"
+    )
     lines.append("\n---")
     return "\n".join(lines)
 
 
+def append_metrics(target: date, s: dict) -> None:
+    entry = {
+        "date": str(target),
+        "total": s["total"],
+        "agent": s["ops"].get("agent", 0),
+        "edit": s["ops"].get("edit", 0),
+        "write": s["ops"].get("write", 0),
+        "bash": s["ops"].get("bash", 0),
+        "agent_rate": round(s["agent_rate"], 4),
+        "work_rate": round(s["work_rate"], 4),
+        "health": round(s["health"], 4),
+        "grade": s["grade"],
+    }
+    with METRICS_FILE.open("a", encoding="utf-8") as f:
+        f.write(json.dumps(entry, ensure_ascii=False) + "\n")
+
+
+def update_trend_summary() -> None:
+    if not METRICS_FILE.exists():
+        return
+
+    metrics = []
+    for line in METRICS_FILE.read_text(encoding="utf-8").splitlines():
+        try:
+            metrics.append(json.loads(line))
+        except Exception:
+            pass
+
+    if not metrics:
+        return
+
+    rows = []
+    for m in metrics[-10:]:
+        rows.append(
+            f"| {m['date']} | {m['total']} | {m['agent_rate']:.1%} | "
+            f"{m['work_rate']:.1%} | {m['health']:.2f} | {m['grade']} |"
+        )
+
+    recent = [m["health"] for m in metrics[-3:]]
+    if len(recent) >= 2:
+        trend = "↑ 상승" if recent[-1] > recent[-2] else "↓ 하락" if recent[-1] < recent[-2] else "→ 유지"
+    else:
+        trend = "데이터 부족"
+    avg = sum(recent) / len(recent) if recent else 0.0
+
+    summary = (
+        "<!-- METRICS_START -->\n"
+        "## 📊 추세 요약\n\n"
+        "> **건강도** = (에이전트 활용률 + 작업 집중도) / 2\n"
+        "> Grade: **A** > 0.25 · **B** 0.15 ~ 0.25 · **C** < 0.15\n\n"
+        "| 날짜 | 총 호출 | 에이전트율 | 집중도 | 건강도 | Grade |\n"
+        "|------|---------|-----------|--------|--------|-------|\n"
+        + "\n".join(rows)
+        + f"\n\n최근 추세: **{trend}** (최근 {len(recent)}회 평균 `{avg:.2f}`)\n"
+        "<!-- METRICS_END -->"
+    )
+
+    content = LESSONS_FILE.read_text(encoding="utf-8")
+    if "<!-- METRICS_START -->" in content:
+        content = re.sub(
+            r"<!-- METRICS_START -->.*?<!-- METRICS_END -->",
+            summary,
+            content,
+            flags=re.DOTALL,
+        )
+    else:
+        content = content.rstrip() + "\n\n" + summary + "\n"
+
+    LESSONS_FILE.write_text(content, encoding="utf-8")
+
+
+def seed_historical_metrics() -> None:
+    """metrics.jsonl이 없을 때 기존 세션 로그로 소급 계산한다."""
+    if METRICS_FILE.exists():
+        return
+
+    last = get_last_retrospected()
+    seen: set = set()
+
+    for f in sorted(SESSIONS_DIR.glob("*.jsonl")):
+        try:
+            d = date.fromisoformat(f.stem)
+        except Exception:
+            continue
+        if d > last or d in seen:
+            continue
+        seen.add(d)
+        s = analyze(d)
+        if s["total"] > 0:
+            append_metrics(d, s)
+
+    for f in sorted(PROMPTS_DIR.glob("*.jsonl")):
+        try:
+            d = date.fromisoformat(f.stem)
+        except Exception:
+            continue
+        if d > last or d in seen:
+            continue
+        seen.add(d)
+        s = analyze(d)
+        if s["total"] > 0:
+            append_metrics(d, s)
+
+
 # ── 메인 ──────────────────────────────────────────────────────────────────────
+
+seed_historical_metrics()
 
 yesterday = date.today() - timedelta(days=1)
 last = get_last_retrospected()
 
 if last >= yesterday:
+    update_trend_summary()
     sys.exit(0)
 
 pending = []
@@ -106,6 +228,7 @@ while cursor <= yesterday:
     cursor += timedelta(days=1)
 
 if not pending:
+    update_trend_summary()
     sys.exit(0)
 
 if not LESSONS_FILE.exists():
@@ -115,12 +238,14 @@ if not LESSONS_FILE.exists():
     )
 
 for d in pending:
-    # 세션/프롬프트 파일이 없는 날은 기록하지 않음
     if not (SESSIONS_DIR / f"{d}.jsonl").exists() and not (PROMPTS_DIR / f"{d}.jsonl").exists():
         continue
-    summary = analyze(d)
-    entry = format_entry(d, summary)
+    s = analyze(d)
+    entry = format_entry(d, s)
     with LESSONS_FILE.open("a", encoding="utf-8") as f:
         f.write(entry + "\n")
+    if s["total"] > 0:
+        append_metrics(d, s)
 
 MARKER_FILE.write_text(str(yesterday), encoding="utf-8")
+update_trend_summary()
