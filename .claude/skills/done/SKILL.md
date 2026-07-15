@@ -23,19 +23,21 @@ capture(생성) → plan(구체화) → **done(완료)** 로 이어지는 상태
 
 ### Step 1: 미완료 항목 조회
 
-> **속도 + 책임 분리 포인트**
-> 조회는 결정론적이므로 `notion.sh`를 Bash로 직접 호출한다(콜드 스타트 제거).
-> `notion.sh read`는 단일 status 필터만 지원하므로, **인자 없이 전체를 읽고
-> 오케스트레이터가 `status != done`으로 걸러낸다.** 단순 조회는 헬퍼가,
-> 복합 조건 판단은 오케스트레이터가 맡는다.
+> **속도 포인트 — 조회를 네트워크에서 캐시로**
+> `notion.sh read`는 curl 동기 POST 로 네트워크 왕복(실측 ~0.5s)을 매번 태운다.
+> 하지만 `/list`·`/done` 이 보는 목록은 어차피 `cache.sh`가 들고 있는 로컬 read-model과
+> 같다 — capture 가 쓰기를 outbox + 백그라운드 동기로 뺀 것과 대칭으로, 읽기도 이미
+> 로컬 캐시로 빠져 있다. `done-fast.sh read`는 그 캐시에서 `status != "done"`인 항목만
+> 걸러 곧바로 돌려준다(~0.01s, 크리티컬 패스에 네트워크 없음). "무엇을 걸러낼지"라는
+> 조건 판단은 여전히 이 헬퍼가 맡고, 오케스트레이터는 그 결과를 그대로 쓴다.
 
-1. Bash로 아래를 실행한다. (인자 없이 전체 조회)
+1. Bash로 아래를 실행한다.
 
 ```bash
-.claude/skills/_shared/notion.sh read
+.claude/skills/_shared/done-fast.sh read
 ```
 
-2. 반환된 배열에서 `status`가 `done`이 **아닌** 항목만 남겨 `pending` 변수에 저장한다.
+2. 반환된 배열(이미 `status != done` 인 항목만)을 `pending` 변수에 저장한다.
 3. `pending`이 비어 있으면: "완료 처리할 항목이 없어요. 모두 끝냈거나, `/capture`로 할일을 추가해보세요." 출력 후 종료.
 
 ---
@@ -66,21 +68,25 @@ AskUserQuestion으로 어떤 항목을 완료할지 선택받는다. (복수 선
 
 ---
 
-### Step 3: done으로 업데이트 (루프)
+### Step 3: done으로 업데이트
 
-> **공용 헬퍼 재사용 포인트**
-> plan이 `planned`로 바꾸듯, done은 같은 `notion.sh update` 계약을 재사용한다.
-> 헬퍼를 한 줄도 고치지 않고 status 값만 바꿔 호출하는 것이 공용 설계의 이점이다.
+> **속도 포인트 — 완료 처리를 크리티컬 패스에서 뺀다**
+> 기존에는 선택된 항목 수만큼 `notion.sh update`를 반복 호출했다 — 항목마다 curl 동기
+> 왕복(~0.5s)이 붙으니 여러 개를 고르면 그만큼 느려졌다. `/capture`가 저장을 "즉시 로컬 +
+> 백그라운드 동기"로 뺀 것과 같은 이유로, 완료 처리도 대기할 이유가 없다: 방금 끝낸 일을
+> Notion 응답까지 기다렸다가 알려줄 필요는 없다. `done-fast.sh complete`는 (1) 선택된
+> id 전부를 캐시 파일에서 한 번에 `done`으로 고쳐 쓰고(즉시, 원자적), (2) 각 id의 Notion
+> 반영은 detached 백그라운드로 던진 뒤 곧바로 반환한다. 여러 항목을 골라도 호출은 한 번뿐이다.
 
-선택된 각 항목에 대해 반복한다.
-
-1. Bash로 아래를 실행한다.
+선택된 항목의 id 를 모두 모아 **한 번에** 넘겨 호출한다.
 
 ```bash
-printf '%s' '{"status":"done"}' | .claude/skills/_shared/notion.sh update {항목 id}
+.claude/skills/_shared/done-fast.sh complete {항목1 id} {항목2 id} ...
 ```
 
-2. 출력에서 `status`가 `done`으로 바뀐 것을 확인한다.
+출력은 `{ completed:[{id,title}...], count:N }` 형태다. `completed`에 들어간 항목은
+캐시에서 이미 `done`으로 반영된 것이고(즉시 확정), 이후 `/list`·`/done`도 이 값을
+바로 반영해서 보여준다. Notion 쪽 반영은 백그라운드에서 이어지며 여기서 기다리지 않는다.
 
 ---
 
