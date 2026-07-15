@@ -1,0 +1,265 @@
+<meta charset="utf-8">
+<title>OS 작업 흐름 — 누가 무엇을</title>
+<style>
+  :root {
+    --ground: #f0f4f2; --panel: #ffffff; --panel-2: #f7faf8;
+    --ink: #14201c; --muted: #5b6d65; --faint: #86968e;
+    --line: #dde5e0; --line-strong: #c6d1cb;
+    /* 역할(actor) 색 — 이 다이어그램의 핵심 키 */
+    --a-human: #4a5bd6; --a-human-s: #e7e9fb;
+    --a-orch:  #0e8a5f; --a-orch-s:  #e2f2ea;
+    --a-agent: #0f8ea3; --a-agent-s: #dcf0f4;
+    --a-ci:    #b0702a; --a-ci-s:    #f6ecdd;
+    --stop: #c2703d; --stop-ink: #9a5227;
+    --radius: 13px;
+    --mono: ui-monospace, "SF Mono", "SFMono-Regular", Menlo, Consolas, monospace;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", "Apple SD Gothic Neo",
+            "Malgun Gothic", "Noto Sans KR", Roboto, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --ground: #0d1411; --panel: #16201c; --panel-2: #121b17;
+      --ink: #e9efec; --muted: #94a69d; --faint: #6f8078;
+      --line: #26332d; --line-strong: #33443c;
+      --a-human: #98a4f4; --a-human-s: #1e2450;
+      --a-orch:  #34c88a; --a-orch-s:  #10352b;
+      --a-agent: #45bcd2; --a-agent-s: #0e3239;
+      --a-ci:    #dd9a54; --a-ci-s:    #362510;
+      --stop: #e0895a; --stop-ink: #f0a97f;
+    }
+  }
+  :root[data-theme="light"] {
+    --ground:#f0f4f2;--panel:#fff;--panel-2:#f7faf8;--ink:#14201c;--muted:#5b6d65;--faint:#86968e;
+    --line:#dde5e0;--line-strong:#c6d1cb;--a-human:#4a5bd6;--a-human-s:#e7e9fb;--a-orch:#0e8a5f;
+    --a-orch-s:#e2f2ea;--a-agent:#0f8ea3;--a-agent-s:#dcf0f4;--a-ci:#b0702a;--a-ci-s:#f6ecdd;
+    --stop:#c2703d;--stop-ink:#9a5227;
+  }
+  :root[data-theme="dark"] {
+    --ground:#0d1411;--panel:#16201c;--panel-2:#121b17;--ink:#e9efec;--muted:#94a69d;--faint:#6f8078;
+    --line:#26332d;--line-strong:#33443c;--a-human:#98a4f4;--a-human-s:#1e2450;--a-orch:#34c88a;
+    --a-orch-s:#10352b;--a-agent:#45bcd2;--a-agent-s:#0e3239;--a-ci:#dd9a54;--a-ci-s:#362510;
+    --stop:#e0895a;--stop-ink:#f0a97f;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--ground); color: var(--ink);
+    font-family: var(--sans); line-height: 1.55; -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 780px; margin: 0 auto; padding: clamp(24px,5vw,56px) clamp(16px,4vw,32px) 72px; }
+
+  .eyebrow { font-family: var(--mono); font-size: 12px; letter-spacing: .2em; text-transform: uppercase; color: var(--a-orch); font-weight: 600; margin: 0 0 12px; }
+  h1 { font-size: clamp(27px,5.5vw,42px); line-height: 1.08; letter-spacing: -.02em; margin: 0 0 14px; font-weight: 800; text-wrap: balance; }
+  .sub { font-size: clamp(14px,2.2vw,16px); color: var(--muted); margin: 0; max-width: 56ch; }
+  .sub code { font-family: var(--mono); font-size: .9em; color: var(--a-orch); }
+
+  /* ---- legend ---- */
+  .legend { display: grid; grid-template-columns: repeat(2,1fr); gap: 10px; margin: 26px 0 8px; }
+  @media (max-width: 560px){ .legend { grid-template-columns: 1fr; } }
+  .lg { display: flex; gap: 11px; align-items: flex-start; background: var(--panel); border: 1px solid var(--line); border-radius: 11px; padding: 11px 13px; }
+  .lg .sw { width: 12px; height: 12px; border-radius: 4px; margin-top: 4px; flex: none; }
+  .lg .nm { font-weight: 700; font-size: 13.5px; }
+  .lg .ro { font-size: 12px; color: var(--muted); }
+  .sw.human{background:var(--a-human)} .sw.orch{background:var(--a-orch)}
+  .sw.agent{background:var(--a-agent)} .sw.ci{background:var(--a-ci)}
+
+  /* ---- flow ---- */
+  .flow { margin-top: 20px; }
+  .node { position: relative; display: flex; gap: 0; background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
+  .node .bar { width: 6px; flex: none; background: var(--c, var(--line-strong)); }
+  .node.dual .bar { background: linear-gradient(var(--c), var(--c2)); }
+  .node .body { padding: 13px 16px; flex: 1; min-width: 0; }
+  .node .top { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 5px; }
+  .phase { font-family: var(--mono); font-size: 10.5px; letter-spacing: .05em; text-transform: uppercase; color: var(--faint); border: 1px solid var(--line); border-radius: 5px; padding: 1px 7px; }
+  .chip { font-family: var(--mono); font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 20px; white-space: nowrap; }
+  .chip.human{color:var(--a-human);background:var(--a-human-s)} .chip.orch{color:var(--a-orch);background:var(--a-orch-s)}
+  .chip.agent{color:var(--a-agent);background:var(--a-agent-s)} .chip.ci{color:var(--a-ci);background:var(--a-ci-s)}
+  .node h3 { margin: 0; font-size: 16.5px; font-weight: 700; letter-spacing: -.01em; text-wrap: balance; }
+  .node .d { margin: 4px 0 0; font-size: 13px; color: var(--muted); }
+  .node .out { margin-top: 8px; font-family: var(--mono); font-size: 11px; color: var(--faint); }
+  .node .out b { color: var(--ink); font-weight: 600; }
+
+  .node.actor-human { --c: var(--a-human); }
+  .node.actor-orch  { --c: var(--a-orch); }
+  .node.actor-agent { --c: var(--a-agent); }
+  .node.actor-ci    { --c: var(--a-ci); }
+
+  /* gate style */
+  .node.gate { border-style: dashed; border-color: var(--line-strong); background: var(--panel-2); }
+  .node.gate .phase { color: var(--a-human); border-color: color-mix(in srgb, var(--a-human) 40%, transparent); }
+  .badge-row { display: flex; gap: 7px; flex-wrap: wrap; margin-top: 9px; }
+  .lp { font-size: 11.5px; font-weight: 600; padding: 3px 9px; border-radius: 7px; display: inline-flex; align-items: center; gap: 5px; }
+  .lp.back { color: var(--stop-ink); background: color-mix(in srgb, var(--stop) 15%, transparent); }
+  .lp.pass { color: var(--a-orch); background: var(--a-orch-s); }
+  .lp.skip { color: var(--faint); background: var(--panel); border: 1px solid var(--line); }
+
+  /* connector */
+  .conn { display: flex; justify-content: center; align-items: center; height: 26px; color: var(--line-strong); }
+  .conn svg { width: 16px; height: 26px; display: block; }
+
+  /* automation strip */
+  .auto { margin-top: 26px; border: 1px dashed color-mix(in srgb, var(--a-ci) 45%, var(--line)); border-radius: var(--radius); background: color-mix(in srgb, var(--a-ci-s) 55%, var(--panel)); padding: 14px 16px; }
+  .auto .h { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 13.5px; }
+  .auto .h .chip { flex: none; }
+  .auto ul { margin: 8px 0 0; padding-left: 18px; font-size: 12.5px; color: var(--muted); }
+  .auto li { margin: 2px 0; }
+  .auto code { font-family: var(--mono); font-size: .92em; color: var(--ink); }
+
+  /* ralph alt path */
+  .alt { margin-top: 22px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel); padding: 18px; }
+  .alt .h { font-family: var(--mono); font-weight: 700; color: var(--a-orch); font-size: 14px; }
+  .alt .hd { font-size: 12.5px; color: var(--muted); margin: 3px 0 14px; }
+  .cyc { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .cyc .st { flex: 1 1 120px; min-width: 0; border-radius: 9px; padding: 9px 11px; font-size: 12.5px; text-align: center; border: 1px solid var(--line); background: var(--panel-2); }
+  .cyc .st .who { display: block; font-family: var(--mono); font-size: 10px; margin-bottom: 3px; }
+  .cyc .st.ci .who{color:var(--a-ci)} .cyc .st.orch .who{color:var(--a-orch)} .cyc .st.agent .who{color:var(--a-agent)}
+  .cyc .ar { color: var(--faint); font-size: 13px; flex: none; }
+  .cyc .st.end { background: var(--a-orch-s); border-color: color-mix(in srgb,var(--a-orch) 30%, transparent); color: var(--a-orch); font-weight: 700; flex-basis: 90px; }
+  .loopnote { margin-top: 10px; font-size: 12px; color: var(--stop-ink); }
+
+  footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid var(--line); color: var(--muted); font-size: 12.5px; }
+  footer b { color: var(--ink); }
+</style>
+
+<div class="wrap">
+
+  <p class="eyebrow">Claude OS · 작업 흐름 · 책임 주체</p>
+  <h1>요청 하나가 흘러가는 길</h1>
+  <p class="sub"><code>/os</code>가 개발 요청을 받아 완료까지 옮기는 순서와, <b>각 단계를 누가 책임지는가</b>(사람 · AI 조율 · AI 실무 · 자동화)를 색으로 구분했다. 색이 바뀌는 곳이 곧 <b>인계 지점</b>이다.</p>
+
+  <div class="legend">
+    <div class="lg"><span class="sw human"></span><div><div class="nm">🙋 사람</div><div class="ro">요청·인터뷰 답변·되돌리기 비싼 결정·수용·커밋 승인</div></div></div>
+    <div class="lg"><span class="sw orch"></span><div><div class="nm">🧭 AI 오케스트레이터 <code>/os</code></div><div class="ro">얇은 조율 — 라우팅·위임·게이트 판정·상태 기록</div></div></div>
+    <div class="lg"><span class="sw agent"></span><div><div class="nm">🤖 AI 서브에이전트</div><div class="ro">무거운 실무 — 파악·구현·검증·리뷰·문서화</div></div></div>
+    <div class="lg"><span class="sw ci"></span><div><div class="nm">⚙️ CI · 자동화</div><div class="ro">테스트 실행·커버리지 측정·훅·원격 push</div></div></div>
+  </div>
+
+  <div class="flow">
+
+    <div class="node actor-human"><div class="bar"></div><div class="body">
+      <div class="top"><span class="phase">접수</span><span class="chip human">🙋 사람</span></div>
+      <h3>기능 구현 요청 접수</h3>
+      <p class="d">개발 요청 또는 슬래시 명령(<code>/os …</code>)으로 시작한다.</p>
+    </div></div>
+
+    <div class="conn"><svg viewBox="0 0 16 26"><path d="M8 0V20" stroke="currentColor" stroke-width="1.5" fill="none"/><path d="M3 18l5 6 5-6" stroke="currentColor" stroke-width="1.5" fill="none"/></svg></div>
+
+    <div class="node actor-orch"><div class="bar"></div><div class="body">
+      <div class="top"><span class="phase">라우팅</span><span class="chip orch">🧭 오케스트레이터</span></div>
+      <h3>모호하면 인터뷰로 보낼지 판단</h3>
+      <p class="d">요구사항이 이미 명확하면 이 단계와 인터뷰를 건너뛴다.</p>
+      <div class="badge-row"><span class="lp skip">명확함 → 결정 게이트로 직행</span></div>
+    </div></div>
+
+    <div class="conn"><svg viewBox="0 0 16 26"><path d="M8 0V20" stroke="currentColor" stroke-width="1.5" fill="none"/><path d="M3 18l5 6 5-6" stroke="currentColor" stroke-width="1.5" fill="none"/></svg></div>
+
+    <div class="node actor-human dual" style="--c2:var(--a-orch)"><div class="bar"></div><div class="body">
+      <div class="top"><span class="phase">전처리 · /interview</span><span class="chip orch">🧭 AI 질문</span><span class="chip human">🙋 사람 답변</span></div>
+      <h3>세부 기능에 대한 인터뷰</h3>
+      <p class="d">AI가 입력·출력·경계·예외를 묻고 사람이 답해 모호함을 없앤다.</p>
+      <div class="out">산출 · <b>state.md 씨앗(계약서)</b></div>
+    </div></div>
+
+    <div class="conn"><svg viewBox="0 0 16 26"><path d="M8 0V20" stroke="currentColor" stroke-width="1.5" fill="none"/><path d="M3 18l5 6 5-6" stroke="currentColor" stroke-width="1.5" fill="none"/></svg></div>
+
+    <div class="node gate actor-human"><div class="bar"></div><div class="body">
+      <div class="top"><span class="phase">🚦 결정 게이트 ①</span><span class="chip human">🙋 사람</span></div>
+      <h3>개발 시작 전, 회색지대 설계 결정 승인</h3>
+      <p class="d">AI가 <code>DECISIONS.md</code>를 먼저 조회해 후보를 제시하면, 사람이 confirm/override 한다. (API 계약·toolchain·도메인 정밀도 등 되돌리기 비싼 것만)</p>
+    </div></div>
+
+    <div class="conn"><svg viewBox="0 0 16 26"><path d="M8 0V20" stroke="currentColor" stroke-width="1.5" fill="none"/><path d="M3 18l5 6 5-6" stroke="currentColor" stroke-width="1.5" fill="none"/></svg></div>
+
+    <div class="node actor-agent"><div class="bar"></div><div class="body">
+      <div class="top"><span class="phase">1단계</span><span class="chip agent">🤖 os-mapper</span></div>
+      <h3>현재 코드 컨벤션·재사용 자산 확인</h3>
+      <p class="d">구조·네이밍·테스트 관행을 조사하고 재사용 가능한 기존 코드를 목록화한다.</p>
+      <div class="out">산출 · <b>CONVENTIONS.md · REUSE.md</b></div>
+    </div></div>
+
+    <div class="conn"><svg viewBox="0 0 16 26"><path d="M8 0V20" stroke="currentColor" stroke-width="1.5" fill="none"/><path d="M3 18l5 6 5-6" stroke="currentColor" stroke-width="1.5" fill="none"/></svg></div>
+
+    <div class="node actor-agent"><div class="bar"></div><div class="body">
+      <div class="top"><span class="phase">2단계</span><span class="chip agent">🤖 os-developer</span></div>
+      <h3>재사용 우선 구현 + 단위·통합 테스트 작성</h3>
+      <p class="d"><code>REUSE.md</code>를 먼저 뒤져 기존 자산을 활용하고, 기능 코드와 테스트를 함께 만든다.</p>
+      <div class="out">산출 · <b>기능 코드 + 단위·통합 테스트</b></div>
+    </div></div>
+
+    <div class="conn"><svg viewBox="0 0 16 26"><path d="M8 0V20" stroke="currentColor" stroke-width="1.5" fill="none"/><path d="M3 18l5 6 5-6" stroke="currentColor" stroke-width="1.5" fill="none"/></svg></div>
+
+    <div class="node gate actor-agent dual" style="--c2:var(--a-ci)"><div class="bar"></div><div class="body">
+      <div class="top"><span class="phase">3단계 · 🚦 초록불 게이트</span><span class="chip agent">🤖 os-verifier</span><span class="chip ci">⚙️ gradle · JaCoCo</span></div>
+      <h3>테스트 검증 루프</h3>
+      <p class="d">CI가 전체 테스트를 실행하고, os-verifier가 실패 원인을 분석해 코드/테스트를 고친다.</p>
+      <div class="badge-row"><span class="lp back">❌ 실패 → ↺ 수정·재실행</span><span class="lp pass">✅ 모두 green → 다음</span></div>
+    </div></div>
+
+    <div class="conn"><svg viewBox="0 0 16 26"><path d="M8 0V20" stroke="currentColor" stroke-width="1.5" fill="none"/><path d="M3 18l5 6 5-6" stroke="currentColor" stroke-width="1.5" fill="none"/></svg></div>
+
+    <div class="node gate actor-agent"><div class="bar"></div><div class="body">
+      <div class="top"><span class="phase">🚦 리뷰 게이트</span><span class="chip agent">🤖 /code-review</span></div>
+      <h3>코드 품질·재사용 준수·놓친 엣지케이스 점검</h3>
+      <p class="d">green이 "의도대로 도는가"만 보므로, 품질·설계는 별도 리뷰가 본다. (새 에이전트 없이 기존 스킬 재사용)</p>
+      <div class="badge-row"><span class="lp back">⛔ 블로킹 이슈 → 2단계로</span><span class="lp pass">✅ 경미/없음 → 다음</span></div>
+    </div></div>
+
+    <div class="conn"><svg viewBox="0 0 16 26"><path d="M8 0V20" stroke="currentColor" stroke-width="1.5" fill="none"/><path d="M3 18l5 6 5-6" stroke="currentColor" stroke-width="1.5" fill="none"/></svg></div>
+
+    <div class="node actor-agent"><div class="bar"></div><div class="body">
+      <div class="top"><span class="phase">4단계</span><span class="chip agent">🤖 os-documenter</span></div>
+      <h3>문서화 — docs + HTTP/API</h3>
+      <p class="d">검증된 기능의 사용법·결정·제약을 문서화하고, API 변경이 있으면 HTTP 문서를 갱신한다.</p>
+      <div class="out">산출 · <b>docs/ · HTTP 문서</b></div>
+    </div></div>
+
+    <div class="conn"><svg viewBox="0 0 16 26"><path d="M8 0V20" stroke="currentColor" stroke-width="1.5" fill="none"/><path d="M3 18l5 6 5-6" stroke="currentColor" stroke-width="1.5" fill="none"/></svg></div>
+
+    <div class="node gate actor-human"><div class="bar"></div><div class="body">
+      <div class="top"><span class="phase">🚦 수용 게이트 ②</span><span class="chip human">🙋 사람</span></div>
+      <h3>의도 일치·누락 없음 확인</h3>
+      <p class="d">테스트 green은 "AI의 해석"을 검증했을 뿐 — "이게 당신이 원한 그것이 맞나"는 사람만 안다.</p>
+      <div class="badge-row"><span class="lp back">✏️ 수정 요청 → 해당 단계로</span><span class="lp pass">✅ 수용 → 완료</span></div>
+    </div></div>
+
+    <div class="conn"><svg viewBox="0 0 16 26"><path d="M8 0V20" stroke="currentColor" stroke-width="1.5" fill="none"/><path d="M3 18l5 6 5-6" stroke="currentColor" stroke-width="1.5" fill="none"/></svg></div>
+
+    <div class="node actor-human dual" style="--c2:var(--a-ci)"><div class="bar"></div><div class="body">
+      <div class="top"><span class="phase">완료</span><span class="chip human">🙋 사람 승인</span><span class="chip ci">⚙️ /commit · push</span></div>
+      <h3>커밋 · 원격 푸시</h3>
+      <p class="d">사람이 최종 승인하면 <code>/commit</code>이 의미 단위로 커밋하고 원격에 올린다.</p>
+    </div></div>
+
+  </div>
+
+  <!-- 상시 자동화 -->
+  <div class="auto">
+    <div class="h"><span class="chip ci">⚙️ 상시 자동화</span> 사람이 부르지 않아도 배경에서 도는 훅</div>
+    <ul>
+      <li><code>os-resume-notice.sh</code> — 세션 시작 시 <code>state.md</code>를 읽어 "진행 중 작업 있음"을 알려 이어가게 한다.</li>
+      <li><code>count-requests.sh</code> — 매 요청마다 호출 횟수를 집계한다(<code>/skill-stat</code>이 소비).</li>
+    </ul>
+  </div>
+
+  <!-- /ralph 대체 경로 -->
+  <div class="alt">
+    <div class="h">/ralph — 대체 경로 (지표 수렴)</div>
+    <div class="hd">"feature 완성"이 아니라 "지표를 목표값까지"일 때. 위와 같은 오케스트레이터·에이전트가 <b>측정↔개선</b>을 반복한다.</div>
+    <div class="cyc">
+      <div class="st ci"><span class="who">⚙️ CI 측정</span>커버리지 %</div>
+      <span class="ar">→</span>
+      <div class="st orch"><span class="who">🧭 판정</span>목표 도달?</div>
+      <span class="ar">→</span>
+      <div class="st agent"><span class="who">🤖 os-developer</span>테스트 추가</div>
+      <span class="ar">↺</span>
+      <div class="st end">converged</div>
+    </div>
+    <div class="loopnote">↺ 목표 미달이면 측정으로 되돌아가 반복 · 회귀(테스트 깨짐)면 롤백 · 예산·정체면 사람에게 에스컬레이트</div>
+  </div>
+
+  <footer>
+    이 그림은 OS <b>작업 흐름</b>의 스냅샷이다. 단계·게이트·책임 주체가 바뀌면 갱신한다.<br>
+    부품 배선은 <b>CONTEXT-MAP.md</b>, 단계 규칙·DoD는 <b>OS.md</b>, 반복 엔진의 추상은 <b>CORE-LOOP.md</b>를 본다.
+  </footer>
+
+</div>

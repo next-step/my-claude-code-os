@@ -1,5 +1,6 @@
 plugins {
     `java-library`
+    jacoco
 }
 
 group = "ai.genesislab"
@@ -32,5 +33,17 @@ tasks.test {
     useJUnitPlatform()
     testLogging {
         events("passed", "skipped", "failed")
+    }
+    // 테스트가 끝나면 커버리지 리포트를 자동 생성한다(랄프 루프의 "측정" 단계가 소비).
+    finalizedBy(tasks.jacocoTestReport)
+}
+
+tasks.jacocoTestReport {
+    dependsOn(tasks.test)
+    reports {
+        // /ralph 스킬이 파싱하는 지표 소스. CSV는 라인/브랜치 커버리지를 기계가 읽기 쉽게 준다.
+        csv.required.set(true)
+        html.required.set(true)
+        xml.required.set(false)
     }
 }

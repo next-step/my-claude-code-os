@@ -8,9 +8,16 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import ai.genesislab.testutil.UtilityClasses;
+import java.security.GeneralSecurityException;
+import java.security.NoSuchAlgorithmException;
+import java.security.Provider;
+import java.security.Security;
+import java.util.ArrayList;
 import java.util.Base64;
+import java.util.List;
 import javax.crypto.AEADBadTagException;
 import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -48,6 +55,36 @@ class AesGcmCipherTest {
             assertNotEquals(
                     Base64.getEncoder().encodeToString(first.getEncoded()),
                     Base64.getEncoder().encodeToString(second.getEncoded()));
+        }
+
+        @Test
+        @DisplayName("예외: AES KeyGenerator를 쓸 수 없으면 CryptoException(NoSuchAlgorithmException 원인)")
+        void generateKey_whenAesUnavailable_throwsCryptoException() {
+            // generateKey()의 방어적 catch 경로(NoSuchAlgorithmException → CryptoException 래핑)를 실행한다.
+            // 표준 JVM에서는 AES가 항상 존재하므로, 이 경로를 재현하려면 KeyGenerator.AES 서비스를 제공하는
+            // JCE 프로바이더를 일시적으로 제거해야 한다. 전역 상태를 건드리므로 finally에서 반드시 복원한다
+            // (프로덕션 코드는 수정하지 않고, 테스트 실행 중에만 프로바이더 등록을 조정).
+            List<Provider> removed = new ArrayList<>();
+            for (Provider provider : Security.getProviders()) {
+                if (provider.getService("KeyGenerator", AesGcmCipher.KEY_ALGORITHM) != null) {
+                    removed.add(provider);
+                }
+            }
+
+            try {
+                for (Provider provider : removed) {
+                    Security.removeProvider(provider.getName());
+                }
+
+                CryptoException ex = assertThrows(CryptoException.class, AesGcmCipher::generateKey);
+                assertInstanceOf(NoSuchAlgorithmException.class, ex.getCause(),
+                        "AES 알고리즘 부재는 NoSuchAlgorithmException을 원인으로 보존해야 한다");
+            } finally {
+                // 원상 복구: 제거한 프로바이더를 모두 되돌린다(다른 테스트에 영향 없도록).
+                for (Provider provider : removed) {
+                    Security.addProvider(provider);
+                }
+            }
         }
     }
 
@@ -94,6 +131,20 @@ class AesGcmCipherTest {
             IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
                     () -> AesGcmCipher.encrypt("hello", null));
             assertEquals(AesGcmCipher.NULL_KEY_MESSAGE, ex.getMessage());
+        }
+
+        @Test
+        @DisplayName("예외: 형식이 맞지만 유효하지 않은 키(길이 오류)는 CryptoException(GeneralSecurityException 원인)")
+        void encrypt_invalidKey_throwsCryptoException() {
+            // null이 아니어서 인자 검증은 통과하지만 AES 유효 길이(16/24/32B)가 아닌 키.
+            // cipher.init 단계에서 InvalidKeyException(=GeneralSecurityException)이 나고,
+            // encrypt의 방어적 catch가 이를 CryptoException으로 원인 보존 래핑한다.
+            SecretKey invalidKey = new SecretKeySpec(new byte[7], AesGcmCipher.KEY_ALGORITHM);
+
+            CryptoException ex = assertThrows(CryptoException.class,
+                    () -> AesGcmCipher.encrypt("hello", invalidKey));
+            assertInstanceOf(GeneralSecurityException.class, ex.getCause(),
+                    "암호화 실패는 보안 예외를 원인으로 보존해야 한다");
         }
     }
 

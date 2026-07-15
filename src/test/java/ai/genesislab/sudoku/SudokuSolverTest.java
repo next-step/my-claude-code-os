@@ -275,6 +275,41 @@ class SudokuSolverTest {
             int[][] solution = SudokuSolver.solve(uniquePuzzle());
             assertArrayEquals(uniqueSolution(), solution);
         }
+
+        /**
+         * 형식·모순은 정상이지만 <b>해가 없고</b>, 백트래킹 방문 노드가
+         * {@link SudokuSolver#MAX_SEARCH_NODES}(2,000,000)를 초과하도록 구성된 병리적 희소 보드.
+         *
+         * <p>MRV로도 조기에 모순을 못 찾고 탐색 트리가 폭발하는 입력이라, 노드 가드가 없으면 사실상
+         * hang한다. 이 보드는 결정적으로 노드 예산을 소진시켜 방어적 가드
+         * ({@link SudokuSolver#SEARCH_LIMIT_EXCEEDED_MESSAGE})가 발동되게 한다.</p>
+         */
+        static int[][] guardBustingPuzzle() {
+            return new int[][] {
+                    {0, 0, 0, 0, 0, 0, 0, 0, 0},
+                    {5, 0, 0, 0, 0, 0, 0, 0, 0},
+                    {0, 0, 0, 8, 0, 0, 2, 0, 0},
+                    {0, 0, 1, 0, 0, 6, 0, 0, 0},
+                    {0, 6, 0, 0, 0, 2, 0, 5, 0},
+                    {3, 9, 0, 0, 0, 0, 0, 0, 0},
+                    {9, 0, 0, 0, 8, 0, 0, 0, 0},
+                    {0, 0, 0, 0, 6, 0, 0, 0, 0},
+                    {0, 0, 0, 0, 0, 0, 0, 0, 0},
+            };
+        }
+
+        @Test
+        @DisplayName("가드: 탐색 노드가 상한을 초과하는 병리적 입력은 SudokuException(SEARCH_LIMIT_EXCEEDED)")
+        void solve_searchExplodesBeyondNodeLimit_throwsSearchLimitExceeded() {
+            // 노드 가드가 발동하는 실제 경로(--nodeBudget[0] < 0 → throw)를 실행한다.
+            // 이 입력은 형식·모순 정상(→ IllegalArgumentException 아님)이며 해가 없지만, 트리가 폭발해
+            // 2,000,000 노드 예산을 소진하므로 도메인 실패가 아닌 자원 한계로 분류되어야 한다.
+            // 넉넉한 상한(30초)은 회귀로 가드가 사라져 hang하는 경우를 잡기 위한 안전망이다(정상 시 ~2초).
+            SudokuException ex = assertThrows(SudokuException.class,
+                    () -> assertTimeoutPreemptively(Duration.ofSeconds(30),
+                            () -> SudokuSolver.solve(guardBustingPuzzle())));
+            assertEquals(SudokuSolver.SEARCH_LIMIT_EXCEEDED_MESSAGE, ex.getMessage());
+        }
     }
 
     @Test
