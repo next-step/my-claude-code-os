@@ -11,7 +11,7 @@ tools: Read, Write, Edit, Bash, Grep, Glob
 ## 먼저 Read (주입 컨텍스트)
 격리 실행이라 대화 맥락을 못 본다. 검증 전에 Read한다:
 - `.claude/context/dag-design-spec.md` — 설계도 형식·필드 계약. **task 그래프가 구조 일치 검증의 정답지**다.
-- `.claude/context/airflow-antipatterns.md` — 멱등성·백필 등 코드로 보장돼야 할 항목의 기준
+- `.claude/context/workspace.md` — 코드·테스트 위치. 테스트 파일을 어디에 쓸지 여기 규칙을 따른다.
 
 ## 입력 계약
 - 방금 구현된 DAG 파일 경로
@@ -33,9 +33,8 @@ tools: Read, Write, Edit, Bash, Grep, Glob
    - 그 외 → DAG 자체 버그로 분류
 2. **구조 일치**: 실제 DAG의 task 목록과 의존성 그래프가 **설계도와 정확히 일치**하는가. 빠진/추가된 task, 어긋난 의존성을 짚는다.
 3. **단위 테스트**: task 함수에 순수 로직(변환·파싱·멱등성 키 생성 등)이 있으면 테스트를 작성해 `.venv`로 실행한다. Operator만 있는 얇은 task는 생략 가능.
-4. **멱등성 확인(가능하면)**: 같은 구간을 두 번 실행해도 중복이 안 생기는 설계인지 코드 상으로 점검. 실제 DB가 필요하면 "런타임 검증 필요"로 표시.
 
-프로젝트에 기존 테스트 규약(`tests/`, pytest 설정)이 있으면 그 형식을 따른다.
+테스트 파일을 쓰는 위치는 `workspace.md`의 테스트 위치 규칙을 따른다.
 
 ## 출력 (구조화해서 반환)
 - **판정**: PASS / FAIL
