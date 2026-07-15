@@ -9,6 +9,11 @@
 #   덕분에 (1) 폰 응답이 claude -p(~15초) 대신 ~0.7초로 빨라지고
 #         (2) 표시 규칙이 두 곳에 중복되지 않는다.
 #
+#   항목 조회는 notion.sh(curl 동기 POST, 실측 ~0.5s)를 직접 부르지 않고
+#   cache.sh read(로컬 read-model, stale-while-revalidate)를 거친다.
+#   캐시가 신선하면 ~0.01s로 즉시 반환하고, 갱신은 백그라운드로 던지므로
+#   네트워크 왕복이 이 스크립트의 크리티컬 패스에서 완전히 빠진다.
+#
 # 사용법:
 #   list-view.sh             # 전체 (상태별 그룹)
 #   list-view.sh draft       # 특정 상태만 (planned/done 동일)
@@ -19,7 +24,7 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-NOTION="$SCRIPT_DIR/notion.sh"
+CACHE="$SCRIPT_DIR/cache.sh"
 TODAY="$(date +%F)"
 
 arg="${1:-}"
@@ -29,18 +34,18 @@ status_filter=""
 keyword=""
 case "$arg" in
   "")                 ;;                       # 전체
-  draft|planned|done) status_filter="$arg" ;;  # 상태 필터 → DB 단에서 거름
+  draft|planned|done) status_filter="$arg" ;;  # 상태 필터 → jq 단에서 거름
   *)                  keyword="$arg" ;;        # 그 외 → 키워드 검색
 esac
 
 # ── 항목 조회 ──────────────────────────────────────────────
+# cache.sh는 상태 인자를 받지 않고 항상 전체를 반환하므로,
+# 상태 필터는 (키워드 필터와 마찬가지로) jq 단에서 거른다.
+items="$("$CACHE" read)"
 if [[ -n "$status_filter" ]]; then
-  items="$("$NOTION" read "$status_filter")"
-else
-  items="$("$NOTION" read)"
-  if [[ -n "$keyword" ]]; then
-    items="$(jq --arg k "$keyword" '[.[] | select(.title // "" | contains($k))]' <<<"$items")"
-  fi
+  items="$(jq --arg s "$status_filter" '[.[] | select(.status==$s)]' <<<"$items")"
+elif [[ -n "$keyword" ]]; then
+  items="$(jq --arg k "$keyword" '[.[] | select(.title // "" | contains($k))]' <<<"$items")"
 fi
 
 count="$(jq 'length' <<<"$items")"
@@ -66,7 +71,7 @@ fi
 
 # ── 상태별 그룹핑 + 포맷 (표시 규칙의 단일 출처) ────────────
 #   - 흐름 순서 draft → planned → done 으로 묶는다
-#   - 각 그룹 내부는 notion.sh가 캡처일 오래된 순으로 정렬해 반환
+#   - 각 그룹 내부는 cache.sh가 캡처일 오래된 순으로 정렬해 반환
 #   - 번호는 그룹을 가로질러 연속(1,2,3,…)
 #   - 비어 있는 그룹은 출력하지 않는다
 jq -r --arg today "$TODAY" --arg header "$header" '
