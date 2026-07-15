@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+# ─────────────────────────────────────────────────────────────
+# pre-commit — 드리프트 방지 게이트
+#
+# 매 커밋 직전에 결정적 테스트(L1+L2)를 돌려, 정본이 실제 상태와 어긋난 채
+# 커밋되는 것을 구조적으로 막는다. L1 이 잡는 대표 드리프트:
+#   - 끊어진 참조 링크 (파일명 바꿨는데 참조 안 고침)      — lint.sh
+#   - 정본 주입 배선 끊김 / 고아 정본 / 지도 드리프트        — inject.sh
+#   - Eager 상주 정본 크기 회귀                           — context-budget.sh
+# L2 는 detect-todo.js 훅의 stdin→stdout 계약을 검증한다.
+#
+# 왜 L1+L2 만 — L3(smoke)는 claude -p·Notion 자격증명이 필요해 느리고
+# 비결정적이라 매 커밋 게이트엔 부적합하다. L1+L2 는 ~1초, 외부 의존 없음.
+#
+# 재현성 — 이 훅은 .git/hooks(커밋 안 됨)가 아니라 추적되는 .claude/githooks 에
+# 있고, git 의 core.hooksPath 로 연결된다. 설치: bash .claude/githooks/install.sh
+#
+# 우회 — 긴급 시 'git commit --no-verify' 로 이 게이트를 건너뛸 수 있다.
+# ─────────────────────────────────────────────────────────────
+set -uo pipefail
+
+# 훅은 저장소 루트에서 실행되지만, 안전하게 명시적으로 이동한다.
+ROOT="$(git rev-parse --show-toplevel)"
+cd "$ROOT" || exit 1
+
+echo "▶ pre-commit: 드리프트 게이트 (L1+L2) 실행 중…"
+
+if bash run-tests.sh l1 l2; then
+  echo "✓ 게이트 통과 — 커밋 진행"
+  exit 0
+else
+  echo ""
+  echo "✗ 드리프트 게이트 실패 — 커밋을 막았습니다."
+  echo "  위 실패 항목을 고친 뒤 다시 커밋하세요."
+  echo "  (정말 우회해야 하면: git commit --no-verify)"
+  exit 1
+fi
