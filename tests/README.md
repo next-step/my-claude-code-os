@@ -81,6 +81,18 @@
 
 `claude` CLI·`notion.json`·`jq` 중 하나라도 없으면 **SKIP**(실패 아님) → CI 에서 안전.
 
+## 별도: 주입 효과 A/B 실험 (`ab-injection/`)
+
+위 L1~L3 이 정본 주입의 **배선·크기**를 정적으로 게이트한다면, [`ab-injection/`](./ab-injection/)
+는 그 배선이 **스킬 동작에 미치는 효과**를 통제 실험으로 잰다 (게이트가 아닌 1회성 측정 기록).
+
+- **무엇을** — 분류 정본(`categories.md`) 주입 有無(Arm A/B)에서 같은 모델·입력의 분류 동작 대조.
+- **결과** — 정확도 50.0%→**97.2%**, 6종 어휘 준수 50.0%→**100%**, 3회 일관성 58.3%→**91.7%**.
+- **재현** — `bash tests/ab-injection/score.sh` (원자료 `raw-runs.tsv` → 지표 재계산). 상세는
+  [`ab-injection/README.md`](./ab-injection/README.md).
+- **inject.sh 와의 관계** — inject 는 "정본이 배선에 걸렸나"(존재), ab-injection 은 "그래서
+  동작이 달라지나"(효과). 상보적이다.
+
 ## CI
 
 `.github/workflows/ci.yml` 가 push·PR 마다 **L1+L2** 를 돌린다.
