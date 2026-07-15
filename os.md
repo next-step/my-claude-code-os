@@ -35,6 +35,10 @@
 | `05_reference/investing-knowledge.md` | 참조(연 단위) | 투자 도메인 지식(ETF·지수·매크로 해석 프레임) | ② 항상 참조 | Q&A 인터뷰로 확정 |
 | `05_reference/dca-playbook.md` | 참조(반기 단위) | 적립식 실행 절차(리밸런싱·하락장·세제 캘린더) | ② 항상 참조 | Q&A 인터뷰로 확정 |
 | `prompts/daily-advice-prompt.md` | 참조 | 데일리 조언 프롬프트 | ② | 사용자 명시 |
+| `06_retrospect/lessons.md` | 로그(append) | ⑤ 세션 회고에서 얻은 일반화된 배움 | SessionStart 훅(최근 N) | ⑤ |
+| `06_retrospect/issues.md` | 로그(상태) | ⑤ 미해결 개선 이슈(열림/해결) | SessionStart 훅(열림) | ⑤ |
+| `06_retrospect/_template.md` | 양식(불변) | 세션 회고 작업 양식 | ⑤ | 사용자 명시 |
+| `06_retrospect/LOOP-1P.md` | 문서(요약) | ⑤ 회고 루프 1페이지 요약(흐름·구성·한계·확장안) | 필요시 | ⑤ 구조 변경시 |
 
 ---
 
@@ -51,6 +55,24 @@
 | ② 데일리 조언 | AI | profile+holdings+watchlist+시장데이터 | 개인화 분석 | `04_daily/YYYY-MM-DD.md` |
 | ③ 실행 | **사람** | 데일리 조언 | 매수/매도 결정·주문 | (체결 결과) |
 | ④ 학습·기록 | AI | 체결 결과·결과 복기 | 일지화·패턴 추출 | `holdings`+`trade-journal` 갱신, 월말 리뷰 |
+
+### 메타 루프 ⑤ — 시스템 회고 (매일 루프를 감싸는 축적 고리)
+
+①②③④가 *투자*를 다룬다면, ⑤는 **stock-os 자체**를 세션마다 한 뼘 개선한다. 매매 성과 회고(④ 월말)
+와 별개인 **OS·협업 개선 루프**다.
+
+```
+[SessionStart 훅]──주입──▶  세션 작업(①②③④)  ──세션 끝──▶  /retrospect (⑤)
+   ▲ 열린 이슈+최근 lessons                                   │ 안전한 1건 즉시 개선
+   │                                                          │ 이슈 기록/해결·lesson 누적
+   └──────────────────── 다음 세션에 되먹임 ◀──────────────────┘
+```
+
+- 세션 끝 `/retrospect`(`skills/retrospect`)가 **최소 1개 변화**(즉시 수정 또는 신규 lesson)를 남기고
+  `06_retrospect/`에 축적한다. **메인 컨텍스트 스킬**이다(세션 맥락은 메인만 알므로 subagent 아님).
+- `SessionStart` 훅(`hooks/session-start-context.py`)이 다음 세션 시작에 **열린 이슈 + 최근 lessons**를
+  자동 주입해 고리를 닫는다 → 이슈가 하나씩 닫히며 OS가 수렴·복리 축적된다.
+- 루프 1P 요약: `06_retrospect/LOOP-1P.md` (흐름·구성요소·가드레일·현재 한계·확장안 A/B/C).
 
 ---
 
@@ -134,6 +156,7 @@
 - 매매 기록 → `holdings` + `trade-journal` 갱신
 - 성향 인터뷰 → `investor-profile` 채우기
 - 월말 복기 → `trade-journal` 하단 월간 리뷰
+- 세션 종료 회고(OS 개선·축적) → `/retrospect` 스킬 (⑤)
 
 ---
 
@@ -145,5 +168,7 @@
 - 새 기록 항목 → ③④의 상태 파일 스키마 확장.
 - 새 데이터 소스 → `05_reference/data-sources.md`.
 - 새 불변 규칙 → 본 파일 §6·§7에 추가.
+- 새 교훈/개선 이슈 → `06_retrospect/`(lessons·issues), 세션 끝 `/retrospect`가 축적(메타 루프 ⑤).
+- 새 축적 루프 → `06_retrospect/LOOP-1P.md`의 확장안(A 조언 적중 피드백·B 소스 신뢰도·C watchlist 재정렬) 참고.
 
 > ⚠️ 투자 정보·기록 도구이며 투자 권유·수익 보장이 아니다. 모든 책임은 사용자에게 있다.
