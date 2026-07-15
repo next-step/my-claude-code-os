@@ -1,0 +1,15 @@
+{
+  "hooks": {
+    "SubagentStop": [
+      {
+        "matcher": "^dag-(reviewer|builder|tester)$",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PROJECT_DIR}/.claude/tests/check-injection.sh --hook"
+          }
+        ]
+      }
+    ]
+  }
+}
