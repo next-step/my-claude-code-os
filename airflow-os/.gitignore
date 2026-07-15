@@ -15,3 +15,4 @@ prod-airflow
 ab/answer-key.md
 ab/sample-dag.py
 ab/results.md
+ab/variants/
