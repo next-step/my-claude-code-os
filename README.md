@@ -32,6 +32,7 @@
 | `/remind-when` | remind 자동 알럿이 **몇 시에 실행되는지** crontab에서 조회 | 예: `매일 오후 5시 (17:00)` |
 | `/list [상태] [키워드]` | 저장된 할일을 모두 조회해 상태별로 정리·표시. 상태·키워드로 필터링 가능 | 상태별 그룹으로 전체 표시 / 키워드·상태 필터 |
 | `/skills` | 이 프로젝트에 등록된 스킬을 모두 스캔해 이름·설명·호출 방식과 함께 표시 | 등록된 스킬 카탈로그 한눈에 |
+| `/usage` | 스킬 호출 로그(`skill-invocations.log`)를 분석해 자주 쓰는 스킬·이어 부른 연쇄·유휴 스킬을 표시 | 자기 관찰 루프의 read 절반 (write는 log-skill-invocation 훅) |
 | `/sync-readme` | 실제 `.claude/` 상태(스킬·에이전트·디렉터리)를 스캔해 **이 README를 최신화** | 스킬 추가/삭제 후 문서 자동 동기화 |
 | `/sync-test` | 실제 상태(스킬·훅·데이터 파일)를 스캔해 `tests/` 테스트 커버리지를 최신화 | 스킬·훅 변경 후 tests/ 커버리지 동기화 |
 
@@ -82,10 +83,11 @@
 | Telegram | `_shared/telegram-agent.md` | 알럿 메시지를 텔레그램으로 발송 | remind (발송 채널 교체 지점) |
 | Interviewer | `plan/_interviewer.md` | 할일 구체화 인터뷰 | plan 전용 |
 | Alert | `remind/_alert.md` | 리마인더 메시지 생성 (2일 이상 방치 항목 강조) | remind 전용 |
-| State-Sync Writer | `_shared/state-sync-writer.md` | 받은 사실에 맞춰 대상 문서/테스트를 최소 diff로 갱신 | sync-readme · sync-test (공유) |
+| README Sync | `_shared/readme-sync-agent.md` | 파일시스템 스캔+비교+갱신을 한 창에서 통합 수행 | sync-readme 전용 (단순 전사라 통합) |
+| State-Sync Writer | `_shared/state-sync-writer.md` | 받은 사실에 맞춰 대상 문서/테스트를 최소 diff로 갱신 | sync-test (수집·작성 분리 유지) |
 
 > **공유(`_shared`) vs 로컬 에이전트**
-> `Classifier`·`Telegram`·`State-Sync Writer`처럼 여러 곳에서 공통으로 쓰거나 교체 지점이 되는 일꾼은 `_shared/`에 두어 중복 없이 재사용하고,
+> `Classifier`·`Telegram`·`README Sync`·`State-Sync Writer`처럼 여러 곳에서 공통으로 쓰거나 교체 지점이 되는 일꾼은 `_shared/`에 두어 중복 없이 재사용하고,
 > `Interviewer`·`Alert`처럼 한 스킬에서만 쓰는 일꾼은 해당 스킬 폴더 안에 둔다.
 > 덕분에 알림 채널을 슬랙·이메일로 바꿔도 `telegram-agent.md`만 교체하면 되고, 분류 로직을 바꿔도 `classifier-agent.md`만 교체하면 된다.
 
@@ -102,6 +104,7 @@
 | remind-cron | `hooks/remind-cron.sh` | crontab 매일 17:00 (세션 외부) | `claude -p "/remind"` 실행 → 미처리 draft를 텔레그램으로 알럿 |
 | telegram-listener | `hooks/telegram-listener.sh` | launchd 상시 데몬 + long poll (세션 외부) | 폰에서 봇에 보낸 `/capture` 등 슬래시 명령을 거의 실시간으로 받아 `claude -p`로 실행 → 결과를 폰으로 회신 |
 | restart-listener-on-change | `hooks/restart-listener-on-change.sh` | Claude Code `PostToolUse` 이벤트 (세션 내부, telegram-listener.sh 수정 시) | 파일 변경 시 `launchctl kickstart -k`로 launchd 데몬 즉시 재시작 → 화이트리스트 변경 반영 |
+| log-skill-invocation | `hooks/log-skill-invocation.sh` | Claude Code `PostToolUse` 이벤트 (세션 내부, matcher `Skill`) | Skill 툴로 스킬을 실행할 때마다 호출 사실을 `skill-invocations.log`에 한 줄 append → `/usage`가 읽는 자기 관찰 로그의 write 쪽 |
 
 > **세션 내부 훅 vs 외부 스케줄 훅**
 > `detect-todo`·`restart-listener-on-change`는 Claude Code의 **네이티브 훅**이다. 대화 세션 안에서 사용자가 입력하거나 파일을 수정하는 순간 끼어들어 동작한다.
@@ -115,6 +118,12 @@
 ```
 .claude/
 ├── OS.md                          # 시스템 설계 문서 (원칙·흐름·스키마)
+├── settings.json                  # 공유 hooks 배선 (SessionStart·UserPromptSubmit·PostToolUse)
+├── skill-invocations.log          # 스킬 호출 로그 (런타임, git 제외 — log-skill-invocation 훅이 append)
+├── githooks/                      # git core.hooksPath로 연결하는 커밋 게이트
+│   ├── pre-commit                 # 커밋 직전 결정적 테스트(L1+L2) 실행 → 정본 드리프트 차단
+│   ├── install.sh                 # core.hooksPath를 .claude/githooks로 설정
+│   └── uninstall.sh               # 위 설치 되돌리기
 ├── launchd/
 │   ├── install.sh                 # 세션 밖 자동화 설치: 현재 clone 경로/사용자명으로 plist·crontab 생성
 │   └── uninstall.sh               # 위 설치 되돌리기 (데몬 언로드·plist 삭제·crontab 정리)
@@ -130,19 +139,23 @@
 │   │   └── _alert.md              # 알럿 메시지 에이전트 (로컬)
 │   ├── remind-when/SKILL.md       # /remind-when (crontab 시각 조회)
 │   ├── skills/SKILL.md            # /skills 오케스트레이터 (스킬 카탈로그)
+│   ├── usage/SKILL.md             # /usage (스킬 호출 로그 분석 — 자기 관찰 루프의 read)
 │   ├── sync-readme/SKILL.md       # /sync-readme (실제 상태 스캔 → README 갱신)
 │   ├── sync-test/SKILL.md         # /sync-test (실제 상태 스캔 → tests/ 커버리지 동기화)
 │   └── _shared/
 │       ├── classifier-agent.md    # 카테고리 분류 에이전트 (공유)
 │       ├── list-view.sh           # 할일 목록 조회·표시 단일 소스 (공유)
 │       ├── notion.sh              # Notion DB 직접 호출 헬퍼 (공유, 결정론 스크립트)
-│       ├── state-sync-writer.md   # 정본 동기화 작가 (공유, sync-readme·sync-test 재사용)
-│       └── telegram-agent.md      # 알럿 발송 에이전트 (공유)
+│       ├── readme-sync-agent.md   # README 스캔+갱신 통합 에이전트 (sync-readme 전용)
+│       ├── state-sync-writer.md   # 정본 동기화 작가 (공유, sync-test 갱신 단계)
+│       ├── telegram-agent.md      # 알럿 발송 에이전트 (공유)
+│       └── usage-report.sh        # 스킬 호출 로그 집계 스크립트 (공유, /usage용)
 ├── hooks/
 │   ├── detect-todo.js             # UserPromptSubmit 훅: 자연어 할일 감지 → /capture 제안 힌트
 │   ├── remind-cron.sh             # crontab(매일 17:00)이 호출하는 /remind 실행 스크립트
 │   ├── telegram-listener.sh       # launchd 상시 데몬: 폰의 슬래시 명령 long poll → claude -p 실행 → 회신
-│   └── restart-listener-on-change.sh  # PostToolUse 훅: telegram-listener.sh 수정 시 데몬 재시작
+│   ├── restart-listener-on-change.sh  # PostToolUse 훅: telegram-listener.sh 수정 시 데몬 재시작
+│   └── log-skill-invocation.sh    # PostToolUse 훅(matcher Skill): 스킬 호출을 skill-invocations.log에 기록
 └── data/
     ├── notion.json                # Notion 토큰·DB ID (비밀값, git 제외)
     ├── telegram.json              # 텔레그램 봇 토큰·chat_id (비밀값, git 제외)
