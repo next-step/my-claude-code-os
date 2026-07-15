@@ -47,15 +47,15 @@ CARDS = {
     "rev":   dict(col="workers", cy=478, title="dag-reviewer", sub="컨벤션·안티패턴·진단"),
     # 컨텍스트 (badges = 이걸 읽는 워커/스킬)
     "spec":  dict(col="context", cy=222, title="dag-design-spec", sub="설계도 형식·필드",
-                  badges="IBTR"),
+                  badges="IBTR", cond="R"),
     "anti":  dict(col="context", cy=306, title="airflow-antipatterns", sub="top-level·멱등성 금지 패턴",
-                  badges="IBTR"),
+                  badges="IBR"),
     "know":  dict(col="context", cy=390, title="airflow3-knowledge", sub="버전 종속 지식",
                   badges="BR"),
     "plat":  dict(col="context", cy=474, title="platform", sub="XCom backend · 계보",
                   badges="BR"),
     "work":  dict(col="context", cy=558, title="workspace", sub="코드 위치 · 작업환경",
-                  badges="B"),
+                  badges="BT"),
     "conv":  dict(col="context", cy=650, h=88, title="conventions/  ×8",
                   sub="naming · loading · operators · schedule",
                   sub2="defaults · reuse · dbt · airbyte",
@@ -147,7 +147,10 @@ def build():
         tint = c.get("tint", "#ffffff")
         badges = ""
         if c.get("badges"):
-            chips = "".join(f'<span class="bdg">{b}</span>' for b in c["badges"])
+            cond = c.get("cond", "")
+            chips = "".join(
+                f'<span class="bdg{" cond" if b in cond else ""}">{b}</span>'
+                for b in c["badges"])
             badges = f'<span class="bdgs">{chips}</span>'
         sub = html.escape(c["sub"])
         if c.get("sub2"):
@@ -168,7 +171,9 @@ def build():
         '<span class="gap"></span>'
         '<span class="bdg">B</span><span class="bdg">T</span>'
         '<span class="bdg">R</span><span class="bdg">I</span>'
-        '&nbsp;이 컨텍스트를 읽는 워커 (B dag-builder · T dag-tester · R dag-reviewer · I interview)'
+        '&nbsp;읽는 워커 (B 빌더 · T 테스터 · R 리뷰어 · I 인터뷰)'
+        '<span class="gap"></span>'
+        '<span class="bdg cond">R</span>&nbsp;테두리 = 조건부 주입(검증 모드에서만)'
     ) % (PURPLE, SLATE)
     parts.append(f'<div class="legend">{legend}</div>')
     parts.append('<div class="stamp">기준 2026-07-15 · .claude/ 로컬 자산 · 참조 관계 실측</div>')
@@ -202,6 +207,7 @@ body { background:#eef1f5; font-family:-apple-system,'Helvetica Neue','Apple SD 
   min-width:15px; height:15px; padding:0 3px; border-radius:4px;
   background:#e3f2fd; color:#0284c7; font-size:9.5px; font-weight:700;
   font-family:ui-monospace,Menlo,monospace; }
+.bdg.cond { background:#fff; box-shadow:inset 0 0 0 1px #86c5e6; }
 .legend { position:absolute; left:40px; bottom:28px; font-size:11.5px; color:#6b7686;
   display:flex; align-items:center; }
 .legend .sw { width:14px; height:14px; border-radius:4px; border:1px solid #ccc;
