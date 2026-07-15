@@ -10,6 +10,10 @@ allowed-tools: Read Bash
 지금까지 쌓인 할일을 한눈에 본다.
 capture(생성) → plan(구체화) → done(완료) 흐름 어디에 무엇이 걸려 있는지 상태별로 보여준다.
 
+> **참조 정본**: 이 스킬은 아래 정본을 따른다. 관련 판단 시 먼저 Read한다.
+> - `.claude/context/status-lifecycle.md` — list는 전이 없이 상태별로 조회만 한다
+> - `.claude/context/data-model.md` — 표시하는 필드 스키마 (표시 규칙 자체는 `list-view.sh`)
+
 ## 사용법
 
 ```

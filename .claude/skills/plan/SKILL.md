@@ -9,6 +9,11 @@ allowed-tools: Read Bash Agent AskUserQuestion
 
 쌓인 draft 항목을 하나씩 꺼내 언제·왜·어떻게 할지 구체화한다.
 
+> **참조 정본**: 이 스킬은 아래 정본을 따른다. 관련 판단 시 먼저 Read한다.
+> - `.claude/context/status-lifecycle.md` — plan은 `draft` → `planned` 전이를 담당한다
+> - `.claude/context/data-model.md` — 채우는 필드(recurrence·due_date·time·detail) 스키마
+> - `.claude/context/categories.md` — 구체화 중 카테고리 조정 시 기준
+
 ## 사용법
 
 ```

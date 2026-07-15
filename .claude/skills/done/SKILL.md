@@ -10,6 +10,10 @@ allowed-tools: Read Bash Agent AskUserQuestion
 쌓인 할일 중 끝낸 것을 골라 `done` 상태로 바꾼다.
 capture(생성) → plan(구체화) → **done(완료)** 로 이어지는 상태 흐름의 종착점이다.
 
+> **참조 정본**: 이 스킬은 아래 정본을 따른다. 관련 판단 시 먼저 Read한다.
+> - `.claude/context/status-lifecycle.md` — done은 `draft`·`planned` → `done` 전이를 담당한다
+> - `.claude/context/data-model.md` — 조회/완료가 쓰는 캐시·pending-done 경로
+
 ## 사용법
 
 ```

@@ -9,6 +9,11 @@ allowed-tools: Read Bash
 
 키워드 하나만 던지면 분류부터 저장까지 자동으로 처리한다.
 
+> **참조 정본**: 이 스킬은 아래 정본을 따른다. 관련 판단 시 먼저 Read한다.
+> - `.claude/context/categories.md` — 카테고리 6종 + 분류 규칙 (Step 2)
+> - `.claude/context/data-model.md` — todos 스키마 + 저장 구조 (Step 3)
+> - `.claude/context/status-lifecycle.md` — capture는 `draft`를 생성한다
+
 > **응답 속도 설계 (정직한 한계 포함)**
 > `/capture` 체감 지연 = ① 모델 추론 턴 + ② 저장 네트워크 왕복. 이 스킬 코드로 줄일 수
 > 있는 건 ②와 "모델 턴 수"뿐이고, ①(요청을 이해하고 도구 호출을 발행하는 모델 추론)은
@@ -79,8 +84,8 @@ allowed-tools: Read Bash
 분류 규칙: ① 가장 가까운 카테고리를 고른다. ② 두 카테고리에 걸치면 더 구체적인 쪽
 (예: "헬스장 등록비 납부" → 건강). ③ 확실하지 않으면 기타.
 
-> `_shared/classifier-agent.md`는 이 규칙의 단일 출처로 남겨둔다. 규칙을 바꿀 때는
-> 그 파일과 위 표를 함께 갱신한다.
+> 위 표는 `.claude/context/categories.md`(정본)의 요약이다. 규칙을 바꿀 때는 **정본을
+> 먼저** 고치고, 위 표 · `_shared/classifier-agent.md` · `_shared/classify.sh`를 함께 맞춘다.
 
 ---
 
