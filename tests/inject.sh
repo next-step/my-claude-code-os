@@ -42,7 +42,10 @@ skip() { printf '  \033[33m–\033[0m %s (SKIP)\n' "$1"; }
 
 CLAUDE_MD="CLAUDE.md"
 CTX_DIR=".claude/context"
-CONTEXT_MAP="$CTX_DIR/context-map.md"
+# context-map.md 는 정본이 아니라 정본을 설명하는 도식 문서라 docs/ 로 분리돼 있다
+# (정본 *.md 는 CTX_DIR 에 남는다). §4 표의 소비자·정본 경로는 표 안에서 레포 루트
+# 기준으로 해석하므로, 맵 파일 위치만 여기서 가리키면 된다.
+CONTEXT_MAP="docs/context-map.md"
 CONTEXT_README="$CTX_DIR/README.md"
 
 echo "── L1: 주입검증 (정본 배선 무결성) ─────────────"
