@@ -82,9 +82,10 @@
 | Telegram | `_shared/telegram-agent.md` | 알럿 메시지를 텔레그램으로 발송 | remind (발송 채널 교체 지점) |
 | Interviewer | `plan/_interviewer.md` | 할일 구체화 인터뷰 | plan 전용 |
 | Alert | `remind/_alert.md` | 리마인더 메시지 생성 (2일 이상 방치 항목 강조) | remind 전용 |
+| State-Sync Writer | `_shared/state-sync-writer.md` | 받은 사실에 맞춰 대상 문서/테스트를 최소 diff로 갱신 | sync-readme · sync-test (공유) |
 
 > **공유(`_shared`) vs 로컬 에이전트**
-> `Classifier`·`Telegram`처럼 여러 곳에서 공통으로 쓰거나 교체 지점이 되는 일꾼은 `_shared/`에 두어 중복 없이 재사용하고,
+> `Classifier`·`Telegram`·`State-Sync Writer`처럼 여러 곳에서 공통으로 쓰거나 교체 지점이 되는 일꾼은 `_shared/`에 두어 중복 없이 재사용하고,
 > `Interviewer`·`Alert`처럼 한 스킬에서만 쓰는 일꾼은 해당 스킬 폴더 안에 둔다.
 > 덕분에 알림 채널을 슬랙·이메일로 바꿔도 `telegram-agent.md`만 교체하면 되고, 분류 로직을 바꿔도 `classifier-agent.md`만 교체하면 된다.
 
@@ -135,6 +136,7 @@
 │       ├── classifier-agent.md    # 카테고리 분류 에이전트 (공유)
 │       ├── list-view.sh           # 할일 목록 조회·표시 단일 소스 (공유)
 │       ├── notion.sh              # Notion DB 직접 호출 헬퍼 (공유, 결정론 스크립트)
+│       ├── state-sync-writer.md   # 정본 동기화 작가 (공유, sync-readme·sync-test 재사용)
 │       └── telegram-agent.md      # 알럿 발송 에이전트 (공유)
 ├── hooks/
 │   ├── detect-todo.js             # UserPromptSubmit 훅: 자연어 할일 감지 → /capture 제안 힌트
