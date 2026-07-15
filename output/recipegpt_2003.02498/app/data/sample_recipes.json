@@ -25,5 +25,57 @@
       "1 1/2 cups all purpose flour"
     ],
     "instructions": "Preheat the oven to 350 degrees. Mash the bananas in a bowl. Stir the melted butter into the mashed bananas. Mix in the sugar, egg and vanilla. Sprinkle the baking soda over the mixture and stir. Add the flour and combine. Pour the batter into a greased loaf pan. Bake for 50 minutes until a toothpick comes out clean."
+  },
+  {
+    "id": "guacamole",
+    "title": "fresh guacamole",
+    "ingredients": [
+      "3 ripe avocados",
+      "1 clove garlic",
+      "1 tablespoon lime juice",
+      "2 tablespoons chopped onion",
+      "1 tablespoon chopped cilantro",
+      "1 pinch salt"
+    ],
+    "instructions": "Mash the avocados in a bowl. Add the garlic, lime juice and onion. Stir in the cilantro and season with salt. Blend until it forms a coarse paste. Serve with tortilla chips right before serving."
+  },
+  {
+    "id": "marinara",
+    "title": "simple marinara sauce",
+    "ingredients": [
+      "2 tablespoons olive oil",
+      "3 cloves garlic",
+      "1 can crushed tomatoes",
+      "1 teaspoon dried basil",
+      "1 pinch salt",
+      "1 pinch black pepper"
+    ],
+    "instructions": "Heat the olive oil in a pan. Add the garlic and cook until fragrant. Pour in the crushed tomatoes and stir. Season with basil, salt and pepper. Simmer for 20 minutes until thickened. Serve over pasta."
+  },
+  {
+    "id": "hummus",
+    "title": "classic hummus",
+    "ingredients": [
+      "1 can chickpeas",
+      "2 tablespoons tahini",
+      "1 clove garlic",
+      "2 tablespoons lemon juice",
+      "2 tablespoons olive oil",
+      "1 pinch salt"
+    ],
+    "instructions": "Drain the chickpeas and add to a food processor. Add the tahini, garlic and lemon juice. Pour in the olive oil and pulse until smooth. Season with salt and blend into a paste. Serve drizzled with olive oil."
+  },
+  {
+    "id": "pancakes",
+    "title": "fluffy pancakes",
+    "ingredients": [
+      "1 1/2 cups all purpose flour",
+      "2 tablespoons sugar",
+      "1 teaspoon baking soda",
+      "1 egg",
+      "1 cup milk",
+      "2 tablespoons melted butter"
+    ],
+    "instructions": "Whisk the flour, sugar and baking soda in a bowl. Beat in the egg, milk and melted butter until smooth. Pour batter onto a hot greased griddle. Cook until bubbles form then flip. Cook until golden brown. Serve warm with syrup."
   }
 ]

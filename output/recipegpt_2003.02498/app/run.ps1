@@ -16,9 +16,14 @@ try { & $py -c "import sys; assert sys.version_info>=(3,9)" } catch {
 Write-Host "== Evaluation module (no heavy deps) ==" -ForegroundColor Cyan
 & $py main.py --mode evaluate
 
+Write-Host "`n== Similar-recipe retrieval: BM25 + TF-IDF (no heavy deps) ==" -ForegroundColor Cyan
+& $py main.py --mode retrieve
+
 if ($Gen) {
   Write-Host "`n== Installing generation deps (torch, transformers) ==" -ForegroundColor Cyan
   & $py -m pip install -r requirements.txt
   Write-Host "`n== Real GPT-2 inference: instructions from title+ingredients ==" -ForegroundColor Cyan
   & $py main.py --mode gen-instructions
+  Write-Host "`n== Live perplexity (companion to paper PPL 3.70) ==" -ForegroundColor Cyan
+  & $py main.py --mode perplexity
 }

@@ -13,6 +13,10 @@ fi
 echo "== Evaluation module (no heavy deps) =="
 "$PY" main.py --mode evaluate
 
+echo
+echo "== Similar-recipe retrieval: BM25 + TF-IDF (no heavy deps) =="
+"$PY" main.py --mode retrieve
+
 if [[ "${1:-}" == "--gen" ]]; then
   echo
   echo "== Installing generation deps (torch, transformers) =="
@@ -20,4 +24,7 @@ if [[ "${1:-}" == "--gen" ]]; then
   echo
   echo "== Real GPT-2 inference: instructions from title+ingredients =="
   "$PY" main.py --mode gen-instructions
+  echo
+  echo "== Live perplexity (companion to paper PPL 3.70) =="
+  "$PY" main.py --mode perplexity
 fi
