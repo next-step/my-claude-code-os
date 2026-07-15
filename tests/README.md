@@ -7,6 +7,7 @@
 |------|------|-----------|------|------|
 | **L1** | `tests/lint.sh` | frontmatter·참조 링크 무결성·문법·JSON 스키마 | 결정적·정적 | 즉시 |
 | **L1** | `tests/inject.sh` | 정본 컨텍스트 **주입 배선** 무결성 (Eager @import·고아 정본·지도 드리프트) | 결정적·정적 | 즉시 |
+| **L1** | `tests/context-budget.sh` | Eager 컨텍스트 **크기 회귀** (매 세션 상주 정본의 토큰·줄 예산) | 결정적·정적 | 즉시 |
 | **L2** | `tests/unit.test.js` | `detect-todo.js` 훅의 stdin→stdout 계약 | 결정적·단위 | 즉시 |
 | **L3** | `tests/smoke.sh` | `claude -p "/capture"` → Notion 저장 end-to-end | 비결정적·통합 | 수십 초·자격증명 필요 |
 
@@ -56,6 +57,17 @@
   "파서가 표를 못 찾음" / "열 헤더가 정본 파일과 불일치"로 **명확히** 실패한다(무더기 오탐 대신).
   즉 파싱 취약성 자체는 남되, 깨질 때 혼란스럽지 않게 알린다.
 
+### L1 — 예산검증 (`context-budget.sh`)
+`inject.sh` 가 "Eager 배선이 **존재하는가**"(배선 무결성)를 본다면, `context-budget.sh` 는
+그 Eager 페이로드가 **비대해지지 않았는가**(크기 회귀)를 본다. 상보적이라 겹치지 않는다.
+- **왜 필요한가** — Eager 정본(`CLAUDE.md` + `@import` 대상)은 스킬 실행과 무관하게 **매 세션
+  항상** 컨텍스트 창에 상주한다. 여기 한 줄이 늘면 그 비용을 모든 세션이 영구히 부담한다.
+  "정말 모든 상황에서 필요한가?"를 통과 못 한 내용이 슬그머니 Eager 로 승격되는 것을 막는다.
+- **무엇을 재나** — `@import` 목록을 하드코딩하지 않고 `CLAUDE.md` 에서 동적으로 읽어, Eager
+  대상 전체의 근사 토큰(바이트÷3.5)과 줄 수를 합산한다. Eager import 를 새로 추가하면 자동 포함.
+- **예산** — `EAGER_MAX_TOKENS`(기본 1200, 주 게이트)·`EAGER_MAX_LINES`(기본 80, 보조) 환경변수로
+  조정. 초과하면 실패하며 "Lazy 로 내릴 내용이 없는지 재심사하라"고 안내한다.
+
 ### L2 — 훅 단위 테스트 (`unit.test.js`)
 `detect-todo.js` 는 stdin(JSON)→stdout(JSON|빈출력)인 순수 함수에 가깝다.
 의존성 없이 실제 훅을 실행해 두 계약을 검증한다:
@@ -81,4 +93,6 @@ L3 는 자격증명과 `claude` CLI 가 필요해 CI 에선 생략하고, 로컬
 - **새 데이터 파일**을 쓰면 → `lint.sh` 의 `check_json` 한 줄 추가
 - **새 정본**을 `context/` 에 추가하면 → `inject.sh` 가 자동으로 고아 여부를 검사.
   스킬이 그 정본을 참조하기 시작하면 `context-map §2` 표도 함께 갱신해야 드리프트 검사를 통과한다
-- **정본을 Eager 로 승격**하면 → `inject.sh` 의 검사 1·2·5 대상(현재 `security.md` 하드코딩)을 함께 갱신
+- **정본을 Eager 로 승격**하면 → `inject.sh` 의 검사 1·2·5 대상(현재 `security.md` 하드코딩)을 함께 갱신.
+  또한 `context-budget.sh` 가 Eager 총량을 자동 재계산하니, 예산을 넘기면 상한(`EAGER_MAX_*`) 조정이
+  아니라 **"정말 Eager 여야 하는가"를 먼저 재심사**한다

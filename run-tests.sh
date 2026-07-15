@@ -10,6 +10,7 @@
 # 계층:
 #   L1 (lint)  정적 검증     — frontmatter·링크 무결성·문법·JSON  (빠름, 외부 의존 없음)
 #              + 주입검증    — 정본 컨텍스트 주입 배선 무결성(inject.sh) (빠름, 결정적)
+#              + 예산검증    — Eager 컨텍스트 크기 회귀(context-budget.sh) (빠름, 결정적)
 #   L2 (unit)  훅 단위       — detect-todo.js stdin/stdout        (빠름, 결정적)
 #   L3 (smoke) headless 통합 — claude -p "/capture" → Notion 확인 (느림, 자격증명 필요)
 #
@@ -28,7 +29,9 @@ run_layer() {
   case "$1" in
     l1) bash tests/lint.sh; local r=$?
         bash tests/inject.sh; local ri=$?
-        [[ $r -eq 0 && $ri -ne 0 ]] && r=$ri ;;
+        bash tests/context-budget.sh; local rb=$?
+        [[ $r -eq 0 && $ri -ne 0 ]] && r=$ri
+        [[ $r -eq 0 && $rb -ne 0 ]] && r=$rb ;;
     l2) node tests/unit.test.js;   local r=$? ;;
     l3) bash tests/smoke.sh;       local r=$? ;;
     *)  echo "알 수 없는 계층: $1 (l1|l2|l3)"; return 0 ;;
