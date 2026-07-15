@@ -3,7 +3,7 @@
 이 문서는 **Claude OS**(이 저장소가 만들고 있는 개발 운영 시스템)의 구성요소와 그들이 주고받는 컨텍스트의 **배선도**다.
 `CONVENTIONS.md`가 *애플리케이션 코드*(Java 모듈)의 규칙이라면, 이 문서는 *OS 자체*(`.claude/` 배선 + `docs/` 원장)가 어떻게 맞물려 도는지를 그린다.
 
-> 한 문장 요약: **`/os` 오케스트레이터**가 `OS.md`를 규칙서로 삼아 개발 요청을 **4단계 파이프라인**으로 돌리되, 각 단계를 **전용 서브에이전트**에 위임하고, **DoD 게이트 + 사람 게이트**로 전진을 통제하며, **수명이 다른 4계층 컨텍스트 파일**로 상태와 학습을 파일에 남긴다.
+> 한 문장 요약: **`/os` 오케스트레이터**가 `OS.md`를 규칙서로 삼아 개발 요청을 **4단계 파이프라인**으로 돌리되, 각 단계를 **전용 서브에이전트**에 위임하고, **DoD 게이트 + 사람 게이트**로 전진을 통제하며, **수명이 다른 5계층 컨텍스트 파일**로 상태와 학습을 파일에 남긴다.
 
 ---
 
@@ -28,6 +28,7 @@ graph TB
         COMMIT["/commit"]
         SSTAT["/skill-stat<br/>호출 통계"]
         REVIEW["/code-review<br/>(재사용)"]
+        RETRO["/retrospect<br/>회고 → 교훈 누적 루프"]
     end
 
     subgraph Agents["🤖 서브에이전트 (.claude/agents)"]
@@ -46,6 +47,7 @@ graph TB
         CONV["docs/CONVENTIONS.md<br/>규칙 · 반영구"]
         REUSE["docs/REUSE.md<br/>재사용 카탈로그 · 반영구"]
         DEC["docs/DECISIONS.md<br/>결정 원장 · 영속"]
+        LESS["docs/LESSONS.md<br/>교훈 원장 · 영속"]
         STATE[".claude/os/state.md<br/>작업 계약 · 휘발"]
     end
 
@@ -62,8 +64,11 @@ graph TB
     SSTAT -.reads.-> LOG
 
     MAP -->|writes| CONV & REUSE
+    MAP -.reads.-> LESS
     DEV -.reads.-> REUSE & CONV & DEC
     OS -->|writes| STATE & DEC
+    REQ --> RETRO
+    RETRO -->|writes| LESS
 ```
 
 **요약**
@@ -122,27 +127,30 @@ flowchart LR
 
 ---
 
-## 3. 컨텍스트 4계층 (수명과 학습)
+## 3. 컨텍스트 5계층 (수명과 학습)
 
-에이전트는 서로 대화하지 않는다. 모든 협업은 **수명이 다른 4개 파일**을 통해 일어나고, 아래로 갈수록 수명이 짧아진다.
-위 두 계층(REUSE·DECISIONS)이 **작업을 넘어 누적**되기에 OS가 **작업 간 학습**을 한다.
+에이전트는 서로 대화하지 않는다. 모든 협업은 **수명이 다른 5개 파일**을 통해 일어나고, 아래로 갈수록 수명이 짧아진다.
+가운데 세 계층(REUSE·DECISIONS·LESSONS)이 **작업을 넘어 누적**되기에 OS가 **작업 간 학습**을 한다 — 각각 *코드·정책·경험*을 남긴다.
 
 ```mermaid
 graph TD
     L1["📏 규칙<br/>OS.md · CONVENTIONS.md<br/><i>반영구 — 코드 바뀌면 갱신</i>"]
     L2["📦 재고<br/>REUSE.md<br/><i>반영구 — 스캔마다 전체 갱신</i>"]
     L3["⚖️ 정책<br/>DECISIONS.md<br/><i>영속 — 작업 간 누적</i>"]
-    L4["📄 작업 계약<br/>state.md<br/><i>휘발 — 작업 1건</i>"]
+    L4["🧭 교훈<br/>LESSONS.md<br/><i>영속 — 누적, 해소 시 졸업</i>"]
+    L5["📄 작업 계약<br/>state.md<br/><i>휘발 — 작업 1건</i>"]
 
-    L1 -->|"'어떻게 짜라'"| L4
-    L2 -->|"'이미 있는 것, 갖다 써라'"| L4
-    L3 -->|"'이미 정한 정책, 다시 묻지 마라'"| L4
-    L4 -->|"새 자산·일반화 정책은<br/>다음 작업 스캔/게이트가 흡수 ↑"| L2
+    L1 -->|"'어떻게 짜라'"| L5
+    L2 -->|"'이미 있는 것, 갖다 써라'"| L5
+    L3 -->|"'이미 정한 정책, 다시 묻지 마라'"| L5
+    L4 -->|"'지난번 넘어진 데, 이렇게 피해라'"| L5
+    L5 -->|"새 자산·정책은 다음 스캔/게이트가,<br/>겪은 마찰은 /retrospect가 흡수 ↑"| L2
 
     style L1 fill:#e8f0fe
     style L2 fill:#e6f4ea
     style L3 fill:#fef7e0
-    style L4 fill:#fce8e6
+    style L4 fill:#f3e8fd
+    style L5 fill:#fce8e6
 ```
 
 **소유권 · 읽기/쓰기 매트릭스**
@@ -152,6 +160,7 @@ graph TD
 | `docs/CONVENTIONS.md` | `os-mapper`(1단계) | `os-developer`, `os-documenter` | 반영구 |
 | `docs/REUSE.md` | `os-mapper`(1단계, 전체 overwrite) | `os-developer`(2단계) | 반영구 |
 | `docs/DECISIONS.md` | **오케스트레이터만**(게이트①) | `/os`(게이트 전), `os-developer` | 영속(누적) |
+| `docs/LESSONS.md` | **`/retrospect`만**(회고 루프) | `os-mapper`(1단계, 상기), `/os`(게이트 전) | 영속(누적, 해소 시 졸업) |
 | `.claude/os/state.md` | **오케스트레이터만** | 모든 에이전트(**읽기 전용**) | 휘발(작업 1건) |
 
 > **포인터 주입 원칙**: 오케스트레이터는 요구사항 내용을 프롬프트에 **복사하지 않고** state.md 경로만 가리킨다. 에이전트가 원본을 직접 읽어 **복사 드리프트**를 방지하고, 오케스트레이터는 "얇은 코디네이터"로 남는다.
@@ -190,8 +199,8 @@ stateDiagram-v2
 | **재사용 우선(Reuse-first)** | REUSE.md 카탈로그를 부품 재고로; OS 자신도 `/code-review`를 재사용(새 에이전트 안 만듦) |
 | **테스트로 증명(Test-proven)** | 2단계 단위+통합 필수, 3단계 green 게이트 |
 | **초록불에서만 전진(Green-gate)** | DoD 미충족 시 다음 단계 진입 차단 |
-| **흔적을 남김(Traceable)** | 4계층 컨텍스트 파일 + 단계별 원자적 커밋 |
-| **작업 간 학습** | REUSE(재고)·DECISIONS(정책)가 작업을 넘어 누적 → 다음 작업이 흡수 |
+| **흔적을 남김(Traceable)** | 5계층 컨텍스트 파일 + 단계별 원자적 커밋 |
+| **작업 간 학습** | REUSE(재고)·DECISIONS(정책)·LESSONS(교훈)가 작업을 넘어 누적 → 다음 작업이 흡수 (`/retrospect`가 겪은 마찰을 교훈으로 자산화) |
 | **얇은 코디네이터** | `/os`는 판단·위임·게이트·기록만; 코드는 손대지 않음 |
 
 ---
