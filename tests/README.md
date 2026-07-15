@@ -9,6 +9,7 @@
 | **L1** | `tests/inject.sh` | 정본 컨텍스트 **주입 배선** 무결성 (Eager @import·고아 정본·지도 드리프트) | 결정적·정적 | 즉시 |
 | **L1** | `tests/context-budget.sh` | Eager 컨텍스트 **크기 회귀** (매 세션 상주 정본의 토큰·줄 예산) | 결정적·정적 | 즉시 |
 | **L2** | `tests/unit.test.js` | `detect-todo.js` 훅의 stdin→stdout 계약 | 결정적·단위 | 즉시 |
+| **L2** | `tests/unit-scripts.sh` | 순수 셸 스크립트(`log-skill-invocation.sh`·`usage-report.sh`) 동작 계약 | 결정적·단위 | 즉시 |
 | **L3** | `tests/smoke.sh` | `claude -p "/capture"` → Notion 저장 end-to-end | 비결정적·통합 | 수십 초·자격증명 필요 |
 
 > **왜 이렇게 나눴나:** LLM 흐름까지 매번 돌리면 느리고 비결정적이라 CI 가 불안정해진다.
@@ -74,6 +75,14 @@
 - 할일 뉘앙스 + 명령/질문/슬래시 아님 → **capture 힌트 출력**
 - 그 외(명령·질문·슬래시·무관·빈입력) → **침묵**
 
+### L2 — 순수 셸 스크립트 단위 테스트 (`unit-scripts.sh`)
+자기 관찰 루프를 이루는 두 셸 스크립트는 외부 의존(네트워크·데몬·`claude`)이 없어
+`detect-todo.js` 처럼 결정적으로 검증할 수 있다. 실데이터를 건드리지 않으려고 두
+스크립트가 지원하는 `SKILL_LOG` 환경변수로 임시 로그를 주입해 계약을 확인한다:
+- `log-skill-invocation.sh`(write) — Skill 호출 → `#N 스킬명` append·카운터 증가,
+  비-Skill 호출 → 무기록·exit0, 네임스페이스 스킬명 보존
+- `usage-report.sh`(read) — 빈도·연쇄(`capture → plan`)·유휴 스킬 집계, 빈 로그 안내
+
 ### L3 — headless 통합 스모크 (`smoke.sh`)
 1. 고유 마커 제목으로 `claude -p "/capture <marker>"` 를 실제 실행
 2. `notion.sh read draft` 로 그 항목이 생성·분류됐는지 확인
@@ -100,7 +109,8 @@ L3 는 자격증명과 `claude` CLI 가 필요해 CI 에선 생략하고, 로컬
 
 ## 테스트 추가하기
 
-- **새 훅**을 만들면 → `unit.test.js` 에 케이스 테이블 한 줄 추가
+- **새 훅**을 만들면 → JS 훅은 `unit.test.js` 케이스 테이블에, 외부 의존 없는 순수 셸
+  스크립트는 `unit-scripts.sh` 에 계약 테스트를 추가 (외부 의존이 큰 `.sh` 는 통합/보고 대상)
 - **새 스킬**을 만들면 → L1 이 자동으로 frontmatter·링크를 검사 (별도 작업 불필요)
 - **새 데이터 파일**을 쓰면 → `lint.sh` 의 `check_json` 한 줄 추가
 - **새 정본**을 `context/` 에 추가하면 → `inject.sh` 가 자동으로 고아 여부를 검사.

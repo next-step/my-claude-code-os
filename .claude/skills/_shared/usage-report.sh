@@ -31,7 +31,8 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CLAUDE_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"   # _shared → skills → .claude
-LOG="$CLAUDE_DIR/skill-invocations.log"
+# 로그 경로. 기본은 정본이나, 테스트가 SKILL_LOG 로 픽스처 로그를 주입할 수 있게 허용.
+LOG="${SKILL_LOG:-$CLAUDE_DIR/skill-invocations.log}"
 PAIR_SUGGEST_MIN="${PAIR_SUGGEST_MIN:-3}"
 
 # ── 로그가 없거나 비어 있으면 안내 후 종료 ──────────────────

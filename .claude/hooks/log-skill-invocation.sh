@@ -26,7 +26,9 @@ export PATH="/opt/homebrew/bin:/usr/local/bin:$PATH"
 
 # 스크립트 자기 위치 기준 프로젝트 루트(.claude/hooks → ../..). 절대경로 미사용.
 PROJECT_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
-LOG="$PROJECT_ROOT/.claude/skill-invocations.log"
+# 로그 경로. 기본은 정본 위치이나, 테스트가 SKILL_LOG 로 임시 파일을 주입해
+# 실데이터를 건드리지 않고 동작을 검증할 수 있게 오버라이드를 허용한다.
+LOG="${SKILL_LOG:-$PROJECT_ROOT/.claude/skill-invocations.log}"
 
 # stdin(JSON)에서 스킬명 추출. jq 실패해도 훅이 죽지 않게 방어.
 payload="$(cat)"

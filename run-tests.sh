@@ -32,7 +32,9 @@ run_layer() {
         bash tests/context-budget.sh; local rb=$?
         [[ $r -eq 0 && $ri -ne 0 ]] && r=$ri
         [[ $r -eq 0 && $rb -ne 0 ]] && r=$rb ;;
-    l2) node tests/unit.test.js;   local r=$? ;;
+    l2) node tests/unit.test.js;   local r=$?
+        bash tests/unit-scripts.sh; local r2=$?
+        [[ $r -eq 0 && $r2 -ne 0 ]] && r=$r2 ;;
     l3) bash tests/smoke.sh;       local r=$? ;;
     *)  echo "알 수 없는 계층: $1 (l1|l2|l3)"; return 0 ;;
   esac
