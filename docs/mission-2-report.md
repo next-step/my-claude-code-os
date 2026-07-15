@@ -117,6 +117,6 @@ bash tests/ab-injection/score.sh  # 원자료(raw-runs.tsv) → 지표 재계산
 ### 참고 파일
 
 - 정본 5종 — [`.claude/context/`](../.claude/context/) · 폴더 개요 [`README.md`](../.claude/context/README.md)
-- 도식 — [`.claude/context/context-map.md`](../.claude/context/context-map.md)
+- 도식 — [`.claude/context/context-map.md`](context-map.md)
 - 주입 검증 — [`tests/inject.sh`](../tests/inject.sh) · 예산 [`tests/context-budget.sh`](../tests/context-budget.sh)
 - A/B 실험 — [`tests/ab-injection/`](../tests/ab-injection/) (README · score.sh · 원자료 TSV)
