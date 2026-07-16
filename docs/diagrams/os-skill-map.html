@@ -39,12 +39,14 @@
   .zone.z-sup{border-top:4px solid var(--sup-b);}
   .zone.z-hook{border-top:4px solid var(--hook-b);}
   .zone.z-ctx{border-top:4px solid var(--ctx-b);}
+  .zone.z-loop{border-top:4px solid #6366f1;}
   .zone .zh{font-weight:800;font-size:12.5px;margin-bottom:8px;}
-  .z-sup .zh{color:var(--sup-b);} .z-hook .zh{color:var(--hook-b);} .z-ctx .zh{color:var(--ctx-b);}
+  .z-sup .zh{color:var(--sup-b);} .z-hook .zh{color:var(--hook-b);} .z-ctx .zh{color:var(--ctx-b);} .z-loop .zh{color:#4f46e5;}
   .item{border-radius:8px;padding:6px 9px;font-size:11.5px;border:1px solid;background:#fff;line-height:1.3;margin-bottom:6px;font-weight:700;}
   .item .k{display:block;font-size:9px;font-weight:600;color:var(--muted);margin-top:1px;}
   .i-hook{background:var(--hook);border-color:#fde68a;color:var(--hook-b);}
   .i-ctx{background:var(--ctx);border-color:#a7f3d0;color:var(--ctx-b);}
+  .i-loop{background:#eef2ff;border-color:#c7d2fe;color:#4f46e5;}
   .rel{font-size:10.5px;color:var(--muted);font-weight:700;margin:1px 0 7px 3px;}
   .rel b{color:#374151;}
   .reviewer{margin-top:7px;background:var(--agent);border:1px solid #bfdbfe;border-radius:8px;padding:6px 9px;font-size:11px;font-weight:700;color:var(--agent-b);}
@@ -131,6 +133,13 @@
 
   <!-- ===== SUPPORT ZONES ===== -->
   <div class="zones">
+    <div class="zone z-loop">
+      <div class="zh">독립 루프 트랙 · 흐름 밖</div>
+      <div class="item i-loop">/coverage<span class="k">커버리지 목표까지 tests/에만 무인 반복 · 예산·게이밍가드·서킷브레이커</span></div>
+      <div class="item i-loop">/perf-loop<span class="k">속도 개선 게이트 루프 · 측정+정확성 게이트, 6차원 루브릭 ≥90 채택</span></div>
+      <div class="rel">└ /prd·/plan 건너뜀 · 지표로 수렴까지 반복(랄프 루프) · (+ <b>/quick</b> 저위험 트랙 → ③ 참조)</div>
+    </div>
+
     <div class="zone z-sup">
       <div class="zh">받침 · 메타 스킬</div>
       <div class="skill k-sup">/retro<span class="k">세션 회고(파일 없이 직접 보고)</span></div>
@@ -164,6 +173,7 @@
   <div class="legend">
     <span><span class="sw" style="background:var(--flow);border-color:#99f6e4"></span><b>흐름 스킬</b> ①→④</span>
     <span><span class="sw" style="background:var(--sup);border-color:#ddd6fe"></span><b>받침·메타 스킬</b></span>
+    <span><span class="sw" style="background:#eef2ff;border-color:#c7d2fe"></span><b>독립 루프 트랙</b> /coverage·/perf-loop</span>
     <span><span class="sw" style="background:var(--agent);border-color:#bfdbfe"></span><b>서브에이전트</b> reviewer</span>
     <span><span class="sw" style="background:var(--hook);border-color:#fde68a"></span><b>자동 훅</b></span>
     <span><span class="sw" style="background:var(--ctx);border-color:#a7f3d0"></span><b>컨텍스트·지식</b></span>
