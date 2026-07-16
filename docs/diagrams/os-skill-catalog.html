@@ -56,6 +56,8 @@
   .z-know .skill{border-color:#a7f3d0;background:var(--know);} .z-know .skill .n{color:var(--know-b);}
   .z-meta{border-top:4px solid var(--meta-b);} .z-meta .zh{color:var(--meta-b);}
   .z-meta .skill{border-color:#ddd6fe;background:var(--meta);} .z-meta .skill .n{color:var(--meta-b);}
+  .z-loop{border-top:4px solid #6366f1;} .z-loop .zh{color:#4f46e5;}
+  .z-loop .skill{border-color:#c7d2fe;background:#eef2ff;} .z-loop .skill .n{color:#4f46e5;}
   .zone .zsub{font-size:10.5px;color:var(--muted);font-weight:600;margin:-3px 0 2px;}
 
   .legend{margin-top:20px;border-top:1px solid var(--line);padding-top:13px;display:flex;gap:18px;
@@ -66,7 +68,7 @@
   code{background:#f1f5f9;border-radius:3px;padding:0 4px;font-size:10.5px;}
 </style></head><body>
   <h1>개발 OS — 스킬 카탈로그</h1>
-  <p class="sub">우리 OS의 스킬 <b>14개</b>가 각각 뭘 하는지 한눈에. 위 = <b>기능 개발 흐름</b>(순서대로 ①→④, 게이트는 사람 검토) · 아래 = 목적별 <b>받침 스킬</b>. 색 = 종류(범례).</p>
+  <p class="sub">우리 OS의 스킬 <b>16개</b>가 각각 뭘 하는지 한눈에. 위 = <b>기능 개발 흐름</b>(순서대로 ①→④, 게이트는 사람 검토) · 아래 = 목적별 <b>받침 스킬</b>(빠른·루프 트랙 포함). 색 = 종류(범례).</p>
 
   <!-- ===== 흐름 스킬 ===== -->
   <div class="flowhead">
@@ -162,6 +164,21 @@
       </div>
     </div>
 
+    <div class="zone z-loop">
+      <div class="zh">루프 트랙 · 자기수렴 grind</div>
+      <div class="zsub">지표가 값싸게 재지는 일을 반복(랄프 루프)으로 수렴</div>
+      <div class="skill">
+        <span class="n">/coverage</span>
+        <span class="d">테스트 커버리지가 목표(기본 85%)에 닿을 때까지 tests/에만 테스트를 보태며 무인 반복. 예산 상한·게이밍 방지·서킷브레이커로 방어. 프로덕션 로직은 안 건드림.</span>
+        <span class="t"><b>언제:</b> "커버리지 올려줘" · "N%까지"</span>
+      </div>
+      <div class="skill">
+        <span class="n">/perf-loop</span>
+        <span class="d">속도 개선을 게이트 달린 랄프 루프로. 매 라운드 측정→6차원 루브릭 채점→변경 하나→재측정→/verify→≥90·정확성 통과면 채택, 아니면 되돌림. "빨라 보이지만 틀린" 변경을 게이트로 차단.</span>
+        <span class="t"><b>언제:</b> "속도 개선" · "성능 최적화 루프"</span>
+      </div>
+    </div>
+
     <div class="zone z-know">
       <div class="zh">지식 · 문서</div>
       <div class="zsub">흐름을 더 정확하게 만드는 컨텍스트·산출물</div>
@@ -197,6 +214,7 @@
     <span><span class="sw" style="background:var(--flow);border-color:#99f6e4"></span><b>흐름 스킬</b> 기능 개발 ①→④</span>
     <span><span class="sw" style="background:var(--launch);border-color:#c7d2fe"></span><b>흐름 런처</b> /feature</span>
     <span><span class="sw" style="background:var(--quick);border-color:#fed7aa"></span><b>빠른 트랙</b> /quick</span>
+    <span><span class="sw" style="background:#eef2ff;border-color:#c7d2fe"></span><b>루프 트랙</b> /coverage·/perf-loop</span>
     <span><span class="sw" style="background:var(--know);border-color:#a7f3d0"></span><b>지식·문서</b></span>
     <span><span class="sw" style="background:var(--meta);border-color:#ddd6fe"></span><b>메타·관측</b></span>
     <span><span class="sw" style="background:var(--gate);border-color:#fde047"></span><b>게이트</b> 사람 검토</span>
