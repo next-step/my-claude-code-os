@@ -1,0 +1,376 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>과제3 — 실행할수록 개선되는 시스템 루프 (implement-loop)</title>
+<style>
+  :root {
+    --bg: #EBEEF2; --surface: #FFFFFF; --surface-2: #F5F7FA;
+    --ink: #161D29; --muted: #5A6B7C; --faint: #8595A5;
+    --line: #CDD6DF; --line-strong: #AEBAC6;
+    --accent: #4B54C6; --accent-soft: #E6E8FB; --accent-ink: #343CA0;
+    --pass: #1C8A5A; --pass-soft: #DCF0E6; --fail: #A96612; --fail-soft: #F4E9D5;
+    --loop: #B0439A; --loop-soft: #F6E2F1;
+    --sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+    --mono: ui-monospace, "Cascadia Code", "SF Mono", Menlo, Consolas, monospace;
+    --radius: 10px; --shadow: 0 1px 2px rgba(20,30,45,.06), 0 6px 20px rgba(20,30,45,.05);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0D1218; --surface: #151C25; --surface-2: #1B242F;
+      --ink: #E7EDF3; --muted: #94A3B3; --faint: #6C7C8D;
+      --line: #29333F; --line-strong: #3A4653;
+      --accent: #8B93FF; --accent-soft: #21274A; --accent-ink: #B9BEFF;
+      --pass: #46C288; --pass-soft: #16301F; --fail: #E0A24A; --fail-soft: #33260F;
+      --loop: #E58ECF; --loop-soft: #331833;
+      --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.28);
+    }
+  }
+  :root[data-theme="light"] {
+    --bg: #EBEEF2; --surface: #FFFFFF; --surface-2: #F5F7FA;
+    --ink: #161D29; --muted: #5A6B7C; --faint: #8595A5;
+    --line: #CDD6DF; --line-strong: #AEBAC6;
+    --accent: #4B54C6; --accent-soft: #E6E8FB; --accent-ink: #343CA0;
+    --pass: #1C8A5A; --pass-soft: #DCF0E6; --fail: #A96612; --fail-soft: #F4E9D5;
+    --loop: #B0439A; --loop-soft: #F6E2F1;
+    --shadow: 0 1px 2px rgba(20,30,45,.06), 0 6px 20px rgba(20,30,45,.05);
+  }
+  :root[data-theme="dark"] {
+    --bg: #0D1218; --surface: #151C25; --surface-2: #1B242F;
+    --ink: #E7EDF3; --muted: #94A3B3; --faint: #6C7C8D;
+    --line: #29333F; --line-strong: #3A4653;
+    --accent: #8B93FF; --accent-soft: #21274A; --accent-ink: #B9BEFF;
+    --pass: #46C288; --pass-soft: #16301F; --fail: #E0A24A; --fail-soft: #33260F;
+    --loop: #E58ECF; --loop-soft: #331833;
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.28);
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--sans);
+         line-height: 1.6; -webkit-font-smoothing: antialiased; }
+  .wrap { max-width: 1000px; margin: 0 auto; padding: clamp(20px,5vw,52px) clamp(16px,4vw,40px) 72px; }
+
+  .kicker { font-family: var(--mono); font-size: 11.5px; letter-spacing: .14em; text-transform: uppercase;
+            color: var(--accent-ink); font-weight: 600; }
+  h1 { font-size: clamp(26px,4.6vw,42px); line-height: 1.08; letter-spacing: -.02em; margin: 13px 0 0;
+       text-wrap: balance; font-weight: 800; }
+  h2 { font-size: clamp(18px,2.5vw,24px); letter-spacing: -.01em; margin: 0; font-weight: 750; text-wrap: balance; }
+  .lede { color: var(--muted); font-size: clamp(15px,1.7vw,17.5px); max-width: 64ch; margin: 15px 0 0; }
+  p { margin: 0; } code, .mono { font-family: var(--mono); font-size: .88em; }
+  .fname { font-family: var(--mono); font-size: .82em; color: var(--accent-ink); background: var(--accent-soft);
+           padding: 1px 6px; border-radius: 5px; white-space: nowrap; }
+
+  .toprow { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap; }
+  .themebtn { font-family: var(--mono); font-size: 11px; letter-spacing: .08em; text-transform: uppercase;
+              color: var(--muted); background: var(--surface); border: 1px solid var(--line);
+              border-radius: 999px; padding: 7px 14px; cursor: pointer; white-space: nowrap; }
+  .themebtn:hover { border-color: var(--line-strong); color: var(--ink); }
+  .themebtn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  /* 과제 매핑 배너 */
+  .mission { margin-top: 26px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .mcol { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);
+          padding: 15px 18px; box-shadow: var(--shadow); }
+  .mcol .mh { font-family: var(--mono); font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--faint); }
+  .mcol h3 { margin: 5px 0 6px; font-size: 15px; letter-spacing: -.01em; }
+  .mcol p { font-size: 13px; color: var(--muted); }
+
+  section { margin-top: clamp(34px,5vw,56px); }
+  .sec-head { display: flex; align-items: baseline; gap: 14px; margin-bottom: 20px;
+              border-bottom: 1px solid var(--line); padding-bottom: 11px; flex-wrap: wrap; }
+  .sec-no { font-family: var(--mono); font-size: 13px; color: var(--faint); font-weight: 600; }
+  .sec-sub { color: var(--muted); font-size: 14px; margin-left: auto; }
+
+  /* 루프 도식 */
+  .loopwrap { background: var(--surface); border: 1px solid var(--line); border-radius: 14px;
+              padding: clamp(16px,3vw,26px); box-shadow: var(--shadow); }
+  .rail { display: flex; align-items: center; gap: 9px; flex-wrap: wrap; margin-bottom: 18px;
+          font-family: var(--mono); font-size: 12.5px; }
+  .pill { padding: 6px 12px; border-radius: 999px; background: var(--surface-2); border: 1px solid var(--line);
+          white-space: nowrap; }
+  .pill.a { background: var(--accent-soft); border-color: color-mix(in srgb,var(--accent) 30%,var(--line)); color: var(--accent-ink); }
+  .to { color: var(--faint); }
+
+  .cycle { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; position: relative; }
+  .cyc { background: var(--surface-2); border: 1px solid var(--line); border-radius: var(--radius);
+         padding: 14px; position: relative; }
+  .cyc .cn { font-family: var(--mono); font-size: 11px; color: var(--loop); font-weight: 700; letter-spacing: .05em; }
+  .cyc h4 { margin: 4px 0 6px; font-size: 14.5px; letter-spacing: -.01em; }
+  .cyc p { font-size: 12.5px; color: var(--muted); }
+  .cyc .ar { position: absolute; right: -12px; top: 50%; transform: translateY(-50%); z-index: 2;
+             color: var(--loop); font-weight: 700; font-family: var(--mono); }
+  .returnbar { margin-top: 12px; border: 1px dashed var(--loop); color: var(--loop); background: var(--loop-soft);
+               border-radius: var(--radius); padding: 10px 14px; font-family: var(--mono); font-size: 12.5px;
+               display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .stopgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 14px; }
+  .stopcard { border-radius: var(--radius); padding: 13px 16px; border: 1px solid var(--line); background: var(--surface-2); }
+  .stopcard .st { font-family: var(--mono); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; font-weight: 700; }
+  .stopcard.win .st { color: var(--pass); } .stopcard.plateau .st { color: var(--loop); }
+  .stopcard p { font-size: 12.5px; color: var(--muted); margin-top: 5px; }
+
+  /* 자율 개선 장치 */
+  .devs { display: grid; grid-template-columns: repeat(auto-fit,minmax(255px,1fr)); gap: 14px; }
+  .dev { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);
+         padding: 17px 19px; box-shadow: var(--shadow); position: relative; overflow: hidden; }
+  .dev::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: var(--loop); }
+  .dev.detect::before { background: var(--pass); } .dev.accrue::before { background: var(--accent); }
+  .dev .badge { font-family: var(--mono); font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase;
+                font-weight: 700; padding: 2px 8px; border-radius: 999px; display: inline-block; }
+  .dev.detect .badge { color: var(--pass); background: var(--pass-soft); }
+  .dev.accrue .badge { color: var(--accent-ink); background: var(--accent-soft); }
+  .dev.indep .badge { color: var(--loop); background: var(--loop-soft); }
+  .dev h4 { margin: 9px 0 6px; font-size: 15.5px; letter-spacing: -.01em; }
+  .dev p { font-size: 13px; color: var(--muted); }
+  .dev .chain { margin-top: 10px; font-family: var(--mono); font-size: 11.5px; color: var(--ink);
+                background: var(--surface-2); border: 1px solid var(--line); border-radius: 7px; padding: 8px 10px;
+                display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+
+  /* 실제 자취 */
+  .trace { background: var(--surface); border: 1px solid var(--line); border-radius: 14px;
+           padding: clamp(16px,3vw,26px); box-shadow: var(--shadow); }
+  .steps { display: flex; align-items: flex-end; gap: 6px; margin: 4px 0 16px; height: 128px; }
+  .step { flex: 1 1 0; min-width: 46px; text-align: center; display: flex; flex-direction: column; justify-content: flex-end; height: 100%; }
+  .step .col { border-radius: 6px 6px 0 0; width: 100%; background: var(--accent-soft);
+               border: 1px solid var(--line); border-bottom: none; }
+  .step.final .col { background: var(--pass-soft); border-color: color-mix(in srgb,var(--pass) 30%,var(--line)); }
+  .step .sv { font-family: var(--mono); font-weight: 700; font-size: 13px; font-variant-numeric: tabular-nums; margin-top: 4px; }
+  .step.final .sv { color: var(--pass); }
+  .step .sl { font-size: 11px; color: var(--faint); font-family: var(--mono); }
+  .tracenote { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .tn { border-radius: var(--radius); padding: 13px 15px; font-size: 13px; border: 1px solid var(--line); }
+  .tn.up { background: var(--pass-soft); border-color: color-mix(in srgb,var(--pass) 30%,var(--line)); }
+  .tn.cap { background: var(--fail-soft); border-color: color-mix(in srgb,var(--fail) 30%,var(--line)); }
+  .tn h4 { margin: 0 0 6px; font-size: 13px; font-family: var(--mono); }
+  .tn.up h4 { color: var(--pass); } .tn.cap h4 { color: var(--fail); }
+  .tn ul { margin: 0; padding-left: 17px; color: var(--muted); } .tn li { margin: 3px 0; }
+
+  /* 개선 노트 */
+  .improve { background: var(--loop-soft); border: 1px solid color-mix(in srgb,var(--loop) 35%,var(--line));
+             border-radius: var(--radius); padding: 16px 19px; }
+  .improve .it { font-family: var(--mono); font-size: 11px; letter-spacing: .08em; text-transform: uppercase;
+                 color: var(--loop); font-weight: 700; }
+  .improve h4 { margin: 6px 0 6px; font-size: 15px; }
+  .improve p { font-size: 13.5px; color: var(--ink); }
+  .improve .ba { font-family: var(--mono); font-size: 12px; margin-top: 8px; color: var(--muted); }
+  .improve .ba b { color: var(--loop); }
+
+  /* 요구 충족 표 */
+  .reqs { display: grid; gap: 8px; }
+  .req { display: grid; grid-template-columns: 26px 1fr; gap: 12px; align-items: start;
+         background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 11px 15px; }
+  .req .ck { color: var(--pass); font-weight: 800; font-size: 16px; line-height: 1.4; }
+  .req .rt { font-size: 13.5px; } .req .rt b { color: var(--ink); }
+  .req .rt span { color: var(--muted); }
+
+  footer { margin-top: 56px; padding-top: 20px; border-top: 1px solid var(--line); color: var(--faint);
+           font-size: 12.5px; display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+  footer .mono { color: var(--muted); }
+
+  @media (max-width: 720px) {
+    .mission { grid-template-columns: 1fr; }
+    .cycle { grid-template-columns: 1fr 1fr; } .cyc .ar { display: none; }
+    .stopgrid, .tracenote { grid-template-columns: 1fr; }
+    .step { min-width: 38px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="toprow">
+      <div class="kicker">과제3 · 실행할수록 개선되는 시스템 루프</div>
+      <button class="themebtn" id="themebtn" type="button" aria-label="테마 전환">◐ 테마</button>
+    </div>
+    <h1>implement-loop — 돌릴수록 점수가 오르고 자산이 쌓이는 루프</h1>
+    <p class="lede">과제3이 요구한 &ldquo;시스템 루프&rdquo;를 새로 지어내지 않고, <b>이번에 실제로 돌린 현재 과정</b>을 그대로 담았다.
+      논문 재현 프로그램을 <b>만들고 → 채점하고 → 스스로 고치기</b>를 독립 컨텍스트로 반복하며,
+      점수가 <b>더 오르지 않을 때까지</b> 자가개선한다. 실제 실행: RecipeGPT <b>89 → 98</b> 수렴.</p>
+
+    <div class="mission">
+      <div class="mcol">
+        <div class="mh">요구 ①</div>
+        <h3>단계로 분해한 시스템 루프</h3>
+        <p>Setup · Triage · <b>BUILD → SYNC → SCORE → LEARN</b> · 정지 판정 — 각 단계가 독립 서브에이전트.</p>
+      </div>
+      <div class="mcol">
+        <div class="mh">요구 ②</div>
+        <h3>자율 개선 장치를 실제로 연결</h3>
+        <p><b>자율 탐지형</b>(SCORE가 결함을 찾아 다음 루프가 고침) + <b>자산 축적형</b>(LEARNINGS.md에 교훈 누적)을 함께.</p>
+      </div>
+    </div>
+  </header>
+
+  <!-- 루프 도식 -->
+  <section>
+    <div class="sec-head">
+      <span class="sec-no">01</span>
+      <h2>루프 도식</h2>
+      <span class="sec-sub"><code>.claude/workflows/implement-loop.js</code></span>
+    </div>
+    <div class="loopwrap">
+      <div class="rail">
+        <span class="pill a">Setup</span><span class="to">→</span>
+        <span class="pill a">Triage · 빌드 에이전트 수 결정</span><span class="to">→</span>
+        <span class="pill">반복 시작</span>
+      </div>
+
+      <div class="cycle">
+        <div class="cyc">
+          <div class="cn">1 · BUILD</div>
+          <h4><span class="mono">/code-run</span></h4>
+          <p>재현 프로그램을 만들거나 개선. 직전 결함 목록부터 고친다.</p>
+          <span class="ar">→</span>
+        </div>
+        <div class="cyc">
+          <div class="cn">2 · SYNC</div>
+          <h4>블랙보드 응답</h4>
+          <p>빌더가 <span class="fname">CHANNEL.md</span>에 남긴 질문에 논문·레포 근거로 답한다.</p>
+          <span class="ar">→</span>
+        </div>
+        <div class="cyc">
+          <div class="cn">3 · SCORE</div>
+          <h4><span class="mono">/score</span></h4>
+          <p>6축 100점 채점 + 공식 레포 대조(WebFetch). <b>결함(must_fix) 산출</b>.</p>
+          <span class="ar">→</span>
+        </div>
+        <div class="cyc">
+          <div class="cn">4 · LEARN</div>
+          <h4>학습 인계</h4>
+          <p>교훈·결함을 <span class="fname">LEARNINGS.md</span>에 누적.</p>
+        </div>
+      </div>
+
+      <div class="returnbar">
+        <span>↩︎ 다음 루프</span>
+        <span class="to">— 새 독립 컨텍스트로 다시 BUILD. LEARNINGS.md와 scorecard의 must_fix를 먼저 읽는다.</span>
+      </div>
+
+      <div class="stopgrid">
+        <div class="stopcard win">
+          <div class="st">종료 ① 임계 도달</div>
+          <p>총점 ≥ threshold 이면 즉시 종료.</p>
+        </div>
+        <div class="stopcard plateau">
+          <div class="st">종료 ② 수렴(정체)</div>
+          <p>최고점을 못 넘긴 루프가 2회 연속이면 &ldquo;최대치 도달&rdquo;로 자동 종료.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 자율 개선 장치 -->
+  <section>
+    <div class="sec-head">
+      <span class="sec-no">02</span>
+      <h2>자율 개선 장치 — 무엇이 루프를 스스로 좋아지게 하나</h2>
+    </div>
+    <div class="devs">
+      <div class="dev detect">
+        <span class="badge">자율 탐지형</span>
+        <h4>SCORE → must_fix → 고침</h4>
+        <p>매 루프 <span class="mono">/score</span>가 논문 정본·실제 레포와 대조해 <b>구체적 결함 목록</b>을 뽑고, 다음 루프 BUILD가 그것부터 수정한다. 사람이 지적하지 않아도 스스로 찾아 고친다.</p>
+        <div class="chain">SCORE <span class="to">▸</span> must_fix <span class="to">▸</span> BUILD 반영</div>
+      </div>
+      <div class="dev accrue">
+        <span class="badge">자산 축적형</span>
+        <h4>LEARNINGS.md 누적 인계</h4>
+        <p>루프마다 배운 것과 남은 숙제를 <span class="fname">LEARNINGS.md</span>에 <b>덧붙여</b> 남긴다. 다음 루프는 처음부터가 아니라 이 파일부터 읽고 이어가, 실행할수록 자산이 쌓인다.</p>
+        <div class="chain">루프N <span class="to">▸</span> LEARNINGS.md <span class="to">▸</span> 루프N+1</div>
+      </div>
+      <div class="dev indep">
+        <span class="badge">독립 컨텍스트</span>
+        <h4>매 단계 새 서브에이전트</h4>
+        <p>모든 <code>agent()</code> 호출이 깨끗한 컨텍스트에서 판단해, 앞 단계의 편향·군더더기를 물려받지 않는다. 인계는 오직 <b>파일</b>(LEARNINGS·CHANNEL·scorecard)로만.</p>
+        <div class="chain">clean ctx <span class="to">×</span> 파일 인계</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 실제 자취 -->
+  <section>
+    <div class="sec-head">
+      <span class="sec-no">03</span>
+      <h2>실제 자취 — RecipeGPT 89 → 98 수렴</h2>
+      <span class="sec-sub">이번 세션이 실제로 밟은 점수</span>
+    </div>
+    <div class="trace">
+      <div class="steps" aria-label="루프별 점수">
+        <div class="step"><div class="col" style="height:70%"></div><div class="sv">89</div><div class="sl">시작</div></div>
+        <div class="step"><div class="col" style="height:80%"></div><div class="sv">94</div><div class="sl">L1</div></div>
+        <div class="step"><div class="col" style="height:83%"></div><div class="sv">95</div><div class="sl">L2</div></div>
+        <div class="step"><div class="col" style="height:83%"></div><div class="sv">95</div><div class="sl">L3</div></div>
+        <div class="step final"><div class="col" style="height:96%"></div><div class="sv">98</div><div class="sl">L4</div></div>
+        <div class="step final"><div class="col" style="height:96%"></div><div class="sv">98</div><div class="sl">L5</div></div>
+        <div class="step final"><div class="col" style="height:96%"></div><div class="sv">98</div><div class="sl">수렴</div></div>
+      </div>
+      <div class="tracenote">
+        <div class="tn up">
+          <h4>루프가 스스로 회복한 3점</h4>
+          <ul>
+            <li>Repo 19→20 : &ldquo;미공개&rdquo; 문구 모순 제거</li>
+            <li>Method 14→15 : NTED 트리를 세로 액션 체인으로</li>
+            <li>Honesty 9→10 : 릴리스 문구 통일</li>
+          </ul>
+        </div>
+        <div class="tn cap">
+          <h4>남은 2점 — 구조적 상한(정직하게 고정)</h4>
+          <ul>
+            <li>Functional 24/25 · Metric 14/15</li>
+            <li>저자 fine-tuned 가중치가 OneDrive 대화형/GPU 필요</li>
+            <li>비대화형·무GPU 환경 불가 → 지어내지 않고 상한 문서화</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 문서화 중 개선 -->
+  <section>
+    <div class="sec-head">
+      <span class="sec-no">04</span>
+      <h2>문서화하며 그 자리서 개선한 점</h2>
+      <span class="sec-sub">과제3 요구 ②의 &ldquo;아쉬운 점 즉시 개선&rdquo;</span>
+    </div>
+    <div class="improve">
+      <div class="it">개선 적용됨</div>
+      <h4>정지 조건: 고정 횟수 → 점수 수렴</h4>
+      <p>기존 루프는 <code>maxIters</code>에 도달하면 멈춰, 점수가 더 오를 수 있는데도 조기 종료하거나 반대로 무의미하게 계속 돌 여지가 있었다.
+        &ldquo;최대한 높게&rdquo;라는 의도에 맞게 <b>수렴(plateau) 종료</b>를 추가했다 — 최고점을 못 넘긴 루프가 2회 연속이면 최대치로 보고 자동 종료, <code>maxIters</code>는 폭주 방지용 안전 상한으로만 남긴다.</p>
+      <div class="ba">before <b>for i in 1..maxIters</b> &nbsp;→&nbsp; after <b>while 개선 지속 (2회 정체 시 종료)</b></div>
+    </div>
+  </section>
+
+  <!-- 요구 충족 -->
+  <section>
+    <div class="sec-head">
+      <span class="sec-no">05</span>
+      <h2>과제3 요구 ↔ 충족</h2>
+    </div>
+    <div class="reqs">
+      <div class="req"><div class="ck">✓</div><div class="rt"><b>단계로 분해한 시스템 루프 1개</b> <span>— Setup·Triage·BUILD·SYNC·SCORE·LEARN·정지 판정 (§01)</span></div></div>
+      <div class="req"><div class="ck">✓</div><div class="rt"><b>자율 탐지형 장치 연결</b> <span>— SCORE가 결함을 찾아 다음 루프가 자동 수정 (§02)</span></div></div>
+      <div class="req"><div class="ck">✓</div><div class="rt"><b>자산 축적형 장치 연결</b> <span>— LEARNINGS.md 누적으로 다음 루프에 인계 (§02)</span></div></div>
+      <div class="req"><div class="ck">✓</div><div class="rt"><b>실제로 연결·실행</b> <span>— RecipeGPT 89→98 수렴, 라이브 실행 검증 (§03)</span></div></div>
+      <div class="req"><div class="ck">✓</div><div class="rt"><b>1페이지 도식 문서로 정리</b> <span>— 이 파일 <code>LOOP-SYSTEM.html</code></span></div></div>
+      <div class="req"><div class="ck">✓</div><div class="rt"><b>문서화 중 아쉬운 점 즉시 개선</b> <span>— 정지 조건을 수렴 종료로 개선 (§04)</span></div></div>
+    </div>
+  </section>
+
+  <footer>
+    <span>클로드 OS · 과제3 — 시스템 루프 1페이지 정리</span>
+    <span class="mono">implement-loop · /score · LEARNINGS.md</span>
+  </footer>
+</div>
+<script>
+  (function () {
+    var btn = document.getElementById('themebtn'), root = document.documentElement;
+    btn.addEventListener('click', function () {
+      var cur = root.getAttribute('data-theme');
+      if (!cur) cur = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+      root.setAttribute('data-theme', cur === 'dark' ? 'light' : 'dark');
+    });
+  })();
+</script>
+</body>
+</html>
