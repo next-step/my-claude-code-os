@@ -38,6 +38,8 @@
       <path d="M0,0 L7.5,3.2 L0,6.4 Z" fill="#ea580c"/></marker>
     <marker id="ah-fb" markerWidth="9" markerHeight="9" refX="7.5" refY="3.2" orient="auto">
       <path d="M0,0 L7.5,3.2 L0,6.4 Z" fill="#db2777"/></marker>
+    <marker id="ah-meta" markerWidth="9" markerHeight="9" refX="7.5" refY="3.2" orient="auto">
+      <path d="M0,0 L7.5,3.2 L0,6.4 Z" fill="#7c3aed"/></marker>
     <style>
       .nt{font-size:14.5px;font-weight:800;}
       .ns{font-size:11px;fill:#6b7280;font-weight:600;}
@@ -103,7 +105,7 @@
   <text class="als" x="800" y="582" text-anchor="middle" fill="#6366f1">PRD 다시 쓰기</text>
   <text class="al"  x="1165" y="566" text-anchor="middle" fill="#6366f1">↺ 수정 요청</text>
   <text class="als" x="1165" y="582" text-anchor="middle" fill="#6366f1">설계 다시 하기</text>
-  <text class="al"  x="1686" y="566" text-anchor="middle" fill="#6366f1">↺ 구현결함</text>
+  <text class="al"  x="1686" y="566" text-anchor="middle" fill="#6366f1">↺ 구현결함 · 리뷰&lt;90</text>
   <text class="als" x="1686" y="582" text-anchor="middle" fill="#6366f1">미충족 항목만 고쳐 재구현</text>
 
   <!-- escalation -->
@@ -118,6 +120,12 @@
   </g>
   <text class="al" x="2100" y="118" text-anchor="middle" fill="#db2777">↺ 리뷰 피드백 — 고쳐서 다시 푸시</text>
 
+  <!-- self-improvement meta loop -->
+  <g fill="none" stroke="#7c3aed" stroke-width="2.6" stroke-dasharray="2 5" stroke-linecap="round">
+    <path d="M2240,378 V34 H150 V186" marker-end="url(#ah-meta)"/>
+  </g>
+  <text class="al" x="1160" y="27" text-anchor="middle" fill="#7c3aed">🔁 자기개선 시스템 루프 — 회고가 스킬·도메인을 고쳐 다음 실행이 나아짐 (실행할수록 개선)</text>
+
   <!-- ============ NODES ============ -->
   <!-- ① -->
   <g><rect x="72" y="190" width="156" height="62" rx="11" fill="#fdf2f8" stroke="#f9a8d4" stroke-width="1.5"/>
@@ -128,7 +136,7 @@
     <text class="ns" x="340" y="424" text-anchor="middle">한 번에 하나씩 질문</text></g>
   <g><rect x="452" y="190" width="156" height="62" rx="11" fill="#fdf2f8" stroke="#f9a8d4" stroke-width="1.5"/>
     <text class="nt" x="530" y="216" text-anchor="middle" fill="#db2777">답변 · 확인</text>
-    <text class="ns" x="530" y="234" text-anchor="middle">requirements.md 합의</text></g>
+    <text class="ns" x="530" y="234" text-anchor="middle">요구사항 합의 → docs/prd</text></g>
   <g><rect x="642" y="380" width="156" height="62" rx="11" fill="#eff6ff" stroke="#bfdbfe" stroke-width="1.5"/>
     <text class="nt" x="720" y="406" text-anchor="middle" fill="#2563eb">/prd</text>
     <text class="ns" x="720" y="424" text-anchor="middle">PRD 작성 · reviewer 반박</text></g>
@@ -151,8 +159,9 @@
     <text class="nt" x="1480" y="406" text-anchor="middle" fill="#2563eb">/impl</text>
     <text class="ns" x="1480" y="424" text-anchor="middle">구현 + 테스트(필수)</text></g>
   <g><rect x="1592" y="380" width="156" height="62" rx="11" fill="#eff6ff" stroke="#bfdbfe" stroke-width="1.5"/>
-    <text class="nt" x="1670" y="406" text-anchor="middle" fill="#2563eb">/verify</text>
-    <text class="ns" x="1670" y="424" text-anchor="middle">테스트 · 기준 대조</text></g>
+    <text class="nt" x="1670" y="402" text-anchor="middle" fill="#2563eb">/verify</text>
+    <text class="ns" x="1670" y="418" text-anchor="middle">테스트 · reviewer 적대 대조</text>
+    <text class="ns" x="1670" y="432" text-anchor="middle">· 리뷰 루브릭 점수</text></g>
   <g><path d="M1860,367 L1942,411 L1860,455 L1778,411 Z" fill="#f5f3ff" stroke="#c4b5fd" stroke-width="2.2"/>
     <text class="nt" x="1860" y="408" text-anchor="middle" fill="#7c3aed">판정</text>
     <text class="ns" x="1860" y="424" text-anchor="middle">3갈래</text></g>
@@ -165,6 +174,8 @@
     <text class="nt" x="2240" y="401" text-anchor="middle" fill="#2563eb">/retro</text>
     <text class="ns" x="2240" y="418" text-anchor="middle">세션 회고 — 스킬·도메인</text>
     <text class="ns" x="2240" y="433" text-anchor="middle">개선 제안(파일 안 만듦)</text></g>
+  <g><rect x="2138" y="458" width="204" height="30" rx="8" fill="#fffbeb" stroke="#fbbf24" stroke-width="1.6"/>
+    <text class="als" x="2240" y="477" text-anchor="middle" fill="#b45309">🪝 회고 게이트 훅 — push 전 /retro 강제(차단)</text></g>
   <g><rect x="2344" y="187" width="172" height="68" rx="11" fill="#fef9c3" stroke="#fde047" stroke-width="2.2"/>
     <text class="nt" x="2430" y="211" text-anchor="middle" fill="#ca8a04">회고 제안 검토</text>
     <text class="ns" x="2430" y="228" text-anchor="middle" fill="#a16207">사람 검토 · 멈춤 지점</text>
@@ -187,6 +198,8 @@
   <span><i class="ln" style="border-color:#6366f1"></i><b>루프백</b> 다시 하기</span>
   <span><i class="ln" style="border-color:#ea580c"></i><b>에스컬레이션</b> 위 단계로</span>
   <span><i class="ln" style="border-color:#db2777"></i><b>사람 피드백</b></span>
+  <span><i class="ln" style="border-color:#7c3aed"></i><b>자기개선 메타 루프</b></span>
+  <span><i class="sw" style="background:#fffbeb;border-color:#fbbf24"></i><b>훅</b> 차단형(회고 강제)</span>
 </div>
 </body>
 </html>
