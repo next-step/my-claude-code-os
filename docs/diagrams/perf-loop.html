@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>/perf-loop 시스템 루프 — 흐름</title>
+<style>
+  :root{
+    --ink:#1f2937; --muted:#6b7280; --line:#e5e7eb;
+    --blue:#2563eb; --blue-bg:#eff6ff;
+    --green:#059669; --green-bg:#ecfdf5;
+    --orange:#c2410c; --orange-bg:#fff7ed;
+    --red:#b91c1c; --red-bg:#fef2f2;
+    --gate:#ca8a04; --gate-bg:#fef9c3;
+    --gray:#475569; --gray-bg:#f8fafc;
+    --loop:#6366f1;
+  }
+  *{box-sizing:border-box;}
+  body{font-family:-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;color:var(--ink);
+       background:#fff;margin:0;padding:28px 34px;width:1000px;}
+  h1{font-size:22px;margin:0 0 4px;}
+  h1 .tag{font-size:12px;font-weight:800;color:var(--loop);background:#eef2ff;border:1px solid #c7d2fe;
+          border-radius:999px;padding:3px 10px;vertical-align:middle;margin-left:8px;}
+  .sub{color:var(--muted);font-size:13px;margin:0 0 6px;line-height:1.5;}
+  .sub b{color:var(--ink);}
+  .key{margin:10px 0 14px;background:#f5f3ff;border:1px solid #ddd6fe;border-left:5px solid var(--loop);
+       border-radius:10px;padding:10px 14px;font-size:12.5px;line-height:1.55;color:#4338ca;}
+  .key b{color:#3730a3;}
+  .gate-i{font-weight:800;color:#a16207;background:#fef9c3;border:1px solid #fde047;border-radius:6px;padding:0 5px;}
+  .band{margin-top:14px;background:var(--gate-bg);border:1px solid #fde047;border-left:5px solid var(--gate);
+        border-radius:12px;padding:12px 16px;}
+  .band .bh{font-weight:800;font-size:13.5px;color:#854d0e;margin-bottom:11px;}
+  .band .bh span{font-weight:700;color:#a16207;font-size:11.5px;}
+  .rubric{display:grid;grid-template-columns:repeat(6,1fr);gap:9px;}
+  .rc{background:#fff;border:1px solid #fde047;border-radius:9px;padding:9px 10px;position:relative;}
+  .rc .rn{font-size:11.5px;font-weight:800;color:#713f12;line-height:1.3;min-height:29px;}
+  .rc .rp{font-size:21px;font-weight:900;color:var(--gate);margin-top:5px;}
+  .rc .rp small{font-size:11px;font-weight:700;color:#a16207;}
+  .rc.hard{border-color:#f87171;background:#fff7ed;}
+  .rc.hard .rn,.rc.hard .rp{color:#b91c1c;}
+  .rc .hg{position:absolute;top:-8px;right:8px;background:#b91c1c;color:#fff;font-size:8.5px;font-weight:800;
+          border-radius:5px;padding:1px 5px;letter-spacing:.2px;}
+  .rtot{margin-top:10px;font-size:12.5px;font-weight:800;color:#854d0e;text-align:center;}
+  .rtot b{color:#b45309;}
+  .legend{margin-top:16px;border-top:1px solid var(--line);padding-top:12px;display:flex;gap:16px;flex-wrap:wrap;font-size:12px;color:var(--muted);}
+  .legend b{color:var(--ink);}
+  .sw{display:inline-block;width:12px;height:12px;border-radius:3px;border:1px solid;vertical-align:middle;margin-right:5px;}
+  .foot{margin-top:12px;font-size:11.5px;color:var(--muted);line-height:1.5;}
+  .foot b{color:#4338ca;}
+</style>
+</head>
+<body>
+  <h1>/perf-loop 시스템 루프 <span class="tag">게이트 달린 랄프 루프</span></h1>
+  <p class="sub"><b>속도(latency/throughput) 개선을 반복(루프)으로</b> — 매 라운드 측정→채점→변경 하나→재측정→정확성 검증→채택/되돌림. 커버리지 루프의 <b>자매편</b>(지표만 커버리지%→속도, 무인 안전판이 <b>게이트+루브릭</b>).</p>
+  <div class="key">💡 순수 랄프 루프의 <b>두 사고</b>를 게이트로 막는다 — ① <b>측정 안 된 승리</b>("빨라 보인다") → <span class="gate-i">🚦 측정 게이트</span> 숫자 없으면 0점 · ② <b>조용한 동작 변경</b>(결과가 바뀌면 버그) → <span class="gate-i">🚦 정확성 게이트</span> <code>/verify</code>, 실패면 되돌림.</div>
+
+  <svg viewBox="0 0 1000 782" width="100%" xmlns="http://www.w3.org/2000/svg"
+       font-family="-apple-system,'Apple SD Gothic Neo','Malgun Gothic',sans-serif">
+    <defs>
+      <marker id="ag" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7.5" markerHeight="7.5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#94a3b8"/></marker>
+      <marker id="aok" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7.5" markerHeight="7.5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#059669"/></marker>
+      <marker id="aorg" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7.5" markerHeight="7.5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#c2410c"/></marker>
+      <marker id="ared" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7.5" markerHeight="7.5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#b91c1c"/></marker>
+      <marker id="aloop" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#6366f1"/></marker>
+    </defs>
+    <style>
+      text{fill:#1f2937;}
+      .t{font-size:12.5px;font-weight:800;}
+      .s{font-size:10px;font-weight:600;fill:#6b7280;}
+      .lab{font-size:11px;font-weight:800;}
+      .e{stroke:#94a3b8;stroke-width:1.7;fill:none;}
+    </style>
+
+    <!-- 0. preflight -->
+    <rect x="280" y="12" width="440" height="52" rx="10" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.5"/>
+    <text class="t" x="500" y="35" text-anchor="middle" fill="#475569">[0단계] 루프 가능성 확인 — 없으면 시작 안 함</text>
+    <text class="s" x="500" y="53" text-anchor="middle">재현 벤치마크 · 주지표 하나 · 환경 고정 · 정확성 기준</text>
+    <path class="e" d="M500,64 V88" marker-end="url(#ag)"/>
+
+    <!-- 베이스라인 -->
+    <rect x="340" y="90" width="320" height="48" rx="10" fill="#eff6ff" stroke="#2563eb" stroke-width="1.6"/>
+    <text class="t" x="500" y="112" text-anchor="middle" fill="#2563eb">베이스라인 고정</text>
+    <text class="s" x="500" y="129" text-anchor="middle">주지표 N회(≥3) 측정 → 중앙값</text>
+
+    <!-- ===== LOOP BOX ===== -->
+    <rect x="18" y="160" width="964" height="432" rx="14" fill="#fbfaff" stroke="#6366f1" stroke-width="1.6" stroke-dasharray="7 4"/>
+    <rect x="40" y="152" width="250" height="16" fill="#fff"/>
+    <text class="lab" x="46" y="165" fill="#6366f1">🔁 매 라운드 반복 — 수렴까지</text>
+
+    <!-- 진입: 베이스라인 → R-a(top) -->
+    <path class="e" d="M500,138 V176 H146 V194" marker-end="url(#ag)"/>
+
+    <!-- 파이프라인 R-a → R-b → R-c → R-d -->
+    <rect x="34" y="196" width="224" height="56" rx="9" fill="#eff6ff" stroke="#2563eb" stroke-width="1.6"/>
+    <text class="t" x="146" y="219" text-anchor="middle" fill="#2563eb">R-a 후보 + 루브릭 채점</text>
+    <text class="s" x="146" y="236" text-anchor="middle">6차원 점수 → 기대이득 최고 딱 하나</text>
+
+    <path class="e" d="M258,224 H274" marker-end="url(#ag)"/>
+    <rect x="278" y="196" width="150" height="56" rx="9" fill="#ecfdf5" stroke="#059669" stroke-width="1.6"/>
+    <text class="t" x="353" y="219" text-anchor="middle" fill="#059669">R-b 변경</text>
+    <text class="s" x="353" y="236" text-anchor="middle">한 라운드 하나만</text>
+
+    <path class="e" d="M428,224 H444" marker-end="url(#ag)"/>
+    <rect x="448" y="196" width="210" height="56" rx="9" fill="#fef9c3" stroke="#ca8a04" stroke-width="1.6"/>
+    <text class="t" x="553" y="219" text-anchor="middle" fill="#a16207">🚦 R-c 재측정</text>
+    <text class="s" x="553" y="236" text-anchor="middle">측정 게이트 · 개선폭 &gt; 노이즈</text>
+
+    <path class="e" d="M658,224 H674" marker-end="url(#ag)"/>
+    <rect x="678" y="196" width="286" height="56" rx="9" fill="#fef9c3" stroke="#ca8a04" stroke-width="1.6"/>
+    <text class="t" x="821" y="219" text-anchor="middle" fill="#a16207">🚦 R-d /verify</text>
+    <text class="s" x="821" y="236" text-anchor="middle">정확성 게이트(하드) · 보존 핵심이면 full</text>
+
+    <!-- R-d → R-e 결정 -->
+    <path class="e" d="M821,252 V264 H500 V270" marker-end="url(#ag)"/>
+
+    <!-- R-e 결정 다이아몬드 -->
+    <polygon points="500,272 600,310 500,348 400,310" fill="#fef9c3" stroke="#ca8a04" stroke-width="1.7"/>
+    <text class="t" x="500" y="305" text-anchor="middle" fill="#a16207" font-size="12">R-e 채택?</text>
+    <text class="s" x="500" y="321" text-anchor="middle">루브릭 ≥90 &amp; 정확성</text>
+
+    <!-- 분기 예: 채택 -->
+    <path class="e" d="M600,310 H720" stroke="#059669" marker-end="url(#aok)"/>
+    <text class="lab" x="655" y="302" fill="#059669">예</text>
+    <rect x="722" y="286" width="250" height="48" rx="9" fill="#ecfdf5" stroke="#059669" stroke-width="1.6"/>
+    <text class="t" x="736" y="306" fill="#059669">✅ 채택</text>
+    <text class="s" x="736" y="323">베이스라인 갱신 · 커밋 후보</text>
+
+    <!-- 분기 &lt;90: 폐기 -->
+    <path class="e" d="M400,310 H252" stroke="#c2410c" marker-end="url(#aorg)"/>
+    <text class="lab" x="300" y="302" fill="#c2410c">&lt;90</text>
+    <rect x="40" y="286" width="212" height="48" rx="9" fill="#fff7ed" stroke="#c2410c" stroke-width="1.6"/>
+    <text class="t" x="54" y="306" fill="#c2410c">폐기 — 되돌림</text>
+    <text class="s" x="54" y="323">목표미달 · 측정약함 · 복잡도과다</text>
+
+    <!-- 분기 정확성 실패: 폐기(버그) -->
+    <path class="e" d="M500,348 V378" stroke="#b91c1c" marker-end="url(#ared)"/>
+    <text class="lab" x="512" y="368" fill="#b91c1c">정확성 실패</text>
+    <rect x="358" y="380" width="284" height="46" rx="9" fill="#fef2f2" stroke="#b91c1c" stroke-width="1.6"/>
+    <text class="t" x="500" y="400" text-anchor="middle" fill="#b91c1c">폐기 — 빨라도 틀리면 버그</text>
+    <text class="s" x="500" y="416" text-anchor="middle">정확성 하드 게이트 실패 → 되돌림</text>
+
+    <!-- 세 갈래 → 종료 판정으로 합류 -->
+    <path class="e" d="M847,334 V440 H500"/>
+    <path class="e" d="M146,334 V440 H500"/>
+    <path class="e" d="M500,426 V454" marker-end="url(#ag)"/>
+
+    <!-- R-f 종료 판정 -->
+    <polygon points="500,454 574,484 500,514 426,484" fill="#fef9c3" stroke="#ca8a04" stroke-width="1.7"/>
+    <text class="t" x="500" y="481" text-anchor="middle" fill="#a16207" font-size="12">R-f 종료?</text>
+    <text class="s" x="500" y="497" text-anchor="middle">목표·정체·고갈·상한</text>
+
+    <!-- 종료 아니오 → 루프백 R-a -->
+    <path d="M426,484 H26 V224 H30" fill="none" stroke="#6366f1" stroke-width="1.8" stroke-dasharray="7 4" marker-end="url(#aloop)"/>
+    <text class="lab" x="150" y="476" fill="#6366f1">↺ 아니오 — 다음 라운드 R-a</text>
+
+    <!-- 스냅샷 append 노트 -->
+    <text class="s" x="150" y="548" fill="#4338ca" font-size="10.5" font-weight="700">📸 매 라운드 스냅샷을 라운드 로그에 append — 채택·폐기 모두(왜 안 됐는지도 자산)</text>
+
+    <!-- 종료 예 → 보고 게이트(루프 밖) -->
+    <path class="e" d="M500,514 V712" stroke="#059669" marker-end="url(#aok)"/>
+    <text class="lab" x="512" y="560" fill="#059669">예 · 수렴</text>
+
+    <!-- 보고 게이트 -->
+    <rect x="280" y="714" width="440" height="54" rx="10" fill="#ecfdf5" stroke="#059669" stroke-width="1.6"/>
+    <text class="t" x="500" y="736" text-anchor="middle" fill="#059669">✋ 보고 게이트 — 멈춤 (자동 커밋·푸시 금지)</text>
+    <text class="s" x="500" y="754" text-anchor="middle">베이스라인→최종 · 채택/폐기 · 남은 후보 보고 · 코드 밖 개선 표시</text>
+  </svg>
+
+  <!-- 6차원 루브릭 밴드 -->
+  <div class="band">
+    <div class="bh">📐 6차원 점수 루브릭 — 매 라운드 후보/변경을 채점 &nbsp;<span>· 채택 = 총점 ≥ 90 <b>AND</b> 정확성 게이트 통과</span></div>
+    <div class="rubric">
+      <div class="rc hard"><span class="hg">하드 게이트</span><div class="rn">① 정확성 보존</div><div class="rp">30</div></div>
+      <div class="rc"><div class="rn">② 속도 목표 달성</div><div class="rp">30</div></div>
+      <div class="rc"><div class="rn">③ 측정 신뢰성</div><div class="rp">15</div></div>
+      <div class="rc"><div class="rn">④ 블라스트 반경 / 되돌리기</div><div class="rp">10</div></div>
+      <div class="rc"><div class="rn">⑤ 스케일 지속성</div><div class="rp">10</div></div>
+      <div class="rc"><div class="rn">⑥ 유지비</div><div class="rp">5</div></div>
+    </div>
+    <div class="rtot">총점 <b>100</b> · <b>≥90 만 통과</b> — 정확성 실패 시 총점 무관하게 불합격 · 통과 못 한 변경은 되돌린다(랄프 루프가 쓰레기를 안 쌓게)</div>
+  </div>
+
+  <!-- 범례 -->
+  <div class="legend">
+    <span><span class="sw" style="background:var(--blue-bg);border-color:#bfdbfe"></span><b>후보 · 측정</b></span>
+    <span><span class="sw" style="background:var(--green-bg);border-color:#a7f3d0"></span><b>변경 · 채택 · 보고</b></span>
+    <span><span class="sw" style="background:var(--gate-bg);border-color:#fde047"></span><b>🚦 게이트 · 결정(분기)</b></span>
+    <span><span class="sw" style="background:var(--orange-bg);border-color:#fed7aa"></span><b>폐기 — 미달(되돌림)</b></span>
+    <span><span class="sw" style="background:var(--red-bg);border-color:#fca5a5"></span><b>폐기 — 정확성 실패(버그)</b></span>
+    <span><span class="sw" style="background:#eef2ff;border-color:#c7d2fe"></span><b style="color:#4f46e5">↺ 루프백</b> 다음 라운드</span>
+    <span><span class="sw" style="background:var(--gray-bg);border-color:#cbd5e1"></span><b>준비(preflight)</b></span>
+  </div>
+
+  <div class="foot">🔬 <b>실측(도전2 · 2h+):</b> 정산 이용권 계산 배치 <b>528초 → 85초(1:25, −84%)</b>, 8라운드 전부 정확성 완전 보존 — 라운드별 이터레이션 스냅샷은 <b>docs/perf/settlement-calc-rounds.md</b>. &nbsp;조합: 위에 <code>/loop</code>(언제 반복) · R-a에 <code>Workflow</code> 판정 패널(후보 병렬 채점).</div>
+</body>
+</html>
