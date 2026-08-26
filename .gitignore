@@ -1,0 +1,13 @@
+# IntelliJ 프로젝트 설정. 사람마다 달라 공유해도 그대로 쓸 수 없다.
+.idea/
+
+# macOS Finder가 만드는 디렉터리 메타데이터.
+.DS_Store
+
+# Claude Code 개인 권한 설정. 팀이 공유할 설정은 .claude/settings.json 에 둔다.
+.claude/settings.local.json
+
+# 스킬 호출 기록 훅(.claude/hooks/log-skill-usage.sh)이 만드는 개인 사용 기록.
+# 사람마다 내용이 달라 커밋하면 충돌만 난다.
+.claude/skill-usage.jsonl
+.claude/skill-usage.json
