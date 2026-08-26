@@ -1,2 +1,5 @@
 # Default ignored files
-./.idea
+./idea
+
+# 스킬 사용 통계 로그 (훅이 로컬에 누적 기록하는 실행 데이터, 버전관리 대상 아님)
+.claude/skill-usage-stats.json
