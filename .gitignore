@@ -1,2 +1,6 @@
 # macOS
 .DS_Store
+
+# 스킬 사용 통계 (훅이 생성하는 로컬 데이터)
+.claude/skill-usage.log
+.claude/skill-usage-stats.json

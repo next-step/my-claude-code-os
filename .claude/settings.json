@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [],
+    "deny": []
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Skill",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/skill-usage-stats.sh\"",
+            "timeout": 10,
+            "statusMessage": "스킬 호출 통계 기록 중..."
+          }
+        ]
+      }
+    ]
+  }
+}
