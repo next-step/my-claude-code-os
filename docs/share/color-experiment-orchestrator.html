@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>색상 실험 OS — 개요 시각화</title>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+  :root {
+    --blue: #2563eb;
+    --green: #16a34a;
+    --purple: #7c3aed;
+    --orange: #ea580c;
+    --blue-bg: #eff6ff;
+    --green-bg: #f0fdf4;
+    --purple-bg: #f5f3ff;
+    --orange-bg: #fff7ed;
+    --border: #e5e7eb;
+    --bg: #fafafa;
+  }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans KR", sans-serif;
+    background: var(--bg);
+    color: #111827;
+    margin: 0;
+    padding: 40px 20px;
+  }
+  main {
+    max-width: 1120px;
+    margin: 0 auto;
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 40px;
+  }
+  .eyebrow {
+    font-size: 13px;
+    font-weight: 700;
+    color: #6b7280;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+  h1 { font-size: 32px; margin: 8px 0 4px; }
+  .subtitle { color: #4b5563; margin-bottom: 32px; }
+  .note {
+    font-size: 13px;
+    color: #6b7280;
+    background: #f3f4f6;
+    border-left: 3px solid #9ca3af;
+    padding: 10px 14px;
+    border-radius: 6px;
+    margin-bottom: 32px;
+  }
+  h2 {
+    font-size: 20px;
+    margin-top: 48px;
+    margin-bottom: 12px;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 8px;
+  }
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    font-size: 14px;
+    margin: 16px 0;
+  }
+  th, td {
+    border: 1px solid var(--border);
+    padding: 10px 12px;
+    text-align: left;
+    vertical-align: top;
+  }
+  th { background: #f9fafb; }
+  code {
+    background: #f3f4f6;
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-size: 13px;
+  }
+  .diagram { overflow-x: auto; padding: 16px 0; }
+  .principle {
+    font-size: 14px;
+    background: var(--blue-bg);
+    border-left: 3px solid var(--blue);
+    padding: 10px 14px;
+    border-radius: 6px;
+    margin: 8px 0;
+  }
+  a { color: var(--blue); }
+  footer { margin-top: 40px; font-size: 12px; color: #9ca3af; }
+
+  /* ===== 스윔레인 (9단계 실험 루프) ===== */
+  .swimlane-wrap { overflow-x: auto; padding: 24px 0 8px; }
+  .swimlane {
+    display: grid;
+    grid-template-columns: 118px repeat(9, minmax(88px, 1fr)) 58px;
+    grid-template-rows: repeat(4, minmax(96px, auto));
+    column-gap: 10px;
+    row-gap: 12px;
+    min-width: 1020px;
+    position: relative;
+  }
+
+  /* 레인 라벨 (좌측 1열) */
+  .lane-label {
+    grid-column: 1;
+    align-self: center;
+    font-size: 13px;
+    font-weight: 700;
+    line-height: 1.4;
+    padding-right: 6px;
+  }
+  .lane-label small {
+    display: block;
+    font-weight: 400;
+    color: #6b7280;
+    font-size: 11px;
+  }
+  .lane-label .mark { font-size: 11px; margin-right: 2px; }
+
+  /* 레인 배경 띠 */
+  .lane-stripe {
+    grid-column: 2 / 11;
+    border-radius: 10px;
+    z-index: 0;
+  }
+  .r1 { grid-row: 1; }
+  .r2 { grid-row: 2; }
+  .r3 { grid-row: 3; }
+  .r4 { grid-row: 4; }
+  .stripe-human { background: #f3f4f6; }
+  .stripe-orch  { background: var(--green-bg); }
+  .stripe-agent { background: var(--purple-bg); }
+  .stripe-log   { background: var(--orange-bg); }
+
+  /* 단계 카드 */
+  .step {
+    background: #fff;
+    border: 1.5px solid #cbd5e1;
+    border-radius: 10px;
+    padding: 10px 12px;
+    z-index: 2;
+    align-self: center;
+    margin: 10px 0;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    font-size: 13px;
+    line-height: 1.45;
+  }
+  .step .no {
+    display: block;
+    font-weight: 800;
+    font-size: 13px;
+    margin-bottom: 2px;
+  }
+  .step-human .no { color: #111827; }
+  .step-human { border-color: #9ca3af; }
+  .step-orch .no { color: var(--green); }
+  .step-orch { border-color: var(--green); }
+  .step-agent .no { color: var(--purple); }
+  .step-agent { border-color: var(--purple); }
+  .step-log .no { color: var(--orange); }
+  .step-log { border-color: var(--orange); }
+
+  /* 단계 → 열 매핑 (1~9단계 = 2~10열) */
+  .c1 { grid-column: 2; }
+  .c2 { grid-column: 3; }
+  .c3 { grid-column: 4; }
+  .c4 { grid-column: 5; }
+  .c5 { grid-column: 6; }
+  .c6 { grid-column: 7; }
+  .c7 { grid-column: 8; }
+  .c8 { grid-column: 9; }
+  .c9 { grid-column: 10; }
+
+  /* 검증 루프 점선 박스 (5~8단계, 전체 레인 관통) */
+  .loop-box {
+    grid-column: 6 / 10;
+    grid-row: 1 / 5;
+    border: 2px dashed var(--purple);
+    border-radius: 12px;
+    margin: -6px -5px;
+    z-index: 1;
+    position: relative;
+    pointer-events: none;
+  }
+  .loop-box .loop-label {
+    position: absolute;
+    top: -12px;
+    left: 14px;
+    background: #fff;
+    color: var(--purple);
+    font-size: 12px;
+    font-weight: 700;
+    padding: 0 8px;
+    border: 1px solid var(--purple);
+    border-radius: 6px;
+    line-height: 20px;
+    white-space: nowrap;
+  }
+
+  /* 다음 루프 우측 세로 패널 */
+  .next-loop {
+    grid-column: 11;
+    grid-row: 1 / 5;
+    border: 2px solid var(--blue);
+    background: var(--blue-bg);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1;
+  }
+  .next-loop span {
+    writing-mode: vertical-rl;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--blue);
+    letter-spacing: 0.12em;
+  }
+
+  .swimlane-caption {
+    font-size: 12.5px;
+    color: #6b7280;
+    margin-top: 10px;
+  }
+</style>
+</head>
+<body>
+<main>
+  <div class="eyebrow">Color Experiment OS · Overview</div>
+  <h1>색상 실험 OS — 개요</h1>
+  <p class="subtitle">
+    색상 추출 알고리즘 개선 작업에서 AI와 사람이 협력하는 체계.
+    스킬·에이전트(행동)와 문서·SSOT(지식·상태)의 두 기둥으로 구성됩니다.
+  </p>
+  <div class="note">
+    이 HTML은 시각화 전용 산출물입니다. 원본 내용은
+    <a href="../../OS.md">OS.md</a> 와
+    <a href="../design/experiment-orchestrator.md">기획 문서</a>
+    에 있습니다.
+  </div>
+
+  <h2>1. 스킬 · 에이전트 카탈로그</h2>
+  <p>스킬은 진입점이자 절차서(지휘 악보), 서브에이전트는 스킬을 수행하는 메인 에이전트가
+  스폰하는 독립 일꾼입니다 (독립 컨텍스트 · 백그라운드 · 병렬).</p>
+  <table>
+    <tr><th>카테고리</th><th>스킬 (지휘)</th><th>서브에이전트 (일꾼)</th><th>협력 방식</th></tr>
+    <tr>
+      <td rowspan="2"><b>방향 결정</b><br>외부 입력 · 의사결정</td>
+      <td><code>/research</code></td>
+      <td>기법 조사 에이전트 ×N + 큐레이터</td>
+      <td><b>병렬</b> 스폰 → 큐레이터가 취합·선별해 knowledge 문서로 정리</td>
+    </tr>
+    <tr>
+      <td><code>/suggest</code></td>
+      <td>기록 분석 에이전트</td>
+      <td>실험 기록을 독립 컨텍스트에서 읽고 다음 후보만 요약 반환</td>
+    </tr>
+    <tr>
+      <td><b>실험 파이프라인</b><br>실행의 중심축</td>
+      <td><code>/experiment</code></td>
+      <td>적용 에이전트 / 측정 에이전트</td>
+      <td><b>순차</b> 협력: 적용→측정→기록 검증 루프(3회 상한), 판정은 메인 담당</td>
+    </tr>
+    <tr>
+      <td rowspan="2"><b>유틸리티</b><br>반복 작업 지원</td>
+      <td><code>/compare</code></td>
+      <td>리포트 에이전트</td>
+      <td>기록을 읽고 전후 비교 리포트 생성 (향후 시각화 확장 지점)</td>
+    </tr>
+    <tr>
+      <td><code>/retrospect</code></td>
+      <td>없음 (메인 직접)</td>
+      <td>대화 맥락 자체가 재료 — 분리하면 오히려 손해</td>
+    </tr>
+    <tr>
+      <td><b>OS 관리</b><br>메타</td>
+      <td><code>/os</code></td>
+      <td>없음 (메인 직접)</td>
+      <td>OS 파일 수정의 유일 경로 — 사람과의 상호작용이 핵심</td>
+    </tr>
+  </table>
+  <div class="principle">
+    💡 <b>병렬 vs 순차</b> — 조사처럼 대상이 독립적이면 병렬, 적용→측정처럼 선후 의존이 있으면 순차.<br>
+    💡 <b>모든 스킬에 에이전트가 필요한 건 아니다</b> — 대화 맥락·사람의 결정이 핵심인 작업은 위임하지 않는다.
+  </div>
+
+  <h2>2. 컨텍스트 갱신 루프 — OS가 성장하는 원리</h2>
+  <p>실행할수록 문서가 두꺼워지고, 문서가 두꺼워질수록 다음 실행이 좋아지는 순환.</p>
+  <div class="diagram">
+  <pre class="mermaid">
+flowchart LR
+    subgraph SK["스킬 · 에이전트 (행동)"]
+        direction TB
+        subgraph D["방향 결정"]
+            R["/research<br/>조사 에이전트 ×N + 큐레이터"]
+            S["/suggest<br/>기록 분석 에이전트"]
+        end
+        subgraph PL["실험 파이프라인"]
+            E["/experiment<br/>적용 · 측정 에이전트"]
+        end
+        subgraph U["유틸리티"]
+            C["/compare<br/>리포트 에이전트"]
+            RT["/retrospect"]
+        end
+        subgraph M["OS 관리"]
+            OS["/os"]
+        end
+    end
+
+    subgraph DOC["문서 · SSOT (지식 · 상태)"]
+        direction TB
+        K["knowledge/<br/>도메인 지식"]
+        X["experiments/<br/>실험 기록"]
+        MT["metrics.md<br/>측정 기준"]
+        PJ["project.md<br/>대상 프로젝트"]
+    end
+
+    R -- "축적" --> K
+    E -- "기록" --> X
+    RT -- "반영" --> MT & K
+    OS -- "관리" --> PJ
+
+    K -. "주입" .-> S & E
+    X -. "주입" .-> S & C
+    MT -. "주입" .-> E
+    PJ -. "주입" .-> E
+  </pre>
+  </div>
+
+  <h2>3. 실험 파이프라인 — /experiment 9단계 루프 (스윔레인)</h2>
+  <p>가로축은 시간 순서, 세로축은 역할 레인. 5~8단계는 검증 루프로 묶여 최대 3회 자동 반복됩니다.</p>
+
+  <div class="swimlane-wrap">
+    <div class="swimlane">
+      <!-- 레인 배경 띠 -->
+      <div class="lane-stripe stripe-human r1"></div>
+      <div class="lane-stripe stripe-orch  r2"></div>
+      <div class="lane-stripe stripe-agent r3"></div>
+      <div class="lane-stripe stripe-log   r4"></div>
+
+      <!-- 레인 라벨 -->
+      <div class="lane-label r1"><span class="mark">🔵</span> 사람<small>의사결정</small></div>
+      <div class="lane-label r2"><span class="mark">🟢</span> 오케스트레이터<small>코디네이터</small></div>
+      <div class="lane-label r3"><span class="mark">🟣</span> 서브에이전트<small>실행자</small></div>
+      <div class="lane-label r4"><span class="mark">🟠</span> 실험 기록<small>상태 저장소</small></div>
+
+      <!-- 검증 루프 점선 박스 (5~8단계) -->
+      <div class="loop-box">
+        <span class="loop-label">🔁 검증 루프 · 최대 3회 · 실패 시 재시도</span>
+      </div>
+
+      <!-- 다음 루프 패널 -->
+      <div class="next-loop"><span>🔁 다음 루프 · 9 → 1</span></div>
+
+      <!-- 단계 카드 -->
+      <div class="step step-human r1 c1"><span class="no">01</span>실험 후보 선정</div>
+      <div class="step step-orch  r2 c2"><span class="no">02</span>이전 기록 조회</div>
+      <div class="step step-agent r3 c3"><span class="no">03</span>리서치</div>
+      <div class="step step-human r1 c4"><span class="no">04</span>진행 승인</div>
+      <div class="step step-agent r3 c5"><span class="no">05</span>적용 · 커밋</div>
+      <div class="step step-agent r3 c6"><span class="no">06</span>측정</div>
+      <div class="step step-log   r4 c7"><span class="no">07</span>결과 기록</div>
+      <div class="step step-orch  r2 c8"><span class="no">08</span>기준 판정</div>
+      <div class="step step-human r1 c9"><span class="no">09</span>인계 · 비교 확인</div>
+    </div>
+    <p class="swimlane-caption">
+      08 기준 판정에서 기준 미달 &amp; 3회 이하면 05 적용·커밋부터 재시도, 충족하거나 3회를 초과하면 09로 종료 후 다음 루프의 01로 이어집니다.
+    </p>
+  </div>
+
+  <h2>4. 호출 순서 (시퀀스)</h2>
+  <div class="diagram">
+  <pre class="mermaid">
+sequenceDiagram
+    actor 사용자
+    participant 오케 as 오케스트레이터<br/>(코디네이터)
+    participant 기록 as 실험 기록<br/>(상태 저장소)
+    participant 리서치 as 리서치 에이전트
+    participant 적용 as 적용 에이전트
+    participant 측정 as 측정 에이전트
+
+    사용자->>오케: 1. 실험 후보 제시
+    오케->>기록: 2. 이전 기록 조회
+    기록-->>오케: 관련 이력 · 교훈
+    오케->>리서치: 리서치 요청
+    리서치-->>오케: 3. 리서치 노트
+    오케->>사용자: 리서치 노트 요약
+    사용자-->>오케: 4. 진행 승인
+
+    loop 검증 루프 · 최대 3회
+        오케->>적용: 적용 요청
+        적용-->>오케: 5. 커밋 결과
+        오케->>측정: 측정 요청
+        측정-->>오케: 6. 측정 결과
+        오케->>기록: 7. 결과 기록
+        오케->>오케: 8. 기준 판정
+    end
+
+    alt 3회 초과 · 기준 미달
+        오케->>사용자: 9. 상태 요약 · 인계
+    else 기준 충족
+        오케->>사용자: 9. 이전 기록과 비교 요약
+    end
+  </pre>
+  </div>
+
+  <footer>Generated for my-claude-code-os · 색상 실험 OS · 2026-08-27</footer>
+</main>
+<script>
+  mermaid.initialize({ startOnLoad: true, theme: "neutral" });
+</script>
+</body>
+</html>
