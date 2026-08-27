@@ -14,3 +14,39 @@
 - 작업을 수행할 때 "무엇을" 했는지뿐 아니라 "왜" 그렇게 했는지 설명한다.
 - 관련된 Claude Code 개념(예: CLAUDE.md, 커스텀 명령어, 훅, 서브에이전트 등)이 등장하면 그 동작 원리를 함께 설명한다.
 - 더 나은 활용 방법이나 대안이 있다면 적극적으로 소개한다.
+
+## 3. OS.md 참조
+
+이 프로젝트의 목표와 작업 방식은 [`OS.md`](OS.md)를 따른다. 작업을 시작하기 전에
+`OS.md`를 읽고, 지금 어떤 워크플로우·원칙 위에서 일하는지 확인할 것.
+
+- 어디서부터 만들어 나갈지는 [`docs/guides/os-growth-stages.md`](docs/guides/os-growth-stages.md)의
+  현재 Stage를 기준으로 판단한다.
+- `OS.md`와 다르게 동작해야 할 이유가 생기면, 임의로 벗어나지 말고 사용자에게 먼저 확인한다.
+
+## 4. 공유 파일과 개인 파일의 분리
+
+이 저장소는 PR용 브랜치(`step*`)와 개인 보관용 브랜치(`personal`)를 나눠 쓴다.
+상세는 [`docs/guides/repo-layout.md`](docs/guides/repo-layout.md) 참고.
+
+- **`private/` 아래 파일은 `step*` 브랜치에 절대 커밋하지 않는다.** 개인 메모, 강의 자료,
+  사고 여정 서사 등이 여기 속한다.
+- **한 커밋에 공유 파일과 `private/` 파일을 섞지 않는다.**
+- 브랜치 병합은 `step* → personal` **한 방향으로만** 한다. 반대로 merge하면 개인 파일이
+  PR 브랜치로 흘러간다.
+- 새 파일을 만들 때 공유 대상인지 개인 보관인지 불분명하면, 커밋하기 전에 사용자에게 묻는다.
+
+## 5. 문서 생성 경로
+
+superpowers 등 플러그인 스킬은 기본 경로(`docs/superpowers/specs`, `docs/superpowers/plans`)에
+문서를 만들려 한다. **이 프로젝트에서는 아래 경로를 쓴다** — 플러그인 이름이 디렉터리로
+드러나지 않게 하고, 공유 대상과 작업 부산물을 처음부터 나누기 위해서다.
+
+| 문서 종류 | 경로 |
+|---|---|
+| 설계 문서 (spec) — 공유 | `docs/design/` |
+| 가이드 — 공유 | `docs/guides/` |
+| 공유용 시각화 HTML | `docs/share/` |
+| 구현 계획서 (plan) — 개인 | `private/notes/plans/` |
+| 의사결정 기록 (ADR) — 개인 | `private/decisions/` |
+| 사고 여정 — 개인 | `private/journey/` |
