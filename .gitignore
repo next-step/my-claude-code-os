@@ -11,3 +11,8 @@
 # 사람마다 내용이 달라 커밋하면 충돌만 난다.
 .claude/skill-usage.jsonl
 .claude/skill-usage.json
+
+# Gradle 빌드 산출물. projects/*/app 아래에서 생긴다.
+build/
+.gradle/
+!gradle/wrapper/gradle-wrapper.jar
