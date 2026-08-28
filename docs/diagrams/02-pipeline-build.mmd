@@ -1,0 +1,31 @@
+%% ATDD OS — 구현 구간 05~07 (OS.md 10.3)
+%% 승인 게이트 이후. 06단계 재시도에만 3회 상한이 걸린다.
+flowchart LR
+    START["04 승인 완료"]
+    T["05 실패 테스트 작성<br/>Skill · acceptance-test-write"]
+    TR1["Agent · test-reviewer<br/>모드 TEST_QUALITY"]
+    I["06 TDD 구현<br/>Skill · tdd-implement<br/>재시도 상한 3회"]
+    TR2["Agent · test-reviewer<br/>모드 IMPL_HONESTY"]
+    HAND["사람에게 인계<br/>인수기준을 의심해 02로"]
+    L["07 실패 원장 확인<br/>Skill · failure-ledger"]
+    FIN["사이클 완료"]
+
+    START --> T
+    T --> TR1
+    TR1 -- "FAIL" --> T
+    TR1 -- PASS --> I
+    I --> TR2
+    TR2 -- "FAIL" --> I
+    TR2 -- PASS --> L
+    I -- "3회 초과" --> HAND
+    L --> FIN
+
+    classDef human fill:#FEF3C7,stroke:#B45309,stroke-width:2px,color:#111827
+    classDef agent fill:#DBEAFE,stroke:#1D4ED8,stroke-width:2px,color:#111827
+    classDef skill fill:#DCFCE7,stroke:#15803D,stroke-width:2px,color:#111827
+    classDef term fill:#F3F4F6,stroke:#6B7280,stroke-width:2px,color:#111827
+
+    class HAND human
+    class TR1,TR2 agent
+    class T,I,L skill
+    class START,FIN term

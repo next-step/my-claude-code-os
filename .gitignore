@@ -3,3 +3,17 @@
 
 # 스킬 사용 통계 로그 (훅이 로컬에 누적 기록하는 실행 데이터, 버전관리 대상 아님)
 .claude/skill-usage-stats.json
+
+# ATDD 인수 테스트 실패 원장 (훅이 로컬에 누적 기록하는 실행 데이터, 버전관리 대상 아님)
+.claude/atdd-failure-ledger.json
+
+# OS.md 회고 확인 훅(os-retro-check.js)이 로컬에 남기는 중복 방지 상태, 버전관리 대상 아님
+.claude/.os-retro-state.json
+
+# 큰 변경 커밋 확인 훅(big-change-commit-check.js)이 로컬에 남기는 중복 방지 상태, 버전관리 대상 아님
+.claude/.commit-check-state.json
+
+# tdd-implement(06단계)가 매 시도마다 재생성하는 UI 렌더링 스크린샷, 재현 가능한 산출물이라 버전관리 대상 아님
+# (mockup.*, ui-spec.md는 고정 fixture라 커밋 대상으로 남긴다)
+.claude/tests/fixtures/**/screenshot.*
+/.idea/

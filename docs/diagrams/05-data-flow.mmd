@@ -1,0 +1,32 @@
+%% ATDD OS — 데이터 흐름: 훅이 쓰고 스킬이 읽는다 (OS.md 10.6)
+flowchart LR
+    SK["Skill 도구 호출"]
+    BA["Bash<br/>node --test"]
+    H1["log-skill-usage.js<br/>PostToolUse · Skill"]
+    H2["atdd-failure-log.js<br/>PostToolUse · Bash"]
+    F1[("skill-usage-stats.json")]
+    F2[("atdd-failure-ledger.json")]
+    LB["lib/stats.js<br/>readStats + summarize"]
+    S1["skill-stat<br/>호출 통계"]
+    S2["failure-ledger<br/>실패 이력"]
+    S3["atdd-status<br/>OS 현황"]
+
+    SK --> H1
+    BA --> H2
+    H1 -- "쓰기" --> F1
+    H2 -- "쓰기" --> F2
+    F1 -- "읽기" --> LB
+    LB --> S1
+    F2 -- "읽기" --> S2
+    F1 -- "읽기" --> S3
+    F2 -- "읽기" --> S3
+
+    classDef hook fill:#FEE2E2,stroke:#B91C1C,stroke-width:2px,color:#111827
+    classDef file fill:#F3F4F6,stroke:#4B5563,stroke-width:2px,color:#111827
+    classDef skill fill:#DCFCE7,stroke:#15803D,stroke-width:2px,color:#111827
+    classDef src fill:#EDE9FE,stroke:#6D28D9,stroke-width:2px,color:#111827
+
+    class H1,H2 hook
+    class F1,F2 file
+    class S1,S2,S3,LB skill
+    class SK,BA src

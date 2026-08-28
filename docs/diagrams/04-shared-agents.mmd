@@ -1,0 +1,18 @@
+%% ATDD OS — 공유 서브에이전트 재사용 관계 (OS.md 10.5)
+flowchart LR
+    AT["acceptance-test-write<br/>05단계"]
+    TI["tdd-implement<br/>06단계"]
+    TR(["test-reviewer<br/>테스트·구현이 정직한가"])
+    O["atdd-orchestrator<br/>03단계"]
+    SD["spec-decompose<br/>단독 실행 시"]
+    PR(["policy-reviewer<br/>인수기준이 요구사항을 덮는가"])
+
+    AT -- "모드 TEST_QUALITY" --> TR
+    TI -- "모드 IMPL_HONESTY" --> TR
+    O -- "독립 리뷰" --> PR
+    SD -- "셀프 체크" --> PR
+
+    classDef agent fill:#DBEAFE,stroke:#1D4ED8,stroke-width:2px,color:#111827
+    classDef skill fill:#DCFCE7,stroke:#15803D,stroke-width:2px,color:#111827
+    class TR,PR agent
+    class AT,TI,O,SD skill
