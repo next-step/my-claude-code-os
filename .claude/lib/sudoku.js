@@ -226,7 +226,7 @@ function isComplete(game) {
   return isValidSudoku(game.board);
 }
 
-module.exports = {
+const SudokuLogic = {
   createGame,
   isValidSudoku,
   countSolutions,
@@ -234,3 +234,10 @@ module.exports = {
   clearCell,
   isComplete,
 };
+
+if (typeof module !== "undefined" && module.exports) {
+  module.exports = SudokuLogic;
+}
+if (typeof window !== "undefined") {
+  window.SudokuLogic = SudokuLogic;
+}
