@@ -17,12 +17,20 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
- * 이번 작업의 승인된 수용 기준 두 가지를 실제 HTTP 계층까지 요청을 태워서 검증한다.
+ * 승인된 수용 기준을 실제 HTTP 계층까지 요청을 태워서 검증한다.
+ *
+ * 이번 작업(삭제/되돌리기)의 기준 세 가지가 여기 있어야 하는 이유: 사람이 이 앱을 쓰는
+ * 통로는 HTTP 하나뿐이라, 서비스 계층에서만 통과하는 기능은 "만들어졌지만 부를 수 없는"
+ * 상태다. NoteServiceTest가 저장·조회 규칙을 보는 것과 별개로, 여기서는 실제로 호출
+ * 가능한 경로·메서드·상태 코드가 붙어 있는지를 본다.
+ *
+ * 이전 작업의 수용 기준 두 가지도 그대로 남겨 검증한다.
  *
  * 1) "노트 등록에 성공하면 응답 본문에 등록된 노트의 다음 복습일이 포함된다."
  * 2) "HTTP 요청으로 지금 복습할 노트 목록을 조회하면 응답에 각 노트의 다음 복습일이
@@ -123,5 +131,99 @@ class NoteHttpApiTest {
         int indexB = contents.indexOf(contentB);
         assertThat(nextReviewDates.get(indexA)).isEqualTo(nextReviewDateA.toString());
         assertThat(nextReviewDates.get(indexB)).isEqualTo(nextReviewDateB.toString());
+    }
+
+    @Test
+    void 복습_목록에_있던_노트를_HTTP로_삭제하면_그_노트는_목록에서_제외된다() throws Exception {
+        // 삭제 대상 말고 다른 노트도 하나 둔다. 삭제가 목록 전체를 비워버리는 구현이어도
+        // "삭제한 노트가 없다"만 확인하면 통과하기 때문이다.
+        String suffix = String.valueOf(System.nanoTime());
+        String targetContent = "HTTP로 삭제할 노트-" + suffix;
+        String survivorContent = "삭제와 무관한 노트-" + suffix;
+        Long targetId = saveDueNote(targetContent, LocalDate.now().minusDays(2));
+        saveDueNote(survivorContent, LocalDate.now().minusDays(1));
+        assertThat(dueContents()).contains(targetContent, survivorContent);
+
+        mockMvc.perform(delete("/notes/{id}", targetId))
+                .andExpect(status().isOk());
+
+        assertThat(dueContents())
+                .doesNotContain(targetContent)
+                .contains(survivorContent);
+    }
+
+    @Test
+    void HTTP로_삭제한_노트를_되돌리면_목록에_다시_포함되고_다음_복습일이_삭제_전과_같다() throws Exception {
+        // 수용 기준 2와 3을 한 흐름에서 본다. 되돌리기가 다음 복습일을 오늘 기준으로 다시
+        // 계산하는 구현이라면 목록에는 다시 들어오더라도(기준 2 통과) 날짜가 달라져
+        // 기준 3에서 걸린다. 그래서 "다시 들어왔는가"와 "값이 같은가"를 함께 단언한다.
+        String suffix = String.valueOf(System.nanoTime());
+        String content = "삭제했다 되돌릴 노트-" + suffix;
+        LocalDate nextReviewDateBeforeDelete = LocalDate.now().minusDays(5);
+        Long noteId = saveDueNote(content, nextReviewDateBeforeDelete);
+
+        String deleteResponse = mockMvc.perform(delete("/notes/{id}", noteId))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString(StandardCharsets.UTF_8);
+        assertThat((String) JsonPath.read(deleteResponse, "$.deletedAt"))
+                .as("삭제 응답에는 삭제 시각이 채워져 있어야 한다")
+                .isNotNull();
+        assertThat(dueContents()).doesNotContain(content);
+
+        String restoreResponse = mockMvc.perform(post("/notes/{id}/restore", noteId))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString(StandardCharsets.UTF_8);
+
+        assertThat((String) JsonPath.read(restoreResponse, "$.deletedAt"))
+                .as("되돌린 노트에는 삭제 시각이 남아 있으면 안 된다")
+                .isNull();
+        assertThat((String) JsonPath.read(restoreResponse, "$.nextReviewDate"))
+                .isEqualTo(nextReviewDateBeforeDelete.toString());
+
+        // 응답 본문만이 아니라 실제 목록 조회에서도 같은 값으로 돌아와야 한다.
+        String dueBody = dueResponseBody();
+        List<String> contents = JsonPath.read(dueBody, "$[*].content");
+        List<String> nextReviewDates = JsonPath.read(dueBody, "$[*].nextReviewDate");
+        assertThat(contents).contains(content);
+        assertThat(nextReviewDates.get(contents.indexOf(content)))
+                .isEqualTo(nextReviewDateBeforeDelete.toString());
+    }
+
+    @Test
+    void 삭제는_행을_지우지_않으므로_삭제한_노트도_HTTP로_되돌릴_수_있다() throws Exception {
+        // 사람이 정한 제약(soft delete)이 HTTP 경로에서도 지켜지는지 본다. 물리 삭제라면
+        // 되돌리기 요청이 404가 되어 여기서 걸린다.
+        Long noteId = saveDueNote("물리 삭제였다면 되돌릴 수 없는 노트-" + System.nanoTime(),
+                LocalDate.now().minusDays(1));
+
+        mockMvc.perform(delete("/notes/{id}", noteId)).andExpect(status().isOk());
+
+        mockMvc.perform(post("/notes/{id}/restore", noteId)).andExpect(status().isOk());
+        assertThat(noteRepository.findById(noteId)).isPresent();
+    }
+
+    @Test
+    void 없는_노트를_삭제하거나_되돌리려_하면_404로_답한다() throws Exception {
+        mockMvc.perform(delete("/notes/{id}", 999_999L)).andExpect(status().isNotFound());
+        mockMvc.perform(post("/notes/{id}/restore", 999_999L)).andExpect(status().isNotFound());
+    }
+
+    /**
+     * 다음 복습일이 이미 지난 노트를 저장해 "지금 복습할 목록"에 뜨게 만든다.
+     * 방금 등록한 노트는 최소 간격이 1일이라 오늘 목록에 뜨지 않으므로, 등록 API 대신
+     * 리포지토리에 직접 저장한다(다른 테스트들이 쓰는 것과 같은 방식).
+     */
+    private Long saveDueNote(String content, LocalDate nextReviewDate) {
+        return noteRepository.save(new Note(content, LocalDateTime.now(), nextReviewDate)).getId();
+    }
+
+    private String dueResponseBody() throws Exception {
+        return mockMvc.perform(get("/notes/due"))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString(StandardCharsets.UTF_8);
+    }
+
+    private List<String> dueContents() throws Exception {
+        return JsonPath.read(dueResponseBody(), "$[*].content");
     }
 }

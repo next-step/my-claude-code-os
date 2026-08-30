@@ -13,6 +13,7 @@ import java.time.ZoneId;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * @DataJpaTest: 실제 JPA/리포지토리 계층만 띄우는 슬라이스 테스트라서
@@ -23,6 +24,10 @@ import static org.assertj.core.api.Assertions.assertThat;
  * 검증 대상 수용 기준:
  * 1) "노트를 1건 등록하면 등록 시각과 다음 복습일이 각각 1개씩 저장된다."
  * 3) "지금 복습할 노트 목록에는 다음 복습일이 오늘 이하인 노트만 포함된다."
+ *
+ * 이번 작업의 수용 기준 3개(삭제하면 목록에서 빠진다 / 되돌리면 다시 들어온다 /
+ * 되돌린 노트의 다음 복습일은 삭제 전과 같다)도 여기서 함께 검증한다. 셋 다
+ * "저장된 뒤 다시 조회했을 때"를 확인해야 하므로 리포지토리 계층이 필요하다.
  */
 @DataJpaTest
 class NoteServiceTest {
@@ -37,8 +42,19 @@ class NoteServiceTest {
     @Autowired
     private TestEntityManager entityManager;
 
+    /** 삭제/되돌리기 테스트가 공유하는 고정된 "오늘". 실제 시스템 날짜와 무관하게 결과가 같아야 한다. */
+    private static final LocalDate TODAY = LocalDate.of(2030, 5, 20);
+
     private NoteService newService(Clock clock) {
         return new NoteService(noteRepository, new NextReviewDateCalculator(), clock);
+    }
+
+    private Clock fixedClockAt(LocalDate date) {
+        return fixedClockAt(date.atStartOfDay());
+    }
+
+    private Clock fixedClockAt(LocalDateTime dateTime) {
+        return Clock.fixed(dateTime.atZone(ZoneId.systemDefault()).toInstant(), ZoneId.systemDefault());
     }
 
     @Test
@@ -96,6 +112,91 @@ class NoteServiceTest {
                 .extracting(Note::getId)
                 .contains(overdueNote.getId(), dueTodayNote.getId())
                 .doesNotContain(futureNote.getId());
+    }
+
+    @Test
+    void 복습_목록에_있던_노트를_삭제하면_그_노트는_목록에서_제외된다() {
+        Clock fixedClock = fixedClockAt(TODAY);
+        NoteService noteService = newService(fixedClock);
+        Note dueNote = noteRepository.save(new Note("삭제할 복습 대상", LocalDateTime.now(), TODAY.minusDays(1)));
+        Note otherNote = noteRepository.save(new Note("남아 있을 복습 대상", LocalDateTime.now(), TODAY));
+        assertThat(noteService.getNotesDueForReview()).extracting(Note::getId).contains(dueNote.getId());
+
+        noteService.deleteNote(dueNote.getId());
+
+        // 1차 캐시에 남은 객체가 아니라 DB에서 다시 읽은 결과로 판정한다.
+        entityManager.flush();
+        entityManager.clear();
+        assertThat(noteService.getNotesDueForReview())
+                .extracting(Note::getId)
+                .doesNotContain(dueNote.getId())
+                .contains(otherNote.getId());
+    }
+
+    @Test
+    void 삭제는_행을_지우지_않고_삭제_시각만_기록한다() {
+        // 사람이 정한 제약: 물리 삭제가 아니라 soft delete. 이 단언이 없으면 구현이
+        // repository.delete(...)로 바뀌어도 "목록에서 빠진다"는 기준만 보면 통과해버린다.
+        LocalDateTime deletedAt = TODAY.atTime(9, 30);
+        NoteService noteService = newService(fixedClockAt(deletedAt));
+        Note note = noteRepository.save(new Note("지워도 남아야 하는 행", LocalDateTime.now(), TODAY));
+
+        noteService.deleteNote(note.getId());
+
+        entityManager.flush();
+        entityManager.clear();
+        Note reloaded = noteRepository.findById(note.getId()).orElseThrow();
+        assertThat(reloaded.isDeleted()).isTrue();
+        assertThat(reloaded.getDeletedAt()).isEqualTo(deletedAt);
+        assertThat(reloaded.getContent()).isEqualTo("지워도 남아야 하는 행");
+    }
+
+    @Test
+    void 삭제한_노트를_되돌리면_그_노트는_복습_목록에_다시_포함된다() {
+        NoteService noteService = newService(fixedClockAt(TODAY));
+        Note note = noteRepository.save(new Note("되돌릴 복습 대상", LocalDateTime.now(), TODAY.minusDays(2)));
+        noteService.deleteNote(note.getId());
+        entityManager.flush();
+        entityManager.clear();
+        assertThat(noteService.getNotesDueForReview()).extracting(Note::getId).doesNotContain(note.getId());
+
+        noteService.restoreNote(note.getId());
+
+        entityManager.flush();
+        entityManager.clear();
+        assertThat(noteService.getNotesDueForReview()).extracting(Note::getId).contains(note.getId());
+        assertThat(noteRepository.findById(note.getId()).orElseThrow().getDeletedAt()).isNull();
+    }
+
+    @Test
+    void 되돌린_노트의_다음_복습일은_삭제_전과_동일하다() {
+        // 되돌리기 시점의 "오늘"을 등록/삭제 시점과 다르게 둔다. 되돌리기가 다음 복습일을
+        // 다시 계산하는 구현이라면 그 값이 여기 고정된 오늘 기준으로 밀려나므로 이 단언이
+        // 깨진다. 같은 날짜로 두면 우연히 일치해 통과할 수 있다.
+        LocalDate nextReviewDateBeforeDelete = TODAY.minusDays(4);
+        Note note = noteRepository.save(
+                new Note("복습일이 보존돼야 하는 노트", LocalDateTime.now(), nextReviewDateBeforeDelete));
+        newService(fixedClockAt(TODAY)).deleteNote(note.getId());
+        entityManager.flush();
+        entityManager.clear();
+
+        newService(fixedClockAt(TODAY.plusDays(30))).restoreNote(note.getId());
+
+        entityManager.flush();
+        entityManager.clear();
+        Note restored = noteRepository.findById(note.getId()).orElseThrow();
+        assertThat(restored.getNextReviewDate()).isEqualTo(nextReviewDateBeforeDelete);
+        assertThat(restored.getRegisteredAt()).isEqualTo(note.getRegisteredAt());
+    }
+
+    @Test
+    void 없는_노트를_삭제하거나_되돌리면_예외를_던진다() {
+        NoteService noteService = newService(Clock.systemDefaultZone());
+
+        assertThatThrownBy(() -> noteService.deleteNote(999_999L))
+                .isInstanceOf(NoteNotFoundException.class);
+        assertThatThrownBy(() -> noteService.restoreNote(999_999L))
+                .isInstanceOf(NoteNotFoundException.class);
     }
 
     @Test

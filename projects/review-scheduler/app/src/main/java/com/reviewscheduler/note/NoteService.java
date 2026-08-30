@@ -2,6 +2,7 @@ package com.reviewscheduler.note;
 
 import com.reviewscheduler.domain.NextReviewDateCalculator;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Clock;
 import java.time.LocalDate;
@@ -9,7 +10,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 /**
- * 노트 등록/조회를 담당하는 애플리케이션 서비스.
+ * 노트 등록/조회/삭제/되돌리기를 담당하는 애플리케이션 서비스.
  *
  * 실제 "다음 복습일이 며칠 뒤인가"는 여기서 계산하지 않고 NextReviewDateCalculator에
  * 위임한다. 이 클래스는 "지금 시각을 구하고, 계산기를 호출하고, 저장소에 저장한다"는
@@ -52,6 +53,41 @@ public class NoteService {
      * 목록"을 결정하는 로직이 두 군데로 갈라질 위험이 있다.
      */
     public List<Note> getNotesDueForReview() {
-        return noteRepository.findByNextReviewDateLessThanEqual(LocalDate.now(clock));
+        return noteRepository.findByDeletedAtIsNullAndNextReviewDateLessThanEqual(LocalDate.now(clock));
+    }
+
+    /**
+     * 노트를 삭제한다. 행을 지우지 않고 삭제 시각만 기록하는 soft delete다(Note.delete).
+     * 삭제된 노트는 복습 목록 질의의 조건에서 걸러진다.
+     *
+     * 삭제 시각도 등록 시각과 같이 주입된 clock에서 얻는다 — LocalDateTime.now()를
+     * 직접 부르면 "언제 지웠는가"를 테스트에서 고정할 수 없다.
+     */
+    @Transactional
+    public Note deleteNote(Long id) {
+        Note note = findExistingNote(id);
+        note.delete(LocalDateTime.now(clock));
+        return noteRepository.save(note);
+    }
+
+    /**
+     * 삭제한 노트를 되돌린다. 삭제 시각만 비우므로 다음 복습일은 삭제 전 값이 그대로 남는다.
+     *
+     * 여기서 nextReviewDate를 다시 계산하지 않는다. 되돌리기는 "오늘부터 다시 시작"이
+     * 아니라 "삭제하기 전 상태로 돌아간다"이기 때문이다.
+     */
+    @Transactional
+    public Note restoreNote(Long id) {
+        Note note = findExistingNote(id);
+        note.restore();
+        return noteRepository.save(note);
+    }
+
+    /**
+     * 삭제 여부와 무관하게 id로 노트를 찾는다. 삭제된 노트도 찾을 수 있어야 되돌리기가
+     * 가능하다 — soft delete라서 행은 그대로 남아 있다.
+     */
+    private Note findExistingNote(Long id) {
+        return noteRepository.findById(id).orElseThrow(() -> new NoteNotFoundException(id));
     }
 }
