@@ -33,6 +33,16 @@ STAGE_RULES = [
     ("④", "Reviewer",       r"^\s*(Reviewer|리뷰어)\b"),
 ]
 
+# 라벨이 규칙에 안 걸릴 때의 보조 근거 — 어떤 역할 타입으로 띄웠는가(.claude/agents/).
+# 라벨을 먼저 보는 이유: 라벨에는 관점("Reviewer: 회귀")이 담기지만 타입에는 없다.
+# 타입은 라벨이 어긋났을 때만 쓴다. 추측이 아니라 훅이 기록한 사실이므로 「기타」로 흘리지 않는다.
+AGENT_STAGES = {
+    "feature-pm":                ("②", "PM"),
+    "feature-developer-advisor": ("②", "Developer 자문"),
+    "feature-developer":         ("③", "Developer"),
+    "feature-reviewer":          ("④", "Reviewer"),
+}
+
 # 서브에이전트가 없는 구간. 로그에 왕복이 안 남는 것이 정상이므로 「없음」을 실패로 읽으면 안 된다.
 NO_SUBAGENT = {"①": "요구 수집 (메인이 사람과 직접)", "⑤": "배포 (사람이 방아쇠)"}
 STAGE_ORDER = ["①", "②", "③", "④", "⑤"]
@@ -44,6 +54,13 @@ QUIET_KINDS = {"알림"}
 # 훅은 이것도 kind="사람입력" 으로 남긴다(이벤트만 보면 구별이 안 된다).
 # kind 를 고쳐 쓰지 않고 auto 플래그만 달아 따로 센다 — 로그를 다시 쓰는 것이 아니라 읽는 쪽에서 가른다.
 AUTO_RETURN = re.compile(r"^\s*<task-notification>")
+
+# 세션 안에서 오케스트레이터가 바뀐 지점. 사람이 친 "/스킬명" 이 그 신호다.
+#   한 세션에서 feature-loop 를 돌린 뒤 skill-forge 를 이어 돌리면 두 오케스트레이터의 왕복이
+#   같은 세션에 섞이고, 세션 이어붙이기(attribute) 가 그것을 한 루프로 몰아넣는다.
+# 라벨 모양(「검토자」는 skill-forge 것)으로 가르지 않는다 — 그건 추측이고, 라벨은 언제든 바뀐다.
+# 사람이 무엇을 불렀는지가 로그에 남아 있으므로 그 사실로 가른다.
+SLASH_CALL = re.compile(r"^\s*/([a-z][a-z0-9-]*)")
 
 
 def dwidth(text):
@@ -106,10 +123,12 @@ def load_jsonl(path):
     return rows, broken
 
 
-def stage_of(label):
+def stage_of(label, agent=None):
     for mark, role, pattern in STAGE_RULES:
         if re.search(pattern, label or "", re.IGNORECASE):
             return mark, role
+    if agent in AGENT_STAGES:
+        return AGENT_STAGES[agent]
     return "기타", (label or "-").split(":")[0].strip() or "-"
 
 
@@ -123,7 +142,7 @@ def normalize(root):
         ts = parse_ts(r.get("ts"))
         if ts is None:
             continue
-        mark, role = stage_of(r.get("label", ""))
+        mark, role = stage_of(r.get("label", ""), r.get("agent"))
         events.append({
             "ts": ts, "src": "agent", "ev": r.get("ev", "?"),
             "loop": r.get("loop", "-") or "-", "session": r.get("session", ""),
@@ -189,6 +208,35 @@ def attribute(events):
     return events
 
 
+def mark_orchestrator(events, known_skills):
+    """각 줄이 어느 오케스트레이터가 도는 중에 찍혔는지 단다.
+
+    근거는 하나뿐이다 — 사람이 친 "/스킬명". 그 시점부터 다음 "/스킬명" 까지가 그 오케스트레이터의 구간이다.
+    첫 "/스킬명" 이전 줄은 None 으로 둔다(모른다). 모르는 것을 앞의 값으로 채우지 않는다.
+    """
+    by_session = {}
+    for e in events:
+        by_session.setdefault(e["session"], []).append(e)
+    for evs in by_session.values():
+        evs.sort(key=lambda e: e["ts"])
+        current = None
+        for e in evs:
+            if (e["src"] == "human" and e["ev"] == "answer" and not e["auto"]):
+                m = SLASH_CALL.match(e["summary"] or "")
+                if m and m.group(1) in known_skills:
+                    current = m.group(1)
+                    e["orch_switch"] = current
+            e["orch"] = current
+    return events
+
+
+def scan_skills(root):
+    d = os.path.join(root, ".claude", "skills")
+    if not os.path.isdir(d):
+        return set()
+    return {n for n in os.listdir(d) if os.path.isdir(os.path.join(d, n))}
+
+
 def scan_loop_dirs(root):
     """projects/<제품>/loops/NNN-<기능> 을 훑는다. 로그가 없는 옛 루프도 목록에 나와야 한다."""
     found = {}
@@ -210,9 +258,10 @@ def loop_number(name):
     return int(m.group(1)) if m else -1
 
 
-def collect(root):
+def collect(root, all_orch=False):
     events, broken = normalize(root)
     attribute(events)
+    mark_orchestrator(events, scan_skills(root))
     events.sort(key=lambda e: e["ts"])
 
     loops = {}
@@ -223,6 +272,20 @@ def collect(root):
         loops[e["loop"]]["events"].append(e)
 
     for lp in loops.values():
+        # 루프의 주인 오케스트레이터 = 이 루프의 첫 줄이 찍힐 때 돌던 것.
+        # 다른 오케스트레이터가 돈 구간은 기본으로 접는다(--all-orch 로 편다).
+        all_evs = lp["events"]
+        owner = next((e["orch"] for e in all_evs if e["orch"]), None)
+        lp["owner"] = owner
+        lp["all_orch"] = all_orch
+        if all_orch or owner is None:
+            lp["outside"] = []
+        else:
+            lp["outside"] = [e for e in all_evs if e["orch"] not in (None, owner)]
+            lp["events"] = [e for e in all_evs if e["orch"] in (None, owner)]
+        lp["outside_orch"] = sorted({e["orch"] for e in lp["outside"] if e["orch"]})
+        lp["outside_dispatch"] = sum(1 for e in lp["outside"]
+                                     if e["src"] == "agent" and e["ev"] == "dispatch")
         evs = lp["events"]
         agent_evs = [e for e in evs if e["src"] == "agent"]
         dispatches = [e for e in agent_evs if e["ev"] == "dispatch"]
@@ -288,6 +351,12 @@ def render_list(loops, broken):
     lines.append("도달 구간 = 서브에이전트 왕복이 로그에 남은 구간. ①·⑤는 서브가 없어 여기 나오지 않는다.")
     lines.append("개입 = 사람이 실제로 답한 줄. 서브 복귀 알림(<task-notification>)은 빼고 셌다.")
     lines.append("로그 없음 = 훅 설치 이전에 돈 루프. 돌지 않은 것이 아니다.")
+    folded = [l for l in loops if l.get("outside")]
+    if folded:
+        lines.append("")
+        for l in folded:
+            lines.append(f"접음  {l['name']} — 같은 세션의 {'·'.join(l['outside_orch'])} "
+                         f"왕복 {l['outside_dispatch']}건은 빼고 셌다 (--all-orch 로 포함)")
     return "\n".join(lines)
 
 
@@ -309,6 +378,15 @@ def render_loop(lp, full=False):
     span = int((lp["last"] - lp["first"]).total_seconds() // 60)
     lines.append(f"기록  {stamp(lp['first'])} ~ {stamp(lp['last'])} KST · {span}분 · 세션 {len(lp['sessions'])}개")
     lines.append(f"귀속  로그가 직접 지목 {lp['confirmed']}줄 · 세션으로 이어붙임 {lp['inferred']}줄(~ 표시)")
+    if lp["outside"]:
+        o_first, o_last = lp["outside"][0]["ts"], lp["outside"][-1]["ts"]
+        lines.append(f"범위  {lp['owner']} 구간만. 같은 세션의 "
+                     f"{'·'.join(lp['outside_orch'])} 왕복 {lp['outside_dispatch']}건"
+                     f"({hm(o_first)}~{hm(o_last)})은 접었다 — --all-orch 로 펼침")
+    elif lp["all_orch"]:
+        lines.append("범위  전부. 같은 세션의 다른 오케스트레이터 구간까지 포함했다(--all-orch)")
+    elif lp["owner"]:
+        lines.append(f"범위  {lp['owner']} 구간만. 이 세션에 다른 오케스트레이터는 없었다")
 
     # ── 구간 도달
     lines += ["", "구간 — 서브에이전트 왕복이 로그에 남은 것"]
@@ -388,7 +466,8 @@ def render_loop(lp, full=False):
     notes = []
     if lp["no_isolation"]:
         labels = ", ".join(clip(e["label"], 24) for e in lp["no_isolation"][:4])
-        notes.append(f"격리 문구 없이 나간 호출 {len(lp['no_isolation'])}건 — {labels} (OS.md 4절 규칙 3)")
+        notes.append(f"격리 없이 나간 호출 {len(lp['no_isolation'])}건 — {labels} "
+                     f"(프롬프트에도 역할 타입에도 읽는 범위 제한이 없었다 · OS.md 4절 규칙 3)")
     if lp["empty_return"]:
         notes.append(f"빈 응답 {len(lp['empty_return'])}건 — 서브가 배경으로 돌아 return 이 즉시 찍혔다. "
                      f"dur_s 를 작업 시간으로 읽으면 안 된다")
@@ -473,7 +552,8 @@ def find_loop(loops, query):
 
 def as_json(lp):
     return {
-        "loop": lp["name"], "path": lp["path"],
+        "loop": lp["name"], "path": lp["path"], "orchestrator": lp["owner"],
+        "folded_orchestrators": lp["outside_orch"], "folded_dispatch": lp["outside_dispatch"],
         "first": lp["first"].isoformat() if lp["first"] else None,
         "last": lp["last"].isoformat() if lp["last"] else None,
         "sessions": lp["sessions"], "dispatch": lp["dispatch"],
@@ -498,6 +578,8 @@ def main():
     ap.add_argument("--list", action="store_true", help="루프 목록만 (기본)")
     ap.add_argument("--full", action="store_true", help="접은 진행 알림까지 모두 보이기")
     ap.add_argument("--mermaid", action="store_true", help="흐름을 mermaid flowchart 로")
+    ap.add_argument("--all-orch", action="store_true",
+                    help="같은 세션에서 다른 오케스트레이터가 돈 구간까지 포함")
     ap.add_argument("--json", action="store_true", help="JSON 출력")
     ap.add_argument("--root", default=os.environ.get("CLAUDE_PROJECT_DIR", os.getcwd()),
                     help="저장소 루트")
@@ -508,7 +590,7 @@ def main():
         print(f"저장소 루트가 아니다: {root} (.claude 가 없다)", file=sys.stderr)
         return 2
 
-    loops, broken = collect(root)
+    loops, broken = collect(root, all_orch=args.all_orch)
 
     if args.loop and not args.list:
         lp, candidates = find_loop(loops, args.loop)
@@ -530,6 +612,7 @@ def main():
     if args.json:
         print(json.dumps([{
             "loop": l["name"], "logged": bool(l["events"]), "stages": l["stages"],
+            "orchestrator": l["owner"], "folded_dispatch": l["outside_dispatch"],
             "dispatch": l["dispatch"], "human": len(l["human"]),
             "last": l["last"].isoformat() if l["last"] else None,
         } for l in loops], ensure_ascii=False, indent=2))
