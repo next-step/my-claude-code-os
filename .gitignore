@@ -16,3 +16,8 @@
 build/
 .gradle/
 !gradle/wrapper/gradle-wrapper.jar
+
+# 루프 로그(agent-handoff.jsonl · human-intervention.jsonl)는 커밋한다 — 리뷰 대상이다.
+# OS가 실제로 어떻게 돌았는지(원칙 5)는 로그에만 남아 있어서, 빼면 코드만 보이고 작동은 안 보인다.
+# 여기 남기는 것은 로그가 아니라 훅의 임시 상태다. 세션 표식과 왕복 짝짓기 파일이라 커밋할 내용이 없다.
+.claude/.hook-state/
