@@ -3,7 +3,6 @@ package com.reviewscheduler;
 import com.reviewscheduler.domain.NextReviewDateCalculator;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
 
 import java.time.Clock;
@@ -11,12 +10,17 @@ import java.time.Clock;
 @SpringBootApplication
 public class AppApplication {
 
+	/**
+	 * 이 앱의 유일한 진입점은 HTTP 서버다. 명령줄 배치 실행(등록 후 즉시 종료)은
+	 * 없앴다 — 파일 기반 H2가 한 번에 한 프로세스만 열 수 있어서 "서버를 띄운 채로
+	 * 명령줄도 함께 쓴다"는 전제가 애초에 성립하지 않았고, "무엇이 실제 명령인가"를
+	 * 판단하는 규칙이 여기와 명령줄 러너 두 곳에 나뉘어 있어 서로 어긋날 위험도 있었다.
+	 * 그래서 컨텍스트를 닫지 않고 계속 띄워두기만 한다(내장 톰캣의 비-데몬 스레드가
+	 * 프로세스를 살려둔다). 예전 명령줄 동작이 다시 필요해지면 버전 관리 이력에서
+	 * 되돌리면 된다.
+	 */
 	public static void main(String[] args) {
-		// CommandLineRunner(NoteCliRunner)는 컨텍스트 기동 중에 이미 실행되고 끝난다.
-		// 이 앱은 "한 번 실행해서 결과를 보고 끝내는" CLI라서, run() 이후 컨텍스트를
-		// 명시적으로 close()해 커넥션 풀 등을 정리하고 프로세스가 확실히 종료되게 한다.
-		ConfigurableApplicationContext context = SpringApplication.run(AppApplication.class, args);
-		context.close();
+		SpringApplication.run(AppApplication.class, args);
 	}
 
 	/**
