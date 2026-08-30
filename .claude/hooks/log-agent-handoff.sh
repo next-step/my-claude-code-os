@@ -8,6 +8,7 @@
 # stdin  : 훅 입력 JSON
 #          PreToolUse  {session_id, tool_name, tool_input:{description, prompt, subagent_type}}
 #          PostToolUse 위 + {tool_response}
+#          subagent_type 이 .claude/agents/<타입>.md 를 가리키면 격리는 그 파일이 들고 있다
 # stdout : 아무것도 출력하지 않는다. 훅의 stdout은 대화에 끼어들므로 조용해야 한다.
 # 산출물 : .claude/agent-handoff.jsonl  (append-only, 한 왕복이 두 줄 — dispatch / return)
 #          .claude/.hook-state/         (왕복 짝짓기용 임시 파일. 자동 정리)
@@ -90,17 +91,30 @@ case "$ev" in
     # 시각과 함께 루프도 적어둔다. return 쪽 페이로드에 루프 경로가 안 보여도 짝이 물려받는다.
     printf '%s\t%s' "$now" "$loop" > "$STATE/$key" 2>/dev/null
 
-    # 격리 점검 — OS.md 4절 규칙 3. "저장소의 다른 파일을 읽지 마라"가 프롬프트에 있었는가.
+    # 격리 점검 — OS.md 4절 규칙 3. 이 호출에 읽는 범위 제한이 걸려 있었는가.
     # 이건 판정이 아니라 관측이다. 막지 않고 기록만 한다(막으려면 exit 2 를 쓴다).
+    #
+    # 걸리는 자리가 둘이다. 프롬프트에 손으로 넣었거나(예전 방식),
+    # .claude/agents/<타입>.md 가 그 문장을 들고 있거나(지금 방식).
+    # 뒤쪽을 안 세면 역할 서브를 쓰는 순간 전부 격리✗ 로 뒤집혀 관측이 통째로 거짓이 된다.
+    # 파일이 있다는 것만으로 통과시키지 않고 문장을 실제로 확인한다 — 없는 것을 있다고 세면
+    # 관측이 아니라 위안이 된다(OS.md 4절 규칙 7).
     iso=false
-    printf '%s' "$prompt" | grep -q '다른 파일을 읽지' && iso=true
+    iso_by="-"
+    if printf '%s' "$prompt" | grep -qE '다른 파일을 읽지|읽지 마라'; then
+      iso=true; iso_by="prompt"
+    elif [ -n "$agent" ] && [ "$agent" != "-" ] \
+         && grep -qE '읽지 마라|다른 파일을 읽지' "$ROOT/.claude/agents/$agent.md" 2>/dev/null; then
+      iso=true; iso_by="agent"
+    fi
 
     jq -cn --arg ts "$ts" --arg loop "$loop" --arg agent "$agent" --arg label "$label" \
            --arg summary "$(printf '%s' "$prompt" | two_lines)" \
            --argjson bytes "$(printf '%s' "$prompt" | wc -c | tr -d ' ')" \
-           --argjson iso "$iso" --arg key "$key" --arg session "$session" \
+           --argjson iso "$iso" --arg iso_by "$iso_by" --arg key "$key" --arg session "$session" \
       '{ts:$ts, ev:"dispatch", loop:$loop, agent:$agent, label:$label,
-        summary:$summary, bytes:$bytes, isolation_line:$iso, key:$key, session:$session}' >> "$LOG" 2>/dev/null
+        summary:$summary, bytes:$bytes, isolation_line:$iso, isolation_by:$iso_by,
+        key:$key, session:$session}' >> "$LOG" 2>/dev/null
     ;;
 
   PostToolUse)
