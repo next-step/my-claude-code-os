@@ -20,8 +20,10 @@
 이 프로젝트의 목표와 작업 방식은 [`OS.md`](OS.md)를 따른다. 작업을 시작하기 전에
 `OS.md`를 읽고, 지금 어떤 워크플로우·원칙 위에서 일하는지 확인할 것.
 
-- 어디서부터 만들어 나갈지는 [`docs/guides/os-growth-stages.md`](docs/guides/os-growth-stages.md)의
-  현재 Stage를 기준으로 판단한다.
+- 구축은 배치 단위 "빠른 구축" 계획을 따른다 — 계획서는 `private/notes/plans/`의
+  최신 구축 계획(개인 보관), 진행 현황은 `OS.md`의 "구축 현황" 절 기준.
+  (기존의 단계적 성장 가이드 [`docs/guides/os-growth-stages.md`](docs/guides/os-growth-stages.md)는
+  이력 문서로 남아 있다.)
 - `OS.md`와 다르게 동작해야 할 이유가 생기면, 임의로 벗어나지 말고 사용자에게 먼저 확인한다.
 
 ## 4. 공유 파일과 개인 파일의 분리
