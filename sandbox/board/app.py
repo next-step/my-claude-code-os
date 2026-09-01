@@ -23,10 +23,14 @@ def create_app():
     @app.post("/posts")
     def create_post():
         data = request.get_json(silent=True) or {}
-        title = data.get("title", "")
+        title = data.get("title")
         body = data.get("body", "")
 
-        # NOTE: 여기서 title 검증을 하지 않는다 — 빈 제목도 그대로 저장된다.
+        # title 은 내용이 있는 문자열이어야 한다. isinstance 를 먼저 봐서
+        # None/숫자 등에 .strip() 을 호출하지 않는다(500 방지). id 발번 전에 거부한다.
+        if not isinstance(title, str) or not title.strip():
+            return jsonify({"error": "title is required"}), 400
+
         pid = next_id["value"]
         next_id["value"] += 1
         posts[pid] = {"title": title, "body": body}
