@@ -16,6 +16,18 @@
           }
         ]
       }
+    ],
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/session-open-requests.sh\"",
+            "timeout": 5,
+            "statusMessage": "유지보수 요청 현황 확인 중..."
+          }
+        ]
+      }
     ]
   }
 }
