@@ -1,0 +1,27 @@
+%% ATDD OS — 스펙 합의 구간 01~04 (OS.md 10.3)
+%% 승인 게이트 이전. 이 구간의 루프에는 상한이 없다.
+flowchart LR
+    R["01 요구사항<br/>사람"]
+    D["02 정책 분해<br/>Skill · spec-decompose"]
+    RV["03 독립 리뷰<br/>Agent · policy-reviewer"]
+    AP{"04 정책 승인<br/>AskUserQuestion"}
+    STOP["중단"]
+    NEXT["05단계로"]
+
+    R --> D
+    D --> RV
+    RV -- PASS --> AP
+    RV -- "FAIL" --> D
+    AP -- "수정 필요" --> D
+    AP -- "중단" --> STOP
+    AP -- "승인" --> NEXT
+
+    classDef human fill:#FEF3C7,stroke:#B45309,stroke-width:2px,color:#111827
+    classDef agent fill:#DBEAFE,stroke:#1D4ED8,stroke-width:2px,color:#111827
+    classDef skill fill:#DCFCE7,stroke:#15803D,stroke-width:2px,color:#111827
+    classDef term fill:#F3F4F6,stroke:#6B7280,stroke-width:2px,color:#111827
+
+    class R,AP human
+    class RV agent
+    class D skill
+    class STOP,NEXT term

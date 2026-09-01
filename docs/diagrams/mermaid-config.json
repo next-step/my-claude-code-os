@@ -1,0 +1,31 @@
+{
+  "theme": "base",
+  "htmlLabels": false,
+  "themeVariables": {
+    "fontFamily": "Apple SD Gothic Neo, Noto Sans KR, Malgun Gothic, sans-serif",
+    "fontSize": "16px",
+    "primaryColor": "#ffffff",
+    "primaryTextColor": "#111827",
+    "primaryBorderColor": "#4b5563",
+    "lineColor": "#4b5563",
+    "textColor": "#111827"
+  },
+  "flowchart": {
+    "htmlLabels": false,
+    "nodeSpacing": 55,
+    "rankSpacing": 65,
+    "padding": 14,
+    "useMaxWidth": false
+  },
+  "sequence": {
+    "useMaxWidth": false,
+    "actorFontSize": 15,
+    "actorFontWeight": 600,
+    "messageFontSize": 14,
+    "noteFontSize": 14,
+    "boxMargin": 12,
+    "width": 170,
+    "height": 46,
+    "messageAlign": "left"
+  }
+}

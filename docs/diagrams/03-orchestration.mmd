@@ -1,0 +1,31 @@
+%% ATDD OS — 오케스트레이션 호출 순서 (OS.md 10.4)
+sequenceDiagram
+    autonumber
+    actor H as 사람
+    participant O as atdd-orchestrator
+    participant S as spec-decompose
+    participant PR as policy-reviewer
+    participant AT as acceptance-test-write
+    participant TI as tdd-implement
+    participant TR as test-reviewer
+    participant FL as failure-ledger
+
+    H->>O: 요구사항 한 줄
+    O->>S: Skill 위임 — 02 분해
+    S-->>O: 인수기준 AC 목록
+    O->>PR: Agent 위임 — 03 독립 리뷰
+    Note over O,PR: 요구사항 + AC 목록만 전달<br/>분해 근거는 넘기지 않는다
+    PR-->>O: PASS 또는 FAIL + 근거
+    O->>H: 04 승인 요청
+    H-->>O: 승인 / 수정 필요 / 중단
+    O->>AT: Skill 위임 — 05 실패 테스트
+    AT->>TR: Agent — 모드 TEST_QUALITY
+    TR-->>AT: 판정
+    AT-->>O: RED 확인 로그
+    O->>TI: Skill 위임 — 06 TDD 구현
+    TI->>TR: Agent — 모드 IMPL_HONESTY
+    TR-->>TI: 판정
+    TI-->>O: GREEN 로그 + 재시도 횟수
+    O->>FL: Skill 위임 — 07 실패 원장
+    FL-->>O: 원장 요약
+    O->>H: 사이클 완료 보고
