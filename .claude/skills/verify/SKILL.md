@@ -51,7 +51,10 @@ allowed-tools: Read, Edit, Glob, Grep, Bash, Task
 ## 5. 보고
 
 결과 표를 요약한다. 실패면 다음 액션(무엇을 고쳐 `/implement` 를 재실행할지)을 제시한다.
-통과면 완료를 알리고, 필요 시 `git-commit` 스킬로 커밋을 권한다.
+통과면:
+
+- 필요 시 `git-commit` 스킬로 커밋을 권한다.
+- 담당자에게 결과를 전달하려면 `/handoff <REQ-ID>` 를 안내한다 (배포 노트 + 통보문).
 
 ## 하지 말 것
 

@@ -1,8 +1,9 @@
 ---
 id: REQ-000
 title: (요청을 한 줄로)
-status: intake            # intake | classified | spec | implementing | verifying | done | outsourced | blocked
+status: intake            # intake | classified | spec | implementing | verifying | done | handed_off | outsourced | blocked
 classification: undecided # undecided | internal | outsource
+size: -                   # - | S | M | L  (classifier 가 분류 시 매김)
 priority: P2              # P1(장애/급함) | P2(보통) | P3(낮음)
 requester: 미상
 created: 2026-01-01
@@ -63,6 +64,18 @@ updated: 2026-01-01
 - 일정:
 - 커뮤니케이션:
 - 예산 / 비고:
+
+## 8. 배포·핸드오프 (/handoff) — 내부 처리 완료 후
+
+### 배포 노트
+- 바뀐 것:
+- 변경 파일 / 커밋:
+- 확인 방법:
+- 적용 범위 / 주의:
+- 롤백:
+
+### 담당자 통보문 초안
+(개발 맥락 없이도 이해되는 짧은 안내문)
 
 ## 변경 이력
 
