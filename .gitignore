@@ -1,0 +1,13 @@
+# 전역 gitignore가 .claude 전체를 무시한다.
+!.claude/
+!.claude/*
+
+# 성능 개선 OS — 사이클 워크스페이스
+# best-practices/ 는 팀 지식이므로 커밋한다. cycles/ 는 사이클마다 늘어나는 로컬 기록이다.
+.claude/perf-os/cycles/
+
+# 스킬 호출 로그 — 로컬 실행 기록
+.claude/data/
+
+# IDE
+.idea/
