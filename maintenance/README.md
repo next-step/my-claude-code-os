@@ -18,26 +18,28 @@ maintenance/
 
 ## 케이스 파일 하나에 담기는 것
 
-frontmatter(요약 메타)와 7개 섹션(요청 원문 → 접수 → 분류 → 스펙 → 구현 → 검증 → 외주)
+frontmatter(요약 메타)와 8개 섹션(요청 원문 → 접수 → 분류 → 스펙 → 구현 → 검증 → 외주 → 배포·핸드오프)
 그리고 변경 이력. 각 스킬은 자기 섹션만 채우고 `status` 를 다음 단계로 넘긴다.
 
 ## 생애주기 (status 값)
 
 ```
-/intake ─▶ intake ─▶ (classifier) ─▶ classified
-                                        │
-                    ┌── internal ───────┤
-                    ▼                   └── outsource ──▶ /outsource ─▶ outsourced
-                  /spec ─▶ spec
-                    ▼
-              /implement ─▶ implementing
-                    ▼
-                /verify ─▶ done  (실패 시 blocked ─▶ 다시 /implement)
+/intake ─▶ intake ─▶ (intake-interview) ─▶ (classifier) ─▶ classified
+                                                             │
+                     ┌── internal ────────────────────────────┤
+                     ▼                                        └── outsource ─▶ /outsource ─▶ outsourced
+                  /spec ─▶ (spec-reviewer) ─▶ spec
+                     ▼
+               /implement ─▶ implementing
+                     ▼
+                 /verify ─▶ done ─▶ /handoff ─▶ handed_off
+                     └─ 실패 시 blocked ─▶ 다시 /implement
 ```
 
 - `/status` 는 어느 시점에서든 현황을 조회한다 (읽기 전용).
 - `context-loader` 서브에이전트는 `/spec`·`/implement`·`/verify` 가 저장소 맥락을
   **같은 방식으로** 모으기 위해 공유한다.
+- 세션을 시작하면 `SessionStart` 훅이 진행 중인 요청(`done`·`outsourced`·`handed_off` 아닌 것)을 브리핑한다.
 
 ## 규칙
 
