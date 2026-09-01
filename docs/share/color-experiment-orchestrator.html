@@ -237,7 +237,8 @@
     이 HTML은 시각화 전용 산출물입니다. 원본 내용은
     <a href="../../OS.md">OS.md</a> 와
     <a href="../design/experiment-orchestrator.md">기획 문서</a>
-    에 있습니다.
+    에 있습니다. 구축 현황(2026-09-01): 배치 0~2 완료(실험 0001~0003으로 실전 검증),
+    ⬜ 표시 항목은 배치 3 예정 — 상세는 OS.md "구축 현황" 절.
   </div>
 
   <h2>1. 스킬 · 에이전트 카탈로그</h2>
@@ -259,23 +260,29 @@
     <tr>
       <td><b>실험 파이프라인</b><br>실행의 중심축</td>
       <td><code>/experiment</code></td>
-      <td>적용 에이전트 / 측정 에이전트</td>
-      <td><b>순차</b> 협력: 적용→측정→기록 검증 루프(3회 상한), 판정은 메인 담당</td>
+      <td>리서치 / 적용 / 측정 에이전트<br>+ 정답지 갱신 시 label-drafter</td>
+      <td><b>순차</b> 협력: 리서치→(승인)→적용→측정→기록 검증 루프(3회 상한), 판정은 메인 담당</td>
+    </tr>
+    <tr>
+      <td><b>공유 에이전트</b><br>스킬 전속 아님</td>
+      <td>—</td>
+      <td><code>label-drafter</code></td>
+      <td>이미지를 보고 정답지 초안 + 추출 대조 HTML 생성 → <b>사람 확정</b> → 적용 에이전트가 등록</td>
     </tr>
     <tr>
       <td rowspan="2"><b>유틸리티</b><br>반복 작업 지원</td>
-      <td><code>/compare</code></td>
+      <td><code>/compare</code> ⬜</td>
       <td>리포트 에이전트</td>
       <td>기록을 읽고 전후 비교 리포트 생성 (향후 시각화 확장 지점)</td>
     </tr>
     <tr>
-      <td><code>/retrospect</code></td>
+      <td><code>/retrospect</code> ⬜</td>
       <td>없음 (메인 직접)</td>
       <td>대화 맥락 자체가 재료 — 분리하면 오히려 손해</td>
     </tr>
     <tr>
       <td><b>OS 관리</b><br>메타</td>
-      <td><code>/os</code></td>
+      <td><code>/os</code> ⬜</td>
       <td>없음 (메인 직접)</td>
       <td>OS 파일 수정의 유일 경로 — 사람과의 상호작용이 핵심</td>
     </tr>
