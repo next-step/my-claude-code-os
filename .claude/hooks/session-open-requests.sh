@@ -10,7 +10,12 @@ dir="${CLAUDE_PROJECT_DIR:-$PWD}/maintenance/requests"
 [ -d "$dir" ] || exit 0
 
 fm=""
-get() { printf '%s\n' "$fm" | sed -n "s/^$1:[[:space:]]*//p" | head -1; }
+# frontmatter 값 한 줄을 뽑고, YAML 인라인 주석( " #..." )과 양끝 공백을 제거한다.
+# (제목에 " #" 두 칸+해시가 들어가는 경우는 드물어 허용 가능한 한계로 둔다.)
+get() {
+  printf '%s\n' "$fm" | sed -n "s/^$1:[[:space:]]*//p" | head -1 \
+    | sed -e 's/[[:space:]][[:space:]]*#.*$//' -e 's/[[:space:]]*$//'
+}
 
 rows=""
 count=0
