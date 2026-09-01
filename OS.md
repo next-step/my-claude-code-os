@@ -154,7 +154,7 @@ Stage 0(맨손 사이클, 실험 0001) 완주 후 **배치 단위 빠른 구축*
 |---|---|---|
 | 0 | 맨손 사이클 — 실험 0001 완주, 기록 포맷·격리 원칙 확정 | ✅ 완료 |
 | 1 | `/experiment` + 리서치·적용·측정 에이전트 + `metrics.md`·`project.md` | ✅ 완료 — 실험 0002로 실전 검증 (성공 기준 6/6) |
-| 2 | `/research`(동적 분해 병렬) + `/suggest` + `knowledge/` | 🔨 구현됨, 실전 검증(/research·/suggest 1회 + 실험 0003) 대기 |
+| 2 | `/research`(동적 분해 병렬) + `/suggest` + `knowledge/` | ✅ 완료 — /research(색상 추출 평가 방법)·/suggest 각 1회 + 실험 0003(하니스 정착, 채택)으로 실전 검증 |
 | 3 | `/compare` + `/retrospect` + `/os` + 권한 설정 | ⬜ |
 
 ## 관련 문서
