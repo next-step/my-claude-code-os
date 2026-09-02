@@ -1,0 +1,109 @@
+{
+  "_comment": [
+    "Environment binding for the legacy-slice OS. Copy to workspace.json and fill in real values.",
+    "workspace.json is gitignored: it holds absolute paths and internal hostnames, which must",
+    "never enter a tracked file of this public repository.",
+    "Skills read this file; they contain no environment constants of their own."
+  ],
+
+  "legacy": {
+    "root": "<abs path to the legacy PHP checkout>",
+    "sourceRoot": "<abs path to the migrated service's source root>",
+    "surfaces": {
+      "<surface-a>": {
+        "docroot": "<abs path>",
+        "localBaseUrl": "http://<local vhost>",
+        "container": "<docker service that serves this surface>",
+        "daoPaths": ["<relative glob of the data-access layer>"]
+      },
+      "<surface-b>": {
+        "docroot": "<abs path>",
+        "localBaseUrl": "http://<local vhost>",
+        "container": "<docker service that serves this surface>",
+        "daoPaths": ["<relative glob>"]
+      }
+    },
+    "docker": {
+      "composeDir": "<abs path to the dir holding docker-compose.yml>",
+      "envFile": "<abs path to the compose .env file that carries migration toggles>"
+    },
+    "switch": {
+      "envVarPattern": "<PREFIX>_BACKEND_{SLICE}",
+      "values": { "legacy": "php", "migrated": "spring" },
+      "helperPath": "<path where the MigrationSwitch helper lives>"
+    }
+  },
+
+  "backend": {
+    "root": "<abs path to the Spring/Kotlin repo>",
+    "_javaHome": [
+      "JDK the Gradle build must run under. Required, not optional: a newer JDK than the",
+      "wrapper supports fails with a one-line error that names only the version number,",
+      "which reads like anything but a toolchain problem. Everything that shells out to",
+      "gradlew exports this."
+    ],
+    "javaHome": "<abs path to the JDK home the build requires>",
+    "proxy": { "module": ":apps:<proxy module>", "port": 0, "packageBase": "<base package>" },
+    "fixity": { "module": ":apps:<fixity module>", "port": 0, "packageBase": "<base package>" },
+    "contract": { "module": ":libs:<contract module>", "packageBase": "<base package>" },
+    "graphqlSchemaDir": "<relative path to the .graphqls dir>",
+    "architectureTest": "<relative path to the Konsist architecture test>",
+    "basicAuth": {
+      "_comment": "Which account each surface authenticates as. Credentials are read at runtime from the backend config, never stored here.",
+      "<surface-a>": "<account name>",
+      "<surface-b>": "<account name>"
+    },
+
+    "_startup": [
+      "What the data layer needs before it can boot. It fetches its DB settings from a",
+      "remote config service over TLS, so a missing truststore looks like a build failure",
+      "rather than a missing prerequisite. The password here is the JKS default, not a",
+      "secret; real credentials come from the config service at runtime."
+    ],
+    "truststore": { "path": "<abs path to the JKS truststore>", "password": "<jks password>" },
+    "configServer": "<config service host:port>",
+    "fixityUrl": {
+      "_comment": "How the gateway is told where the data layer is. Reassigning the data layer port means moving this too, or the gateway boots healthy and returns nothing.",
+      "property": "<gradle property key>",
+      "env": "<env var that overrides it>"
+    }
+  },
+
+  "e2e": {
+    "root": "<abs path to the playwright-e2e repo>",
+    "surfaces": {
+      "<surface-a>": {
+        "project": "<playwright project name>",
+        "testDir": "<relative test dir>",
+        "baseUrlEnv": "<env var that overrides the surface base URL>"
+      },
+      "<surface-b>": {
+        "project": "<playwright project name>",
+        "testDir": "<relative test dir>",
+        "baseUrlEnv": "<env var>"
+      }
+    }
+  },
+
+  "docs": {
+    "root": "<abs path where slice artifacts and domain docs are written>",
+    "slicesDir": "slices",
+    "domainDir": "domain"
+  },
+
+  "upstreamOs": {
+    "_comment": [
+      "Optional. If a richer OS already exists elsewhere, name the skills to delegate to",
+      "instead of reimplementing (D-09). Empty means this repo runs standalone.",
+      "Each key has exactly one consumer, so an unread key is a bug, not a spare:",
+      "  skillsDir    - the directory the three below are resolved in",
+      "  startBackend - local-stack, for bringing the backend up",
+      "  runE2e       - legacy-slice, for the Phase 2 baseline and the Phase 6 loop",
+      "  writeE2e     - e2e-baseline-author, for authoring the spec"
+    ],
+    "skillsDir": "",
+    "startBackend": "",
+    "runE2e": "",
+    "writeE2e": ""
+  }
+}

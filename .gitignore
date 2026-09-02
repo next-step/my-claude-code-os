@@ -1,2 +1,23 @@
 # 스킬 사용 로그는 머신별 기록이라 커밋하지 않는다 (통계는 /skill-stat 로 로컬에서 조회)
 .claude/skill-usage.jsonl
+
+# 사내 레포
+/cs-system/
+/php_legacy/
+
+# 고객센터 전용 e2e 하네스. 자체 git 레포이고, 사내 호스트·경로를 담으므로 추적하지 않는다.
+# 스킬은 이 저장소가 갖고(상수 없음), 대상만 여기 둔다 — 그게 공개 저장소를 유지하는 방식이다.
+/cs-e2e/
+
+# 강의 자료 (강사 저작물)
+/docs/lecture-notes
+
+# macOS
+.DS_Store
+
+# 환경 바인딩 — 절대경로와 사내 호스트명이 들어가므로 커밋하지 않는다
+# (공개 가능한 골격은 .claude/config/workspace.example.json)
+.claude/config/workspace.json
+.claude/config/redaction.json
+.claude/.state/
+__pycache__/

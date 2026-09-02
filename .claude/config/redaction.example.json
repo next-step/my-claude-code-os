@@ -1,0 +1,31 @@
+{
+  "_comment": [
+    "Patterns that must never appear in a tracked file of this public repository.",
+    "Copy to redaction.json and fill in. redaction.json is gitignored — the patterns",
+    "themselves name internal systems, so the list is company information too.",
+    "Each entry is a Python regex, matched case-insensitively against staged diff text.",
+    "Set \"ignoreCase\": false on a pattern whose signal is capitalization (CamelCase",
+    "symbols); otherwise re.I turns [A-Z]\\w+Service into a match for 'microservice'.",
+    "",
+    "The last two entries carry no company information, so they are real rather than",
+    "placeholders: a path or a class name from the legacy tree is company information",
+    "in the same way its source is, and those two shapes are what actually leaks when",
+    "a skill or a hook documents its own reasoning with a measured example."
+  ],
+  "patterns": [
+    {"name": "internal-hostname",   "regex": "<internal domain suffix>"},
+    {"name": "db-schema",           "regex": "\\b(<schema names>)\\b"},
+    {"name": "table-prefix",        "regex": "\\b<table prefix>[A-Za-z]+\\b"},
+    {"name": "internal-ip",         "regex": "\\b10\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\b"},
+    {"name": "issue-id",            "regex": "\\b<TRACKER>-\\d+\\b"},
+
+    {"name": "legacy-source-path",  "regex": "\\b[A-Za-z0-9_]+/[A-Za-z0-9_/]+\\.(?:php|inc|tpl)\\b"},
+    {"name": "legacy-class-symbol", "regex": "\\b[A-Z][A-Za-z0-9]{2,}(?:Dao|Vo|Dto|Service|Manager|Repository)\\b",
+     "ignoreCase": false}
+  ],
+  "allowPaths": [
+    ".claude/config/redaction.json",
+    ".claude/config/workspace.json",
+    ".gitignore"
+  ]
+}
