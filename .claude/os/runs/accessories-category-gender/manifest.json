@@ -1,0 +1,53 @@
+{
+  "generatedAt": "2026-09-02T13:22:37.851846+00:00",
+  "integrity": {
+    "droppedImageReferences": [
+      {
+        "imageId": "D01T12",
+        "origin": "work/detail-images/ee88a978f37f8b64ed81a1033021016d20157246097d508b3ac78935ef43fabf.jpg",
+        "productKey": "EGOOCM:3418386",
+        "role": "DETAIL_TILE"
+      }
+    ],
+    "evaluationOnlyProducts": [],
+    "gtOnlyProducts": [],
+    "imageReferences": 6204
+  },
+  "snapshots": {
+    "accessoriesImageIndex": {
+      "count": 500,
+      "path": ".claude/os/runs/accessories-category-gender/golden/accessories-image-index.jsonl"
+    },
+    "accessoriesPolicyEvaluation": {
+      "count": 500,
+      "path": ".claude/os/runs/accessories-category-gender/golden/accessories-policy-evaluation.jsonl"
+    },
+    "accessoriesProductGt": {
+      "count": 500,
+      "path": ".claude/os/runs/accessories-category-gender/golden/accessories-product-gt.jsonl"
+    },
+    "asset": {
+      "bytes": 1306000234,
+      "contentDigest": "30687dfccdadb651f131d481e18886edd6778f2f78b2ad0f517c9dd92e3ad3b1",
+      "copied": 0,
+      "files": 5839,
+      "nameConflicts": [],
+      "path": ".claude/os/runs/accessories-category-gender/asset",
+      "reusedExisting": 5839,
+      "tracked": false
+    }
+  },
+  "sourceCommit": "f431d40a18bbc7bef02dffffa253567b3321bb55",
+  "sourceDirty": true,
+  "sourceRepository": "/Users/mj/musinsa/dev/core-catalog-platfom",
+  "sources": {
+    "evaluation": {
+      "path": "tool/image-gender/gt-harness/results/accessories-current-refresh-2026-09-01-prompt-v11-upper-body-context/accessories-harness-products-report.jsonl",
+      "sha256": "b319b089974fb554ea138c9045e651987991021d2e2de00c13052d0955dace73"
+    },
+    "gt": {
+      "path": "tool/image-gender/gt-harness/data/accessories-product-gt-20260902.jsonl",
+      "sha256": "a5dcf2fbf2d10dd57bbbcfa5928754759e619a6058b1cb0ba86332f183df3f4f"
+    }
+  }
+}

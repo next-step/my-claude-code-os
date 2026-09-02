@@ -1,0 +1,137 @@
+{
+  "adjudicatedProducts": 0,
+  "adjudicationRate": 0.0,
+  "decisionCounts": {},
+  "deferredProducts": 0,
+  "generatedAt": "2026-09-02T14:30:07.836894+00:00",
+  "pendingProducts": 305,
+  "pendingSample": [
+    {
+      "productKey": "EGOOCM:2970320",
+      "signals": [
+        "INTERACTION_POLICY_RECOVERED"
+      ]
+    },
+    {
+      "productKey": "EGOOCM:2970324",
+      "signals": [
+        "INTERACTION_POLICY_RECOVERED"
+      ]
+    },
+    {
+      "productKey": "EGOOCM:3398529",
+      "signals": [
+        "GOLDEN_POLICY_VIOLATION_CANDIDATE",
+        "INTERACTION_POLICY_RECOVERED"
+      ]
+    },
+    {
+      "productKey": "EGOOCM:3398767",
+      "signals": [
+        "INTERACTION_POLICY_RECOVERED"
+      ]
+    },
+    {
+      "productKey": "EGOOCM:3399281",
+      "signals": [
+        "GOLDEN_POLICY_VIOLATION_CANDIDATE",
+        "INTERACTION_POLICY_RECOVERED"
+      ]
+    },
+    {
+      "productKey": "EGOOCM:3399286",
+      "signals": [
+        "GOLDEN_POLICY_VIOLATION_CANDIDATE",
+        "INTERACTION_POLICY_RECOVERED"
+      ]
+    },
+    {
+      "productKey": "EGOOCM:3400436",
+      "signals": [
+        "INTERACTION_POLICY_RECOVERED"
+      ]
+    },
+    {
+      "productKey": "EGOOCM:3400602",
+      "signals": [
+        "GOLDEN_POLICY_VIOLATION_CANDIDATE",
+        "INTERACTION_POLICY_RECOVERED"
+      ]
+    },
+    {
+      "productKey": "EGOOCM:3400648",
+      "signals": [
+        "GOLDEN_POLICY_VIOLATION_CANDIDATE"
+      ]
+    },
+    {
+      "productKey": "EGOOCM:3400660",
+      "signals": [
+        "INTERACTION_POLICY_RECOVERED"
+      ]
+    },
+    {
+      "productKey": "EGOOCM:3400680",
+      "signals": [
+        "INTERACTION_POLICY_RECOVERED"
+      ]
+    },
+    {
+      "productKey": "EGOOCM:3402445",
+      "signals": [
+        "INTERACTION_POLICY_RECOVERED"
+      ]
+    },
+    {
+      "productKey": "EGOOCM:3402970",
+      "signals": [
+        "INTERACTION_POLICY_RECOVERED"
+      ]
+    },
+    {
+      "productKey": "EGOOCM:3403687",
+      "signals": [
+        "INTERACTION_POLICY_RECOVERED"
+      ]
+    },
+    {
+      "productKey": "EGOOCM:3404922",
+      "signals": [
+        "GOLDEN_POLICY_VIOLATION_CANDIDATE",
+        "INTERACTION_POLICY_RECOVERED"
+      ]
+    },
+    {
+      "productKey": "EGOOCM:3405513",
+      "signals": [
+        "INTERACTION_POLICY_RECOVERED"
+      ]
+    },
+    {
+      "productKey": "EGOOCM:3405653",
+      "signals": [
+        "INTERACTION_POLICY_RECOVERED"
+      ]
+    },
+    {
+      "productKey": "EGOOCM:3405753",
+      "signals": [
+        "INTERACTION_POLICY_RECOVERED"
+      ]
+    },
+    {
+      "productKey": "EGOOCM:3407206",
+      "signals": [
+        "INVALID_TEXT_EVIDENCE_DROPPED"
+      ]
+    },
+    {
+      "productKey": "EGOOCM:3408876",
+      "signals": [
+        "INTERACTION_POLICY_RECOVERED"
+      ]
+    }
+  ],
+  "queuedProducts": 305,
+  "staleDecisionProductKeys": []
+}

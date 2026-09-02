@@ -1,0 +1,123 @@
+{
+  "counts": {
+    "blockingViolations": 0,
+    "decided": 0,
+    "open": 3,
+    "precedents": 3,
+    "questions": 3,
+    "questionsResolved": 0,
+    "questionsWithPrecedent": 3,
+    "untrackedReviewViolations": 0
+  },
+  "generatedAt": "2026-09-02T14:30:07.751257+00:00",
+  "imported": {
+    "path": ".claude/os/runs/bag-category-gender/policy/bag-category-gender.md",
+    "sha256": "2d41c033353141a7eb2c032a59385cbef93bdb98efaece03d61f2d62ce6a22cf"
+  },
+  "owned": {
+    "labels": [
+      "MALE",
+      "FEMALE",
+      "UNISEX",
+      "UNDETERMINED"
+    ],
+    "owner": "minjoon.lee",
+    "path": ".claude/os/attributes/bag-category-gender/policy/policy.md",
+    "sections": [
+      "근거 우선순위",
+      "근거 유형",
+      "판례",
+      "판정 불가 조건",
+      "허용값"
+    ],
+    "sha256": "717af75380aa599ca34c9d7e0e5148667838c4aec1605d6fe012d18249edfbab",
+    "updatedAt": "2026-09-02",
+    "version": "1"
+  },
+  "precedents": [
+    {
+      "acknowledges": [],
+      "answers": [
+        "GQ-GT-001"
+      ],
+      "decidedAt": null,
+      "decidedBy": null,
+      "decision": null,
+      "id": "BG-0001",
+      "path": ".claude/os/attributes/bag-category-gender/policy/precedents/BG-0001.md",
+      "sha256": "7635d937db64c79de6dab3e063a93933fbf9e46e62308dd39cac5122acf20d38",
+      "status": "OPEN",
+      "supersedes": null
+    },
+    {
+      "acknowledges": [
+        "LABEL_NOT_IN_PROFILE",
+        "LABEL_NOT_IN_POLICY"
+      ],
+      "answers": [
+        "GQ-RUN-001"
+      ],
+      "decidedAt": null,
+      "decidedBy": null,
+      "decision": null,
+      "id": "BG-0002",
+      "path": ".claude/os/attributes/bag-category-gender/policy/precedents/BG-0002.md",
+      "sha256": "0a047346a8c382a256b89fc7b255446af99bf5335a48783db8ef0cbc069a3aa2",
+      "status": "OPEN",
+      "supersedes": null
+    },
+    {
+      "acknowledges": [],
+      "answers": [
+        "GQ-SOURCE-001"
+      ],
+      "decidedAt": null,
+      "decidedBy": null,
+      "decision": null,
+      "id": "BG-0003",
+      "path": ".claude/os/attributes/bag-category-gender/policy/precedents/BG-0003.md",
+      "sha256": "50cce11730eb4689cce723cd0924656bb85f71378700635707341f1b46135d83",
+      "status": "OPEN",
+      "supersedes": null
+    }
+  ],
+  "profileId": "bag-category-gender",
+  "questionPrecedents": {
+    "GQ-GT-001": [
+      "BG-0001"
+    ],
+    "GQ-RUN-001": [
+      "BG-0002"
+    ],
+    "GQ-SOURCE-001": [
+      "BG-0003"
+    ]
+  },
+  "questionsWithoutPrecedent": [],
+  "schemaVersion": "catalog-policy-index-v1",
+  "unresolvedQuestions": [
+    "GQ-GT-001",
+    "GQ-RUN-001",
+    "GQ-SOURCE-001"
+  ],
+  "violations": [
+    {
+      "code": "LABEL_NOT_IN_PROFILE",
+      "detail": "정책 허용값 `UNDETERMINED`이 프로필 labels에 없습니다.",
+      "severity": "REVIEW",
+      "tracked": true,
+      "trackedBy": [
+        "BG-0002"
+      ]
+    },
+    {
+      "code": "LABEL_NOT_IN_POLICY",
+      "detail": "프로필 라벨 `UNCLASSIFIED`이 정책 허용값에 없습니다.",
+      "severity": "REVIEW",
+      "tracked": true,
+      "trackedBy": [
+        "BG-0002"
+      ]
+    }
+  ]
+}

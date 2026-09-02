@@ -1,0 +1,178 @@
+{
+  "basedOn": {
+    "file": ".claude/os/runs/bag-category-gender/run-summary.json",
+    "generatedAt": "2026-09-02T14:30:07.582849+00:00",
+    "profileId": "bag-category-gender"
+  },
+  "checks": [
+    {
+      "check": "ARTIFACT_DECLARED",
+      "lookedAt": [
+        ".claude/os/runs/bag-category-gender/run-summary.json"
+      ],
+      "status": "RAN"
+    },
+    {
+      "check": "QUEUE_CONTRACT",
+      "lookedAt": [
+        ".claude/os/runs/bag-category-gender/queue"
+      ],
+      "status": "RAN"
+    },
+    {
+      "check": "PROGRESS_RECOUNT",
+      "lookedAt": [
+        ".claude/os/runs/bag-category-gender/queue"
+      ],
+      "status": "RAN"
+    },
+    {
+      "check": "VERDICT_COVERAGE",
+      "lookedAt": [
+        ".claude/os/runs/bag-category-gender/queue"
+      ],
+      "status": "RAN"
+    },
+    {
+      "check": "REVIEW_LOAD",
+      "lookedAt": [
+        ".claude/os/runs/bag-category-gender/queue",
+        ".claude/os/runs/bag-category-gender/review/verdicts.jsonl"
+      ],
+      "status": "RAN"
+    },
+    {
+      "check": "LEDGER_ALIGNMENT",
+      "lookedAt": [
+        ".claude/os/runs/bag-category-gender/queue",
+        ".claude/os/runs/bag-category-gender/review/decisions.json"
+      ],
+      "status": "RAN"
+    },
+    {
+      "check": "POLICY_TRACKING",
+      "lookedAt": [
+        ".claude/os/runs/bag-category-gender/run-summary.json"
+      ],
+      "status": "RAN"
+    }
+  ],
+  "completion": [
+    {
+      "condition": "큐에 쌓인 상품이 전부 한 번은 사람 판정을 거쳤다",
+      "met": false,
+      "observed": 305,
+      "source": "recount"
+    },
+    {
+      "condition": "질문마다 답한 판례가 있다",
+      "met": false,
+      "observed": 3,
+      "source": "run-summary.json"
+    },
+    {
+      "condition": "추적되지 않는 공백이 없다",
+      "met": true,
+      "observed": 0,
+      "source": "run-summary.json"
+    },
+    {
+      "condition": "정책 결함마다 답한 질문이 있다",
+      "met": false,
+      "observed": 3,
+      "source": "run-summary.json"
+    },
+    {
+      "condition": "GT 결함이 다음 스냅샷에 반영됐다",
+      "met": null,
+      "observed": null,
+      "source": "다음 사이클과 비교해야 안다. 이번 run 하나로는 확인할 수 없다"
+    }
+  ],
+  "findingCounts": {
+    "ERROR": 0,
+    "INFO": 0,
+    "WARN": 2
+  },
+  "findings": [
+    {
+      "check": "REVIEW_LOAD",
+      "count": 197,
+      "detail": {},
+      "pointer": ".claude/os/runs/bag-category-gender/review/verdicts.jsonl",
+      "sample": [
+        "EGOOCM:2970320",
+        "EGOOCM:2970324",
+        "EGOOCM:3398767",
+        "EGOOCM:3400436",
+        "EGOOCM:3400660",
+        "EGOOCM:3400680",
+        "EGOOCM:3402445",
+        "EGOOCM:3402970",
+        "EGOOCM:3403687",
+        "EGOOCM:3405513",
+        "EGOOCM:3405653",
+        "EGOOCM:3405753",
+        "EGOOCM:3407206",
+        "EGOOCM:3408876",
+        "EGOOCM:3410402",
+        "EGOOCM:3410700",
+        "EGOOCM:3412153",
+        "EGOOCM:3412701",
+        "EGOOCM:3413569",
+        "EGOOCM:3414273"
+      ],
+      "severity": "WARN",
+      "summary": "심판이 충돌 없음으로 본 상품이 미판정 큐에 남아 있다. 사람 시간이 여기에 쓰인다."
+    },
+    {
+      "check": "REVIEW_LOAD",
+      "count": 76,
+      "detail": {
+        "blockedByPrecedent": {
+          "BG-0001": 22,
+          "BG-0002": 48,
+          "BG-0003": 10
+        }
+      },
+      "pointer": ".claude/os/runs/bag-category-gender/review/verdicts.jsonl",
+      "sample": [
+        {
+          "precedent": "BG-0001",
+          "products": 22
+        },
+        {
+          "precedent": "BG-0002",
+          "products": 48
+        },
+        {
+          "precedent": "BG-0003",
+          "products": 10
+        }
+      ],
+      "severity": "WARN",
+      "summary": "미결 판례가 답해야 판정할 수 있는 상품이 있다. 건별 판정보다 판례가 먼저다."
+    }
+  ],
+  "recount": {
+    "adjudicatedProducts": 0,
+    "deferredProducts": 0,
+    "pendingProducts": 305,
+    "queuedProducts": 305
+  },
+  "reviewLoad": {
+    "blockedByPrecedent": {
+      "BG-0001": 22,
+      "BG-0002": 48,
+      "BG-0003": 10
+    },
+    "blockedProducts": 76,
+    "decidableNow": 32,
+    "noConflictProducts": 197,
+    "pendingProducts": 305
+  },
+  "reviewedAt": "2026-09-02T14:30:08.123791+00:00",
+  "runId": "bag-category-gender",
+  "schemaVersion": "catalog-run-review-v1",
+  "verdict": "WARN"
+}

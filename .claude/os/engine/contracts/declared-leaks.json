@@ -1,0 +1,5 @@
+{
+  "schemaVersion": "engine-declared-leak-v1",
+  "note": "엔진에 아직 남아 있는 도메인 지식. 여기 선언되지 않은 누수는 test_package_boundary가 막는다.",
+  "leaks": []
+}

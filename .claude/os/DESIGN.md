@@ -1,7 +1,25 @@
-# 카탈로그 속성 추출 OS
+# 설계 — 카탈로그 속성 추출 OS
 
-카탈로그 정보에서 **색상·성별**을 추출하는 Gemini 프롬프트를, 사람이 손으로 고치지 않고
-정책·골든셋·평가의 순환으로 개선하는 시스템.
+> 이 문서는 **왜 이렇게 만들었는가**를 담는다. 작업할 때 매번 필요하지 않으므로
+> [CLAUDE.md](../../CLAUDE.md)에서 분리했다. 새 속성을 설계하거나, 지금 구조가 왜 이런지
+> 되짚을 때 읽는다. 오늘 실제로 도는 코드의 계약은 `engine/contracts/`에 있다.
+>
+> 목차: §1 문제 · §2 원칙 · §3 아키텍처 · §4 정책 · §5 골든셋 생성 · §6 오류 탐지 ·
+> §7 경계 탐지 · §8 프롬프트 하네스 · §9 게이트 · §10 지표 · §11 아티팩트 · §12 운영 루프 ·
+> §13 개선 워크플로우 · §14 신규 데이터 검증 · §15 구축 순서 · §16 열린 결정
+
+## 0. 미션 완료 조건 대응
+
+| 조건 | 구현 | 확인 |
+|---|---|---|
+| 전체 사이클 | `bag-category-gender-os` → `attributes/bag-category-gender/run.sh` | `runs/bag-category-gender/run-summary.json`의 `completed` |
+| 스킬·서브에이전트 5개 이상 | 엔진·인터뷰·가방·dev-workflow 스킬과 패키지별 에이전트 | `ls .claude/skills .claude/agents/*` |
+| 공유 서브에이전트 | `catalog-golden-adjudicator`를 공통 감사·보고서·판정 스킬이 재사용 | `grep -rl catalog-golden-adjudicator .claude/os/*/skills` |
+| 훅 | `UserPromptSubmit`에서 요청 횟수를 기록하는 `count-prompt.sh` | `.claude/settings.json` |
+| 사람·AI 협력 | AI는 근거와 질문을 추천하고, 데이터 운영팀만 `decisions.json`에 확정 판정 기록 | `runs/<id>/review/decisions.json` |
+
+개수를 표에 적지 않고 확인 명령을 적는다. 숫자는 스킬을 하나 추가하는 순간 틀리고,
+틀린 숫자는 아무도 다시 세지 않는다.
 
 ## 1. 이 문서가 푸는 문제
 
@@ -102,27 +120,95 @@ policy/
 
 ```mermaid
 flowchart TB
-    D["카탈로그 데이터"]
-    D --> V1["V1 · 옵션명만"]
-    D --> V2["V2 · 상품명 + 카테고리"]
-    D --> V3["V3 · 브랜드 + 설명"]
+    subgraph EXT["외부 · core-catalog-platfom"]
+        D["카탈로그 데이터 · 프롬프트 · 상품 GT"]
+    end
 
-    V1 --> AGG{"합의 판정<br/>서로 다른 근거"}
+    subgraph ATTR["attributes/‹id› · 속성 팩 · 사람이 쓴다"]
+        PROF["profile.json<br/>허용값 · 관점별 필드 · 어댑터 경로"]
+        IMP["import 어댑터"]
+        AUD["audit · arbiter 어댑터<br/>속성 고유 규칙"]
+        POL["policy.md + precedents/<br/>유일한 진실"]
+        GOAL["goal.md<br/>귀책 원칙"]
+    end
+
+    subgraph ENG["engine · 공통 코어 · 속성을 모른다"]
+        V1["V1 · 옵션명만"]
+        V2["V2 · 상품명 + 카테고리"]
+        V3["V3 · 브랜드 + 설명"]
+        AGG{"합의 판정<br/>서로 다른 근거"}
+        CR["비평 패스 §6"]
+        OK["자동 승인 HIGH"]
+        MD["승인 MEDIUM"]
+        SK["정보 부족 · 제외"]
+        PG["정책 경계 후보 → §7"]
+        ARB["arbitrate<br/>귀책 추천"]
+        IDX["build_policy_index<br/>질문 ↔ 판례 대조"]
+        REC["record_review_decision<br/>원장 기록"]
+        RPT["render_catalog_report"]
+    end
+
+    subgraph RUNS["runs/‹id› · 산출물 · 지워도 된다"]
+        SNAP["policy/ 가져온 스냅샷"]
+        GS["golden/"]
+        Q["queue/*.jsonl"]
+        PQ["reports/policy-questions.json"]
+        LED["review/decisions.json<br/>사람 원장"]
+    end
+
+    subgraph INT["interview · 사람 판정 게이트"]
+        HQ["G2 충돌 판정<br/>표본만"]
+        G1["G1 정책 질문에 답"]
+    end
+
+    subgraph REP["reports · 사람이 읽는다"]
+        HTML["runs/‹id›/reports/<br/>catalog-audit · suspect-gt · policy-gaps"]
+        FLOW["os/reports/step1-flow.html<br/>손으로 쓴 해설"]
+    end
+
+    D --> IMP
+    IMP --> SNAP
+    IMP --> GS
+    PROF -.-> V1 & V2 & V3
+    GS -.-> V1 & V2 & V3
+    V1 --> AGG
     V2 --> AGG
     V3 --> AGG
+    AGG -->|"3 / 3 일치"| OK
+    AGG -->|"2 : 1"| CR
+    AGG -->|"근거가 각각 타당"| PG
+    AGG -->|"전원 UNKNOWN"| SK
+    CR -->|해소| MD
+    CR -->|미해소| Q
+    OK -.-> GS
+    MD -.-> GS
+    PG -.-> PQ
 
-    AGG -->|"3 / 3 일치"| OK["자동 승인 HIGH"]
-    AGG -->|"2 : 1"| CR["비평 패스 §6"]
-    AGG -->|"근거가 각각 타당"| PG["정책 경계 후보 → §7"]
-    AGG -->|"전원 UNKNOWN"| SK["정보 부족 · 제외"]
+    SNAP --> AUD
+    GS --> AUD
+    AUD --> Q
+    AUD --> PQ
+    POL --> ARB
+    GOAL --> ARB
+    Q --> ARB
+    ARB --> HQ
+    PQ --> G1
+    HQ -->|"사용자가 확정한 것만"| REC
+    REC --> LED
+    G1 -->|"판례로 기록"| POL
+    POL --> IDX
+    PQ --> IDX
+    Q --> RPT
+    LED --> RPT
+    RPT --> HTML
+    FLOW -.-> HTML
 
-    CR -->|해소| MD["승인 MEDIUM"]
-    CR -->|미해소| HQ["사람 큐 G2"]
-
-    OK --> GS["골든셋"]
-    MD --> GS
-    HQ --> GS
+    classDef design stroke-dasharray: 5 5
+    class V1,V2,V3,AGG,CR,OK,MD,SK,PG design
 ```
+
+점선 상자와 점선 화살표는 아직 설계만 있는 부분이다. 지금은 골든셋을 세 관점으로 만들지 않고
+`import` 어댑터가 외부 GT를 그대로 가져온다. 실선은 오늘 실제로 도는 경로다.
 
 | 상태 | 해석 | 처리 |
 |---|---|---|
@@ -390,6 +476,12 @@ flowchart TB
 - **모든 게이트는 건너뛸 수 있되 기록에 남는다.** 막을 수 없는 게이트는 우회당한다.
 - **큐가 임계치를 넘으면 배포를 막는다.** 미판정 충돌이 쌓인 채 배포되면 골든셋이 신뢰를 잃는다.
 
+이 표 앞에 기계 게이트가 하나 더 있다. 사이클 직후 `review` 패키지가 그 run을 심사해
+`FAIL`이면 G1·G2를 시작하지 않는다(§11). 사람의 시간을 아끼는 가장 싼 방법은
+**판정할 수 없는 run에서 판정을 시작하지 않는 것**이다. 같은 심사가 미판정 큐에서
+심판이 충돌 없다고 본 건과 미결 판례에 막힌 건을 빼고, G1·G2가 지금 실제로 다룰 수 있는
+건수를 낸다 — 원칙 1이 지켜지는지 실행마다 확인하는 자리다.
+
 ## 10. 지표
 
 정확도 하나만 보지 않는다. 무엇이 나빠졌는지 분해되어야 한다.
@@ -419,6 +511,74 @@ harness/         라벨러 · 컴파일러 · 최적화기 · 탐지기
 
 전부 git으로 버전 관리한다. 정책 변경 → 프롬프트 변경 → 지표 변화가
 **하나의 커밋 흐름으로 추적**되는 것이 이 구조의 목적이다.
+
+### 현재 구현 (2026-09-02)
+
+손으로 쓰는 **입력**과 사이클이 만드는 **산출물**을 물리적으로 분리했다.
+
+```
+.claude/os/
+  PACKAGES.md              패키지 목록과 의존 방향
+  engine/                  ← 패키지 1. 속성을 모르는 공통 코어
+    package.md             소유 목록과 규칙
+    goal.md                프로세스 전체의 성공 기준
+    contracts/             변경 경계 · 정책 레이어 · 선언된 누수
+    scripts/               오케스트레이터 · 심판 · 정책 인덱스 · 진행률 · 원장 · 리포트
+    skills/ · agents/      catalog-* 스킬과 판정관의 실체. .claude/skills·agents는 링크
+    templates/             새 속성용 정책·판례 뼈대
+    tests/                 계약 회귀 + 패키지 경계 테스트
+  attributes/bag-category-gender/   ← 패키지 2. 가방 성별만 아는 속성 팩
+    package.md · profile.json · goal.md · run.sh
+    policy/                policy.md + precedents/BG-*.md   ← 유일한 진실
+    adapters/              import · audit · arbiter
+    skills/                bag-* 스킬의 실체
+    tests/
+  runs/<속성>/             ← 산출물. 지우고 다시 만들 수 있다
+    run-review/            심사 결과. 엔진이 아니라 review 패키지가 쓴다
+  review/                  ← 패키지 3. 엔진이 낸 run을 심사한다. 읽기만 하고 run-review/에만 쓴다
+    contracts/handoff.md   엔진과 무엇으로 만나는가
+  interview/               ← 패키지 4. 정의가 비어 있을 때 인터뷰로 채운다. catalog-interview 스킬과 인터뷰어의 실체
+  reports/                 ← 사람이 쓰는 해설 보고서. 사이클이 만드는 보고서는 runs/<속성>/reports/
+```
+
+의존은 한 방향이다. **속성은 엔진을 알고, 엔진은 속성을 모른다.** 엔진이 속성을 알기
+시작하면 속성을 추가할 때마다 엔진을 고쳐야 하고, 그 순간 패키지는 이름만 남는다.
+합격 기준은 하나다 — 속성 폴더를 통째로 지워도 엔진이 그대로 돈다.
+[test_package_boundary.py](engine/tests/test_package_boundary.py)가 매번 확인한다.
+
+`runs/`는 지우고 다시 만들 수 있어야 한다. 그래서 손으로 쓴 정책은 절대 `runs/`에 두지 않는다.
+`runs/<속성>/policy/`에 있는 것은 외부에서 **가져온 읽기 전용 스냅샷**, 즉 "지금 프로덕션이
+실제로 쓰는 문장"이고, `attributes/<속성>/policy/`에 있는 것이 "우리가 옳다고 정한 문장"이다.
+둘의 차이가 곧 개선 대상이다.
+
+### 엔진과 심사는 산출물로만 만난다
+
+사이클이 끝나면 `review` 패키지가 그 run을 심사한다 — **이 결과로 사람이 판정을 시작해도 되는가.**
+엔진이 정책과 GT를 의심하듯, 심사는 그 의심이 서 있는 바닥을 의심한다.
+
+둘을 잇는 방법이 세 가지 있었다.
+
+| 방법 | 왜 안 했나 |
+|---|---|
+| 엔진 스크립트 안에서 검사한다 | 만든 코드가 자기 산출물을 검사하면 같은 오해가 양쪽에 그대로 들어간다. 골든셋 생성과 검증을 다른 프롬프트로 나누는 것과 같은 이유(§5)다 |
+| 엔진이 심사를 함수로 부른다 | 심사가 엔진의 시그니처에 묶인다. 필요한 값이 생길 때마다 엔진에 반환값을 하나씩 붙이게 되고, 그 순간 둘은 한 덩어리다 |
+| **산출물 한 장으로 잇는다** | 골랐다 |
+
+심사가 읽는 것은 `runs/<속성>/run-summary.json`과 그 요약이 `artifacts`로 선언한 경로뿐이다.
+프로필도 어댑터도 정책도 읽지 않는다. 그래서 어제 만든 run, 남이 준 run도 같은 코드가 심사하고,
+속성이 늘어도 심사는 바뀌지 않는다. **선언하지 않은 산출물은 심사하지 않고 `SKIPPED`로 남긴다** —
+경로를 관습으로 추측하는 순간 그것은 계약이 아니기 때문이다. 건너뛴 검사는 통과가 아니다.
+
+방향은 한쪽이다. 심사는 지적만 하고 아무것도 고치지 않는다. 읽는 쪽이 원본을 고치면
+다음 사람은 어느 숫자가 원본이고 어느 숫자가 심사가 손댄 값인지 알 수 없다.
+이 OS가 GT와 정책에 대해 하는 일과 같다 — **근거와 함께 지목하는 것까지가 산출물이다.**
+
+엔진은 심사를 모르므로 둘을 잇는 것은 속성의 `run.sh`다. 심사가 멈춰도 사이클은 그대로 돈다.
+계약은 [handoff.md](review/contracts/handoff.md), 검사 목록은 [review/package.md](review/package.md)에 있다.
+
+판례는 경계 질문 하나당 파일 하나다. `status: OPEN`은 아직 사람이 답하지 않았다는 뜻이고,
+열린 판례의 개수가 그 속성의 정책이 얼마나 미완성인지를 보여준다.
+자세한 계약은 [policy-layer.md](engine/contracts/policy-layer.md)에 있다.
 
 ## 12. 운영 루프
 
@@ -558,3 +718,13 @@ L3에서 보는 신호:
 | 4 | 입력 필드 범위 | 상품명·옵션명·카테고리·브랜드 | 이미지 사용 시 설계 변경 |
 | 5 | 기존 라벨 데이터 유무 | 없음 (신규 구축) | 있으면 0~2단계 단축 |
 | 6 | 규모·비용 상한 | 미정 | 최적화 반복 횟수 |
+
+## 참고한 자료 (2026-09-02 기준 GitHub 스타)
+
+- Anthropic, Claude Code best practices. CLAUDE.md는 짧게 유지하고 각 줄을 "이 줄을 지우면 클로드가
+  실수하는가"로 검사한다. 가끔만 필요한 지식은 스킬로 뺀다. https://code.claude.com/docs/en/best-practices
+- shanraisshan/claude-code-best-practice (65k). 파일당 200줄 이하, 명령형 규칙, skills·agents를 기능별로
+  분리. https://github.com/shanraisshan/claude-code-best-practice
+- hesreallyhim/awesome-claude-code (53k). CLAUDE.md와 스킬 사례 모음. https://github.com/hesreallyhim/awesome-claude-code
+- revfactory/claude-code-mastering (770). 한국어 Claude Code 가이드북 4장. 도메인 용어와 중요 규칙을
+  우선순위로 구조화. https://github.com/revfactory/claude-code-mastering

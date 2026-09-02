@@ -4,3 +4,12 @@
 # github-flow / count-prompt 훅이 매 요청마다 갱신하는 로컬 카운터.
 # 설정과 스크립트는 커밋하되, 변동 데이터는 추적하지 않는다.
 .claude/usage/
+
+# OS의 Python 검증 과정에서 생기는 로컬 바이트코드.
+__pycache__/
+*.py[cod]
+
+# 골든셋 근거 이미지 바이트. 어느 상품의 몇 번째 근거인지는 같은 run의
+# golden/ 색인이 추적하므로 파일 자체는 재현물이다.
+# 1GB가 넘어 git에 넣지 않는다. import 어댑터를 다시 돌리면 복구된다.
+.claude/os/runs/*/asset/

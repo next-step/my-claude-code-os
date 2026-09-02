@@ -1,0 +1,162 @@
+{
+  "schemaVersion": "catalog-interview-slots-v1",
+  "note": "인터뷰가 채우는 빈칸 목록. 질문은 이 목록에서만 나온다. 도착지 없는 질문은 하지 않는다. 순서는 레이어 서열(목표 > 정책 > GT)을 따른다.",
+  "goalSections": [
+    "이유",
+    "판정 기준",
+    "목표 품질",
+    "귀책",
+    "경계"
+  ],
+  "slots": [
+    {
+      "id": "SLOT-PURPOSE",
+      "order": 1,
+      "ambiguity": "A0-PURPOSE",
+      "name": "이 값을 누가 쓰고, 틀리면 무슨 일이 생기는가",
+      "target": {
+        "kind": "goal",
+        "section": [
+          "이유",
+          "사용처"
+        ]
+      },
+      "seedQuestion": "이 값을 실제로 읽는 화면·기능은 무엇이고, 값이 틀렸을 때 거기서 누가 무엇을 못 하게 되는가?",
+      "enforcedBy": "사람. 사용처를 하나도 못 대면 이 속성은 목표가 없는 것이다."
+    },
+    {
+      "id": "SLOT-VERDICT",
+      "order": 2,
+      "ambiguity": "A0-PURPOSE",
+      "name": "무엇이 옳은 판단인가",
+      "target": {
+        "kind": "goal",
+        "section": [
+          "판정 기준",
+          "옳은 판단"
+        ]
+      },
+      "seedQuestion": "'이 값이 옳다'가 무슨 뜻인지 한 문장으로 쓰면 무엇인가? 그 문장만 읽고 상품 하나를 판정할 수 있는가?",
+      "enforcedBy": "사람. 판정표의 ①(GT가 목표에 맞는가)을 채울 때 읽는 문장이 이것이다."
+    },
+    {
+      "id": "SLOT-QUALITY",
+      "order": 3,
+      "ambiguity": "A8-LEVEL",
+      "name": "얼마나 맞아야 충분한가",
+      "target": {
+        "kind": "goal",
+        "section": [
+          "목표 품질",
+          "품질"
+        ]
+      },
+      "seedQuestion": "실패 장면이 100건 중 몇 건까지면 사용처가 버티는가, 어느 방향으로? 그 숫자는 무엇으로 재고, 지금 GT를 그만큼 믿을 수 있는가?",
+      "enforcedBy": "사람. 없으면 '정확도 올리자'가 끝나지 않고 배포 판단이 매번 감이 된다.",
+      "answerMustContain": "number"
+    },
+    {
+      "id": "SLOT-PROVENANCE",
+      "order": 4,
+      "ambiguity": "A7-PROVENANCE",
+      "name": "정책으로 아는 것과 그 출처",
+      "target": {
+        "kind": "policy",
+        "section": [
+          "출처와 확신도",
+          "출처",
+          "아는 것"
+        ]
+      },
+      "seedQuestion": "지금 정책이라 부르는 문장은 어디에 있는가 — 소유 정책인가, 프로덕션 프롬프트뿐인가, 아무 데도 없는가? 그리고 그건 누가 정한 것인가, 그냥 그렇게 해온 것인가?",
+      "enforcedBy": "사람. 출처 없이 정책에 들어간 규칙은 나중에 근거 없는 일치의 원인이 된다."
+    },
+    {
+      "id": "SLOT-SCOPE",
+      "order": 5,
+      "ambiguity": "A2-SCOPE",
+      "name": "무엇이 판정 대상인가",
+      "target": {
+        "kind": "goal",
+        "section": "경계"
+      },
+      "seedQuestion": "이 속성을 붙이지 않는 상품 종류를 세 개 대면 무엇인가?",
+      "enforcedBy": "사람. 대상이 안 정해지면 같은 질문이 카테고리마다 다시 올라온다."
+    },
+    {
+      "id": "SLOT-SUBJECT",
+      "order": 5,
+      "ambiguity": "A2-SCOPE",
+      "name": "프로필의 판정 대상 이름",
+      "target": {
+        "kind": "profile",
+        "field": "subjectName"
+      },
+      "seedQuestion": "보고서에 판정 대상을 뭐라고 부를 것인가?",
+      "enforcedBy": "catalog_profile.load_profile — 없으면 사이클이 시작되지 않는다."
+    },
+    {
+      "id": "SLOT-LABELS",
+      "order": 6,
+      "ambiguity": "A3-VALUE",
+      "name": "허용값",
+      "target": {
+        "kind": "policy",
+        "section": "허용값"
+      },
+      "seedQuestion": "이 속성이 낼 수 있는 값을 전부 대면 무엇이고, 두 값이 동시에 참인 상품이 있는가?",
+      "enforcedBy": "build_policy_index.py — POLICY_SECTION_MISSING · POLICY_LABELS_EMPTY (BLOCKING)"
+    },
+    {
+      "id": "SLOT-ABSTAIN",
+      "order": 7,
+      "ambiguity": "A5-NULL",
+      "name": "판정 불가 조건",
+      "target": {
+        "kind": "policy",
+        "section": "판정 불가 조건"
+      },
+      "seedQuestion": "근거가 없을 때 값을 비울 것인가, 기본값을 채울 것인가? 그 둘을 어떻게 구분해 읽는가?",
+      "enforcedBy": "build_policy_index.py — POLICY_SECTION_MISSING (BLOCKING)"
+    },
+    {
+      "id": "SLOT-PRIORITY",
+      "order": 8,
+      "ambiguity": "A4-EVIDENCE",
+      "name": "근거 우선순위",
+      "target": {
+        "kind": "policy",
+        "section": "근거 우선순위"
+      },
+      "seedQuestion": "두 근거가 서로 다른 값을 가리키면 어느 쪽이 이기는가?",
+      "enforcedBy": "build_policy_index.py — POLICY_SECTION_MISSING (BLOCKING)"
+    },
+    {
+      "id": "SLOT-BLAME",
+      "order": 9,
+      "ambiguity": "A6-COST",
+      "name": "귀책 원칙",
+      "target": {
+        "kind": "goal",
+        "section": [
+          "귀책",
+          "고칠"
+        ]
+      },
+      "seedQuestion": "정책과 GT가 다를 때 기본적으로 어느 쪽을 고치는가? 반대 방향 오류보다 더 비싼 오류는 무엇인가?",
+      "enforcedBy": "사람. catalog-golden-adjudicator가 이 문장을 읽어 GT 수정과 정책 보강을 가른다."
+    },
+    {
+      "id": "SLOT-PRECEDENT",
+      "order": 10,
+      "ambiguity": "A2-SCOPE",
+      "name": "판례",
+      "target": {
+        "kind": "policy",
+        "section": "판례"
+      },
+      "seedQuestion": "이미 답한 경계 판정이 정책 문서에서 링크되어 있는가?",
+      "enforcedBy": "build_policy_index.py — QUESTION_WITHOUT_PRECEDENT (REVIEW)"
+    }
+  ]
+}

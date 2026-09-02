@@ -1,0 +1,90 @@
+{
+  "generatedAt": "2026-09-02T14:30:07.087537+00:00",
+  "integrity": {
+    "goldLabelConflicts": [
+      "MUSINSA:3539191",
+      "MUSINSA:4236053",
+      "MUSINSA:5391475",
+      "MUSINSA:6167240",
+      "MUSINSA:6221028",
+      "MUSINSA:6319596",
+      "MUSINSA:6354989",
+      "MUSINSA:6547369",
+      "MUSINSA:6710977",
+      "MUSINSA:6746326"
+    ],
+    "overlappingProducts": 100
+  },
+  "snapshots": {
+    "bagPolicyDetailEvidence": {
+      "count": 410,
+      "path": ".claude/os/runs/bag-category-gender/golden/bag-policy-detail-evidence.jsonl"
+    },
+    "bagPolicyEvaluation": {
+      "count": 500,
+      "path": ".claude/os/runs/bag-category-gender/golden/bag-policy-evaluation.jsonl"
+    },
+    "bagProductGallery": {
+      "count": 500,
+      "path": ".claude/os/runs/bag-category-gender/golden/bag-product-gallery.jsonl"
+    },
+    "canonicalBagProductGt": {
+      "count": 100,
+      "path": ".claude/os/runs/bag-category-gender/golden/bag-product-gt.jsonl"
+    },
+    "policy": ".claude/os/runs/bag-category-gender/policy/bag-category-gender.md"
+  },
+  "sourceCommit": "a4a253334c193a6028a18fb97a369a59d9f5d897",
+  "sourceDirty": true,
+  "sourceRepository": "/Users/mj/musinsa/dev/core-catalog-platfom",
+  "sources": {
+    "canonicalGt": {
+      "path": "tool/product-gender/gt-harness/data/gt.jsonl",
+      "sha256": "6786c65dd4aae02375e5fabde82852446a73a4b56155acc47bffbff900bd6181"
+    },
+    "currentCollectionErrors": {
+      "path": "tool/image-gender/gt-harness/results/multi-category-image-complete-2026-08-31/bags-detail-manifest.errors.json",
+      "sha256": "bd01cfe226d2fc4c76e6bde27e5a51a8228d69f6ee953e416b7aaf2bf39c1f50"
+    },
+    "detailImageManifest": {
+      "path": "tool/image-gender/gt-harness/results/multi-category-image-complete-2026-08-31/bags-detail-manifest-complete-resolved.json",
+      "sha256": "5c31c9265a36e5e0c21f841f6320ecf4165a7be9a5feccf3d04635555680f1e7"
+    },
+    "detailTrace": {
+      "path": "tool/image-gender/gt-harness/results/bags-v1000-two-stage-image-complete-2026-08-31/detail-complete.jsonl",
+      "sha256": "613903d46d7b8b2997df6451f4d7821b84037c9c6c4f3bf47b7993af6b261155"
+    },
+    "evaluation": {
+      "path": "tool/image-gender/gt-harness/results/bags-v1000-two-stage-image-complete-2026-08-31/final-complete.jsonl",
+      "sha256": "89a204f1677ef1928794f07252b691a15623782535e89be0c15f83ee77afa39b"
+    },
+    "evaluationSummary": {
+      "path": "tool/image-gender/gt-harness/results/bags-v1000-two-stage-image-complete-2026-08-31/summary-complete.json",
+      "sha256": "5aaf437ab95a4240b665d466cdc9447150e72d0b52b7b6036b731a47e182f8f1"
+    },
+    "harnessProductResults": {
+      "path": "tool/image-gender/gt-harness/results/bags-v1000-two-stage-image-complete-2026-08-31/harness-product-results.jsonl",
+      "sha256": "d8d86b079dff5b79b6069dce547948e9f21a9876c09140ea6225fac85f99ee5c"
+    },
+    "invalidExplicitTextRecoveries": {
+      "path": "tool/image-gender/gt-harness/results/bags-v1000-two-stage-image-complete-2026-08-31/invalid-explicit-text-recovered-ids.json",
+      "sha256": "d39a94a5319a51a61dfb8b3f8a9bdbf7353bb85cf156d9fd402345207da5093e"
+    },
+    "policy": {
+      "path": "core/src/main/resources/prompts/image-gender/v1000/bag-role-aware-judge.txt",
+      "sha256": "51e4b1561b6c39f36f0952a0924aaab6bcaaa4b1779c413fcb03cfae036d37d8"
+    },
+    "previousCollectionErrors": {
+      "path": "tool/image-gender/gt-harness/results/multi-category-budgeted-v1-full500-2026-08-28/bags-detail-manifest.errors.json",
+      "sha256": "6d1d8e663d41acd92629390731b8b4e374b2da699f41467d08845455679bdd04"
+    },
+    "targetReference": {
+      "path": "/Users/mj/.codex/worktrees/gender-budgeted-v1-20260828/tool/image-gender/gt-harness/results/bags-v9.1-recommerce-filtered-2026-08-28/target-reference-non-used500.jsonl",
+      "sha256": "3ceb7de91c528620535a6fccbab1e809878fcc29c51f7f48e1acdf7eb1b7e7ed"
+    },
+    "wornInteractionRecoveries": {
+      "path": "tool/image-gender/gt-harness/results/bags-v1000-two-stage-image-complete-2026-08-31/worn-interaction-recovered-ids.json",
+      "sha256": "c35fa68f8a02737ed348f25182182af132b65960a3d5bfd8d8dd288199d1c055"
+    }
+  }
+}

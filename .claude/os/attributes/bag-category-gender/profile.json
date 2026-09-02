@@ -1,0 +1,112 @@
+{
+  "schemaVersion": "catalog-data-profile-v1",
+  "id": "bag-category-gender",
+  "displayName": "가방 성별 정책·골든셋 감사",
+  "attributeName": "대상 고객 성별",
+  "subjectName": "가방 상품",
+  "outputRoot": ".claude/os/runs/bag-category-gender",
+  "source": {
+    "repository": "../core-catalog-platfom"
+  },
+  "policy": {
+    "owned": ".claude/os/attributes/bag-category-gender/policy/policy.md",
+    "precedents": ".claude/os/attributes/bag-category-gender/policy/precedents",
+    "imported": ".claude/os/runs/bag-category-gender/policy/bag-category-gender.md"
+  },
+  "goal": ".claude/os/attributes/bag-category-gender/goal.md",
+  "gallery": ".claude/os/runs/bag-category-gender/golden/bag-product-gallery.jsonl",
+  "adapters": {
+    "import": ".claude/os/attributes/bag-category-gender/adapters/import_bag_category_gender_sources.py",
+    "audit": ".claude/os/attributes/bag-category-gender/adapters/audit_bag_category_gender.py",
+    "arbiter": ".claude/os/attributes/bag-category-gender/adapters/arbiter_bag_category_gender.py"
+  },
+  "labels": [
+    "MALE",
+    "FEMALE",
+    "UNISEX",
+    "UNCLASSIFIED"
+  ],
+  "signals": {
+    "IMAGE_COLLECTION_RECOVERED": {
+      "label": "29CM 상세 이미지 수집 복구",
+      "description": "공개 HTML에 없던 product-detail BFF 이미지를 수집해 상세 판정을 복구했습니다.",
+      "priority": 1
+    },
+    "INTERACTION_POLICY_RECOVERED": {
+      "label": "가방 WORN 정책 복구",
+      "description": "몸에 멘 백팩·숄더백을 실제 가방 상호작용으로 인정해 판정을 복구했습니다.",
+      "priority": 2
+    },
+    "INVALID_TEXT_EVIDENCE_DROPPED": {
+      "label": "잘못된 직접 문구 제거",
+      "description": "성별 표지가 없는 상품명을 직접 성별 문구로 오인한 출력만 제거했습니다.",
+      "priority": 3
+    },
+    "EVIDENCE_PIPELINE_RECOVERED": {
+      "label": "공유 이미지 필터 복구",
+      "description": "같은 상품군의 변형이 공유한 PDP 이미지를 보존해 상세 추론을 복구했습니다.",
+      "priority": 4
+    },
+    "GOLDEN_POLICY_VIOLATION_CANDIDATE": {
+      "label": "정책 근거가 있는 GT 오류 후보",
+      "description": "상세 이미지나 직접 문구가 단일 성별을 지지하지만 현재 GT가 다릅니다.",
+      "priority": 5
+    },
+    "MODEL_POLICY_CONTRADICTION": {
+      "label": "추론 결과·근거 모순",
+      "description": "실행이 기록한 상세 근거와 최종 실행 라벨이 서로 반대입니다.",
+      "priority": 6
+    },
+    "GOLDEN_SOURCE_CONFLICT": {
+      "label": "골든 소스 충돌",
+      "description": "같은 상품의 정답 소스가 서로 다릅니다.",
+      "priority": 7
+    },
+    "POLICY_RUNTIME_CONTRADICTION": {
+      "label": "정책·실행 모순",
+      "description": "정책 문장과 실제 변환 로직이 정면으로 어긋납니다.",
+      "priority": 8
+    },
+    "POLICY_GOLDEN_CONFLICT": {
+      "label": "정책·골든 충돌",
+      "description": "정책 실행의 확정 결과와 사람 정답이 다릅니다.",
+      "priority": 9
+    },
+    "POLICY_GOLDEN_GAP": {
+      "label": "정책 공백",
+      "description": "골든셋에는 답이 있지만 정책은 답을 만들 근거가 부족합니다.",
+      "priority": 10
+    },
+    "GOLDEN_UNSUPPORTED_AGREEMENT": {
+      "label": "근거 없는 일치",
+      "description": "결과와 정답은 같지만 정책 근거가 없어 우연히 맞았을 수 있습니다.",
+      "priority": 11
+    }
+  },
+  "references": [
+    {
+      "id": "lld",
+      "kind": "LLD",
+      "path": "../core-catalog-platfom/docs/gender/gender-inference-lld.md",
+      "note": "정책·스코프·인수 조건 정본. 다른 문서들이 이 문서를 정본으로 가리킨다"
+    },
+    {
+      "id": "registry",
+      "kind": "LLD",
+      "path": "../core-catalog-platfom/docs/gender/version-registry.md",
+      "note": "프롬프트·평가 버전 정본. 어느 프롬프트가 현재인지"
+    },
+    {
+      "id": "validation",
+      "kind": "OTHER",
+      "path": "../core-catalog-platfom/docs/gender/v502-validation-plan.md",
+      "note": "검증 계획. 목표 품질(SLOT-QUALITY) 후보 숫자가 있을 수 있다"
+    },
+    {
+      "id": "coreai",
+      "kind": "OTHER",
+      "path": "../core-catalog-platfom/docs/gender/core-ai-infer-logic.md",
+      "note": "외부 구현의 판정 재료 대조. 근거 우선순위 후보"
+    }
+  ]
+}

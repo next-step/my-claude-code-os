@@ -1,0 +1,533 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>의심 원장 — 고쳐야 할 쪽 지목 (디자인 샘플)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Hahmlet:wght@200;300;400;500;600&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+KR:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  color-scheme: light;
+  --paper:#FAF9F5;
+  --inset:#F2F1EB;
+  --ink:#17150F;
+  --muted:#6E6A5E;
+  --faint:#9A9689;
+  --rule:#DCD8CB;
+  --accent:#8C2B18;
+  --accent-soft:#EFE5E0;
+  --serif:"Hahmlet",Georgia,"Apple SD Gothic Neo",serif;
+  --sans:"IBM Plex Sans KR","Apple SD Gothic Neo",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,monospace;
+}
+*{box-sizing:border-box}
+html{background:var(--paper)}
+body{
+  margin:0;background:var(--paper);color:var(--ink);
+  font-family:var(--sans);font-weight:350;font-size:15px;line-height:1.62;
+  -webkit-font-smoothing:antialiased;
+}
+h1,h2,h3,h4,p,ul,ol,figure{margin:0}
+a{color:inherit;text-decoration:none;border-bottom:1px solid var(--rule);transition:border-color .18s}
+a:hover{border-color:var(--accent)}
+.wrap{width:min(1080px,calc(100% - 56px));margin:0 auto}
+
+/* ── type primitives ───────────────────────────── */
+.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.kicker{font-family:var(--mono);font-size:10px;font-weight:500;letter-spacing:.18em;text-transform:uppercase;color:var(--faint)}
+.serif{font-family:var(--serif)}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums;font-weight:500;letter-spacing:-.02em}
+
+/* ── mark: 세 가지 귀책 상태를 색이 아니라 형태로 구분 ── */
+.mark{display:inline-block;width:9px;height:9px;border:1.25px solid var(--ink);flex:0 0 auto;translate:0 -1px}
+.mark.gt{background:var(--ink)}
+.mark.policy{background:transparent}
+.mark.open{background:linear-gradient(135deg,var(--ink) 0 50%,transparent 50% 100%)}
+
+/* ── masthead ──────────────────────────────────── */
+.masthead{padding:44px 0 0}
+.masthead-top{display:flex;justify-content:space-between;align-items:baseline;gap:24px;padding-bottom:10px}
+.sample-tag{font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:.16em;color:var(--accent);border:1px solid var(--accent);padding:3px 7px}
+.masthead h1{
+  font-family:var(--serif);font-weight:300;letter-spacing:-.035em;line-height:1.06;
+  font-size:clamp(2.6rem,6.4vw,4.6rem);padding:16px 0 18px;border-top:1.5px solid var(--ink);
+}
+.masthead h1 em{font-style:normal;font-weight:500}
+.standfirst{max-width:52ch;font-size:16px;color:var(--muted);padding-bottom:26px}
+.standfirst b{color:var(--ink);font-weight:500}
+
+.runbar{display:flex;flex-wrap:wrap;gap:0;border-top:1px solid var(--ink);border-bottom:1px solid var(--ink)}
+.runbar div{flex:1 1 130px;padding:9px 14px 10px;border-left:1px solid var(--rule)}
+.runbar div:first-child{border-left:0;padding-left:0}
+.runbar dt{font-family:var(--mono);font-size:9.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--faint)}
+.runbar dd{margin:2px 0 0;font-family:var(--mono);font-size:14px;font-weight:500;font-variant-numeric:tabular-nums}
+
+/* ── the two suspects ──────────────────────────── */
+.lanes{display:grid;grid-template-columns:1fr 1fr;gap:0;margin-top:56px}
+.lane{padding:0 34px 26px 0}
+.lane + .lane{border-left:1px solid var(--rule);padding:0 0 26px 34px}
+.lane-head{display:flex;align-items:baseline;gap:10px;padding-bottom:4px}
+.lane-head h2{font-family:var(--serif);font-weight:400;font-size:1.62rem;letter-spacing:-.03em}
+.lane-count{margin:6px 0 20px;display:flex;align-items:baseline;gap:10px}
+.lane-count .num{font-size:3.4rem;font-weight:300;line-height:1}
+.lane-count span{font-size:12.5px;color:var(--muted);font-family:var(--mono)}
+.sig{display:grid;grid-template-columns:1fr auto;gap:2px 16px;padding:11px 0;border-top:1px solid var(--rule)}
+.sig strong{font-weight:500;font-size:13.5px}
+.sig .num{font-size:14px}
+.sig p{grid-column:1/-1;font-size:12.5px;color:var(--muted);line-height:1.5}
+.rule-note{margin-top:20px;padding:12px 14px;background:var(--inset);font-size:12.5px;line-height:1.6;color:var(--muted)}
+.rule-note b{display:block;font-family:var(--mono);font-size:9.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--faint);margin-bottom:4px}
+.rule-note i{font-style:normal;color:var(--ink)}
+
+.overlap{
+  display:grid;grid-template-columns:auto 1fr;gap:0 18px;align-items:center;
+  margin-top:2px;padding:16px 0;border-top:1px solid var(--ink);border-bottom:1px solid var(--ink);
+}
+.overlap .num{font-size:2rem;font-weight:300;line-height:1}
+.overlap p{font-size:13.5px;color:var(--muted);max-width:76ch}
+.overlap p b{color:var(--ink);font-weight:500}
+
+/* ── section heading ───────────────────────────── */
+.sec{margin-top:70px}
+.sec-head{display:flex;align-items:baseline;justify-content:space-between;gap:20px;padding-bottom:10px;border-bottom:1.5px solid var(--ink)}
+.sec-head h2{font-family:var(--serif);font-weight:400;font-size:1.9rem;letter-spacing:-.03em}
+.sec-head p{font-size:12.5px;color:var(--muted);max-width:44ch;text-align:right}
+
+/* ── filter ────────────────────────────────────── */
+.filters{display:flex;gap:0;margin:0;border-bottom:1px solid var(--rule)}
+.filters button{
+  appearance:none;background:none;border:0;border-right:1px solid var(--rule);
+  font-family:var(--mono);font-size:11px;letter-spacing:.06em;color:var(--muted);
+  padding:9px 15px;cursor:pointer;transition:color .16s,background .16s;
+  display:flex;align-items:center;gap:7px;
+}
+.filters button:hover{background:var(--inset);color:var(--ink)}
+.filters button[aria-pressed=true]{color:var(--ink);background:var(--ink);color:var(--paper)}
+.filters button[aria-pressed=true] .mark{border-color:var(--paper)}
+.filters button[aria-pressed=true] .mark.gt{background:var(--paper)}
+.filters button[aria-pressed=true] .mark.open{background:linear-gradient(135deg,var(--paper) 0 50%,transparent 50% 100%)}
+.filters .spacer{margin-left:auto;border:0;font-family:var(--mono);font-size:11px;color:var(--faint);padding:9px 0;cursor:default}
+
+/* ── case ledger ───────────────────────────────── */
+.case{display:grid;grid-template-columns:184px 1fr;gap:0 34px;padding:26px 0;border-bottom:1px solid var(--rule);animation:rise .42s cubic-bezier(.22,.7,.3,1) backwards}
+.case[hidden]{display:none}
+.case-rail{font-family:var(--mono);font-size:11px;color:var(--muted);line-height:1.75}
+.case-rail .idx{display:flex;align-items:center;gap:8px;color:var(--ink);font-weight:500;font-size:11px;letter-spacing:.08em}
+.case-rail .key{margin-top:9px;color:var(--ink);font-size:11.5px}
+.case-rail .sigid{display:block;margin-top:9px;font-size:10px;letter-spacing:.02em;word-break:break-all;color:var(--faint)}
+.case-body{min-width:0}
+.case-body h3{font-family:var(--serif);font-weight:400;font-size:1.28rem;letter-spacing:-.02em;line-height:1.32}
+.case-meta{font-family:var(--mono);font-size:11px;color:var(--muted);margin-top:5px}
+
+.labels{display:flex;align-items:stretch;margin:16px 0 0;border:1px solid var(--rule);width:fit-content;max-width:100%}
+.labels div{padding:7px 15px 8px;border-left:1px solid var(--rule)}
+.labels div:first-child{border-left:0}
+.labels dt{font-family:var(--mono);font-size:9px;letter-spacing:.13em;text-transform:uppercase;color:var(--faint)}
+.labels dd{margin:1px 0 0;font-family:var(--mono);font-size:14px;font-weight:600;letter-spacing:-.01em}
+.labels .arrow{display:flex;align-items:center;padding:0 12px;color:var(--faint);font-family:var(--mono);font-size:12px}
+.labels .verdict{background:var(--ink);color:var(--paper)}
+.labels .verdict dt{color:rgba(250,249,245,.6)}
+.labels .verdict.undecided{background:var(--accent-soft);color:var(--accent)}
+.labels .verdict.undecided dt{color:rgba(140,43,24,.62)}
+
+.evidence{margin-top:15px;padding-left:15px;border-left:2px solid var(--ink);font-family:var(--serif);font-size:15px;font-weight:300;line-height:1.55}
+.evidence span{display:block;margin-top:5px;font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint)}
+.why{margin-top:14px;font-size:13.5px;color:var(--muted);max-width:70ch}
+.why b{color:var(--ink);font-weight:500}
+.cite{margin-top:9px;font-family:var(--mono);font-size:11px;color:var(--faint)}
+.cite a{border-bottom-color:var(--faint)}
+.dual{display:inline-flex;align-items:center;gap:6px;margin-top:12px;padding:3px 8px;border:1px solid var(--accent);color:var(--accent);font-family:var(--mono);font-size:10px;letter-spacing:.06em}
+
+/* ── questions ─────────────────────────────────── */
+.q{display:grid;grid-template-columns:184px 1fr;gap:0 34px;padding:24px 0;border-bottom:1px solid var(--rule)}
+.q-rail .qid{font-family:var(--mono);font-size:12px;font-weight:600;color:var(--accent);letter-spacing:.04em}
+.q-rail .prec{margin-top:8px;font-family:var(--mono);font-size:10.5px;color:var(--muted);line-height:1.7}
+.q-rail .prec u{text-decoration:none;border-bottom:1px solid var(--rule)}
+.q-rail .status{display:inline-block;margin-top:6px;padding:2px 6px;border:1px solid var(--accent);color:var(--accent);font-family:var(--mono);font-size:9.5px;letter-spacing:.1em}
+.q-body h3{font-family:var(--serif);font-weight:400;font-size:1.24rem;line-height:1.42;letter-spacing:-.02em;max-width:56ch}
+.q-impact{display:flex;flex-wrap:wrap;gap:0;margin-top:14px;border:1px solid var(--rule);width:fit-content;max-width:100%}
+.q-impact div{padding:6px 14px 7px;border-left:1px solid var(--rule)}
+.q-impact div:first-child{border-left:0}
+.q-impact dt{font-family:var(--mono);font-size:9px;letter-spacing:.11em;text-transform:uppercase;color:var(--faint)}
+.q-impact dd{margin:0;font-family:var(--mono);font-size:13.5px;font-weight:600}
+.q-rec{margin-top:14px;font-size:13.5px;max-width:66ch}
+.q-rec b{font-family:var(--mono);font-size:10px;letter-spacing:.11em;text-transform:uppercase;color:var(--faint);display:block;margin-bottom:2px}
+
+/* ── appendix ──────────────────────────────────── */
+.map{width:100%;border-collapse:collapse;margin-top:6px}
+.map th,.map td{text-align:left;padding:9px 16px 9px 0;border-bottom:1px solid var(--rule);vertical-align:top;font-size:13px}
+.map th{font-family:var(--mono);font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--faint);font-weight:500;padding-top:0}
+.map td:first-child{width:26%;font-weight:500}
+.map td.src{font-family:var(--mono);font-size:11.5px;color:var(--muted);width:38%;word-break:break-all}
+
+footer{margin-top:70px;padding:22px 0 70px;border-top:1.5px solid var(--ink);color:var(--muted);font-size:12px;line-height:1.75}
+footer .mono{color:var(--ink)}
+
+@keyframes rise{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:none}}
+@media (max-width:860px){
+  .lanes{grid-template-columns:1fr}
+  .lane{padding:0 0 24px}
+  .lane + .lane{border-left:0;border-top:1px solid var(--rule);padding:24px 0 0}
+  .case,.q{grid-template-columns:1fr;gap:14px}
+  .case-rail{display:flex;flex-wrap:wrap;gap:6px 18px}
+  .case-rail .key,.case-rail .sigid{margin-top:0}
+  .sec-head{flex-direction:column;align-items:flex-start}
+  .sec-head p{text-align:left}
+  .wrap{width:min(1080px,calc(100% - 32px))}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+@media print{
+  body{font-size:10pt}
+  .filters,.sample-tag{display:none}
+  .case,.q{break-inside:avoid}
+  a{border:0}
+}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <header class="masthead">
+    <div class="masthead-top">
+      <p class="kicker">Catalog OS · bag-category-gender · 의심 원장</p>
+      <span class="sample-tag">DESIGN SAMPLE</span>
+    </div>
+    <h1>고쳐야 할 쪽을<br><em>지목한다</em></h1>
+    <p class="standfirst">
+      이 보고서는 정확도를 보고하지 않는다. 정책과 골든셋이 어긋난 지점에서
+      <b>어느 쪽이 틀렸는지</b>를 근거와 함께 지목하고, 사람이 한 번 답하면 닫히는 질문으로 넘긴다.
+      귀책 순서는 <span class="mono">attributes/bag-category-gender/goal.md</span>가 정한다.
+    </p>
+    <dl class="runbar">
+      <div><dt>평가 상품</dt><dd>500</dd></div>
+      <div><dt>표면 정확도</dt><dd>82.8%</dd></div>
+      <div><dt>귀책 대상</dt><dd>92 상품</dd></div>
+      <div><dt>정책</dt><dd>v1</dd></div>
+      <div><dt>판례</dt><dd>3 · 확정 0</dd></div>
+      <div><dt>생성</dt><dd>2026-09-02</dd></div>
+    </dl>
+  </header>
+
+  <!-- ── 두 피의자 ─────────────────────────────── -->
+  <section class="lanes" aria-label="의심 대상 두 갈래">
+    <div class="lane">
+      <div class="lane-head"><span class="mark gt" aria-hidden="true"></span><h2>의심되는 GT</h2></div>
+      <p class="lane-count"><span class="num">44</span><span>상품 / 46건</span></p>
+
+      <div class="sig">
+        <strong>정책 근거가 있는 GT 오류 후보</strong><span class="num">20</span>
+        <p>상세 이미지나 직접 문구가 단일 성별을 지지하는데 현재 GT가 다르다.</p>
+      </div>
+      <div class="sig">
+        <strong>골든 소스 충돌</strong><span class="num">10</span>
+        <p>같은 상품의 정답 소스가 서로 다르다. 정본이 무엇인지부터 정해야 한다.</p>
+      </div>
+      <div class="sig">
+        <strong>근거 없는 일치</strong><span class="num">16</span>
+        <p>결과와 정답이 같지만 지지 근거가 없다. 우연히 맞았을 수 있다.</p>
+      </div>
+
+      <p class="rule-note"><b>귀책 원칙 4</b>
+        정책이 답을 내는데 <i>골든셋이 다르면 골든셋을 고친다.</i>
+        단, 고치기 전에 근거 이미지가 실제 대상 가방에 연결되는지 먼저 본다.
+      </p>
+    </div>
+
+    <div class="lane">
+      <div class="lane-head"><span class="mark policy" aria-hidden="true"></span><h2>의심되는 정책</h2></div>
+      <p class="lane-count"><span class="num">65</span><span>상품 / 97건</span></p>
+
+      <div class="sig">
+        <strong>정책·실행 모순</strong><span class="num">48</span>
+        <p>정책은 근거 부족을 UNDETERMINED로 두는데 실행 결과는 UNISEX다.</p>
+      </div>
+      <div class="sig">
+        <strong>정책 공백</strong><span class="num">32</span>
+        <p>사람 GT에는 단일 성별 답이 있으나 정책은 답을 만들 근거가 없다.</p>
+      </div>
+      <div class="sig">
+        <strong>정책·골든 충돌 <span class="mono" style="font-size:10px;color:var(--accent)">귀책 미확정</span></strong><span class="num">17</span>
+        <p>실행값과 GT가 다르지만 기록된 근거만으로 어느 쪽 오류인지 확정할 수 없다.</p>
+      </div>
+
+      <p class="rule-note"><b>귀책 원칙 5 · 6</b>
+        정책이 답을 못 내는데 골든셋에 답이 있으면 <i>정책에 판례를 더한다.</i>
+        골든셋과 실행이 같은데 정책만 다르면 <i>정책이 목표를 잘못 옮긴 것이다.</i>
+      </p>
+    </div>
+  </section>
+
+  <div class="overlap">
+    <span class="num">17</span>
+    <p><b>양쪽에 동시에 걸린 상품.</b> 한 상품이 두 원장에 모두 나타나면 GT 근거 검수를 먼저 하고
+      정책 판단은 그 뒤로 미룬다. 순서를 바꾸면 GT 오류를 정책으로 흡수해 판례가 오염된다.</p>
+  </div>
+
+  <!-- ── 사례 ─────────────────────────────────── -->
+  <section class="sec" aria-labelledby="cases-title">
+    <div class="sec-head">
+      <h2 id="cases-title">지목된 사례</h2>
+      <p>각 건은 라벨 대조 · 근거 원문 · 적용 정책 문장을 함께 싣는다. 근거 없이 지목하지 않는다.</p>
+    </div>
+
+    <div class="filters" role="group" aria-label="귀책 필터">
+      <button data-filter="all" aria-pressed="true">전체 6</button>
+      <button data-filter="gt" aria-pressed="false"><span class="mark gt" aria-hidden="true"></span>GT 3</button>
+      <button data-filter="policy" aria-pressed="false"><span class="mark policy" aria-hidden="true"></span>정책 2</button>
+      <button data-filter="open" aria-pressed="false"><span class="mark open" aria-hidden="true"></span>미확정 1</button>
+      <span class="spacer" id="shown">6 / 6</span>
+    </div>
+
+    <div id="ledger">
+
+      <article class="case" data-lane="gt" style="animation-delay:.02s">
+        <div class="case-rail">
+          <p class="idx"><span class="mark gt" aria-hidden="true"></span>01 · GT</p>
+          <p class="key">EGOOCM:3398529</p>
+          <span class="sigid">GOLDEN_POLICY_<br>VIOLATION_CANDIDATE</span>
+        </div>
+        <div class="case-body">
+          <h3>세이프선데이 스트랩 숄더백 (오간자네이비)</h3>
+          <p class="case-meta">SafeSunday · 가방&gt;숄더백/쇼퍼백</p>
+          <dl class="labels">
+            <div><dt>GT</dt><dd>UNISEX</dd></div>
+            <span class="arrow" aria-hidden="true">→</span>
+            <div><dt>실행</dt><dd>FEMALE</dd></div>
+            <div class="verdict"><dt>귀책</dt><dd>GT</dd></div>
+          </dl>
+          <blockquote class="evidence">여성 모델만 동일 대상 상품을 실제 착용한 이미지가 확인됨.
+            <span>detail evidence · HUMAN · scene D04T01</span></blockquote>
+          <p class="why">정책은 대상 가방을 착용한 여성 모델 또는 직접 문구를 <b>우선 근거</b>로 사용한다.
+            상세 근거는 FEMALE을 지지하지만 현재 GT는 UNISEX다.</p>
+          <p class="cite">policy · 근거 우선순위 1·2 — 직접 성별 문구와 대상 가방 착용자의 외형 성별 표현 &nbsp;·&nbsp;
+            <a href="https://www.29cm.co.kr/products/3398529">PDP ↗</a></p>
+        </div>
+      </article>
+
+      <article class="case" data-lane="gt" style="animation-delay:.06s">
+        <div class="case-rail">
+          <p class="idx"><span class="mark gt" aria-hidden="true"></span>02 · GT</p>
+          <p class="key">MUSINSA:3539191</p>
+          <span class="sigid">GOLDEN_SOURCE_<br>CONFLICT</span>
+        </div>
+        <div class="case-body">
+          <h3>라이트파스텔 프리미엄 여행용파우치 6종세트</h3>
+          <p class="case-meta">가방&gt;클러치/파우치&gt;파우치 · dataset 2026-08-11</p>
+          <dl class="labels">
+            <div><dt>정본 GT</dt><dd>UNCLASSIFIED</dd></div>
+            <span class="arrow" aria-hidden="true">≠</span>
+            <div><dt>평가 스냅샷</dt><dd>FEMALE</dd></div>
+            <div class="verdict"><dt>귀책</dt><dd>GT</dd></div>
+          </dl>
+          <p class="why">두 GT 소스가 같은 사람 검수 원장인데 라벨이 다르다. 어느 쪽이 정본인지 정하지 않으면
+            <b>이 상품의 정확도는 측정 자체가 무의미하다.</b> 라벨 오류가 아니라 소스 관리 문제로 분류한다.</p>
+          <p class="cite">conflictKind · UNCLASSIFIED_TO_LABELED &nbsp;·&nbsp; 질문 GQ-SOURCE-001로 승격</p>
+        </div>
+      </article>
+
+      <article class="case" data-lane="gt" style="animation-delay:.1s">
+        <div class="case-rail">
+          <p class="idx"><span class="mark gt" aria-hidden="true"></span>03 · GT</p>
+          <p class="key">MUSINSA:3337704</p>
+          <span class="sigid">GOLDEN_UNSUPPORTED_<br>AGREEMENT</span>
+        </div>
+        <div class="case-body">
+          <h3>J 슬링 백 Ver.2 L BLACK</h3>
+          <p class="case-meta">맨하탄 포티지 · 가방&gt;메신저/크로스백&gt;슬링백</p>
+          <dl class="labels">
+            <div><dt>GT</dt><dd>UNISEX</dd></div>
+            <span class="arrow" aria-hidden="true">=</span>
+            <div><dt>실행</dt><dd>UNISEX</dd></div>
+            <div class="verdict"><dt>귀책</dt><dd>GT</dd></div>
+          </dl>
+          <p class="why">결과와 정답이 같지만 UNISEX를 지지하는 <b>직접 근거가 하나도 없다.</b>
+            decisionSource는 NONE, 상세 이미지 0장. 맞은 것이 아니라 기본값이 우연히 겹친 것이므로
+            정확도 분자에서 빼고 재라벨 대상으로 둔다.</p>
+          <p class="dual"><span class="mark open" aria-hidden="true" style="border-color:var(--accent);background:linear-gradient(135deg,var(--accent) 0 50%,transparent 50% 100%)"></span>이중 계류 — 정책·실행 모순에도 동시 등재</p>
+        </div>
+      </article>
+
+      <article class="case" data-lane="policy" style="animation-delay:.14s">
+        <div class="case-rail">
+          <p class="idx"><span class="mark policy" aria-hidden="true"></span>04 · 정책</p>
+          <p class="key">MUSINSA:2242870</p>
+          <span class="sigid">POLICY_RUNTIME_CONTRADICTION<br>POLICY_GOLDEN_GAP</span>
+        </div>
+        <div class="case-body">
+          <h3>MESH SHAKOSHU TYPE L / BLACK</h3>
+          <p class="case-meta">리베레 · 가방&gt;숄더백/쇼퍼백&gt;숄더백</p>
+          <dl class="labels">
+            <div><dt>GT</dt><dd>FEMALE</dd></div>
+            <span class="arrow" aria-hidden="true">→</span>
+            <div><dt>실행</dt><dd>UNISEX</dd></div>
+            <div class="verdict"><dt>귀책</dt><dd>정책</dd></div>
+          </dl>
+          <blockquote class="evidence">이름·썸네일·상세 모두 결정적 성별 근거가 없음.
+            <span>mismatch classification · NO_EVIDENCE</span></blockquote>
+          <p class="why">정책은 근거 부족을 <b>UNDETERMINED</b>로 두라고 쓰여 있는데 실행은 이를 UNISEX로 저장한다.
+            모른다는 상태가 공용이라는 답으로 바뀌면서, 사람 GT가 FEMALE인 이 건이 오답으로 집계된다.
+            고칠 곳은 라벨이 아니라 <b>정책과 저장 변환의 어긋남</b>이다.</p>
+          <p class="cite">policy · 허용값 UNDETERMINED vs 프로필 저장 라벨 UNCLASSIFIED &nbsp;·&nbsp; 판례 BG-0002</p>
+        </div>
+      </article>
+
+      <article class="case" data-lane="policy" style="animation-delay:.18s">
+        <div class="case-rail">
+          <p class="idx"><span class="mark policy" aria-hidden="true"></span>05 · 정책</p>
+          <p class="key">MUSINSA:3534697</p>
+          <span class="sigid">POLICY_GOLDEN_GAP</span>
+        </div>
+        <div class="case-body">
+          <h3>실린더 백 (블랙)</h3>
+          <p class="case-meta">월스와일 무브먼트 · 가방&gt;메신저/크로스백&gt;크로스백</p>
+          <dl class="labels">
+            <div><dt>GT</dt><dd>MALE</dd></div>
+            <span class="arrow" aria-hidden="true">→</span>
+            <div><dt>실행</dt><dd>UNISEX</dd></div>
+            <div class="verdict"><dt>귀책</dt><dd>정책</dd></div>
+          </dl>
+          <p class="why">사람은 MALE이라고 답할 수 있는데 정책은 그 답을 만들 근거 경로를 갖고 있지 않다.
+            같은 형태가 32건 모여 있으므로 개별 라벨이 아니라 <b>정책 공백</b>으로 승격한다.
+            여기서 판례 하나가 32건을 한 번에 닫는다.</p>
+          <p class="cite">군집 32건 · 공통 분류 NO_EVIDENCE &nbsp;·&nbsp; 질문 GQ-RUN-001</p>
+        </div>
+      </article>
+
+      <article class="case" data-lane="open" style="animation-delay:.22s">
+        <div class="case-rail">
+          <p class="idx"><span class="mark open" aria-hidden="true"></span>06 · 미확정</p>
+          <p class="key">EGOOCM:3420004</p>
+          <span class="sigid">POLICY_GOLDEN_<br>CONFLICT</span>
+        </div>
+        <div class="case-body">
+          <h3>[키링 악세사리] 체리 케이프 &amp; 스커트</h3>
+          <p class="case-meta">코지모지 · 가방&gt;백 액세서리</p>
+          <dl class="labels">
+            <div><dt>GT</dt><dd>UNISEX</dd></div>
+            <span class="arrow" aria-hidden="true">→</span>
+            <div><dt>실행</dt><dd>FEMALE</dd></div>
+            <div class="verdict undecided"><dt>귀책</dt><dd>미확정</dd></div>
+          </dl>
+          <blockquote class="evidence">체리 패턴의 프릴 케이프와 스커트 디자인은 여성용 장식 결합 신호에 해당함.
+            <span>detail evidence · PRODUCT_ONLY · 착용자 없음</span></blockquote>
+          <p class="why">근거가 상품 디자인 하나뿐이라 <b>어느 쪽 오류인지 기록만으로는 확정할 수 없다.</b>
+            여기서 한쪽을 고르면 그 판단이 판례가 되어 다음 실행 전체를 끌고 간다.
+            그래서 이 건은 지목하지 않고 사람 게이트로 넘긴다.</p>
+          <p class="cite">basis · 결정 근거가 GT와 다르며 직접 충돌을 확정할 증거가 부족함 &nbsp;·&nbsp;
+            <a href="https://www.29cm.co.kr/products/3420004">PDP ↗</a></p>
+        </div>
+      </article>
+
+    </div>
+  </section>
+
+  <!-- ── 질문 ─────────────────────────────────── -->
+  <section class="sec" aria-labelledby="q-title">
+    <div class="sec-head">
+      <h2 id="q-title">한 번 답하면 닫히는 질문</h2>
+      <p>사람은 143건에 라벨을 달지 않는다. 그 143건을 가르는 질문 하나에 답한다.</p>
+    </div>
+
+    <article class="q">
+      <div class="q-rail">
+        <p class="qid">GQ-GT-001</p>
+        <p class="prec"><u>BG-0001</u><br><span class="status">OPEN</span></p>
+      </div>
+      <div class="q-body">
+        <h3>정책의 직접 근거가 단일 성별을 지지하는데 GT가 UNISEX인 사례를 GT 오류로 확정할 것인가?</h3>
+        <dl class="q-impact">
+          <div><dt>대상</dt><dd>20</dd></div>
+          <div><dt>FEMALE 후보</dt><dd>14</dd></div>
+          <div><dt>MALE 후보</dt><dd>6</dd></div>
+        </dl>
+        <p class="q-rec"><b>권고</b>상세 근거 이미지를 우선 검수하고, 근거가 실제 대상 가방과 연결되면 GT를 수정한다.
+          근거 이미지가 다른 가방의 것이면 GT 오류가 아니라 실행 오류이고, 고칠 곳이 정반대다.</p>
+      </div>
+    </article>
+
+    <article class="q">
+      <div class="q-rail">
+        <p class="qid">GQ-RUN-001</p>
+        <p class="prec"><u>BG-0002</u><br><span class="status">OPEN</span></p>
+      </div>
+      <div class="q-body">
+        <h3>근거가 없을 때 내부 UNDETERMINED를 최종 UNISEX로 바꿔도 되는가?</h3>
+        <dl class="q-impact">
+          <div><dt>영향</dt><dd>48</dd></div>
+          <div><dt>GT와 불일치</dt><dd>32</dd></div>
+          <div><dt>근거 없는 일치</dt><dd>16</dd></div>
+        </dl>
+        <p class="q-rec"><b>권고</b>평가에서는 UNDETERMINED를 보존하고, 저장 호환 변환은 별도 projection으로 분리한다.</p>
+      </div>
+    </article>
+
+    <article class="q">
+      <div class="q-rail">
+        <p class="qid">GQ-SOURCE-001</p>
+        <p class="prec"><u>BG-0003</u><br><span class="status">OPEN</span></p>
+      </div>
+      <div class="q-body">
+        <h3>두 GT 소스 중 어느 버전을 정본으로 사용할 것인가?</h3>
+        <dl class="q-impact">
+          <div><dt>다른 행</dt><dd>10</dd></div>
+          <div><dt>라벨↔라벨</dt><dd>5</dd></div>
+          <div><dt>미분류↔라벨</dt><dd>5</dd></div>
+        </dl>
+        <p class="q-rec"><b>권고</b>최신 사람 검수 원장을 정본으로 지정하고, datasetVersion과 라벨 해시를 평가 입력에 기록한다.</p>
+      </div>
+    </article>
+  </section>
+
+  <!-- ── 부록: 렌더러 계약 ─────────────────────── -->
+  <section class="sec" aria-labelledby="map-title">
+    <div class="sec-head">
+      <h2 id="map-title">이 샘플이 요구하는 입력</h2>
+      <p>렌더러가 속성을 몰라도 이 화면을 만들 수 있어야 한다. 아래가 그 최소 계약이다.</p>
+    </div>
+    <table class="map">
+      <thead><tr><th>화면 요소</th><th>출처</th><th>규칙</th></tr></thead>
+      <tbody>
+        <tr><td>상단 지표</td><td class="src">run-summary.json · products, surfaceAccuracy</td><td>속성 이름은 profile의 displayName·attributeName에서만 읽는다.</td></tr>
+        <tr><td>두 원장 분류</td><td class="src">profile.signals[].priority + queue/*.jsonl</td><td>어느 신호가 GT 쪽인지 정책 쪽인지는 프로필이 정한다. 렌더러에 신호 이름을 하드코딩하지 않는다.</td></tr>
+        <tr><td>귀책 표시</td><td class="src">row.mismatchClassification</td><td>GT_CONFLICT → GT · NO_EVIDENCE → 정책 · MODEL_ERROR → 미확정. 매핑 밖의 값은 미확정으로 떨어뜨린다.</td></tr>
+        <tr><td>라벨 대조</td><td class="src">referenceLabel · observedLabel</td><td>골든 소스 충돌 행은 canonicalGold ↔ evaluationGold로 대체한다.</td></tr>
+        <tr><td>근거 원문</td><td class="src">detailEvidence · detailEvidenceType · policyEvidenceSceneIds</td><td>근거가 없으면 인용 블록을 그리지 않는다. 빈 인용은 없는 근거를 있는 것처럼 보이게 한다.</td></tr>
+        <tr><td>적용 정책 문장</td><td class="src">row.policyRule</td><td>정책 문장을 그대로 싣는다. 요약하면 판정 근거가 사라진다.</td></tr>
+        <tr><td>이중 계류</td><td class="src">productKey 교집합</td><td>한 상품이 두 원장에 있으면 GT 쪽에 배치하고 배지로 표시한다.</td></tr>
+        <tr><td>질문 · 판례</td><td class="src">reports/policy-questions.json · policy/policy-index.json</td><td>questionPrecedents로 연결하고 status가 OPEN이면 미결로 표시한다.</td></tr>
+        <tr><td>사람 판정률</td><td class="src">review/status.json</td><td>AI 추천은 분자에 넣지 않는다. decisions.json에 기록된 것만 판정으로 센다.</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <footer>
+    디자인 샘플 · <span class="mono">.claude/os/reports/samples/suspect-report-sample.html</span><br>
+    수치와 사례는 <span class="mono">runs/bag-category-gender</span> 2026-09-02 실행에서 그대로 가져왔다. 이 파일은 렌더러가 만들지 않으며 손으로 고친다.<br>
+    참조 계약 · <span class="mono">engine/contracts/customization-boundary.md</span> · <span class="mono">attributes/bag-category-gender/goal.md</span>
+  </footer>
+
+</div>
+
+<script>
+(function(){
+  var buttons = document.querySelectorAll('.filters button[data-filter]');
+  var cases = Array.prototype.slice.call(document.querySelectorAll('.case'));
+  var shown = document.getElementById('shown');
+  function apply(filter){
+    var n = 0;
+    cases.forEach(function(el){
+      var hit = filter === 'all' || el.dataset.lane === filter;
+      el.hidden = !hit;
+      if (hit) n++;
+    });
+    shown.textContent = n + ' / ' + cases.length;
+    buttons.forEach(function(b){ b.setAttribute('aria-pressed', String(b.dataset.filter === filter)); });
+  }
+  buttons.forEach(function(b){ b.addEventListener('click', function(){ apply(b.dataset.filter); }); });
+})();
+</script>
+</body>
+</html>

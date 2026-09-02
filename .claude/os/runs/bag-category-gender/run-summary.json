@@ -1,0 +1,99 @@
+{
+  "artifacts": {
+    "arbiterReport": ".claude/os/runs/bag-category-gender/reports/arbiter.md",
+    "arbiterVerdicts": ".claude/os/runs/bag-category-gender/review/verdicts.jsonl",
+    "auditReport": ".claude/os/runs/bag-category-gender/reports/bag-category-gender-audit.md",
+    "decisionLedger": ".claude/os/runs/bag-category-gender/review/decisions.json",
+    "htmlReport": ".claude/os/runs/bag-category-gender/reports/catalog-audit.html",
+    "policyGapReport": ".claude/os/runs/bag-category-gender/reports/policy-gaps.html",
+    "policyIndex": ".claude/os/runs/bag-category-gender/policy/policy-index.json",
+    "policyQuestions": ".claude/os/runs/bag-category-gender/reports/bag-category-gender-policy-questions.md",
+    "policyQuestionsJson": ".claude/os/runs/bag-category-gender/reports/policy-questions.json",
+    "policyStatus": ".claude/os/runs/bag-category-gender/reports/policy-status.md",
+    "queueDirectory": ".claude/os/runs/bag-category-gender/queue",
+    "reviewProgress": ".claude/os/runs/bag-category-gender/reports/review-progress.md",
+    "reviewStatus": ".claude/os/runs/bag-category-gender/review/status.json",
+    "suspectGtReport": ".claude/os/runs/bag-category-gender/reports/suspect-gt.html"
+  },
+  "completed": true,
+  "cycle": [
+    "정책 스냅샷",
+    "최신 fresh 평가·상세 근거 스냅샷",
+    "정책-실행-골든 비교",
+    "GT 오류 후보와 실행 오류 분리",
+    "상세 근거 이미지 큐 생성",
+    "소유 정책 레이어",
+    "사람 판정 진행률",
+    "HTML 보고서"
+  ],
+  "generatedAt": "2026-09-02T14:30:07.582849+00:00",
+  "goldenSourceBreakdown": {
+    "LABEL_TO_LABEL": 5,
+    "UNCLASSIFIED_TO_LABELED": 5
+  },
+  "imagePipeline": {
+    "collectedTiles": 6956,
+    "completeCoverageProducts": 410,
+    "detailProducts": 410,
+    "failedDetailProducts": 0,
+    "imageCollectionRecoveredProducts": 1,
+    "interactionPolicyRecoveredProducts": 223,
+    "invalidTextEvidenceDroppedProducts": 6,
+    "productsOverTwentyTiles": 105,
+    "retainedTiles": 6571
+  },
+  "input": ".claude/os/runs/bag-category-gender/golden/bag-policy-evaluation.jsonl",
+  "policy": ".claude/os/runs/bag-category-gender/policy/bag-category-gender.md",
+  "policyLayer": {
+    "blockingViolations": 0,
+    "decided": 0,
+    "labels": [
+      "MALE",
+      "FEMALE",
+      "UNISEX",
+      "UNDETERMINED"
+    ],
+    "open": 3,
+    "precedents": 3,
+    "questions": 3,
+    "questionsResolved": 0,
+    "questionsWithPrecedent": 3,
+    "untrackedReviewViolations": 0,
+    "version": "1"
+  },
+  "primaryFinding": {
+    "count": 20,
+    "description": "상세 이미지·직접 문구가 단일 성별을 지지하지만 현재 GT가 다릅니다.",
+    "label": "정책 직접 근거가 있는 GT 오류 후보",
+    "signal": "GOLDEN_POLICY_VIOLATION_CANDIDATE"
+  },
+  "products": 500,
+  "profileId": "bag-category-gender",
+  "reviewProgress": {
+    "adjudicatedProducts": 0,
+    "adjudicationRate": 0.0,
+    "deferredProducts": 0,
+    "pendingProducts": 305,
+    "queuedProducts": 305
+  },
+  "signals": {
+    "evidencePipelineRecovered": 4,
+    "goldenPolicyViolationCandidate": 20,
+    "goldenSourceConflict": 10,
+    "goldenUnsupportedAgreement": 16,
+    "imageCollectionRecovered": 1,
+    "interactionPolicyRecovered": 223,
+    "invalidTextEvidenceDropped": 6,
+    "modelPolicyContradiction": 1,
+    "policyGoldenConflict": 17,
+    "policyGoldenGap": 32,
+    "policyRuntimeContradiction": 48
+  },
+  "spotlightFinding": {
+    "count": 1,
+    "description": "공개 HTML에서 보이지 않던 BFF 상세 이미지를 수집해 전체 판정을 복구했습니다.",
+    "label": "29CM 상세 이미지 수집 복구",
+    "signal": "IMAGE_COLLECTION_RECOVERED"
+  },
+  "surfaceAccuracy": 0.828
+}

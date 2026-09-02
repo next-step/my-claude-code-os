@@ -21,7 +21,7 @@ description: 여러 GitHub 계정(개인/회사)이 한 머신에 공존하는 �
 ## 사전 점검 — 쓰기 작업 전에 먼저 돌린다
 
 ```bash
-.claude/skills/github-flow/scripts/preflight.sh
+.claude/os/dev-workflow/skills/github-flow/scripts/preflight.sh
 ```
 
 규칙 1~3을 사람 기억 대신 스크립트로 검사한다. 한 번에 6가지를 본다.
@@ -60,8 +60,8 @@ gh api repos/<owner>/<repo> --jq '.permissions'
 기본 상태는 회사 계정(`2minjoon`)이다. 개인 저장소 쓰기 작업은 **그 순간만 개인 계정을 빌려 쓰고 즉시 되돌린다.**
 
 ```bash
-.claude/skills/github-flow/scripts/with-account.sh mj950425 -- git push origin step0
-.claude/skills/github-flow/scripts/with-account.sh mj950425 -- gh pr create --repo ... --base ... --head ...
+.claude/os/dev-workflow/skills/github-flow/scripts/with-account.sh mj950425 -- git push origin step0
+.claude/os/dev-workflow/skills/github-flow/scripts/with-account.sh mj950425 -- gh pr create --repo ... --base ... --head ...
 ```
 
 복귀는 `trap EXIT`로 걸려 있다. **명령이 실패하든 중간에 끊기든(INT/TERM) 회사 계정으로 돌아온다.**
