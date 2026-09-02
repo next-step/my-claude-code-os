@@ -1,0 +1,13 @@
+# IDE
+.idea/
+.vscode/
+
+# macOS
+.DS_Store
+
+# Python (훅 스크립트 실행 부산물)
+__pycache__/
+*.py[cod]
+
+# Claude Code 로컬 설정 (개인 권한 설정이라 공유하지 않는다)
+.claude/settings.local.json
