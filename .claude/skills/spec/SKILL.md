@@ -33,6 +33,7 @@ allowed-tools: Read, Edit, Glob, Grep, Bash, Task
 - **영향 파일**: context-loader 가 지목한 파일·라인 기준.
 - **구현 접근**: 방법 개요(알고리즘/흐름). 대안이 있으면 한 줄씩, 그리고 고른 이유.
 - **완료 기준 (검증 가능하게)**: `/verify` 가 하나씩 체크할 수 있는 형태로.
+  작성 전 [`.claude/context/dod-patterns.md`](../../context/dod-patterns.md) 의 패턴·안티패턴을 따른다.
   예: "잘못된 토큰으로 로그인 시 3회까지 재시도 후 401 반환", "관련 유닛테스트 통과".
 - **위험 / 롤백**: 회귀 위험 지점, 되돌리는 방법.
 
