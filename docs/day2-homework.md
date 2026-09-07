@@ -85,7 +85,7 @@ Day2 과제 완료 조건 = 필수 3 + 도전 2.
 | - | --- | --- | --- | --- |
 | 0 | 준비 | `team-capability.md` 의 `(채울 것)` 를 `sandbox/board` 소유팀 값으로 교체 (첨삭 제출용이라 실회사 정보는 뺌 — 회사 전환 시 이 파일만 교체) | 플레이스홀더 0개 | ✅ |
 | 1 | 필수 1 | 컨텍스트 md **5개 이상** + 스킬·서브에이전트 자동 주입 연결 | `.claude/context/` 실질 컨텍스트 5개, 각각 소비자에 연결(=@import / Read 지침 / 훅 트리거) | ✅ (6개, A/B 실증은 필수 2에서) |
-| 2 | 필수 2 | 주입 O/X **A/B 동작 비교** | 같은 입력에 대해 컨텍스트 있을 때 vs 없을 때 스킬 출력 차이를 기록 | ✅ → [`day2-ab-injection-test.md`](./day2-ab-injection-test.md) |
+| 2 | 필수 2 | 주입 O/X **A/B 동작 비교** (`skill-creator` 포함) | 같은 입력에 대해 컨텍스트 있을 때 vs 없을 때 스킬 출력 차이를 기록 | ✅ → [`day2-ab-injection-test.md`](./day2-ab-injection-test.md) |
 | 3 | 필수 3 | 컨텍스트 체계 **도식화** 1P 파일 | `docs/` 에 다이어그램 파일 1개 (파일→트리거→소비자 관계) | ✅ → [`day2-context-map.md`](./day2-context-map.md) |
 | 4 | 도전 1 | 주입 검증 **테스트** 제작 | 컨텍스트가 실제로 주입됐는지 확인하는 자동 검사 | ⬜ |
 | 5 | 도전 2 | 컨텍스트 체계 **최적화 + 정량 비교** (= p.47) | 위 before 표 대비 after 표, 절감 토큰/% 기록 | ⬜ |
@@ -141,3 +141,8 @@ Day2 과제 완료 조건 = 필수 3 + 도전 2.
   `sizing.md` 가 A·A2·A3 세 번 모두 `적용한 기준` 에 인용됨 → 필수 1 배선 실사용 확인.
 - 2026-09-07 필수 3 완료. `day2-context-map.md` — Mermaid 도식(파일→주입방식→소비자) +
   트리거 표 + 활용 검증 루프 + 필수 2 검증 결과. 필수 3개 모두 완료 (도전 1·2 남음).
+- 2026-09-07 필수 2 보강. `skill-creator@claude-plugins-official` 설치 후 `/spec ± dod-patterns.md`
+  스킬 레벨 A/B: assertion 100% vs 95%, 블라인드 comparator **3/3 컨텍스트 O 승**(격차 +1~+3점),
+  비용 실행당 토큰 +4.3k. `day2-ab-injection-test.md` 에 "스킬 레벨 정량 비교" 절 추가.
+- 2026-09-07 도전 1 완료. `.claude/scripts/check-context-wiring.sh` — 의존 표 SSOT 기준
+  파일 존재/@import/Lazy 참조/훅/고아 파일/죽은 지침 검사. 16건 PASS, WARN 1(§N 인용 0회).
