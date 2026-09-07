@@ -14,6 +14,7 @@
 | `skills/skill-stat/` | 훅이 기록한 스킬 호출 데이터를 통계로 보여주는 스킬 (`SKILL.md` + `report.sh`) | O (커밋) |
 | `skills/{intake,spec,implement,verify,outsource,status}/SKILL.md` | **유지보수 요청 처리 OS** 스킬 6개. `/intake` 로 접수·분류 → `/spec` → `/implement` → `/verify` → `/handoff`, 또는 `/outsource`. `/status` 로 현황 조회 | O (커밋) |
 | `skills/handoff/SKILL.md` | 내부 처리 완료(`done`) 요청의 배포 노트·담당자 통보문 작성 → `handed_off` | O (커밋) |
+| `context/` | **운영 지침 컨텍스트.** 스킬·에이전트가 *읽어서* 판단 근거로 삼는 자료 (실행되지 않음) — `team-capability.md`(팀 역량), `classification-policy.md`(분류 룰), `interview-method.md`(모호함 진단 인터뷰 방법론 — `/interview` 와 `intake-interview` 가 공유). 무엇을 언제 읽는지는 `context/README.md` 의존 표 | O (커밋) |
 | `agents/` | OS가 쓰는 서브에이전트 — `classifier`(내부/외주 + 규모 판단), `context-loader`(`spec`·`implement`·`verify` 공유 컨텍스트 수집), `intake-interview`(담당자 면담 질문 생성), `spec-reviewer`(스펙 초안 검토) | O (커밋) |
 | `hooks/skill-usage-stats.sh` | `Skill` 툴 호출마다 횟수를 기록하는 PreToolUse 훅 | O (커밋) |
 | `hooks/session-open-requests.sh` | 세션 시작 시 진행 중인 유지보수 요청을 브리핑하는 SessionStart 훅 | O (커밋) |
