@@ -9,12 +9,20 @@
 ```
 maintenance/
   README.md
+  capacity.md          # 이번 달 유지보수 캐파(M/M). classifier 가 분류에 참조하는 라이브 데이터
   requests/
     _TEMPLATE.md       # 케이스 파일 원본. /intake 가 이걸 복사한다.
     REQ-001.md         # 요청 1건 = 파일 1개 (전체 생애주기를 한 파일에)
     REQ-002.md
     ...
+  interviews/          # /interview 가 남기는 모호함 진단 기록
+    2026-09-02-주간-리포트.md
 ```
+
+- `capacity.md` 는 **규칙이 아니라 데이터**다. 판단 규칙은
+  `.claude/context/classification-policy.md` §2 에 있고, 이 파일의 숫자를 참조만 한다. 매달 갱신.
+- `interviews/` 는 요청으로 접수되기 **전** 단계의 기록이다. 이미 접수된 요청을 파고든
+  경우에는 케이스 파일 "2. 접수 정리" 에 링크가 남는다.
 
 ## 케이스 파일 하나에 담기는 것
 

@@ -15,6 +15,17 @@
             "statusMessage": "스킬 호출 통계 기록 중..."
           }
         ]
+      },
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/inject-style-context.sh\"",
+            "timeout": 10,
+            "statusMessage": "스타일 규칙 주입 중..."
+          }
+        ]
       }
     ],
     "SessionStart": [
@@ -25,6 +36,19 @@
             "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/session-open-requests.sh\"",
             "timeout": 5,
             "statusMessage": "유지보수 요청 현황 확인 중..."
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/verify-wiring-on-edit.sh\"",
+            "timeout": 15,
+            "statusMessage": "컨텍스트 배선 확인 중..."
           }
         ]
       }
