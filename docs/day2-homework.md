@@ -73,22 +73,26 @@ CLAUDE.md                    규칙 4·5 추가 + @team-capability.md 항상 로
 - `style.md` → PreToolUse 훅(`Write`/`Edit`, 세션당 1회) 주입
 - `team-capability.md` → Lazy Read (소비자 classifier·intake-interview 가 직접 Read)
 
-**측정 절차** (실제 숫자는 `/context` 로 채울 것):
-1. 최적화 전 커밋(`4ae2cfd` 또는 그 이전)으로 `git switch --detach 4ae2cfd` → `/clear` → `/context` → "Memory files" 기록 = **before**
-2. `git switch step2` (최적화 후) → `/clear` → `/context` → "Memory files" 기록 = **after**
-3. 절감 = before − after
+**측정 절차**: 새 `claude` 세션에서 `git switch --detach 4ae2cfd` → `/context` (= before),
+`git switch step2` → `/context` (= after). `/context` 의 `Memory files` 줄 + 맨 위 합계.
 
-| 시점 | Memory files 토큰 | 합계 토큰 |
+측정일: 2026-09-08 (각각 새 세션, `/clear` 아님)
+
+| 시점 | Memory files | 합계 |
 | --- | --- | --- |
-| before (`@team-capability` + `@style` 항상 로드) | (기입) | (기입) |
-| after (`@import` 0개) | (기입) | (기입) |
-| **절감** | (기입) | (기입) |
+| before (`@team-capability` + `@style` 항상 로드) | **2,600** (2.6k) | **32.0k** |
+| after (`@import` 0개) | **543** | **29.9k** |
+| **절감** | **−2,057 (−79%)** | **−2,100 (−6.6%)** |
 
-**예상** (측정 1·2 기준 추정): `@team-capability` ≈ 940 토큰 + `@style`(원문이 team-capability 의 약 1.2배) ≈ 1,100 토큰
-→ 세션 시작 baseline 에서 **약 2,000 토큰(≈ Memory files 의 88%) 감소** 예상. `CLAUDE.md` 본문이 설명 추가로 ~150 토큰 늘어 순감은 ~1,850.
+- Memory files 만 놓고 보면 **79% 감소** (2.6k → 543). `after` 의 543 = `CLAUDE.md` 본문 하나
+  (설명 섹션 추가로 이전 ~250 → 543 으로 늘어난 상태 포함).
+- 전체 세션 시작 컨텍스트 대비 **6.6% 감소**. 나머지(System prompt 4.5k, System tools 20.3k,
+  Skills 3.9k, Custom agents 645)는 우리가 못 건드리는 고정분 → **제어 가능한 부분에서 79% 절감**한 셈.
+- 예상(−1,900)보다 실측이 −2,057 로 조금 더 큼 (`style.md` 가 추정 1,190 보다 무거웠음).
 
-**트레이드오프**: `style.md` 는 파일을 쓰는 세션에서 첫 `Write`/`Edit` 때 ~1,100 토큰이 한 번 들어옴(그 뒤 재주입 없음).
-파일을 안 쓰는 세션(질문·조사·계획)은 0. `team-capability.md` 는 `classifier`/`intake-interview` 가 돌 때만 Read.
+**트레이드오프**: `style.md`(~1,190 tok)는 파일 쓰는 세션의 첫 `Write`/`Edit` 때 한 번 들어옴(그 뒤 재주입 없음).
+파일 안 쓰는 세션(질문·조사·계획)은 0. `team-capability.md` 는 `classifier`/`intake-interview` 가 돌 때만 Read.
+`CLAUDE.md` 설명 섹션을 뺐으면 after 가 ~250 으로 더 내려가지만, 가독성 위해 유지.
 
 ---
 
@@ -166,3 +170,5 @@ Day2 과제 완료 조건 = 필수 3 + 도전 2.
   세션 시작 baseline 에서 운영 지침 @import 0. 예상 절감 ≈ 1,850 토큰/세션 (실측은 `/context` 로 기입).
   배선 검증 17건 PASS. 이제 자동 주입 3가지(항상로드 제외 → Lazy + 훅) 실증 완료.
   `day2-context-map.md` 도식·표 갱신.
+- 2026-09-08 측정 3 실측 기입. before Memory files 2.6k → after 543 (**−2,057, −79%**),
+  합계 32.0k → 29.9k (−6.6%). 예상(−1,900) 대비 실측이 조금 더 큼. Day2 과제 전부 완료.
