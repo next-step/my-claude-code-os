@@ -109,7 +109,3 @@ Day2 과제 완료 조건 = 필수 3 + 도전 2.
 | `CLAUDE.md` `@import` | 세션 시작 무조건 | **없음** (도전 2에서 제거 — baseline 토큰 절감) |
 | 소비자가 `Read` (Lazy) | 그 스킬·에이전트가 돌 때 | `team-capability`, `classification-policy`, `sizing`, `dod-patterns`, `interview-method`, `capacity` |
 | **훅 (PreToolUse additionalContext)** | `Write`/`Edit` 툴 실행 직전 (세션당 1회) | `style.md` (`.claude/hooks/inject-style-context.sh`) |
-
----
-
-> 변경 이력은 커밋 로그 참고 (`git log main..step2`). 이 파일은 측정값과 완료 현황만 남긴다.
