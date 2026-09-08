@@ -106,7 +106,7 @@ Day2 과제 완료 조건 = 필수 3 + 도전 2.
 | 1 | 필수 1 | 컨텍스트 md **5개 이상** + 스킬·서브에이전트 자동 주입 연결 | `.claude/context/` 실질 컨텍스트 5개, 각각 소비자에 연결(=@import / Read 지침 / 훅 트리거) | ✅ (6개, A/B 실증은 필수 2에서) |
 | 2 | 필수 2 | 주입 O/X **A/B 동작 비교** (`skill-creator` 포함) | 같은 입력에 대해 컨텍스트 있을 때 vs 없을 때 스킬 출력 차이를 기록 | ✅ → [`day2-ab-injection-test.md`](./day2-ab-injection-test.md) |
 | 3 | 필수 3 | 컨텍스트 체계 **도식화** 1P 파일 | `docs/` 에 다이어그램 파일 1개 (파일→트리거→소비자 관계) | ✅ → [`day2-context-map.md`](./day2-context-map.md) |
-| 4 | 도전 1 | 주입 검증 **테스트** 제작 | 컨텍스트가 실제로 주입됐는지 확인하는 자동 검사 | ✅ → `.claude/scripts/check-context-wiring.sh` |
+| 4 | 도전 1 | 주입 검증 **테스트** 제작 | 컨텍스트가 실제로 주입됐는지 확인하는 자동 검사 | ✅ `check-context-wiring.sh` (검사) + `--self-test` (검사기 검증) + PostToolUse 훅 (자동 실행) |
 | 5 | 도전 2 | 컨텍스트 체계 **최적화 + 정량 비교** (= p.47) | 위 before 표 대비 after 표, 절감 토큰/% 기록 | ✅ (측정 3 절차, `/context` 숫자만 기입 대기) |
 
 ### 필수 1 — 컨텍스트 6개 + 주입 연결 (완료 2026-09-07, 도전 2에서 주입 방식 재배정)
@@ -172,3 +172,7 @@ Day2 과제 완료 조건 = 필수 3 + 도전 2.
   `day2-context-map.md` 도식·표 갱신.
 - 2026-09-08 측정 3 실측 기입. before Memory files 2.6k → after 543 (**−2,057, −79%**),
   합계 32.0k → 29.9k (−6.6%). 예상(−1,900) 대비 실측이 조금 더 큼. Day2 과제 전부 완료.
+- 2026-09-08 도전 1 보강 (2주차 리뷰 피드백 반영 — 남들 도전 1이 "완료 판정 어려움"으로 보류됨).
+  `check-context-wiring.sh --self-test`: 임시 복사본에 Lazy 끊김·훅 미등록·고아 파일 3종을 일부러
+  주입해 검사기가 FAIL 로 잡는지 검증 (실제 파일 불변). + `verify-wiring-on-edit.sh` PostToolUse 훅으로
+  `CLAUDE.md`·`.claude/context/`·`settings.json`·에이전트·스킬 편집 시 자동 배선 재검사.

@@ -117,4 +117,6 @@ grep -rho 'classification-policy\.md §[0-9]' maintenance/requests/ | sort | uni
 | `team-capability.md` 가 판단을 바꾸나 | ✅ classifier A/B 라운드 3에서 이 파일 때문에 판단이 outsource↔internal 로 갈림 |
 | ③ 훅이 실제로 발동하나 | ✅ 도전 2 — 이 파일 편집 시 `inject-style-context.sh` 가 `style.md` 를 `additionalContext` 로 주입 (스모크 테스트 + 실사용 확인) |
 | 배선 정합성 | ✅ `check-context-wiring.sh` 17건 PASS / WARN 1 |
+| 검사기 신뢰성 | ✅ `--self-test` — 일부러 넣은 배선 고장 3종을 모두 FAIL 로 탐지 |
+| 배선 회귀 방지 | ✅ `verify-wiring-on-edit.sh` PostToolUse 훅 — 배선 파일 편집 시 자동 재검사 |
 | `knowledge/systems/` 갭 | ⚠ 파일 부재로 `classifier` §1② 가 "board = 내부 관리" 를 추측으로 대체 중 |
