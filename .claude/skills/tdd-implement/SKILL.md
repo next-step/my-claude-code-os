@@ -68,6 +68,7 @@ description: 05단계에서 작성된 실패하는 인수 테스트를 통과시
 
 - 재시도 상한 3회는 온보딩 자료의 "3회 상한" 규칙을 따른 것이다. 무한히 시도하는 AI보다 빨리 손드는 AI가 낫다는 판단이다.
 - `test-reviewer`는 `acceptance-test-write`(05단계)와 **공유하는 서브에이전트**다. 05는 `TEST_QUALITY`, 06은 `IMPL_HONESTY` 모드로 같은 전문성을 재사용한다.
+- **리뷰어의 지적을 축소하지 않는다.** 판정과 이유를 원문 그대로, 항목 **개수 그대로** 사람에게 올린다. 구현 지식으로 지적을 지우지 않는다 — 규칙 본문과 기계 검사(`.claude/lib/review-handoff.js`)는 `atdd-orchestrator`의 03단계에 있다. 이유는 `docs/context-ab-test.md` 실험 3.
 - 이 스킬이 가장 어기기 쉬운 규율은 "막히면 테스트를 살짝 고치기"다. 막히면 고칠 대상은 언제나 구현이거나 인수기준이다.
 - `ui-visual-reviewer`의 FAIL은 `node --test` Bash 출력이 아니므로 `atdd-failure-log.js` 훅이 자동 기록하지 않는다 — `policy-reviewer`/`test-reviewer`의 FAIL이 원장에 안 남는 것과 같은 기존 설계와 일관된 동작이다(새로운 갭이 아니다).
 

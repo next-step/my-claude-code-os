@@ -1,0 +1,13 @@
+{
+  "eval_id": 0,
+  "eval_name": "eval-ledger-recent",
+  "prompt": "실패 원장에서 최근 7일치만 뽑아 보여주는 스킬이 필요해. 인수기준으로 나눠줘.",
+  "assertions": [
+    {"id": "A1", "text": "인수기준이 번호 붙은 개별 항목 3개 이상으로 분리돼 있다", "method": "script"},
+    {"id": "A2", "text": "각 항목이 조건·행동·기대결과 3요소를 갖는다 (Given-When-Then 형식 자체는 요구하지 않음)", "method": "grader"},
+    {"id": "A3", "text": "항목 본문에 구현 수단(함수명, 파일 경로, 라이브러리명)이 들어 있지 않다", "method": "grader"},
+    {"id": "A4", "text": "테스트 코드나 구현 코드를 작성하지 않았다", "method": "script"},
+    {"id": "A5", "text": "관측 가능한 완료 조건(수치·상태·경계값)이 최소 1개 항목에 명시된다", "method": "grader"},
+    {"id": "A6", "text": "7일 경계 자체의 처리(경계 포함 여부)와 빈 원장/기록 없음 상황이 각각 항목으로 다뤄진다", "method": "grader"}
+  ]
+}

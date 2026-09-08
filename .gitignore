@@ -17,3 +17,25 @@
 # (mockup.*, ui-spec.md는 고정 fixture라 커밋 대상으로 남긴다)
 .claude/tests/fixtures/**/screenshot.*
 /.idea/
+
+# 세션 인계·협업 계층(session-board)이 세션마다 남기는 런타임 상태.
+# 훅(session-register/heartbeat/close/conflict-warn)이 매 턴 갱신하는 로컬 실행 데이터다.
+# 커밋 대상이 되면 big-change-commit-check.js의 git status 서명이 매 턴 달라져
+# 무한 재발동한다 — .commit-check-state.json과 정확히 같은 이유다.
+# (.claude/tests/fixtures/session-board/sessions/ 는 고정 픽스처라 커밋 대상이므로
+#  'sessions/' 가 아니라 정확한 경로로 적는다)
+.claude/sessions/
+
+# notion-min MCP 서버의 Notion integration 토큰. 이 저장소는 공개 커밋되므로
+# 토큰은 .mcp.json(커밋됨)이 아니라 여기 gitignore된 파일이나 환경변수로만 받는다.
+.claude/.notion-token
+
+# MCP 프로토콜 도청기(probe.js)가 남기는 관측 로그. 일회성 조사 산출물이고
+# 내용이 매 실행마다 달라져 big-change-commit-check.js를 계속 재발동시킨다.
+.claude/mcp-servers/**/.probe.log
+
+# 컨텍스트 A/B 실험(context-ab)의 실행 결과. 매 실행마다 내용이 달라져
+# big-change-commit-check.js·os-retro-check.js를 계속 재발동시킨다 — .commit-check-state.json과 같은 이유다.
+# 재현을 가능하게 하는 것은 결과가 아니라 팔 정의(arms.json·evals.json)이고 그쪽은 커밋된다.
+# 남길 가치가 있는 결과는 사람이 docs/ 로 승격한다.
+experiments/context-ab/runs/

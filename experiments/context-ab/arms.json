@@ -1,0 +1,36 @@
+{
+  "note": "docs/context-ab-test.md 실험 1의 3팔 설계를 그대로 코드화한 것. 이 파일이 커밋돼 있어야 실험이 재현된다 — 기존 실험은 사본이 /tmp에 있어 재현이 불가능했다.",
+  "axes": {
+    "A_vs_B": "주입의 값 — 파일은 양쪽 다 있고 index.md 등록만 다르다",
+    "B_vs_C": "지침 존재 자체의 값 — B는 뒤지면 찾을 수 있고 C는 아예 없다"
+  },
+  "arms": [
+    {
+      "name": "armA",
+      "label": "주입됨",
+      "guidelines": "all",
+      "registered": true,
+      "hooks": false,
+      "git": false,
+      "note": "세션 시작부터 지침을 알고 있다. 이 저장소의 실제 상태와 가장 가깝다."
+    },
+    {
+      "name": "armB",
+      "label": "미주입·파일 있음",
+      "guidelines": "all",
+      "registered": false,
+      "hooks": false,
+      "git": false,
+      "note": "등록만 지웠다. 저장소를 뒤지면 발견할 수 있다 — 실험 1에서 실제로 발견했고, 그래서 C팔이 생겼다."
+    },
+    {
+      "name": "armC",
+      "label": "지침 없음",
+      "guidelines": [],
+      "registered": false,
+      "hooks": false,
+      "git": false,
+      "note": "지침 파일 자체가 없다. 관습은 여전히 스킬·lib 코드에 남아 있으므로 '아무것도 모르는 팔'이 아니다."
+    }
+  ]
+}

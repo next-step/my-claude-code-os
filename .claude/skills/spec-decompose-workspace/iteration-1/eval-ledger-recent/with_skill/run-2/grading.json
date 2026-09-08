@@ -1,0 +1,46 @@
+{
+  "summary": {
+    "pass_rate": 0.8333,
+    "passed": 5,
+    "failed": 1,
+    "total": 6
+  },
+  "expectations": [
+    {
+      "id": "A1",
+      "text": "인수기준이 번호 붙은 개별 항목 3개 이상으로 분리돼 있다",
+      "passed": true,
+      "evidence": "번호 붙은 항목 6개 검출 (기준 3개)"
+    },
+    {
+      "id": "A2",
+      "text": "각 항목이 조건·행동·기대결과 3요소를 갖는다 (Given-When-Then 형식 자체는 요구하지 않음)",
+      "passed": true,
+      "evidence": "AC-1~AC-6 전부 Given/When/Then 3요소. 예: AC-3 'Given entries는 있지만 모두 recordedAt이 7일보다 오래됐으면, When 스킬을 실행하면, Then \"최근 7일 이내 기록된 실패가 없습니다\" 안내를 보여주고, 7일보다 오래된 항목은 하나도 노출하지 않아야 한다.' 6/6 = 100%."
+    },
+    {
+      "id": "A3",
+      "text": "항목 본문에 구현 수단(함수명, 파일 경로, 라이브러리명)이 들어 있지 않다",
+      "passed": false,
+      "evidence": "AC-1 'Given .claude/atdd-failure-ledger.json 파일이 존재하고 entries가 1개 이상이면 ... 각 entry의 recordedAt이', AC-6 '.claude/atdd-failure-ledger.json 파일을 절대 수정하지 않고' — 파일 경로와 내부 필드명(entries, recordedAt)이 항목 본문에 들어 있다."
+    },
+    {
+      "id": "A4",
+      "text": "테스트 코드나 구현 코드를 작성하지 않았다",
+      "passed": true,
+      "evidence": "코드 파일 없음, 코드펜스에 구현/테스트 토큰 없음"
+    },
+    {
+      "id": "A5",
+      "text": "관측 가능한 완료 조건(수치·상태·경계값)이 최소 1개 항목에 명시된다",
+      "passed": true,
+      "evidence": "AC-4 '경계값(지금으로부터 7일 이내 = 포함)을 명시적으로 정의한 규칙대로 포함/제외가 일관되게 적용되어야 한다' — 경계값과 포함 여부가 수치로 명시된다. AC-5 '시간순(오래된 것 → 최신)으로 정렬'도 관측 가능한 상태."
+    },
+    {
+      "id": "A6",
+      "text": "7일 경계 자체의 처리(경계 포함 여부)와 빈 원장/기록 없음 상황이 각각 항목으로 다뤄진다",
+      "passed": true,
+      "evidence": "경계는 AC-4 'recordedAt이 정확히 \"지금-7일\" 경계에 걸치는 entry가 있으면 ... 경계값(지금으로부터 7일 이내 = 포함)'으로 독립 항목이며 포함 여부까지 정한다. 빈 상황은 AC-2 '파일이 없거나 entries가 비어 있으면 ... \"아직 기록된 인수 테스트 실패가 없습니다\" 안내'와 AC-3(전부 7일 밖)으로 다뤄진다."
+    }
+  ]
+}

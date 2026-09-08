@@ -1,0 +1,18 @@
+{
+  "sessionId": "b2222222-2222-4222-8222-222222222222",
+  "startedAt": "2026-09-06T00:30:00.000Z",
+  "source": "startup",
+  "cwd": "/repo",
+  "gitBranch": "step2",
+  "lastHeartbeatAt": "2026-09-06T02:46:00.000Z",
+  "turns": 30,
+  "lastMessage": "OS.md 10장에 세션 보드 절을 추가하는 중입니다.",
+  "recentFiles": [
+    { "path": ".claude/lib/session-board.js", "at": "2026-09-06T02:56:00.000Z" },
+    { "path": "OS.md", "at": "2026-09-06T02:40:00.000Z" }
+  ],
+  "endedAt": null,
+  "endReason": null,
+  "displayName": "my-claude-code-os-51",
+  "updatedAt": "2026-09-06T02:46:00.000Z"
+}

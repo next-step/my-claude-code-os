@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "notion-min": {
+      "type": "stdio",
+      "command": "node",
+      "args": [".claude/mcp-servers/notion-min/server.js"],
+      "env": {}
+    }
+  }
+}

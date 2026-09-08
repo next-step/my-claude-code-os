@@ -1,0 +1,17 @@
+{
+  "sessionId": "d4444444-4444-4444-8444-444444444444",
+  "startedAt": "2026-09-06T02:00:00.000Z",
+  "source": "resume",
+  "cwd": "/repo",
+  "gitBranch": "step2",
+  "lastHeartbeatAt": "2026-09-06T02:58:00.000Z",
+  "turns": 27,
+  "lastMessage": "requirement-interview 스킬 커밋까지 완료. 다음 할 일은 실제 요구사항으로 dry-run.",
+  "recentFiles": [
+    { "path": ".claude/skills/requirement-interview/SKILL.md", "at": "2026-09-06T02:57:00.000Z" }
+  ],
+  "endedAt": "2026-09-06T02:59:00.000Z",
+  "endReason": "prompt_input_exit",
+  "displayName": null,
+  "updatedAt": "2026-09-06T02:59:00.000Z"
+}

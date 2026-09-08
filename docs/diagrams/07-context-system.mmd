@@ -1,0 +1,44 @@
+flowchart TB
+    Human(["사람<br/>지침을 추가하거나 고친다"]):::human
+
+    subgraph Chain["① 주입 — CLAUDE.md의 @import 체인 (세션 시작 시 1회만 해석)"]
+        direction TB
+        CM["CLAUDE.md<br/>레지스트리 하나만 가리킨다"]:::data
+        IDX[".claude/context/index.md<br/>레지스트리 — 나열만 한다"]:::data
+        G["지침 9개<br/>requirement-gate · response-brevity<br/>code-vs-instruction · hook-discipline<br/>commit-habits · docs-diagrams<br/>explanation-style · sensitive-info<br/>context-experiment"]:::data
+    end
+
+    subgraph Reach["② 도달 범위 — 예외 없이 전부 상속받는다"]
+        direction TB
+        Main["메인 대화 컨텍스트<br/>+ gitStatus · 최근 커밋 5개"]:::data
+        Skills["스킬 15개<br/>같은 대화에서 실행"]:::skill
+        Builder["os-builder<br/>지침을 따르겠다고 선언"]:::agent
+        Judges["policy-reviewer · test-reviewer<br/>ui-visual-reviewer<br/>독립 판정을 선언"]:::agent
+    end
+
+    Caller["atdd-orchestrator<br/>호출자"]:::skill
+
+    subgraph Guard["③ 감시 — 검증되는 것과 안 되는 것"]
+        direction TB
+        Tests[".claude/tests/<br/>context-inject.test.js<br/>AC-1~17"]:::data
+        Audit[".claude/lib/context-inject.js<br/>레지스트리 정합성 + 선언 일관성<br/>주입은 통제하지 못한다"]:::skill
+    end
+
+    Human --> IDX
+    CM -->|"@"| IDX
+    IDX -->|"@ 9줄"| G
+    G ==>|"전원 상속<br/>2026-09-07 실측"| Main
+    Main --- Skills
+    Main --- Builder
+    Main --- Judges
+    Caller -. "분해 과정 · 자기평가는<br/>넘기지 않는다 — 이것만이 실재하는 차단" .-> Judges
+    Tests -->|"빨간불로 잡는다"| Audit
+    Audit -. "고아 · 끊어진 등록 · 경로 오기" .-> Chain
+    Audit -. "선언 일관성(스위치 아님)" .-> Reach
+
+    classDef human fill:#fde68a,stroke:#b45309,color:#111827;
+    classDef data fill:#e5e7eb,stroke:#4b5563,color:#111827;
+    classDef skill fill:#bbf7d0,stroke:#15803d,color:#111827;
+    classDef agent fill:#bfdbfe,stroke:#1d4ed8,color:#111827;
+    classDef hook fill:#fecaca,stroke:#b91c1c,color:#111827;
+    linkStyle 7 stroke:#b91c1c,stroke-width:2px;

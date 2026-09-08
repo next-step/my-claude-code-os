@@ -1,0 +1,17 @@
+{
+  "sessionId": "c3333333-3333-4333-8333-333333333333",
+  "startedAt": "2026-09-05T20:00:00.000Z",
+  "source": "startup",
+  "cwd": "/repo",
+  "gitBranch": "main",
+  "lastHeartbeatAt": "2026-09-05T21:00:00.000Z",
+  "turns": 4,
+  "lastMessage": "context-map 픽스처를 정리하고 있었습니다.",
+  "recentFiles": [
+    { "path": ".claude/lib/session-board.js", "at": "2026-09-05T20:58:00.000Z" }
+  ],
+  "endedAt": null,
+  "endReason": null,
+  "displayName": null,
+  "updatedAt": "2026-09-05T21:00:00.000Z"
+}

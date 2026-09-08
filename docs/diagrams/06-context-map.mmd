@@ -1,0 +1,29 @@
+flowchart TB
+    Start(["세션 시작"]):::data
+
+    subgraph Always["항상 로드 — 세션 시작 시 즉시"]
+        A["CLAUDE.md + @import 체인<br/>(.claude/context/ 개인 지침 포함)<br/>전문(全文)"]:::data
+        B["스킬 name + description<br/>(전체 목록, 요약만)"]:::skill
+        C["서브에이전트 name + description + tools<br/>(전체 목록, 요약만)"]:::agent
+    end
+
+    subgraph OnDemand["온디맨드로만 로드"]
+        D["스킬 본문(SKILL.md 전체)<br/>호출되는 순간, 같은 대화"]:::skill
+        E["서브에이전트 본문 전체<br/>호출되는 순간, 격리된 대화"]:::agent
+    end
+
+    subgraph ZeroCost["컨텍스트 비용 0"]
+        F["훅 (settings.json 등록)<br/>이벤트 발생 시 스크립트만 실행"]:::hook
+    end
+
+    Start --> A
+    Start --> B
+    Start --> C
+    Start --> F
+    B -. "실제로 호출되면" .-> D
+    C -. "실제로 호출되면" .-> E
+
+    classDef data fill:#e5e7eb,stroke:#4b5563,color:#111827;
+    classDef skill fill:#bbf7d0,stroke:#15803d,color:#111827;
+    classDef agent fill:#bfdbfe,stroke:#1d4ed8,color:#111827;
+    classDef hook fill:#fecaca,stroke:#b91c1c,color:#111827;

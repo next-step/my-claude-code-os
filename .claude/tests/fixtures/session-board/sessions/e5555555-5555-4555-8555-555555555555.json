@@ -1,0 +1,15 @@
+{
+  "sessionId": "e5555555-5555-4555-8555-555555555555",
+  "startedAt": "2026-07-28T01:00:00.000Z",
+  "source": "startup",
+  "cwd": "/repo",
+  "gitBranch": "step1",
+  "lastHeartbeatAt": "2026-07-28T02:50:00.000Z",
+  "turns": 9,
+  "lastMessage": "오래전에 끝난 세션입니다.",
+  "recentFiles": [],
+  "endedAt": "2026-07-28T03:00:00.000Z",
+  "endReason": "logout",
+  "displayName": null,
+  "updatedAt": "2026-07-28T03:00:00.000Z"
+}

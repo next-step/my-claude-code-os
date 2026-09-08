@@ -1,0 +1,116 @@
+{
+  "_why": [
+    "같은 규칙이 지침과 스킬 여러 곳에 값으로 중복 선언돼 있다. 2026-09-08 실측으로",
+    "8종이 평균 3곳씩 흩어져 있음을 확인했고, 그때는 전부 일치했다.",
+    "문제는 하나만 바꾸면 조용히 어긋나는데 아무 테스트도 잡지 않았다는 것이다.",
+    "여기 등록하면 .claude/tests/guideline-audit.test.js 가 모든 선언 자리를 대조한다.",
+    "",
+    "value 는 '정답'이고 sites 는 그 값이 적힌 자리들이다. 값을 바꾸려면 여기 value 를",
+    "고치고 테스트를 돌려, 어느 자리가 안 따라왔는지 빨간불로 확인한 뒤 전부 고친다.",
+    "",
+    "pattern 의 {v} 자리에 값이 들어간다. 값만 찾으면 같은 파일 다른 줄의 무관한 숫자에",
+    "걸려 통과해 버린다 — freshness 에서 실제로 겪은 실패라 여기서도 문맥으로 대조한다."
+  ],
+  "constants": [
+    {
+      "name": "슬롯 총 개수",
+      "value": 6,
+      "why": "요청 게이트가 세는 슬롯 수. 늘리면 진입 임계값도 같이 재봐야 한다",
+      "sites": [
+        { "file": ".claude/context/requirement-gate.md", "pattern": "{v}개 슬롯을 채워 본다" },
+        { "file": ".claude/skills/requirement-interview/SKILL.md", "pattern": "아래 {v}개 슬롯을 채워 본다" }
+      ]
+    },
+    {
+      "name": "게이트 진입 임계값(결손 슬롯)",
+      "value": 3,
+      "why": "이 값이 지침과 스킬에서 갈리면 같은 요청이 경로에 따라 다르게 처리된다",
+      "sites": [
+        { "file": ".claude/context/requirement-gate.md", "pattern": "{v}개 이상 못 채우면 진입한다" },
+        { "file": ".claude/skills/requirement-interview/SKILL.md", "pattern": "{v}개 이상 못 채우면 인터뷰에 들어간다" },
+        { "file": ".claude/skills/atdd-orchestrator/SKILL.md", "pattern": "{v}개 이상" }
+      ]
+    },
+    {
+      "name": "한 라운드 질문 상한",
+      "value": 3,
+      "why": "지침과 스킬 양쪽에 적혀 있어 한쪽만 늘리면 질문이 조용히 많아진다",
+      "sites": [
+        { "file": ".claude/context/requirement-gate.md", "pattern": "한 라운드 최대 {v}문항" },
+        { "file": ".claude/skills/requirement-interview/SKILL.md", "pattern": "한 라운드에 최대 {v}개" }
+      ]
+    },
+    {
+      "name": "구현 재시도 상한",
+      "value": 3,
+      "why": "스킬 3개에 흩어져 있다. 하나만 늘리면 지휘자와 실행자가 다른 상한을 믿는다",
+      "sites": [
+        { "file": ".claude/skills/tdd-implement/SKILL.md", "pattern": "재시도 상한은 {v}회다" },
+        { "file": ".claude/skills/atdd-orchestrator/SKILL.md", "pattern": "재시도 상한 {v}회를 스스로 관리한다" },
+        { "file": ".claude/skills/atdd-orchestrator/SKILL.md", "pattern": "구현 재시도는 {v}회로 제한한다" }
+      ]
+    },
+    {
+      "name": "01.5 재진입 상한",
+      "value": 1,
+      "why": "요구사항을 다시 여는 일이 반복되면 사이클이 끝나지 않는다",
+      "sites": [
+        { "file": ".claude/skills/atdd-orchestrator/SKILL.md", "pattern": "01.5 재진입은 사이클당 {v}회만 허용한다" }
+      ]
+    },
+    {
+      "name": "반복 실패 경고 임계값",
+      "value": 3,
+      "why": "실패 원장이 '인수기준 자체를 의심하라'고 권하는 기준",
+      "sites": [
+        { "file": ".claude/skills/failure-ledger/SKILL.md", "pattern": "{v}회 이상**이면 경고하고" }
+      ]
+    },
+    {
+      "name": "@import 재귀 깊이 상한",
+      "value": 5,
+      "why": "Claude Code가 정한 값이라 우리가 바꿀 수 없다. 문서가 틀리게 적는 것만 막는다",
+      "sites": [
+        { "file": ".claude/context/README.md", "pattern": "최대 {v}단계" }
+      ]
+    }
+  ],
+  "_topics": [
+    "지침마다 다루는 주제 키워드다. 겹치는 쌍을 기계가 찾아 후보로 좁힌다.",
+    "겹친다고 모순은 아니다 — hook-discipline과 code-vs-instruction은 겹치지만 상보적이다.",
+    "그래서 결과는 violation이 아니라 note이고, 판정은 guideline-reviewer가 한다."
+  ],
+  "topics": {
+    "requirement-gate": ["질문", "합의", "인터뷰위임", "슬롯", "게이트"],
+    "response-brevity": ["분량", "결론순서", "표", "근거보존", "상한"],
+    "explanation-style": ["근거", "트레이드오프", "출처", "한계", "근거보존"],
+    "code-vs-instruction": ["lib", "테스트", "검증불가", "지시문", "순수함수"],
+    "hook-discipline": ["훅", "누적기록", "쓰기읽기분리", "gitignore", "지시문"],
+    "commit-habits": ["커밋", "커밋단위", "민감정보", "왜"],
+    "docs-diagrams": ["다이어그램", "수치금지", "색언어", "생성물"],
+    "sensitive-info": ["공개커밋", "마스킹", "민감정보", "한계"],
+    "context-experiment": ["측정", "AB팔", "자동채점불신", "커밋", "수치금지"]
+  },
+  "_resolvedElsewhere": [
+    "겹치지만 해소 선언이 지침 밖에 있는 쌍. 기계가 '미해소'로 오탐하는 자리라 면제한다.",
+    "why 에 해소 문구가 어디 있는지 적어 두어, 나중에 그 자리가 사라지면 사람이 알 수 있게 한다."
+  ],
+  "resolvedElsewhere": [
+    {
+      "pair": ["context-experiment", "docs-diagrams"],
+      "why": "해소 문구가 대상 문서 안에 있다 — docs/context-budget.md 머리말이 '현재값이 아니라 그때의 로그'라고 스스로 선언한다"
+    },
+    {
+      "pair": ["commit-habits", "context-experiment"],
+      "why": "범위가 다르다 — commit-habits는 지침·설계 이력, context-experiment는 실험 산출물. 실제 충돌 사례 없음"
+    },
+    {
+      "pair": ["code-vs-instruction", "hook-discipline"],
+      "why": "축이 다르다 — 전자는 로직/지시문, 후자는 훅/스킬. 실제 코드가 둘을 동시에 만족한다(훅이 lib에 위임)"
+    },
+    {
+      "pair": ["explanation-style", "sensitive-info"],
+      "why": "sensitive-info.md가 '지침·브리프·설계 노트·커밋 메시지 모두에 적용된다'로 자기 우선순위를 선언한다"
+    }
+  ]
+}

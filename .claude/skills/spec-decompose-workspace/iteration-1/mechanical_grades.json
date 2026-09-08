@@ -1,0 +1,122 @@
+{
+  "eval-ledger-recent/with_skill/run-1": {
+    "A1": {
+      "passed": true,
+      "evidence": "번호 붙은 항목 8개 검출 (기준 3개)"
+    },
+    "A4": {
+      "passed": true,
+      "evidence": "코드 파일 없음, 코드펜스에 구현/테스트 토큰 없음"
+    }
+  },
+  "eval-ledger-recent/with_skill/run-2": {
+    "A1": {
+      "passed": true,
+      "evidence": "번호 붙은 항목 6개 검출 (기준 3개)"
+    },
+    "A4": {
+      "passed": true,
+      "evidence": "코드 파일 없음, 코드펜스에 구현/테스트 토큰 없음"
+    }
+  },
+  "eval-ledger-recent/with_skill/run-3": {
+    "A1": {
+      "passed": true,
+      "evidence": "번호 붙은 항목 7개 검출 (기준 3개)"
+    },
+    "A4": {
+      "passed": true,
+      "evidence": "코드 파일 없음, 코드펜스에 구현/테스트 토큰 없음"
+    }
+  },
+  "eval-ledger-recent/without_skill/run-1": {
+    "A1": {
+      "passed": true,
+      "evidence": "번호 붙은 항목 10개 검출 (기준 3개)"
+    },
+    "A4": {
+      "passed": true,
+      "evidence": "코드 파일 없음, 코드펜스에 구현/테스트 토큰 없음"
+    }
+  },
+  "eval-ledger-recent/without_skill/run-2": {
+    "A1": {
+      "passed": true,
+      "evidence": "번호 붙은 항목 9개 검출 (기준 3개)"
+    },
+    "A4": {
+      "passed": true,
+      "evidence": "코드 파일 없음, 코드펜스에 구현/테스트 토큰 없음"
+    }
+  },
+  "eval-ledger-recent/without_skill/run-3": {
+    "A1": {
+      "passed": true,
+      "evidence": "번호 붙은 항목 10개 검출 (기준 3개)"
+    },
+    "A4": {
+      "passed": true,
+      "evidence": "코드 파일 없음, 코드펜스에 구현/테스트 토큰 없음"
+    }
+  },
+  "eval-precommit-gate/with_skill/run-1": {
+    "A1": {
+      "passed": true,
+      "evidence": "번호 붙은 항목 8개 검출 (기준 3개)"
+    },
+    "A4": {
+      "passed": true,
+      "evidence": "코드 파일 없음, 코드펜스에 구현/테스트 토큰 없음"
+    }
+  },
+  "eval-precommit-gate/with_skill/run-2": {
+    "A1": {
+      "passed": true,
+      "evidence": "번호 붙은 항목 6개 검출 (기준 3개)"
+    },
+    "A4": {
+      "passed": true,
+      "evidence": "코드 파일 없음, 코드펜스에 구현/테스트 토큰 없음"
+    }
+  },
+  "eval-precommit-gate/with_skill/run-3": {
+    "A1": {
+      "passed": true,
+      "evidence": "번호 붙은 항목 7개 검출 (기준 3개)"
+    },
+    "A4": {
+      "passed": true,
+      "evidence": "코드 파일 없음, 코드펜스에 구현/테스트 토큰 없음"
+    }
+  },
+  "eval-precommit-gate/without_skill/run-1": {
+    "A1": {
+      "passed": true,
+      "evidence": "번호 붙은 항목 10개 검출 (기준 3개)"
+    },
+    "A4": {
+      "passed": true,
+      "evidence": "코드 파일 없음, 코드펜스에 구현/테스트 토큰 없음"
+    }
+  },
+  "eval-precommit-gate/without_skill/run-2": {
+    "A1": {
+      "passed": true,
+      "evidence": "번호 붙은 항목 10개 검출 (기준 3개)"
+    },
+    "A4": {
+      "passed": true,
+      "evidence": "코드 파일 없음, 코드펜스에 구현/테스트 토큰 없음"
+    }
+  },
+  "eval-precommit-gate/without_skill/run-3": {
+    "A1": {
+      "passed": true,
+      "evidence": "번호 붙은 항목 10개 검출 (기준 3개)"
+    },
+    "A4": {
+      "passed": true,
+      "evidence": "코드 파일 없음, 코드펜스에 구현/테스트 토큰 없음"
+    }
+  }
+}

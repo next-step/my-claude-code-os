@@ -1,0 +1,308 @@
+{
+  "_why": [
+    "이 파일은 '어느 문서가 어떤 사실을 어떤 문구로 주장하는가'의 등록부다.",
+    "docs-diagrams.md의 규칙은 '문서에 수치를 박지 않는다'이고, 개요 다이어그램만 예외다.",
+    "예외의 조건이 '낡으면 드러난다'이므로, 예외를 여기 등록해 테스트가 대조하게 한다.",
+    "다이어그램에 숫자를 새로 넣는다면 선택지는 셋뿐이다 — 지우거나, claims에 등록하거나, exemptions에 이유와 함께 면제하거나.",
+    "셋 다 안 하면 freshness 테스트가 '미등록 수치'로 빨간불을 낸다.",
+    "한계: 이 탐지는 다이어그램 안에서만 돈다. OS.md나 다른 docs/*.md의 수치는 여전히 보지 않는다 (.claude/lib/freshness.js 머리말)."
+  ],
+  "_pattern": [
+    "pattern 은 주장이 실제로 쓰인 모양이고 {v} 자리에 실측값이 들어간다.",
+    "값만 찾으면 안 되는 이유: 08의 '스킬 14개'를 '스킬 99개'로 바꿔도, 같은 파일 다른 줄의",
+    "'14개 · 스킬 선택의 유일한 근거' 때문에 '파일에 14가 있다'가 참이라 검사가 통과해 버렸다.",
+    "이 실패를 실제로 겪고 나서 값 대신 문맥을 등록하게 바꿨다.",
+    ".svg 는 mermaid가 단어마다 tspan으로 쪼개므로 태그·공백을 걷어낸 뒤 같은 패턴으로 대조한다.",
+    "그래서 pattern 에는 <br/> 를 넣지 않는다 — .mmd 와 .svg 양쪽에서 통해야 한다."
+  ],
+  "_facts": "쓸 수 있는 이름은 .claude/lib/freshness.js 의 KNOWN_FACTS 참고. format 은 'plain'(14) 또는 'comma'(15,259).",
+  "claims": [
+    {
+      "file": "docs/diagrams/08-context-overview.mmd",
+      "fact": "alwaysLoadedTotal",
+      "format": "comma",
+      "pattern": "항상 로드 · {v}자",
+      "label": "08 · 항상 로드 합계"
+    },
+    {
+      "file": "docs/diagrams/08-context-overview.mmd",
+      "fact": "importChars",
+      "format": "comma",
+      "pattern": "@import 체인 · {v}자",
+      "label": "08 · @import 체인 자수"
+    },
+    {
+      "file": "docs/diagrams/08-context-overview.mmd",
+      "fact": "skillDescChars",
+      "format": "comma",
+      "pattern": "스킬 description · {v}자",
+      "label": "08 · 스킬 description 자수"
+    },
+    {
+      "file": "docs/diagrams/08-context-overview.mmd",
+      "fact": "agentDescChars",
+      "format": "comma",
+      "pattern": "에이전트 description · {v}자",
+      "label": "08 · 에이전트 description 자수"
+    },
+    {
+      "file": "docs/diagrams/08-context-overview.mmd",
+      "fact": "onDemandTotal",
+      "format": "comma",
+      "pattern": "온디맨드 · {v}자",
+      "label": "08 · 온디맨드 합계"
+    },
+    {
+      "file": "docs/diagrams/08-context-overview.mmd",
+      "fact": "onDemandSkillsChars",
+      "format": "comma",
+      "pattern": "스킬 본문 {v}",
+      "label": "08 · 스킬 본문 자수"
+    },
+    {
+      "file": "docs/diagrams/08-context-overview.mmd",
+      "fact": "onDemandAgentsChars",
+      "format": "comma",
+      "pattern": "+ 에이전트 {v}",
+      "label": "08 · 에이전트 본문 자수"
+    },
+    {
+      "file": "docs/diagrams/08-context-overview.mmd",
+      "fact": "skillCount",
+      "format": "plain",
+      "pattern": "스킬 {v}개",
+      "label": "08 · 스킬 개수"
+    },
+    {
+      "file": "docs/diagrams/08-context-overview.mmd",
+      "fact": "agentCount",
+      "format": "plain",
+      "pattern": "서브에이전트 {v}개",
+      "label": "08 · 에이전트 개수"
+    },
+    {
+      "file": "docs/diagrams/08-context-overview.mmd",
+      "fact": "hookCount",
+      "format": "plain",
+      "pattern": "훅 {v}개 · 컨텍스트 비용 0",
+      "label": "08 · 훅 개수"
+    },
+    {
+      "file": "docs/diagrams/08-context-overview.mmd",
+      "fact": "guidelineCount",
+      "format": "plain",
+      "pattern": "지침 {v}개 · 자수",
+      "label": "08 · 지침 개수"
+    },
+    {
+      "file": "docs/diagrams/08-context-overview.mmd",
+      "fact": "mcpServerCount",
+      "format": "plain",
+      "pattern": "MCP {v}개 · 크기 미측정",
+      "label": "08 · MCP 서버 개수"
+    },
+    {
+      "file": "docs/diagrams/08-context-overview.mmd",
+      "fact": "testFileCount",
+      "format": "plain",
+      "pattern": "테스트 {v}파일",
+      "label": "08 · 테스트 파일 수"
+    },
+    {
+      "file": "docs/diagrams/08-context-overview.mmd",
+      "fact": "testCount",
+      "format": "plain",
+      "pattern": "파일 · {v}개",
+      "label": "08 · 테스트 개수"
+    },
+    {
+      "file": "docs/diagrams/07-context-system.mmd",
+      "fact": "guidelineCount",
+      "format": "plain",
+      "pattern": "지침 {v}개",
+      "label": "07 · 지침 개수"
+    },
+    {
+      "file": "docs/diagrams/07-context-system.mmd",
+      "fact": "guidelineCount",
+      "format": "plain",
+      "pattern": "@ {v}줄",
+      "label": "07 · index.md 등록 줄 수"
+    },
+    {
+      "file": "docs/diagrams/07-context-system.mmd",
+      "fact": "skillCount",
+      "format": "plain",
+      "pattern": "스킬 {v}개",
+      "label": "07 · 스킬 개수"
+    },
+    {
+      "file": "docs/diagrams/08-context-overview.svg",
+      "fact": "alwaysLoadedTotal",
+      "format": "comma",
+      "pattern": "항상 로드 · {v}자",
+      "label": "08 SVG · 재생성 확인 (합계)"
+    },
+    {
+      "file": "docs/diagrams/08-context-overview.svg",
+      "fact": "skillCount",
+      "format": "plain",
+      "pattern": "스킬 {v}개",
+      "label": "08 SVG · 재생성 확인 (스킬 수)"
+    },
+    {
+      "file": "docs/diagrams/08-context-overview.svg",
+      "fact": "testCount",
+      "format": "plain",
+      "pattern": "파일 · {v}개",
+      "label": "08 SVG · 재생성 확인 (테스트 수)"
+    },
+    {
+      "file": "docs/diagrams/07-context-system.svg",
+      "fact": "guidelineCount",
+      "format": "plain",
+      "pattern": "지침 {v}개",
+      "label": "07 SVG · 재생성 확인 (지침 수)"
+    },
+    {
+      "file": "docs/diagrams/08-context-overview.mmd",
+      "fact": "guidelineChars",
+      "key": "requirement-gate",
+      "format": "comma",
+      "pattern": "requirement-gate {v}",
+      "label": "08 · 지침 자수 requirement-gate"
+    },
+    {
+      "file": "docs/diagrams/08-context-overview.mmd",
+      "fact": "guidelineChars",
+      "key": "response-brevity",
+      "format": "comma",
+      "pattern": "response-brevity {v}",
+      "label": "08 · 지침 자수 response-brevity"
+    },
+    {
+      "file": "docs/diagrams/08-context-overview.mmd",
+      "fact": "guidelineChars",
+      "key": "docs-diagrams",
+      "format": "comma",
+      "pattern": "docs-diagrams {v}",
+      "label": "08 · 지침 자수 docs-diagrams"
+    },
+    {
+      "file": "docs/diagrams/08-context-overview.mmd",
+      "fact": "guidelineChars",
+      "key": "explanation-style",
+      "format": "comma",
+      "pattern": "explanation-style {v}",
+      "label": "08 · 지침 자수 explanation-style"
+    },
+    {
+      "file": "docs/diagrams/08-context-overview.mmd",
+      "fact": "guidelineChars",
+      "key": "code-vs-instruction",
+      "format": "comma",
+      "pattern": "code-vs-instruction {v}",
+      "label": "08 · 지침 자수 code-vs-instruction"
+    },
+    {
+      "file": "docs/diagrams/08-context-overview.mmd",
+      "fact": "guidelineChars",
+      "key": "hook-discipline",
+      "format": "comma",
+      "pattern": "hook-discipline {v}",
+      "label": "08 · 지침 자수 hook-discipline"
+    },
+    {
+      "file": "docs/diagrams/08-context-overview.mmd",
+      "fact": "guidelineChars",
+      "key": "commit-habits",
+      "format": "comma",
+      "pattern": "commit-habits {v}",
+      "label": "08 · 지침 자수 commit-habits"
+    },
+    {
+      "file": "docs/diagrams/08-context-overview.mmd",
+      "fact": "guidelineChars",
+      "key": "sensitive-info",
+      "format": "comma",
+      "pattern": "sensitive-info {v}",
+      "label": "08 · 지침 자수 sensitive-info"
+    },
+    {
+      "file": "docs/diagrams/08-context-overview.mmd",
+      "fact": "guidelineChars",
+      "key": "context-experiment",
+      "format": "comma",
+      "pattern": "context-experiment {v}",
+      "label": "08 · 지침 자수 context-experiment"
+    },
+    {
+      "file": "docs/diagrams/08-context-overview.mmd",
+      "fact": "guidelineCount",
+      "format": "plain",
+      "pattern": "→ 지침 {v}개",
+      "label": "08 · 지침 개수(체인 노드)"
+    },
+    {
+      "file": "docs/diagrams/08-context-overview.mmd",
+      "fact": "skillCount",
+      "format": "plain",
+      "pattern": "{v}개 · 스킬 선택의",
+      "label": "08 · 스킬 개수(desc 노드)"
+    },
+    {
+      "file": "docs/diagrams/08-context-overview.mmd",
+      "fact": "agentCount",
+      "format": "plain",
+      "pattern": "{v}개 · 판정만",
+      "label": "08 · 에이전트 개수(desc 노드)"
+    }
+  ],
+  "_exemptions": [
+    "면제는 '이 숫자는 실측 가능한 사실 주장이 아니다'라는 사람의 선언이다.",
+    "why 가 없으면 거부한다 — 이유 없는 면제는 검사를 조용히 무력화하는 가장 쉬운 길이고,",
+    "그렇게 무력화된 검사는 초록불이라 아무도 의심하지 않는다."
+  ],
+  "exemptions": [
+    {
+      "file": "docs/diagrams/08-context-overview.mmd",
+      "value": "0",
+      "why": "훅의 컨텍스트 비용은 상수 0이다. 재는 값이 아니다"
+    },
+    {
+      "file": "docs/diagrams/08-context-overview.mmd",
+      "value": "3",
+      "why": "다이어그램 생성 옵션 3종은 docs-diagrams.md가 정한 규칙 수다"
+    },
+    {
+      "file": "docs/diagrams/08-context-overview.mmd",
+      "value": "5",
+      "why": "gitStatus가 싣는 최근 커밋 수는 Claude Code가 정하며 저장소가 못 잰다"
+    },
+    {
+      "file": "docs/diagrams/08-context-overview.mmd",
+      "value": "42",
+      "why": "notion MCP의 툴 개수는 외부 서버 값이라 디스크에서 잴 수 없다"
+    },
+    {
+      "file": "docs/diagrams/07-context-system.mmd",
+      "value": "1",
+      "why": "@import 체인은 세션 시작 시 1회만 해석된다 — 동작 서술이지 수치가 아니다"
+    },
+    {
+      "file": "docs/diagrams/07-context-system.mmd",
+      "value": "5",
+      "why": "gitStatus가 싣는 최근 커밋 수. 08과 같은 이유"
+    },
+    {
+      "file": "docs/diagrams/06-context-map.mmd",
+      "value": "0",
+      "why": "훅의 컨텍스트 비용 상수 0"
+    },
+    {
+      "file": "docs/diagrams/02-pipeline-build.mmd",
+      "value": "3",
+      "why": "tdd-implement 재시도 상한. 스킬 본문과 중복 선언된 상수라 guideline-audit이 따로 감시한다"
+    }
+  ]
+}
