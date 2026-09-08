@@ -1,7 +1,9 @@
 # Day2 필수 3 — 내 OS 컨텍스트 체계 도식 (1P)
 
 > `.claude/context/` 운영 지침이 **어느 파일 → 어떤 트리거 → 어떤 소비자**로 흘러가는지 한 장으로.
-> 이 지도는 [`day2-ab-injection-test.md`](./day2-ab-injection-test.md) 의 A/B 로 실제 동작이 검증됨.
+> 그린 게 아니라 **실측** — 이 배선은 `.claude/scripts/check-context-wiring.sh` (17건 PASS) 가 의존 표와 대조하고,
+> 동작은 [`day2-ab-injection-test.md`](./day2-ab-injection-test.md) 의 A/B 로 확인됨.
+> 인터랙티브 스냅샷: <https://claude.ai/code/artifact/baba4bdc-c48d-48fe-b881-ed4576f2ca79>
 > 작성일: 2026-09-07 · 갱신: 2026-09-08 (도전 2 — `@import` 제거, `style.md` 훅 전환)
 
 ---
@@ -26,6 +28,7 @@ flowchart LR
         direction TB
         CLF(["classifier"])
         II(["intake-interview"])
+        IN(["/intake"])
         INT(["/interview"])
         SP(["/spec"])
         SR(["spec-reviewer"])
@@ -41,18 +44,22 @@ flowchart LR
     TC -->|"② Lazy Read"| II
     CP -->|"② Lazy Read"| CLF
     CP -->|"② Lazy Read"| II
+    CP -->|"② Lazy Read"| IN
     SZ -->|"② Lazy Read"| CLF
     SZ -->|"② Lazy Read"| SP
-    DOD -->|"② Lazy Read"| SP
-    DOD -->|"② Lazy Read"| SR
+    DOD -->|"② Lazy · 스펙 단계만"| SP
+    DOD -->|"② Lazy · 스펙 단계만"| SR
     IM -->|"② Lazy Read"| INT
     IM -->|"② Lazy Read"| II
-    CAP -->|"② Lazy Read"| CLF
+    CAP -->|"② Lazy · §2 발동 시"| CLF
     KS -.->|"② 있으면 Read<br/>(지금은 추측 대체)"| CLF
 
     linkStyle 0,1 stroke:#7c3aed,stroke-width:3px
-    linkStyle 13 stroke:#dc2626,stroke-dasharray:4
+    linkStyle 9,10,13 stroke-dasharray:5
+    linkStyle 14 stroke:#dc2626,stroke-dasharray:4
 ```
+
+**엣지 읽기**: `══>` ③ 훅 · `──>` ② Lazy Read · `╌╌>` ② Lazy(조건부 — 특정 단계에서만) · `┈┈>` 미구현/갭
 
 **엣지 범례** — `══>` ③ 훅 주입(보라) · `──>` ② Lazy Read · `┈┈>` 미구현/갭(빨강 점선)
 **① `@import` 항상 로드는 이 OS 에서 안 씀** (도전 2에서 제거).
