@@ -5,6 +5,12 @@
 5. 지침을 적용해 판단했으면 적용한 기준의 출처(파일명 + 절)를 반드시 인용할 것
 
 
-## 항상 로드되는 컨텍스트
-@.claude/context/team-capability.md
-@.claude/context/style.md
+## 컨텍스트 주입
+
+이 프로젝트는 `@import` 로 항상 로드하는 컨텍스트를 두지 않는다 (Day2 도전 2 최적화).
+운영 지침은 필요할 때만 들어온다:
+
+- `.claude/context/classification-policy.md` · `team-capability.md` · `sizing.md` · `interview-method.md` ·
+  `dod-patterns.md` · `maintenance/capacity.md` → 소비자(스킬·에이전트)가 판단 전에 Read (Lazy)
+- `.claude/context/style.md` → `Write`/`Edit` 직전 PreToolUse 훅이 세션당 1회 주입
+- 무엇을 언제 읽는지는 `.claude/context/README.md` 의 의존 표를 따를 것 (규칙 4)

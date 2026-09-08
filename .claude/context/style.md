@@ -2,9 +2,10 @@
 
 > **성격**: 판단 룰 (형식 규칙). `OS.md` §5 원칙 7 의 구체화.
 > **변경 주기**: 반기. 팀 관례가 바뀌면 사람이 고친다.
-> **읽는 쪽**: 텍스트·코드를 생산하는 모든 스킬 (`/implement`, `/spec`, `/handoff`, `/outsource`, `git-commit` 등)
-> **주입**: `CLAUDE.md` `@import` 로 항상 로드. 길어지면 도전 2(최적화)에서
-> `code-style.md` / `testing.md` 로 쪼개거나 Lazy 로 내릴 후보.
+> **읽는 쪽**: 파일을 쓰거나 고치는 모든 스킬·에이전트
+> **주입**: `Write`/`Edit` 직전 PreToolUse 훅(`.claude/hooks/inject-style-context.sh`)이
+> **세션당 1회** `additionalContext` 로 끼워 넣는다. 파일을 안 쓰는 세션(질문·조사·계획)은 0 토큰.
+> (Day2 도전 2 전까지는 `CLAUDE.md` `@import` 로 항상 로드였음.)
 
 ## 코드 (`sandbox/board` = Python)
 
@@ -41,3 +42,4 @@
 ## 갱신 이력
 
 - 2026-09-07 생성. 코드 / TDD / 문서 / 커밋 규칙 명문화. `CLAUDE.md` 항상 로드에 연결.
+- 2026-09-08 (도전 2) `@import` → PreToolUse(`Write`/`Edit`) 훅 주입으로 전환. 세션당 1회.
