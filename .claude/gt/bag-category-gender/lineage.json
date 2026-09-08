@@ -1,0 +1,93 @@
+{
+  "builtAt": "2026-09-06T08:36:34.206839+00:00",
+  "conflictProductKeys": [
+    "EGOOCM:3402970",
+    "EGOOCM:3407206",
+    "EGOOCM:3412663",
+    "EGOOCM:3412762",
+    "EGOOCM:3413967",
+    "EGOOCM:3415594",
+    "EGOOCM:3417737",
+    "EGOOCM:3430473",
+    "EGOOCM:3440294",
+    "EGOOCM:3442337",
+    "EGOOCM:3443954",
+    "EGOOCM:3443997",
+    "EGOOCM:3448339",
+    "EGOOCM:3448515",
+    "EGOOCM:3448530",
+    "EGOOCM:3451405",
+    "EGOOCM:3452054",
+    "EGOOCM:3456202",
+    "EGOOCM:3466795",
+    "EGOOCM:3469334",
+    "EGOOCM:3469341",
+    "EGOOCM:3469345",
+    "EGOOCM:3469359",
+    "EGOOCM:3477555",
+    "EGOOCM:3482935",
+    "EGOOCM:3483889",
+    "MUSINSA:4456012",
+    "MUSINSA:4816021",
+    "MUSINSA:4881189",
+    "MUSINSA:4881578",
+    "MUSINSA:4886329",
+    "MUSINSA:4888023",
+    "MUSINSA:4895456",
+    "MUSINSA:4924741",
+    "MUSINSA:4944670",
+    "MUSINSA:4956426",
+    "MUSINSA:4956475",
+    "MUSINSA:4956623",
+    "MUSINSA:4956711",
+    "MUSINSA:4988940",
+    "MUSINSA:5005582",
+    "MUSINSA:5336216",
+    "MUSINSA:5355278",
+    "MUSINSA:5355281",
+    "MUSINSA:5357570",
+    "MUSINSA:5385027",
+    "MUSINSA:5389049",
+    "MUSINSA:5392155",
+    "MUSINSA:5396278",
+    "MUSINSA:5519263",
+    "MUSINSA:6746326"
+  ],
+  "corrections": {
+    "applied": 6,
+    "path": "/Users/mj/musinsa/dev/core-catalog-platfom/tool/image-gender/gt-harness/data/bags-product-gt-user-corrections-20260905.jsonl",
+    "sha256": "3547c90c1b2fb71169c55bc077d86add8b5bf9740fa3236e0601f20f6ca1ebf2"
+  },
+  "counts": {
+    "conflicts": 51,
+    "labels": {
+      "FEMALE": 316,
+      "MALE": 38,
+      "UNISEX": 146
+    },
+    "products": 500
+  },
+  "gt": ".claude/gt/bag-category-gender/gt.jsonl",
+  "lineages": [
+    {
+      "id": "scoring",
+      "path": "/Users/mj/musinsa/dev/core-catalog-platfom/tool/image-gender/gt-harness/data/bags-product-context-gt-20260903.jsonl",
+      "rank": 1,
+      "rows": 500,
+      "sha256": "7394c58a03b6d76a436e6909c513e970e221d7fb594c6020916fb618c048733b"
+    },
+    {
+      "id": "reviewSheet",
+      "path": "/Users/mj/musinsa/dev/core-catalog-platfom/tool/image-gender/gt-harness/data/bags-product-gt-20260903.jsonl",
+      "rank": 2,
+      "rows": 500,
+      "sha256": "a98344e23c4760a6f42873b7621c0d65467098ae826873551b1c825df25c46f4"
+    }
+  ],
+  "precedence": [
+    "scoring",
+    "reviewSheet"
+  ],
+  "profileId": "bag-category-gender",
+  "schemaVersion": "catalog-gt-v1"
+}

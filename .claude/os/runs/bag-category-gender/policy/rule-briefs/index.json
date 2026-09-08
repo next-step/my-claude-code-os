@@ -1,0 +1,88 @@
+{
+  "briefs": [
+    {
+      "forReaders": [],
+      "path": ".claude/os/runs/bag-category-gender/policy/rule-briefs/P1_DIRECT_TEXT.md",
+      "precedents": [],
+      "rule": "P1_DIRECT_TEXT",
+      "section": "근거 우선순위",
+      "summary": "직접 상품 성별 문구. 대상 판매 가방을 직접 수식하는 여성용·우먼즈·남성용·맨즈·남녀공용·유니섹스 문구."
+    },
+    {
+      "forReaders": [],
+      "path": ".claude/os/runs/bag-category-gender/policy/rule-briefs/P2_COMBINED_DESIGN.md",
+      "precedents": [],
+      "rule": "P2_COMBINED_DESIGN",
+      "section": "근거 우선순위",
+      "summary": "여성용 결합 디자인. 가방 자체의 구조·크기·형태·장식이 여성용으로 강하게 결합된 경우."
+    },
+    {
+      "forReaders": [],
+      "path": ".claude/os/runs/bag-category-gender/policy/rule-briefs/P3_WEARER.md",
+      "precedents": [
+        "BG-0001"
+      ],
+      "rule": "P3_WEARER",
+      "section": "근거 우선순위",
+      "summary": "대상 가방 착용자의 외형 성별 표현. 위 둘이 성립하지 않을 때만 쓴다."
+    },
+    {
+      "forReaders": [],
+      "path": ".claude/os/runs/bag-category-gender/policy/rule-briefs/P3_MIXED_WEARER.md",
+      "precedents": [],
+      "rule": "P3_MIXED_WEARER",
+      "section": "근거 우선순위",
+      "summary": "남성과 여성이 같은 가방을 모두 착용했으면 `UNISEX`를 낸다."
+    },
+    {
+      "forReaders": [],
+      "path": ".claude/os/runs/bag-category-gender/policy/rule-briefs/U1_SIGNAL_CONFLICT.md",
+      "precedents": [],
+      "rule": "U1_SIGNAL_CONFLICT",
+      "section": "판정 불가 조건",
+      "summary": "여성 신호와 남성 신호가 충돌한다"
+    },
+    {
+      "forReaders": [],
+      "path": ".claude/os/runs/bag-category-gender/policy/rule-briefs/U2_UNLINKED_EVIDENCE.md",
+      "precedents": [],
+      "rule": "U2_UNLINKED_EVIDENCE",
+      "section": "판정 불가 조건",
+      "summary": "근거와 대상 상품의 연결이 불명확하다"
+    },
+    {
+      "forReaders": [],
+      "path": ".claude/os/runs/bag-category-gender/policy/rule-briefs/P0_NO_EVIDENCE.md",
+      "precedents": [
+        "BG-0002"
+      ],
+      "rule": "P0_NO_EVIDENCE",
+      "section": "판정 불가 조건",
+      "summary": "명확한 공용 표기도, 남녀 착용 조합도, 공용 기능 구조도 없다"
+    },
+    {
+      "forReaders": [],
+      "path": ".claude/os/runs/bag-category-gender/policy/rule-briefs/P0_FUNCTION_UNISEX.md",
+      "precedents": [],
+      "rule": "P0_FUNCTION_UNISEX",
+      "section": "판정 불가 조건",
+      "summary": "표준 백팩·캐리어·브리프케이스처럼 기능과 구조가 명확히 공용인 경우에만 디자인 근거로 `UNISEX`를 고려한다"
+    },
+    {
+      "forReaders": [],
+      "path": ".claude/os/runs/bag-category-gender/policy/rule-briefs/P0_CATEGORY_NOT_UNISEX.md",
+      "precedents": [
+        "BG-0002"
+      ],
+      "rule": "P0_CATEGORY_NOT_UNISEX",
+      "section": "판정 불가 조건",
+      "summary": "일반 토트·숄더·크로스백은 남녀 모두 쓸 수 있다는 상식만으로 `UNISEX`가 아니다"
+    }
+  ],
+  "builtAt": "2026-09-07T07:44:19.520859+00:00",
+  "note": "규칙 하나에 브리프 한 장. 판독자에게는 이 파일을 그대로 넘긴다 — 손으로 발췌하지 않는다.",
+  "policy": ".claude/os/attributes/bag-category-gender/policy/policy.md",
+  "policySha256": "fdd40978a1d9",
+  "profileId": "bag-category-gender",
+  "schemaVersion": "catalog-rule-brief-v1"
+}

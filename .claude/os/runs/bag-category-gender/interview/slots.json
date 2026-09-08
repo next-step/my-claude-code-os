@@ -1,0 +1,407 @@
+{
+  "ambiguousProducts": [
+    {
+      "observedLabel": "FEMALE",
+      "productKey": "EGOOCM:3411572",
+      "productName": "데님 방패 포켓 백팩 인디고 다크",
+      "reasons": [
+        "정책은 대상 가방을 착용한 여성 모델 또는 직접 문구를 우선 근거로 사용한다. 상세 근거는 FEMALE을 지지하지만 현재 GT는 MALE이다.",
+        "기존 수집기는 현재 29CM 화면을 만드는 BFF 상세 이미지를 읽지 못했지만, 새 수집기는 19개 타일을 확보해 전부 처리했다.",
+        "백팩·숄더백을 몸에 멘 WORN 장면을 기존 가방 정책이 버렸지만, 실제 가방 상호작용으로 인정해 판정을 복구했다."
+      ],
+      "referenceLabel": "MALE",
+      "signals": [
+        "GOLDEN_POLICY_VIOLATION_CANDIDATE",
+        "IMAGE_COLLECTION_RECOVERED",
+        "INTERACTION_POLICY_RECOVERED"
+      ]
+    },
+    {
+      "observedLabel": "FEMALE",
+      "productKey": "MUSINSA:4236053",
+      "productName": "드로우스트링 백팩 V1 (2color)",
+      "reasons": [
+        "정본 GT가 UNCLASSIFIED이고 평가 스냅샷에는 확정 라벨이 있다.",
+        "사람 GT는 단일 성별이나 이 실행은 상세 근거를 확보하지 못했다.",
+        "정책은 근거 부족을 UNDETERMINED로 두지만 실행 결과는 UNISEX이다."
+      ],
+      "referenceLabel": "UNCLASSIFIED",
+      "signals": [
+        "GOLDEN_SOURCE_CONFLICT",
+        "POLICY_GOLDEN_GAP",
+        "POLICY_RUNTIME_CONTRADICTION"
+      ]
+    },
+    {
+      "observedLabel": "UNISEX",
+      "productKey": "MUSINSA:6354989",
+      "productName": "타오르미나 확장형 트롤리 27인치 (69cm) 크림 (BR-BAH08452.014)",
+      "reasons": [
+        "정본 GT가 UNCLASSIFIED이고 평가 스냅샷에는 확정 라벨이 있다.",
+        "GT와 결과는 같지만 UNISEX를 지지하는 직접 근거가 없다.",
+        "정책은 근거 부족을 UNDETERMINED로 두지만 실행 결과는 UNISEX이다."
+      ],
+      "referenceLabel": "UNCLASSIFIED",
+      "signals": [
+        "GOLDEN_SOURCE_CONFLICT",
+        "GOLDEN_UNSUPPORTED_AGREEMENT",
+        "POLICY_RUNTIME_CONTRADICTION"
+      ]
+    },
+    {
+      "observedLabel": "UNISEX",
+      "productKey": "MUSINSA:6746326",
+      "productName": "UA 트라이엄프 유틸리티6000948-001",
+      "reasons": [
+        "같은 상품의 두 GT 소스가 서로 다른 확정 라벨을 가진다.",
+        "GT와 결과는 같지만 UNISEX를 지지하는 직접 근거가 없다.",
+        "정책은 근거 부족을 UNDETERMINED로 두지만 실행 결과는 UNISEX이다."
+      ],
+      "referenceLabel": "MALE",
+      "signals": [
+        "GOLDEN_SOURCE_CONFLICT",
+        "GOLDEN_UNSUPPORTED_AGREEMENT",
+        "POLICY_RUNTIME_CONTRADICTION"
+      ]
+    },
+    {
+      "observedLabel": "FEMALE",
+      "productKey": "EGOOCM:3398529",
+      "productName": "세이프선데이 스트랩 숄더백 (오간자네이비)",
+      "reasons": [
+        "정책은 대상 가방을 착용한 여성 모델 또는 직접 문구를 우선 근거로 사용한다. 상세 근거는 FEMALE을 지지하지만 현재 GT는 UNISEX이다.",
+        "백팩·숄더백을 몸에 멘 WORN 장면을 기존 가방 정책이 버렸지만, 실제 가방 상호작용으로 인정해 판정을 복구했다."
+      ],
+      "referenceLabel": "UNISEX",
+      "signals": [
+        "GOLDEN_POLICY_VIOLATION_CANDIDATE",
+        "INTERACTION_POLICY_RECOVERED"
+      ]
+    },
+    {
+      "observedLabel": "FEMALE",
+      "productKey": "EGOOCM:3399281",
+      "productName": "홀로홀로 원터치 밀크 텀블러 보온보냉병 구름파우치 - 핑크",
+      "reasons": [
+        "정책은 대상 가방을 착용한 여성 모델 또는 직접 문구를 우선 근거로 사용한다. 상세 근거는 FEMALE을 지지하지만 현재 GT는 UNISEX이다.",
+        "백팩·숄더백을 몸에 멘 WORN 장면을 기존 가방 정책이 버렸지만, 실제 가방 상호작용으로 인정해 판정을 복구했다."
+      ],
+      "referenceLabel": "UNISEX",
+      "signals": [
+        "GOLDEN_POLICY_VIOLATION_CANDIDATE",
+        "INTERACTION_POLICY_RECOVERED"
+      ]
+    },
+    {
+      "observedLabel": "FEMALE",
+      "productKey": "EGOOCM:3399286",
+      "productName": "홀로홀로 원터치 밀크 텀블러 보온보냉병 구름파우치 - 코코아",
+      "reasons": [
+        "정책은 대상 가방을 착용한 여성 모델 또는 직접 문구를 우선 근거로 사용한다. 상세 근거는 FEMALE을 지지하지만 현재 GT는 UNISEX이다.",
+        "백팩·숄더백을 몸에 멘 WORN 장면을 기존 가방 정책이 버렸지만, 실제 가방 상호작용으로 인정해 판정을 복구했다."
+      ],
+      "referenceLabel": "UNISEX",
+      "signals": [
+        "GOLDEN_POLICY_VIOLATION_CANDIDATE",
+        "INTERACTION_POLICY_RECOVERED"
+      ]
+    },
+    {
+      "observedLabel": "MALE",
+      "productKey": "EGOOCM:3400602",
+      "productName": "소가죽 버티컬 힙색 크로스백 IB25Z3MBH2689",
+      "reasons": [
+        "정책은 대상 가방을 착용한 남성 모델 또는 직접 문구를 우선 근거로 사용한다. 상세 근거는 MALE을 지지하지만 현재 GT는 UNISEX이다.",
+        "백팩·숄더백을 몸에 멘 WORN 장면을 기존 가방 정책이 버렸지만, 실제 가방 상호작용으로 인정해 판정을 복구했다."
+      ],
+      "referenceLabel": "UNISEX",
+      "signals": [
+        "GOLDEN_POLICY_VIOLATION_CANDIDATE",
+        "INTERACTION_POLICY_RECOVERED"
+      ]
+    },
+    {
+      "observedLabel": "FEMALE",
+      "productKey": "EGOOCM:3404922",
+      "productName": "스윗 도트 스트링 짐색 (아이보리)",
+      "reasons": [
+        "정책은 대상 가방을 착용한 여성 모델 또는 직접 문구를 우선 근거로 사용한다. 상세 근거는 FEMALE을 지지하지만 현재 GT는 UNISEX이다.",
+        "백팩·숄더백을 몸에 멘 WORN 장면을 기존 가방 정책이 버렸지만, 실제 가방 상호작용으로 인정해 판정을 복구했다."
+      ],
+      "referenceLabel": "UNISEX",
+      "signals": [
+        "GOLDEN_POLICY_VIOLATION_CANDIDATE",
+        "INTERACTION_POLICY_RECOVERED"
+      ]
+    },
+    {
+      "observedLabel": "FEMALE",
+      "productKey": "EGOOCM:3417183",
+      "productName": "[본사직영]컬럼비아 공용 본레 포레스트 20L 패커블 경량 백팩 라이트그레이 (C76YU0369060)",
+      "reasons": [
+        "정책은 대상 가방을 착용한 여성 모델 또는 직접 문구를 우선 근거로 사용한다. 상세 근거는 FEMALE을 지지하지만 현재 GT는 UNISEX이다.",
+        "성별 단어가 없는 상품명을 직접 성별 문구로 신고한 모델 출력만 버리고, 독립적인 이미지 근거는 유지했다."
+      ],
+      "referenceLabel": "UNISEX",
+      "signals": [
+        "GOLDEN_POLICY_VIOLATION_CANDIDATE",
+        "INVALID_TEXT_EVIDENCE_DROPPED"
+      ]
+    }
+  ],
+  "counts": {
+    "ambiguousProducts": 305,
+    "documentCandidates": 0,
+    "empty": 3,
+    "filled": 7,
+    "missingSources": 0,
+    "openPrecedents": 3,
+    "sources": 4,
+    "thin": 1,
+    "unansweredQuestions": 3
+  },
+  "coverage": {
+    "generatedAt": null,
+    "orphans": [],
+    "stale": [],
+    "status": "MISSING"
+  },
+  "generatedAt": "2026-09-02T13:01:27.480271+00:00",
+  "mode": "NEW",
+  "nextQuestion": "'이 값이 옳다'가 무슨 뜻인지 한 문장으로 쓰면 무엇인가? 그 문장만 읽고 상품 하나를 판정할 수 있는가?",
+  "nextSlot": "SLOT-VERDICT",
+  "openPrecedents": [
+    {
+      "answers": [
+        "GQ-GT-001"
+      ],
+      "id": "BG-0001",
+      "path": ".claude/os/attributes/bag-category-gender/policy/precedents/BG-0001.md"
+    },
+    {
+      "answers": [
+        "GQ-RUN-001"
+      ],
+      "id": "BG-0002",
+      "path": ".claude/os/attributes/bag-category-gender/policy/precedents/BG-0002.md"
+    },
+    {
+      "answers": [
+        "GQ-SOURCE-001"
+      ],
+      "id": "BG-0003",
+      "path": ".claude/os/attributes/bag-category-gender/policy/precedents/BG-0003.md"
+    }
+  ],
+  "profileId": "bag-category-gender",
+  "schemaVersion": "catalog-interview-slots-v1",
+  "slots": [
+    {
+      "ambiguity": "A0-PURPOSE",
+      "documentCandidates": [],
+      "enforcedBy": "사람. 사용처를 하나도 못 대면 이 속성은 목표가 없는 것이다.",
+      "evidence": ".claude/os/attributes/bag-category-gender/goal.md · `이유`",
+      "id": "SLOT-PURPOSE",
+      "name": "이 값을 누가 쓰고, 틀리면 무슨 일이 생기는가",
+      "order": 1,
+      "questionShape": "NONE",
+      "seedQuestion": "이 값을 실제로 읽는 화면·기능은 무엇이고, 값이 틀렸을 때 거기서 누가 무엇을 못 하게 되는가?",
+      "status": "FILLED"
+    },
+    {
+      "ambiguity": "A0-PURPOSE",
+      "documentCandidates": [],
+      "enforcedBy": "사람. 판정표의 ①(GT가 목표에 맞는가)을 채울 때 읽는 문장이 이것이다.",
+      "evidence": ".claude/os/attributes/bag-category-gender/goal.md에 `## 판정 기준` 섹션이 없다",
+      "id": "SLOT-VERDICT",
+      "name": "무엇이 옳은 판단인가",
+      "order": 2,
+      "questionShape": "OPEN",
+      "seedQuestion": "'이 값이 옳다'가 무슨 뜻인지 한 문장으로 쓰면 무엇인가? 그 문장만 읽고 상품 하나를 판정할 수 있는가?",
+      "status": "EMPTY"
+    },
+    {
+      "ambiguity": "A8-LEVEL",
+      "documentCandidates": [],
+      "enforcedBy": "사람. 없으면 '정확도 올리자'가 끝나지 않고 배포 판단이 매번 감이 된다.",
+      "evidence": ".claude/os/attributes/bag-category-gender/goal.md에 `## 목표 품질` 섹션이 없다",
+      "id": "SLOT-QUALITY",
+      "name": "얼마나 맞아야 충분한가",
+      "order": 3,
+      "questionShape": "OPEN",
+      "seedQuestion": "실패 장면이 100건 중 몇 건까지면 사용처가 버티는가, 어느 방향으로? 그 숫자는 무엇으로 재고, 지금 GT를 그만큼 믿을 수 있는가?",
+      "status": "EMPTY"
+    },
+    {
+      "ambiguity": "A7-PROVENANCE",
+      "documentCandidates": [],
+      "enforcedBy": "사람. 출처 없이 정책에 들어간 규칙은 나중에 근거 없는 일치의 원인이 된다.",
+      "evidence": ".claude/os/attributes/bag-category-gender/policy/policy.md에 `## 출처와 확신도` 섹션이 없다",
+      "id": "SLOT-PROVENANCE",
+      "name": "정책으로 아는 것과 그 출처",
+      "order": 4,
+      "questionShape": "OPEN",
+      "seedQuestion": "지금 정책이라 부르는 문장은 어디에 있는가 — 소유 정책인가, 프로덕션 프롬프트뿐인가, 아무 데도 없는가? 그리고 그건 누가 정한 것인가, 그냥 그렇게 해온 것인가?",
+      "status": "EMPTY"
+    },
+    {
+      "ambiguity": "A2-SCOPE",
+      "documentCandidates": [],
+      "enforcedBy": "사람. 대상이 안 정해지면 같은 질문이 카테고리마다 다시 올라온다.",
+      "evidence": ".claude/os/attributes/bag-category-gender/goal.md · `경계`이 자리표시자뿐이다",
+      "id": "SLOT-SCOPE",
+      "name": "무엇이 판정 대상인가",
+      "order": 5,
+      "questionShape": "OPEN",
+      "seedQuestion": "이 속성을 붙이지 않는 상품 종류를 세 개 대면 무엇인가?",
+      "status": "THIN"
+    },
+    {
+      "ambiguity": "A2-SCOPE",
+      "documentCandidates": [],
+      "enforcedBy": "catalog_profile.load_profile — 없으면 사이클이 시작되지 않는다.",
+      "evidence": "profile.subjectName",
+      "id": "SLOT-SUBJECT",
+      "name": "프로필의 판정 대상 이름",
+      "order": 5,
+      "questionShape": "NONE",
+      "seedQuestion": "보고서에 판정 대상을 뭐라고 부를 것인가?",
+      "status": "FILLED"
+    },
+    {
+      "ambiguity": "A3-VALUE",
+      "documentCandidates": [],
+      "enforcedBy": "build_policy_index.py — POLICY_SECTION_MISSING · POLICY_LABELS_EMPTY (BLOCKING)",
+      "evidence": ".claude/os/attributes/bag-category-gender/policy/policy.md · `허용값`",
+      "id": "SLOT-LABELS",
+      "name": "허용값",
+      "order": 6,
+      "questionShape": "NONE",
+      "seedQuestion": "이 속성이 낼 수 있는 값을 전부 대면 무엇이고, 두 값이 동시에 참인 상품이 있는가?",
+      "status": "FILLED"
+    },
+    {
+      "ambiguity": "A5-NULL",
+      "documentCandidates": [],
+      "enforcedBy": "build_policy_index.py — POLICY_SECTION_MISSING (BLOCKING)",
+      "evidence": ".claude/os/attributes/bag-category-gender/policy/policy.md · `판정 불가 조건`",
+      "id": "SLOT-ABSTAIN",
+      "name": "판정 불가 조건",
+      "order": 7,
+      "questionShape": "NONE",
+      "seedQuestion": "근거가 없을 때 값을 비울 것인가, 기본값을 채울 것인가? 그 둘을 어떻게 구분해 읽는가?",
+      "status": "FILLED"
+    },
+    {
+      "ambiguity": "A4-EVIDENCE",
+      "documentCandidates": [],
+      "enforcedBy": "build_policy_index.py — POLICY_SECTION_MISSING (BLOCKING)",
+      "evidence": ".claude/os/attributes/bag-category-gender/policy/policy.md · `근거 우선순위`",
+      "id": "SLOT-PRIORITY",
+      "name": "근거 우선순위",
+      "order": 8,
+      "questionShape": "NONE",
+      "seedQuestion": "두 근거가 서로 다른 값을 가리키면 어느 쪽이 이기는가?",
+      "status": "FILLED"
+    },
+    {
+      "ambiguity": "A6-COST",
+      "documentCandidates": [],
+      "enforcedBy": "사람. catalog-golden-adjudicator가 이 문장을 읽어 GT 수정과 정책 보강을 가른다.",
+      "evidence": ".claude/os/attributes/bag-category-gender/goal.md · `귀책`",
+      "id": "SLOT-BLAME",
+      "name": "귀책 원칙",
+      "order": 9,
+      "questionShape": "NONE",
+      "seedQuestion": "정책과 GT가 다를 때 기본적으로 어느 쪽을 고치는가? 반대 방향 오류보다 더 비싼 오류는 무엇인가?",
+      "status": "FILLED"
+    },
+    {
+      "ambiguity": "A2-SCOPE",
+      "documentCandidates": [],
+      "enforcedBy": "build_policy_index.py — QUESTION_WITHOUT_PRECEDENT (REVIEW)",
+      "evidence": ".claude/os/attributes/bag-category-gender/policy/policy.md · `판례`",
+      "id": "SLOT-PRECEDENT",
+      "name": "판례",
+      "order": 10,
+      "questionShape": "NONE",
+      "seedQuestion": "이미 답한 경계 판정이 정책 문서에서 링크되어 있는가?",
+      "status": "FILLED"
+    }
+  ],
+  "sources": [
+    {
+      "bytes": 33788,
+      "id": "lld",
+      "kind": "LLD",
+      "missing": false,
+      "note": "정책·스코프·인수 조건 정본. 다른 문서들이 이 문서를 정본으로 가리킨다",
+      "sha256": "2bb7b783033c56dfd6b06a3159f0077ff15a52a75011397a9b0aab5c2eb9201e",
+      "snapshot": ".claude/os/runs/bag-category-gender/interview/sources/lld.md",
+      "sourcePath": "../core-catalog-platfom/docs/gender/gender-inference-lld.md"
+    },
+    {
+      "bytes": 18818,
+      "id": "registry",
+      "kind": "LLD",
+      "missing": false,
+      "note": "프롬프트·평가 버전 정본. 어느 프롬프트가 현재인지",
+      "sha256": "8574d31be07225ed25d1c4a909b5b0995cc406b2a07367d97d021cf390930af6",
+      "snapshot": ".claude/os/runs/bag-category-gender/interview/sources/registry.md",
+      "sourcePath": "../core-catalog-platfom/docs/gender/version-registry.md"
+    },
+    {
+      "bytes": 23301,
+      "id": "validation",
+      "kind": "OTHER",
+      "missing": false,
+      "note": "검증 계획. 목표 품질(SLOT-QUALITY) 후보 숫자가 있을 수 있다",
+      "sha256": "0c7c70ad6ff551f53f30b63c948f68af997f357f64ebe51da57e2432a5e6d404",
+      "snapshot": ".claude/os/runs/bag-category-gender/interview/sources/validation.md",
+      "sourcePath": "../core-catalog-platfom/docs/gender/v502-validation-plan.md"
+    },
+    {
+      "bytes": 9495,
+      "id": "coreai",
+      "kind": "OTHER",
+      "missing": false,
+      "note": "외부 구현의 판정 재료 대조. 근거 우선순위 후보",
+      "sha256": "ce095227d325c333f6ab8ff6f505f0f3b5ab0a162c0aa77f535a384baf6a7c28",
+      "snapshot": ".claude/os/runs/bag-category-gender/interview/sources/coreai.md",
+      "sourcePath": "../core-catalog-platfom/docs/gender/core-ai-infer-logic.md"
+    }
+  ],
+  "unansweredQuestions": [
+    {
+      "id": "GQ-GT-001",
+      "impact": {
+        "candidates": 20,
+        "femaleCandidates": 14,
+        "maleCandidates": 6
+      },
+      "question": "정책의 직접 근거가 단일 성별을 지지하는데 GT가 UNISEX인 사례를 GT 오류로 확정할 것인가?",
+      "recommendation": "상세 근거 이미지를 우선 검수하고, 근거가 실제 대상 가방과 연결되면 GT를 수정한다."
+    },
+    {
+      "id": "GQ-RUN-001",
+      "impact": {
+        "affected": 48,
+        "unsupportedCorrect": 16,
+        "wrongAgainstGt": 32
+      },
+      "question": "근거가 없을 때 내부 UNDETERMINED를 최종 UNISEX로 바꿔도 되는가?",
+      "recommendation": "평가에서는 UNDETERMINED를 보존하고 저장 호환 변환은 별도 projection으로 분리한다."
+    },
+    {
+      "id": "GQ-SOURCE-001",
+      "impact": {
+        "differentRows": 10,
+        "labelToLabel": 5,
+        "unclassifiedToLabeled": 5
+      },
+      "question": "두 GT 소스 중 어느 버전을 정본으로 사용할 것인가?",
+      "recommendation": "최신 사람 검수 원장을 정본으로 지정하고 datasetVersion과 라벨 해시를 평가 입력에 기록한다."
+    }
+  ],
+  "undeclaredProfileFields": []
+}

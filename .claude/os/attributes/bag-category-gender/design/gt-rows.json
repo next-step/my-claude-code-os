@@ -1,0 +1,993 @@
+[
+ {
+  "productKey": "EGOOCM:3407206",
+  "productName": "스포츠 미니 크로스백 - 블랙(QQ323ABG81)",
+  "brand": "르꼬끄",
+  "category": "가방>메신저/크로스백",
+  "url": "https://www.29cm.co.kr/products/3407206",
+  "referenceLabel": "UNISEX",
+  "goldSource": "MJ_CHAT_REVIEW_2026-09-04",
+  "gtReviewStatus": "REVIEWED",
+  "proposed": "FEMALE",
+  "grade": "ASK",
+  "fromPolicy": true,
+  "unchanged": false,
+  "ruleId": "P3_WEARER",
+  "blockedBy": [
+   "BG-0001",
+   "BG-0003"
+  ],
+  "judgeText": "여성 모델만 동일 대상 상품을 실제 착용한 이미지가 확인됨.",
+  "reviewerText": "약한 근거라 골든셋을 의심할지 판례가 먼저 답해야 한다.",
+  "sourceConflict": {
+   "kind": "LABEL_TO_LABEL",
+   "canonical": "FEMALE",
+   "canonicalSource": "FINAL_AQ_20260903",
+   "canonicalVersion": "2026-09-03",
+   "evaluation": "UNISEX",
+   "evaluationSource": "MJ_CHAT_REVIEW_2026-09-04"
+  },
+  "signals": [
+   "INVALID_TEXT_EVIDENCE_DROPPED",
+   "GOLDEN_POLICY_VIOLATION_CANDIDATE",
+   "GOLDEN_SOURCE_CONFLICT"
+  ],
+  "plate": [
+   {
+    "url": "../asset/thumbnails/EGOOCM-3407206-1.jpg",
+    "caption": "대표 판매 사진",
+    "cited": false,
+    "role": "TARGET"
+   },
+   {
+    "url": "https://img.dk-on.com/contents/editor_images/20250728/QQ323ABG81_20250728095508.jpg",
+    "caption": "D03T01",
+    "cited": true,
+    "role": "DETAIL"
+   },
+   {
+    "url": "https://img.dk-on.com/contents/editor_images/20250909/lcs_76020_20250909111315.jpg",
+    "caption": "D04T01",
+    "cited": true,
+    "role": "DETAIL"
+   },
+   {
+    "url": "https://img.dk-on.com/product/Q/Q3/QQ323ABG81/550/QQ323ABG81_BLK0_N01.JPG",
+    "caption": "D05T01",
+    "cited": false,
+    "role": "DETAIL"
+   },
+   {
+    "url": "https://img.dk-on.com/product/Q/Q3/QQ323ABG81/550/QQ323ABG81_BLK0_N02.JPG",
+    "caption": "D06T01",
+    "cited": false,
+    "role": "DETAIL"
+   },
+   {
+    "url": "https://img.dk-on.com/product/Q/Q3/QQ323ABG81/550/QQ323ABG81_BLK0_N03.JPG",
+    "caption": "D07T01",
+    "cited": false,
+    "role": "DETAIL"
+   }
+  ]
+ },
+ {
+  "productKey": "EGOOCM:3420094",
+  "productName": "TOTE BROCLE [SUEDE MOCHA COMBI]",
+  "brand": "OSOI",
+  "category": "가방>토트백",
+  "url": "https://www.29cm.co.kr/products/3420094",
+  "referenceLabel": "UNISEX",
+  "goldSource": "DO_SHEET_91_AQ_FINAL_REVIEW_20260902",
+  "gtReviewStatus": "REVIEWED",
+  "proposed": "FEMALE",
+  "grade": "ASK",
+  "fromPolicy": true,
+  "unchanged": false,
+  "ruleId": "P3_WEARER",
+  "blockedBy": [
+   "BG-0001"
+  ],
+  "judgeText": "여성 모델만 동일 대상 상품을 실제 착용한 이미지가 확인됨.",
+  "reviewerText": "약한 근거라 골든셋을 의심할지 판례가 먼저 답해야 한다.",
+  "sourceConflict": null,
+  "signals": [
+   "INTERACTION_POLICY_RECOVERED",
+   "GOLDEN_POLICY_VIOLATION_CANDIDATE"
+  ],
+  "plate": [
+   {
+    "url": "../asset/thumbnails/EGOOCM-3420094-1.jpg",
+    "caption": "대표 판매 사진",
+    "cited": false,
+    "role": "TARGET"
+   },
+   {
+    "url": "https://img.29cm.co.kr/item/202508/11f077462d9dd5e4964a717eef47d68a.jpg",
+    "caption": "D01T01",
+    "cited": true,
+    "role": "DETAIL"
+   },
+   {
+    "url": "https://img.29cm.co.kr/item/202508/11f077462d9e4b16964a75f82bb304a6.jpg",
+    "caption": "D02T01",
+    "cited": false,
+    "role": "DETAIL"
+   },
+   {
+    "url": "https://img.29cm.co.kr/item/202508/11f077462d9e4ae688936368840a6e38.jpg",
+    "caption": "D03T01",
+    "cited": false,
+    "role": "DETAIL"
+   },
+   {
+    "url": "https://img.29cm.co.kr/item/202508/11f0771738126c50889391c8dbc4e17f.jpeg",
+    "caption": "D04T01",
+    "cited": false,
+    "role": "DETAIL"
+   },
+   {
+    "url": "https://img.29cm.co.kr/item/202508/11f0771738126c50889391c8dbc4e17f.jpeg",
+    "caption": "D04T02",
+    "cited": false,
+    "role": "DETAIL"
+   },
+   {
+    "url": "https://img.29cm.co.kr/item/202508/11f0771738126c50889391c8dbc4e17f.jpeg",
+    "caption": "D04T03",
+    "cited": false,
+    "role": "DETAIL"
+   },
+   {
+    "url": "https://img.29cm.co.kr/item/202508/11f0771738126c50889391c8dbc4e17f.jpeg",
+    "caption": "D04T04",
+    "cited": false,
+    "role": "DETAIL"
+   },
+   {
+    "url": "https://img.29cm.co.kr/item/202508/11f0771738126c50889391c8dbc4e17f.jpeg",
+    "caption": "D04T05",
+    "cited": false,
+    "role": "DETAIL"
+   },
+   {
+    "url": "https://img.29cm.co.kr/item/202508/11f07746310bd35888937f19efb42428.jpeg",
+    "caption": "D05T02",
+    "cited": false,
+    "role": "DETAIL"
+   },
+   {
+    "url": "https://img.29cm.co.kr/item/202508/11f07746310bd35888937f19efb42428.jpeg",
+    "caption": "D05T03",
+    "cited": false,
+    "role": "DETAIL"
+   },
+   {
+    "url": "https://img.29cm.co.kr/item/202508/11f07746310bd35888937f19efb42428.jpeg",
+    "caption": "D05T06",
+    "cited": false,
+    "role": "DETAIL"
+   },
+   {
+    "url": "https://img.29cm.co.kr/item/202508/11f07746310bd35888937f19efb42428.jpeg",
+    "caption": "D05T07",
+    "cited": false,
+    "role": "DETAIL"
+   }
+  ]
+ },
+ {
+  "productKey": "EGOOCM:3458125",
+  "productName": "Leather Strap Double Pouch (Black)",
+  "brand": "네세서리",
+  "category": "가방>클러치백/파우치",
+  "url": "https://www.29cm.co.kr/products/3458125",
+  "referenceLabel": "UNISEX",
+  "goldSource": "MJ_EXPLICIT_POUCH_BOUNDARY_REVIEW_2026-09-05",
+  "gtReviewStatus": "REVIEWED",
+  "proposed": "FEMALE",
+  "grade": "ASK",
+  "fromPolicy": true,
+  "unchanged": false,
+  "ruleId": "P3_WEARER",
+  "blockedBy": [
+   "BG-0001"
+  ],
+  "judgeText": "여성 모델만 동일 대상 상품을 실제 착용한 이미지가 확인됨.",
+  "reviewerText": "약한 근거라 골든셋을 의심할지 판례가 먼저 답해야 한다.",
+  "sourceConflict": null,
+  "signals": [
+   "GOLDEN_POLICY_VIOLATION_CANDIDATE"
+  ],
+  "plate": [
+   {
+    "url": "../asset/thumbnails/EGOOCM-3458125-1.jpg",
+    "caption": "대표 판매 사진",
+    "cited": false,
+    "role": "TARGET"
+   },
+   {
+    "url": "https://img.29cm.co.kr/item/202508/11f083d5ab671f1bab5d896afc1263b3.jpg",
+    "caption": "D02T01",
+    "cited": true,
+    "role": "DETAIL"
+   },
+   {
+    "url": "https://img.29cm.co.kr/item/202509/11f086ce241e5d01ab5dc710f61ebb1f.jpg",
+    "caption": "D01T01",
+    "cited": false,
+    "role": "DETAIL"
+   },
+   {
+    "url": "https://img.29cm.co.kr/item/202508/11f083d5ad81739fab5dfd79dab142d4.jpg",
+    "caption": "D03T01",
+    "cited": false,
+    "role": "DETAIL"
+   }
+  ]
+ },
+ {
+  "productKey": "EGOOCM:3460326",
+  "productName": "Rio Square Middle Bag_2colors",
+  "brand": "리오므",
+  "category": "가방>캔버스백/에코백",
+  "url": "https://www.29cm.co.kr/products/3460326",
+  "referenceLabel": "UNISEX",
+  "goldSource": "DO_SHEET_91_AQ_FINAL_REVIEW_20260902",
+  "gtReviewStatus": "REVIEWED",
+  "proposed": "FEMALE",
+  "grade": "ASK",
+  "fromPolicy": true,
+  "unchanged": false,
+  "ruleId": "P3_WEARER",
+  "blockedBy": [
+   "BG-0001"
+  ],
+  "judgeText": "여성 모델만 동일 대상 상품을 실제 착용한 이미지가 확인됨.",
+  "reviewerText": "약한 근거라 골든셋을 의심할지 판례가 먼저 답해야 한다.",
+  "sourceConflict": null,
+  "signals": [
+   "INTERACTION_POLICY_RECOVERED",
+   "GOLDEN_POLICY_VIOLATION_CANDIDATE"
+  ],
+  "plate": [
+   {
+    "url": "../asset/thumbnails/EGOOCM-3460326-1.jpg",
+    "caption": "대표 판매 사진",
+    "cited": false,
+    "role": "TARGET"
+   },
+   {
+    "url": "https://img.29cm.co.kr/item/202508/11f0824c0b9ba4208893dfe931f02a26.jpg",
+    "caption": "D01T01",
+    "cited": true,
+    "role": "DETAIL"
+   },
+   {
+    "url": "https://img.29cm.co.kr/item/202508/11f0824c175447b88403a53cfd4ad0ea.jpg",
+    "caption": "D02T01",
+    "cited": false,
+    "role": "DETAIL"
+   },
+   {
+    "url": "https://img.29cm.co.kr/item/202508/11f0824c175447b88403a53cfd4ad0ea.jpg",
+    "caption": "D02T02",
+    "cited": false,
+    "role": "DETAIL"
+   },
+   {
+    "url": "https://img.29cm.co.kr/item/202508/11f0824c175447b88403a53cfd4ad0ea.jpg",
+    "caption": "D02T03",
+    "cited": false,
+    "role": "DETAIL"
+   },
+   {
+    "url": "https://img.29cm.co.kr/item/202508/11f0824c175447b88403a53cfd4ad0ea.jpg",
+    "caption": "D02T04",
+    "cited": false,
+    "role": "DETAIL"
+   },
+   {
+    "url": "https://img.29cm.co.kr/item/202508/11f0824c175447b88403a53cfd4ad0ea.jpg",
+    "caption": "D02T05",
+    "cited": false,
+    "role": "DETAIL"
+   },
+   {
+    "url": "https://img.29cm.co.kr/item/202508/11f0824c0f303c968893cfc6f725a514.jpg",
+    "caption": "D03T01",
+    "cited": false,
+    "role": "DETAIL"
+   }
+  ]
+ },
+ {
+  "productKey": "EGOOCM:3484743",
+  "productName": "트래블러 패스포트 RFID차단 개인정보 보호 여행지갑 여권 케이스 지갑 - 체커보드",
+  "brand": "EGARDEN",
+  "category": "가방>지갑/머니클립",
+  "url": "https://www.29cm.co.kr/products/3484743",
+  "referenceLabel": "UNISEX",
+  "goldSource": "GOOGLE_DRIVE_HUMAN_REVIEW_2026-08-31",
+  "gtReviewStatus": "REVIEWED",
+  "proposed": "FEMALE",
+  "grade": "ASK",
+  "fromPolicy": true,
+  "unchanged": false,
+  "ruleId": "P3_WEARER",
+  "blockedBy": [
+   "BG-0001"
+  ],
+  "judgeText": "여성 모델만 동일 대상 상품을 실제 착용한 이미지가 확인됨.",
+  "reviewerText": "약한 근거라 골든셋을 의심할지 판례가 먼저 답해야 한다.",
+  "sourceConflict": null,
+  "signals": [
+   "INTERACTION_POLICY_RECOVERED",
+   "GOLDEN_POLICY_VIOLATION_CANDIDATE"
+  ],
+  "plate": [
+   {
+    "url": "../asset/thumbnails/EGOOCM-3484743-1.jpg",
+    "caption": "대표 판매 사진",
+    "cited": false,
+    "role": "TARGET"
+   },
+   {
+    "url": "https://egarden1.dothome.co.kr/img/EGARDEN/%ED%8A%B8%EB%9E%98%EB%B8%94%EB%9F%AC%EC%B2%B4%EC%BB%A4%EB%B3%B4%EB%93%9C%EC%97%90%EB%94%94%EC%85%98%ED%8C%A8%EC%8A%A4%ED%8F%AC%ED%8A%B8/%ED%83%80%EC%82%AC%EB%AA%B0(%EC%98%B5%EC%85%98o)/01.jpg",
+    "caption": "D01T01",
+    "cited": true,
+    "role": "DETAIL"
+   },
+   {
+    "url": "https://egarden1.dothome.co.kr/img/EGARDEN/%ED%8A%B8%EB%9E%98%EB%B8%94%EB%9F%AC%EC%B2%B4%EC%BB%A4%EB%B3%B4%EB%93%9C%EC%97%90%EB%94%94%EC%85%98%ED%8C%A8%EC%8A%A4%ED%8F%AC%ED%8A%B8/%ED%83%80%EC%82%AC%EB%AA%B0(%EC%98%B5%EC%85%98o)/01.jpg",
+    "caption": "D01T03",
+    "cited": true,
+    "role": "DETAIL"
+   },
+   {
+    "url": "https://egarden1.dothome.co.kr/img/EGARDEN/%ED%8A%B8%EB%9E%98%EB%B8%94%EB%9F%AC%EC%B2%B4%EC%BB%A4%EB%B3%B4%EB%93%9C%EC%97%90%EB%94%94%EC%85%98%ED%8C%A8%EC%8A%A4%ED%8F%AC%ED%8A%B8/%ED%83%80%EC%82%AC%EB%AA%B0(%EC%98%B5%EC%85%98o)/02.jpg",
+    "caption": "D02T03",
+    "cited": false,
+    "role": "DETAIL"
+   },
+   {
+    "url": "https://egarden1.dothome.co.kr/img/EGARDEN/%ED%8A%B8%EB%9E%98%EB%B8%94%EB%9F%AC%EC%B2%B4%EC%BB%A4%EB%B3%B4%EB%93%9C%EC%97%90%EB%94%94%EC%85%98%ED%8C%A8%EC%8A%A4%ED%8F%AC%ED%8A%B8/%ED%83%80%EC%82%AC%EB%AA%B0(%EC%98%B5%EC%85%98o)/03.jpg",
+    "caption": "D03T02",
+    "cited": false,
+    "role": "DETAIL"
+   },
+   {
+    "url": "https://egarden1.dothome.co.kr/img/EGARDEN/%ED%8A%B8%EB%9E%98%EB%B8%94%EB%9F%AC%EC%B2%B4%EC%BB%A4%EB%B3%B4%EB%93%9C%EC%97%90%EB%94%94%EC%85%98%ED%8C%A8%EC%8A%A4%ED%8F%AC%ED%8A%B8/%ED%83%80%EC%82%AC%EB%AA%B0(%EC%98%B5%EC%85%98o)/04.jpg",
+    "caption": "D04T01",
+    "cited": false,
+    "role": "DETAIL"
+   },
+   {
+    "url": "https://egarden1.dothome.co.kr/img/EGARDEN/%ED%8A%B8%EB%9E%98%EB%B8%94%EB%9F%AC%EC%B2%B4%EC%BB%A4%EB%B3%B4%EB%93%9C%EC%97%90%EB%94%94%EC%85%98%ED%8C%A8%EC%8A%A4%ED%8F%AC%ED%8A%B8/%ED%83%80%EC%82%AC%EB%AA%B0(%EC%98%B5%EC%85%98o)/05.jpg",
+    "caption": "D05T01",
+    "cited": false,
+    "role": "DETAIL"
+   },
+   {
+    "url": "https://egarden1.dothome.co.kr/img/EGARDEN/%ED%8A%B8%EB%9E%98%EB%B8%94%EB%9F%AC%EC%B2%B4%EC%BB%A4%EB%B3%B4%EB%93%9C%EC%97%90%EB%94%94%EC%85%98%ED%8C%A8%EC%8A%A4%ED%8F%AC%ED%8A%B8/%ED%83%80%EC%82%AC%EB%AA%B0(%EC%98%B5%EC%85%98o)/06.jpg",
+    "caption": "D06T01",
+    "cited": false,
+    "role": "DETAIL"
+   },
+   {
+    "url": "https://egarden1.dothome.co.kr/img/EGARDEN/%ED%8A%B8%EB%9E%98%EB%B8%94%EB%9F%AC%EC%B2%B4%EC%BB%A4%EB%B3%B4%EB%93%9C%EC%97%90%EB%94%94%EC%85%98%ED%8C%A8%EC%8A%A4%ED%8F%AC%ED%8A%B8/%ED%83%80%EC%82%AC%EB%AA%B0(%EC%98%B5%EC%85%98o)/07.jpg",
+    "caption": "D07T02",
+    "cited": false,
+    "role": "DETAIL"
+   },
+   {
+    "url": "https://egarden1.dothome.co.kr/img/EGARDEN/%ED%8A%B8%EB%9E%98%EB%B8%94%EB%9F%AC%EC%B2%B4%EC%BB%A4%EB%B3%B4%EB%93%9C%EC%97%90%EB%94%94%EC%85%98%ED%8C%A8%EC%8A%A4%ED%8F%AC%ED%8A%B8/%ED%83%80%EC%82%AC%EB%AA%B0(%EC%98%B5%EC%85%98o)/08.jpg",
+    "caption": "D08T01",
+    "cited": false,
+    "role": "DETAIL"
+   },
+   {
+    "url": "https://egarden1.dothome.co.kr/img/EGARDEN/%ED%8A%B8%EB%9E%98%EB%B8%94%EB%9F%AC%EC%B2%B4%EC%BB%A4%EB%B3%B4%EB%93%9C%EC%97%90%EB%94%94%EC%85%98%ED%8C%A8%EC%8A%A4%ED%8F%AC%ED%8A%B8/%ED%83%80%EC%82%AC%EB%AA%B0(%EC%98%B5%EC%85%98o)/08.jpg",
+    "caption": "D08T03",
+    "cited": false,
+    "role": "DETAIL"
+   },
+   {
+    "url": "https://egarden1.dothome.co.kr/img/EGARDEN/%ED%8A%B8%EB%9E%98%EB%B8%94%EB%9F%AC%EC%B2%B4%EC%BB%A4%EB%B3%B4%EB%93%9C%EC%97%90%EB%94%94%EC%85%98%ED%8C%A8%EC%8A%A4%ED%8F%AC%ED%8A%B8/%ED%83%80%EC%82%AC%EB%AA%B0(%EC%98%B5%EC%85%98o)/10.jpg",
+    "caption": "D10T01",
+    "cited": false,
+    "role": "DETAIL"
+   },
+   {
+    "url": "https://egarden1.dothome.co.kr/img/EGARDEN/%ED%8A%B8%EB%9E%98%EB%B8%94%EB%9F%AC%EC%B2%B4%EC%BB%A4%EB%B3%B4%EB%93%9C%EC%97%90%EB%94%94%EC%85%98%ED%8C%A8%EC%8A%A4%ED%8F%AC%ED%8A%B8/%ED%83%80%EC%82%AC%EB%AA%B0(%EC%98%B5%EC%85%98o)/11.jpg",
+    "caption": "D11T02",
+    "cited": false,
+    "role": "DETAIL"
+   }
+  ]
+ },
+ {
+  "productKey": "MUSINSA:4459402",
+  "productName": "MULTI POUCH 003 Olive Green",
+  "brand": "스위치",
+  "category": "가방>클러치/파우치>파우치",
+  "url": "https://www.musinsa.com/products/4459402",
+  "referenceLabel": "UNISEX",
+  "goldSource": "CODEX_PRODUCT_USE_POLICY_REVIEW_2026-09-05",
+  "gtReviewStatus": "REVIEWED",
+  "proposed": "MALE",
+  "grade": "ASK",
+  "fromPolicy": true,
+  "unchanged": false,
+  "ruleId": "P3_WEARER",
+  "blockedBy": [
+   "BG-0001"
+  ],
+  "judgeText": "남성 모델만 동일 대상 상품을 실제 착용한 이미지가 확인됨.",
+  "reviewerText": "약한 근거라 골든셋을 의심할지 판례가 먼저 답해야 한다.",
+  "sourceConflict": null,
+  "signals": [
+   "INTERACTION_POLICY_RECOVERED",
+   "GOLDEN_POLICY_VIOLATION_CANDIDATE"
+  ],
+  "plate": [
+   {
+    "url": "https://image.msscdn.net/thumbnails/images/goods_img/20240924/4459402/4459402_17280093826671_500.jpg",
+    "caption": "대표 판매 사진",
+    "cited": false,
+    "role": "TARGET"
+   },
+   {
+    "url": "https://image.msscdn.net/thumbnails/images/prd_img/20240924/4459402/detail_4459402_17290573623889_500.jpg",
+    "caption": "대표 판매 사진",
+    "cited": false,
+    "role": "TARGET"
+   },
+   {
+    "url": "https://image.msscdn.net/thumbnails/images/prd_img/20240924/4459402/detail_4459402_17290573633517_500.jpg",
+    "caption": "대표 판매 사진",
+    "cited": false,
+    "role": "TARGET"
+   },
+   {
+    "url": "https://image.msscdn.net/thumbnails/images/prd_img/20240924/4459402/detail_4459402_17280093874550_500.jpg",
+    "caption": "대표 판매 사진",
+    "cited": false,
+    "role": "TARGET"
+   },
+   {
+    "url": "https://image.msscdn.net/thumbnails/images/prd_img/20240924/4459402/detail_4459402_17280093882018_500.jpg",
+    "caption": "대표 판매 사진",
+    "cited": false,
+    "role": "TARGET"
+   },
+   {
+    "url": "https://image.msscdn.net/images/prd_img/202503061539477203238311567c94333afdcc.jpg",
+    "caption": "D03T01",
+    "cited": true,
+    "role": "DETAIL"
+   },
+   {
+    "url": "https://image.msscdn.net/images/prd_img/202503061539477203238311567c94333afdcc.jpg",
+    "caption": "D03T03",
+    "cited": true,
+    "role": "DETAIL"
+   },
+   {
+    "url": "https://image.msscdn.net/images/prd_img/202503061539462955099849667c943324825f.jpg",
+    "caption": "D01T01",
+    "cited": false,
+    "role": "DETAIL"
+   },
+   {
+    "url": "https://image.msscdn.net/images/prd_img/202503061539457047638216967c94331ac104.jpg",
+    "caption": "D04T01",
+    "cited": false,
+    "role": "DETAIL"
+   },
+   {
+    "url": "https://image.msscdn.net/images/prd_img/202503061539465045213132367c943327b2d1.jpg",
+    "caption": "D05T02",
+    "cited": false,
+    "role": "DETAIL"
+   },
+   {
+    "url": "https://image.msscdn.net/images/prd_img/202503061539471822008856667c943332c7c3.jpg",
+    "caption": "D06T03",
+    "cited": false,
+    "role": "DETAIL"
+   },
+   {
+    "url": "https://image.msscdn.net/images/prd_img/202503061539476946436074667c94333a997e.jpg",
+    "caption": "D08T01",
+    "cited": false,
+    "role": "DETAIL"
+   },
+   {
+    "url": "https://image.msscdn.net/images/prd_img/202503061539476946436074667c94333a997e.jpg",
+    "caption": "D08T04",
+    "cited": false,
+    "role": "DETAIL"
+   },
+   {
+    "url": "https://image.msscdn.net/images/prd_img/202503061539477983396034067c94333c2e8c.jpg",
+    "caption": "D09T01",
+    "cited": false,
+    "role": "DETAIL"
+   },
+   {
+    "url": "https://image.msscdn.net/images/prd_img/202503061539477983396034067c94333c2e8c.jpg",
+    "caption": "D09T04",
+    "cited": false,
+    "role": "DETAIL"
+   },
+   {
+    "url": "https://image.msscdn.net/images/prd_img/202503061539469106314497067c94332de532.jpg",
+    "caption": "D10T01",
+    "cited": false,
+    "role": "DETAIL"
+   },
+   {
+    "url": "https://image.msscdn.net/images/prd_img/202503061539465021329512267c943327a97e.jpg",
+    "caption": "D11T02",
+    "cited": false,
+    "role": "DETAIL"
+   }
+  ]
+ },
+ {
+  "productKey": "MUSINSA:4870915",
+  "productName": "A90 28인치 화물용 도어식오픈 확장형 캐리어",
+  "brand": "프레지던트",
+  "category": "가방>캐리어/여행용 백",
+  "url": "https://www.musinsa.com/products/4870915",
+  "referenceLabel": "UNISEX",
+  "goldSource": "GOOGLE_DRIVE_HUMAN_REVIEW_2026-08-31",
+  "gtReviewStatus": "REVIEWED",
+  "proposed": "FEMALE",
+  "grade": "ASK",
+  "fromPolicy": true,
+  "unchanged": false,
+  "ruleId": "P3_WEARER",
+  "blockedBy": [
+   "BG-0001"
+  ],
+  "judgeText": "여성 모델만 동일 대상 상품을 실제 착용한 이미지가 확인됨.",
+  "reviewerText": "약한 근거라 골든셋을 의심할지 판례가 먼저 답해야 한다.",
+  "sourceConflict": null,
+  "signals": [
+   "GOLDEN_POLICY_VIOLATION_CANDIDATE"
+  ],
+  "plate": [
+   {
+    "url": "../asset/thumbnails/MUSINSA-4870915-1.jpg",
+    "caption": "대표 판매 사진",
+    "cited": false,
+    "role": "TARGET"
+   },
+   {
+    "url": "https://sbskorea.esellersimg.co.kr/President/A90/Files/A90_01.jpg",
+    "caption": "D02T02",
+    "cited": true,
+    "role": "DETAIL"
+   },
+   {
+    "url": "https://sbskorea.esellersimg.co.kr/President/A90/Files/A90_01.jpg",
+    "caption": "D02T03",
+    "cited": true,
+    "role": "DETAIL"
+   },
+   {
+    "url": "https://sbskorea.esellersimg.co.kr/President/A90/Files/A90_01.jpg",
+    "caption": "D02T05",
+    "cited": true,
+    "role": "DETAIL"
+   },
+   {
+    "url": "https://sbskorea.esellersimg.co.kr/President/A90/Files/A90_01.jpg",
+    "caption": "D02T07",
+    "cited": true,
+    "role": "DETAIL"
+   },
+   {
+    "url": "https://sbskorea.esellersimg.co.kr/President/A90/Files/A90_02.jpg",
+    "caption": "D03T03",
+    "cited": true,
+    "role": "DETAIL"
+   },
+   {
+    "url": "https://sbskorea.esellersimg.co.kr/Banner/carrier_TOP.jpg",
+    "caption": "D01T01",
+    "cited": false,
+    "role": "DETAIL"
+   },
+   {
+    "url": "https://sbskorea.esellersimg.co.kr/President/A90/Files/A90_02.jpg",
+    "caption": "D03T02",
+    "cited": false,
+    "role": "DETAIL"
+   },
+   {
+    "url": "https://sbskorea.esellersimg.co.kr/President/A90/Files/A90_02.jpg",
+    "caption": "D03T05",
+    "cited": false,
+    "role": "DETAIL"
+   },
+   {
+    "url": "https://sbskorea.esellersimg.co.kr/President/A90/Files/A90_03.jpg",
+    "caption": "D04T01",
+    "cited": false,
+    "role": "DETAIL"
+   },
+   {
+    "url": "https://sbskorea.esellersimg.co.kr/President/A90/Files/A90_03.jpg",
+    "caption": "D04T03",
+    "cited": false,
+    "role": "DETAIL"
+   },
+   {
+    "url": "https://sbskorea.esellersimg.co.kr/President/A90/Files/A90_03.jpg",
+    "caption": "D04T04",
+    "cited": false,
+    "role": "DETAIL"
+   },
+   {
+    "url": "https://sbskorea.esellersimg.co.kr/President/A90/Files/A90_03.jpg",
+    "caption": "D04T06",
+    "cited": false,
+    "role": "DETAIL"
+   }
+  ]
+ },
+ {
+  "productKey": "MUSINSA:4924741",
+  "productName": "로프 키링 짐색 [브라운 비즈]",
+  "brand": "아더월들리",
+  "category": "가방>백팩",
+  "url": "https://www.musinsa.com/products/4924741",
+  "referenceLabel": "FEMALE",
+  "goldSource": "MJ_CHAT_REVIEW_2026-09-04",
+  "gtReviewStatus": "REVIEWED",
+  "proposed": "MALE",
+  "grade": "ASK",
+  "fromPolicy": true,
+  "unchanged": false,
+  "ruleId": "P3_WEARER",
+  "blockedBy": [
+   "BG-0001",
+   "BG-0003"
+  ],
+  "judgeText": "남성 모델만 동일 대상 상품을 실제 착용한 이미지가 확인됨.",
+  "reviewerText": "약한 근거라 골든셋을 의심할지 판례가 먼저 답해야 한다.",
+  "sourceConflict": {
+   "kind": "LABEL_TO_LABEL",
+   "canonical": "UNISEX",
+   "canonicalSource": "FINAL_AQ_20260903",
+   "canonicalVersion": "2026-09-03",
+   "evaluation": "FEMALE",
+   "evaluationSource": "MJ_CHAT_REVIEW_2026-09-04"
+  },
+  "signals": [
+   "INTERACTION_POLICY_RECOVERED",
+   "GOLDEN_POLICY_VIOLATION_CANDIDATE",
+   "GOLDEN_SOURCE_CONFLICT"
+  ],
+  "plate": [
+   {
+    "url": "../asset/thumbnails/MUSINSA-4924741-1.jpg",
+    "caption": "대표 판매 사진",
+    "cited": false,
+    "role": "TARGET"
+   },
+   {
+    "url": "https://image.msscdn.net/images/prd_img/202503201849161307565224067dbe49c1feca.jpg",
+    "caption": "D01T01",
+    "cited": true,
+    "role": "DETAIL"
+   },
+   {
+    "url": "https://image.msscdn.net/images/prd_img/202503201849161307565224067dbe49c1feca.jpg",
+    "caption": "D01T02",
+    "cited": true,
+    "role": "DETAIL"
+   },
+   {
+    "url": "https://image.msscdn.net/images/prd_img/202503201849161307565224067dbe49c1feca.jpg",
+    "caption": "D01T03",
+    "cited": true,
+    "role": "DETAIL"
+   },
+   {
+    "url": "https://image.msscdn.net/images/prd_img/202503201849161307565224067dbe49c1feca.jpg",
+    "caption": "D01T04",
+    "cited": true,
+    "role": "DETAIL"
+   },
+   {
+    "url": "https://image.msscdn.net/images/prd_img/202503201849161307565224067dbe49c1feca.jpg",
+    "caption": "D01T05",
+    "cited": true,
+    "role": "DETAIL"
+   },
+   {
+    "url": "https://image.msscdn.net/images/prd_img/202503201849161307565224067dbe49c1feca.jpg",
+    "caption": "D01T06",
+    "cited": true,
+    "role": "DETAIL"
+   },
+   {
+    "url": "https://image.msscdn.net/images/prd_img/202503201849161307565224067dbe49c1feca.jpg",
+    "caption": "D01T07",
+    "cited": true,
+    "role": "DETAIL"
+   },
+   {
+    "url": "https://image.msscdn.net/images/prd_img/202503201849161307565224067dbe49c1feca.jpg",
+    "caption": "D01T08",
+    "cited": true,
+    "role": "DETAIL"
+   },
+   {
+    "url": "https://image.msscdn.net/images/prd_img/202503201849161307565224067dbe49c1feca.jpg",
+    "caption": "D01T09",
+    "cited": true,
+    "role": "DETAIL"
+   }
+  ]
+ },
+ {
+  "productKey": "MUSINSA:4973361",
+  "productName": "아비스코 힙팩 6 (23200306)",
+  "brand": "피엘라벤",
+  "category": "가방>클러치백/파우치",
+  "url": "https://www.musinsa.com/products/4973361",
+  "referenceLabel": "UNISEX",
+  "goldSource": "MANUFACTURER_EXPLICIT_GENDER_REVIEW_2026-09-05",
+  "gtReviewStatus": "REVIEWED",
+  "proposed": "FEMALE",
+  "grade": "ASK",
+  "fromPolicy": true,
+  "unchanged": false,
+  "ruleId": "P3_WEARER",
+  "blockedBy": [
+   "BG-0001"
+  ],
+  "judgeText": "여성 모델만 동일 대상 상품을 실제 착용한 이미지가 확인됨.",
+  "reviewerText": "약한 근거라 골든셋을 의심할지 판례가 먼저 답해야 한다.",
+  "sourceConflict": null,
+  "signals": [
+   "INTERACTION_POLICY_RECOVERED",
+   "GOLDEN_POLICY_VIOLATION_CANDIDATE"
+  ],
+  "plate": [
+   {
+    "url": "../asset/thumbnails/MUSINSA-4973361-1.jpg",
+    "caption": "대표 판매 사진",
+    "cited": false,
+    "role": "TARGET"
+   },
+   {
+    "url": "https://image2.fjallraven.co.kr/images/prd_img/bess/acc/23200306/prd/23200306_prd_03.jpg",
+    "caption": "D09T01",
+    "cited": true,
+    "role": "DETAIL"
+   },
+   {
+    "url": "https://image2.fjallraven.co.kr/images/prd_img/bess/acc/23200306/prd/23200306_prd_bk_01.jpg",
+    "caption": "D01T01",
+    "cited": false,
+    "role": "DETAIL"
+   },
+   {
+    "url": "https://image2.fjallraven.co.kr/images/prd_img/bess/acc/23200306/prd/23200306_prd_6q_01.jpg",
+    "caption": "D03T01",
+    "cited": false,
+    "role": "DETAIL"
+   },
+   {
+    "url": "https://image2.fjallraven.co.kr/images/prd_img/bess/acc/23200306/prd/23200306_prd_02.jpg",
+    "caption": "D08T01",
+    "cited": false,
+    "role": "DETAIL"
+   }
+  ]
+ },
+ {
+  "productKey": "MUSINSA:5356269",
+  "productName": "라운드 볼륨 무지 에코백 RVS-147 데님 블랙",
+  "brand": "세인트크루",
+  "category": "가방>캔버스백/에코백>에코백",
+  "url": "https://www.musinsa.com/products/5356269",
+  "referenceLabel": "UNISEX",
+  "goldSource": "DO_SHEET_91_AQ_FINAL_REVIEW_20260902",
+  "gtReviewStatus": "REVIEWED",
+  "proposed": "MALE",
+  "grade": "ASK",
+  "fromPolicy": true,
+  "unchanged": false,
+  "ruleId": "P3_WEARER",
+  "blockedBy": [
+   "BG-0001"
+  ],
+  "judgeText": "남성 모델만 동일 대상 상품을 실제 착용한 이미지가 확인됨.",
+  "reviewerText": "약한 근거라 골든셋을 의심할지 판례가 먼저 답해야 한다.",
+  "sourceConflict": null,
+  "signals": [
+   "INTERACTION_POLICY_RECOVERED",
+   "GOLDEN_POLICY_VIOLATION_CANDIDATE"
+  ],
+  "plate": [
+   {
+    "url": "https://image.msscdn.net/thumbnails/images/goods_img/20250822/5356269/5356269_17617175803900_500.jpg",
+    "caption": "대표 판매 사진",
+    "cited": false,
+    "role": "TARGET"
+   },
+   {
+    "url": "https://image.msscdn.net/thumbnails/images/prd_img/20250822/5356269/detail_5356269_17617175897284_500.jpg",
+    "caption": "대표 판매 사진",
+    "cited": false,
+    "role": "TARGET"
+   },
+   {
+    "url": "https://image.msscdn.net/thumbnails/images/prd_img/20250822/5356269/detail_5356269_17617175910659_500.jpg",
+    "caption": "대표 판매 사진",
+    "cited": false,
+    "role": "TARGET"
+   },
+   {
+    "url": "https://image.msscdn.net/thumbnails/images/prd_img/20250822/5356269/detail_5356269_17617175933611_500.jpg",
+    "caption": "대표 판매 사진",
+    "cited": false,
+    "role": "TARGET"
+   },
+   {
+    "url": "https://image.msscdn.net/thumbnails/images/prd_img/20250822/5356269/detail_5356269_17617175948632_500.jpg",
+    "caption": "대표 판매 사진",
+    "cited": false,
+    "role": "TARGET"
+   },
+   {
+    "url": "https://image.msscdn.net/thumbnails/images/prd_img/20250822/5356269/detail_5356269_17617175964940_500.jpg",
+    "caption": "대표 판매 사진",
+    "cited": false,
+    "role": "TARGET"
+   },
+   {
+    "url": "https://image.msscdn.net/thumbnails/images/prd_img/20250822/5356269/detail_5356269_17617175985665_500.jpg",
+    "caption": "대표 판매 사진",
+    "cited": false,
+    "role": "TARGET"
+   },
+   {
+    "url": "https://image.msscdn.net/thumbnails/images/prd_img/20250822/5356269/detail_5356269_17617176007064_500.jpg",
+    "caption": "대표 판매 사진",
+    "cited": false,
+    "role": "TARGET"
+   },
+   {
+    "url": "https://image.msscdn.net/images/prd_img/20251029150025025558851976901ad79063e4.jpg",
+    "caption": "D01T01",
+    "cited": true,
+    "role": "DETAIL"
+   },
+   {
+    "url": "https://image.msscdn.net/images/prd_img/20251029150025318644363636901ad794dcc0.jpg",
+    "caption": "D02T01",
+    "cited": false,
+    "role": "DETAIL"
+   },
+   {
+    "url": "https://image.msscdn.net/images/prd_img/20251029150025381465948096901ad795d225.jpg",
+    "caption": "D03T01",
+    "cited": false,
+    "role": "DETAIL"
+   },
+   {
+    "url": "https://image.msscdn.net/images/prd_img/20251029150025084299949856901ad7914959.jpg",
+    "caption": "D04T01",
+    "cited": false,
+    "role": "DETAIL"
+   },
+   {
+    "url": "https://image.msscdn.net/images/prd_img/20251029150025456275651296901ad796f65e.jpg",
+    "caption": "D05T01",
+    "cited": false,
+    "role": "DETAIL"
+   },
+   {
+    "url": "https://image.msscdn.net/images/prd_img/20251029150025344112402396901ad7954048.jpg",
+    "caption": "D06T01",
+    "cited": false,
+    "role": "DETAIL"
+   },
+   {
+    "url": "https://image.msscdn.net/images/prd_img/20251029150025286182324476901ad7945df0.jpg",
+    "caption": "D07T01",
+    "cited": false,
+    "role": "DETAIL"
+   }
+  ]
+ },
+ {
+  "productKey": "MUSINSA:5356353",
+  "productName": "라운드 볼륨 펜타곤포켓 크로스백 RVP-150 차콜",
+  "brand": "세인트크루",
+  "category": "가방>메신저/크로스백",
+  "url": "https://www.musinsa.com/products/5356353",
+  "referenceLabel": "UNISEX",
+  "goldSource": "DO_SHEET_91_AQ_FINAL_REVIEW_20260902",
+  "gtReviewStatus": "REVIEWED",
+  "proposed": "MALE",
+  "grade": "ASK",
+  "fromPolicy": true,
+  "unchanged": false,
+  "ruleId": "P3_WEARER",
+  "blockedBy": [
+   "BG-0001"
+  ],
+  "judgeText": "남성 모델만 동일 대상 상품을 실제 착용한 이미지가 확인됨.",
+  "reviewerText": "약한 근거라 골든셋을 의심할지 판례가 먼저 답해야 한다.",
+  "sourceConflict": null,
+  "signals": [
+   "INTERACTION_POLICY_RECOVERED",
+   "GOLDEN_POLICY_VIOLATION_CANDIDATE"
+  ],
+  "plate": [
+   {
+    "url": "../asset/thumbnails/MUSINSA-5356353-1.jpg",
+    "caption": "대표 판매 사진",
+    "cited": false,
+    "role": "TARGET"
+   },
+   {
+    "url": "https://image.msscdn.net/images/prd_img/202510281648028145713497469007532c6df6.jpg",
+    "caption": "D01T01",
+    "cited": true,
+    "role": "DETAIL"
+   },
+   {
+    "url": "https://image.msscdn.net/images/prd_img/202510281648028378408054769007532cc8d9.jpg",
+    "caption": "D02T01",
+    "cited": false,
+    "role": "DETAIL"
+   },
+   {
+    "url": "https://image.msscdn.net/images/prd_img/202510281648027928264517769007532c1902.jpg",
+    "caption": "D03T01",
+    "cited": false,
+    "role": "DETAIL"
+   },
+   {
+    "url": "https://image.msscdn.net/images/prd_img/202510281648029603716547469007532ea77a.jpg",
+    "caption": "D04T01",
+    "cited": false,
+    "role": "DETAIL"
+   },
+   {
+    "url": "https://image.msscdn.net/images/prd_img/2025102816480300038623280690075330018b.jpg",
+    "caption": "D05T01",
+    "cited": false,
+    "role": "DETAIL"
+   },
+   {
+    "url": "https://image.msscdn.net/images/prd_img/202510281648029001411717869007532dbc38.jpg",
+    "caption": "D06T01",
+    "cited": false,
+    "role": "DETAIL"
+   },
+   {
+    "url": "https://image.msscdn.net/images/prd_img/202510281648029781356514569007532eece0.jpg",
+    "caption": "D07T01",
+    "cited": false,
+    "role": "DETAIL"
+   },
+   {
+    "url": "https://image.msscdn.net/images/prd_img/202510281648027891619463069007532c0ab5.jpg",
+    "caption": "D08T01",
+    "cited": false,
+    "role": "DETAIL"
+   }
+  ]
+ }
+]

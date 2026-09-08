@@ -1,0 +1,177 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;600;700;800&family=Gothic+A1:wght@400;500;700;800&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *{box-sizing:border-box}
+    body{margin:0;background:#fff;color:#000;
+         font-family:'Archivo','Gothic A1',-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo',sans-serif;
+         -webkit-font-smoothing:antialiased}
+    a{color:inherit;text-decoration:none}
+    /* 귀책을 색이 아니라 형태로 구분한다 — 리포트 CSS의 .mark를 그대로 가져왔다. 인쇄해도 남는다 */
+    .mk{display:inline-block;width:11px;height:11px;border:1.5px solid #000;flex:0 0 auto}
+    .mk.gt{background:#000}
+    .mk.po{background:transparent}
+    .mk.op{background:linear-gradient(135deg,#000 0 50%,transparent 50% 100%)}
+    /* 메뉴 한 장이 통째로 반전된다 — 스토어프론트 카테고리 타일의 몸짓 */
+    .dim{color:#767676}
+    .menu .tag.dim{color:#A0A0A0}
+    .menu .row{border-top:1px solid #E4E4E4}
+    .menu .hot{color:var(--accent)}
+    .menu{transition:background .16s,color .16s}
+    .menu:hover{background:#000;color:#fff}
+    .menu:hover .mk{border-color:#fff}
+    .menu:hover .mk.gt{background:#fff}
+    .menu:hover .mk.op{background:linear-gradient(135deg,#fff 0 50%,transparent 50% 100%)}
+    .menu:hover .dim{color:rgba(255,255,255,.60)}
+    .menu:hover .row{border-color:rgba(255,255,255,.22)}
+    .menu:hover .go{background:#fff;color:#000;border-color:#fff}
+    .menu:hover .hot{color:#fff}
+    .go{transition:background .16s,color .16s,border-color .16s}
+    .lnk{border-bottom:1px solid #D8D8D8;transition:border-color .16s}
+    .lnk:hover{border-color:#000}
+  </style>
+</helmet>
+
+<div style="{{rootStyle}}">
+
+  <!-- 전역 바 — 얇게, 대문자 모노. 리포트 masthead-top의 자리를 그대로 쓴다 -->
+  <div style="display:flex;align-items:center;justify-content:space-between;gap:24px;height:52px;padding:0 40px;border-bottom:1px solid #000">
+    <div style="display:flex;align-items:baseline;gap:14px">
+      <b style="font-size:15px;font-weight:800;letter-spacing:-.02em">CATALOG OS</b>
+      <span style="font-family:var(--mono);font-size:10px;font-weight:500;letter-spacing:.18em;color:#A0A0A0">LOCAL · 127.0.0.1:7391</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:26px;font-family:var(--mono);font-size:11px;letter-spacing:.06em;color:#767676">
+      <span>가방 · 대상 고객 성별</span>
+      <span style="color:#D8D8D8">|</span>
+      <span>RUN 2026-09-06 06:12</span>
+      <span style="display:inline-flex;align-items:center;gap:7px;color:{{accent}};font-weight:600">
+        <i style="width:7px;height:7px;background:{{accent}};display:inline-block"></i>WARN
+      </span>
+    </div>
+  </div>
+
+  <!-- 배너 — 숫자를 두지 않는다. 큐 잔여 지표는 이름이 세는 것과 달라(라벨이 이미 일치하는 건과
+       심판이 "확정 불가"라 적은 건까지 센다) 「지금 가를 수 있는」으로 읽히면 틀린 판단 근거가 된다 -->
+  <div style="padding:46px 40px 40px;border-bottom:1px solid #000">
+    <p style="margin:0 0 18px;font-family:var(--mono);font-size:10.5px;font-weight:500;letter-spacing:.20em;color:#A0A0A0">가방 상품 · 대상 고객 성별</p>
+    <h1 style="margin:0;font-size:56px;font-weight:800;line-height:1.02;letter-spacing:-.05em">가방 성별 정책·골든셋 감사</h1>
+  </div>
+
+  <!-- 메뉴 세 장. 카테고리 타일처럼 같은 크기·같은 뼈대로 놓는다 -->
+  <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border-bottom:1px solid #000">
+
+    <a class="menu" href="#" style="display:flex;flex-direction:column;min-width:0;padding:34px 32px 28px;border-right:1px solid #E4E4E4">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:16px">
+        <span style="display:inline-flex;align-items:center;gap:11px;font-family:var(--mono);font-size:11px;font-weight:600;letter-spacing:.16em">
+          <i class="mk gt"></i>01
+        </span>
+        <span class="dim" style="font-family:var(--mono);font-size:9.5px;letter-spacing:.14em">GT</span>
+      </div>
+      <h2 style="margin:26px 0 0;font-size:40px;font-weight:800;letter-spacing:-.045em;line-height:1.05">GT 개선</h2>
+      <p class="dim" style="margin:9px 0 0;font-size:13.5px;line-height:1.6">골든셋이 틀렸다고 볼 근거가 있는 건. 사진과 함께 한 건씩 본다.</p>
+      <div style="margin-top:26px;margin-bottom:26px">
+        <div class="row" style="display:flex;align-items:baseline;justify-content:space-between;gap:14px;padding:11px 0">
+          <span style="font-size:13px;font-weight:500">정책 근거가 있는 GT 오류 후보</span>
+          <b class="hot" style="font-family:var(--mono);font-size:17px;font-weight:600;font-variant-numeric:tabular-nums">12</b>
+        </div>
+      </div>
+      <span class="go" style="margin-top:auto;align-self:flex-start;display:inline-flex;align-items:center;gap:10px;height:38px;padding:0 17px;border:1px solid currentColor;font-family:var(--mono);font-size:11px;font-weight:600;letter-spacing:.09em;border-color:currentColor">열기 <span style="font-size:13px">→</span></span>
+    </a>
+
+    <a class="menu" href="#" style="display:flex;flex-direction:column;min-width:0;padding:34px 32px 28px;border-right:1px solid #E4E4E4">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:16px">
+        <span style="display:inline-flex;align-items:center;gap:11px;font-family:var(--mono);font-size:11px;font-weight:600;letter-spacing:.16em">
+          <i class="mk po"></i>02
+        </span>
+        <span class="dim" style="font-family:var(--mono);font-size:9.5px;letter-spacing:.14em">POLICY</span>
+      </div>
+      <h2 style="margin:26px 0 0;font-size:40px;font-weight:800;letter-spacing:-.045em;line-height:1.05">정책 보기</h2>
+      <p class="dim" style="margin:9px 0 0;font-size:13.5px;line-height:1.6">지금 무엇이라 정해져 있나. 소유 정책과 판례, 그리고 가져온 스냅샷.</p>
+      <div style="margin-top:26px;margin-bottom:26px">
+        <div class="row" style="display:flex;align-items:baseline;justify-content:space-between;gap:14px;padding:11px 0">
+          <span style="font-size:13px;font-weight:500">소유 정책</span>
+          <b style="font-family:var(--mono);font-size:17px;font-weight:600;font-variant-numeric:tabular-nums">v1</b>
+        </div>
+        <div class="row" style="display:flex;align-items:baseline;justify-content:space-between;gap:14px;padding:11px 0">
+          <span style="font-size:13px;font-weight:500">판례</span>
+          <b style="font-family:var(--mono);font-size:17px;font-weight:600;font-variant-numeric:tabular-nums">3</b>
+        </div>
+        <div class="row" style="display:flex;align-items:baseline;justify-content:space-between;gap:14px;padding:11px 0">
+          <span class="dim" style="font-size:13px;font-weight:500">가져온 스냅샷</span>
+          <b class="dim" style="font-family:var(--mono);font-size:11px;font-weight:600;letter-spacing:.08em">읽기 전용</b>
+        </div>
+      </div>
+      <span class="go" style="margin-top:auto;align-self:flex-start;display:inline-flex;align-items:center;gap:10px;height:38px;padding:0 17px;border:1px solid currentColor;font-family:var(--mono);font-size:11px;font-weight:600;letter-spacing:.09em;border-color:currentColor">열기 <span style="font-size:13px">→</span></span>
+    </a>
+
+    <a class="menu" href="#" style="display:flex;flex-direction:column;min-width:0;padding:34px 32px 28px">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:16px">
+        <span style="display:inline-flex;align-items:center;gap:11px;font-family:var(--mono);font-size:11px;font-weight:600;letter-spacing:.16em">
+          <i class="mk op"></i>03
+        </span>
+        <span class="dim" style="font-family:var(--mono);font-size:9.5px;letter-spacing:.14em">GAP</span>
+      </div>
+      <h2 style="margin:26px 0 0;font-size:40px;font-weight:800;letter-spacing:-.045em;line-height:1.05">정책 개선</h2>
+      <p class="dim" style="margin:9px 0 0;font-size:13.5px;line-height:1.6">정책이 답을 못 내는 자리. 군집 하나가 질문 하나가 된다.</p>
+      <div style="margin-top:26px;margin-bottom:26px">
+        <div class="row" style="display:flex;align-items:baseline;justify-content:space-between;gap:14px;padding:11px 0">
+          <span style="font-size:13px;font-weight:500">답을 기다리는 질문</span>
+          <b class="hot" style="font-family:var(--mono);font-size:17px;font-weight:600;font-variant-numeric:tabular-nums">3</b>
+        </div>
+        <div class="row" style="display:flex;align-items:baseline;justify-content:space-between;gap:14px;padding:11px 0">
+          <span style="font-size:13px;font-weight:500">정책 질문 전체</span>
+          <b style="font-family:var(--mono);font-size:17px;font-weight:600;font-variant-numeric:tabular-nums">3</b>
+        </div>
+        <div class="row" style="display:flex;align-items:baseline;justify-content:space-between;gap:14px;padding:11px 0">
+          <span class="dim" style="font-size:13px;font-weight:500">추적되지 않은 공백</span>
+          <b class="dim" style="font-family:var(--mono);font-size:17px;font-weight:600;font-variant-numeric:tabular-nums">0</b>
+        </div>
+      </div>
+      <span class="go" style="margin-top:auto;align-self:flex-start;display:inline-flex;align-items:center;gap:10px;height:38px;padding:0 17px;border:1px solid currentColor;font-family:var(--mono);font-size:11px;font-weight:600;letter-spacing:.09em;border-color:currentColor">열기 <span style="font-size:13px">→</span></span>
+    </a>
+
+  </div>
+
+  <!-- 실행 건강은 표지의 일이라 여기서는 한 줄이다. 판단에 섞이지 않게 아래에 둔다 -->
+  <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:20px;padding:20px 40px;border-bottom:1px solid #E4E4E4">
+    <div style="display:flex;flex-wrap:wrap;align-items:baseline;gap:0 28px;font-family:var(--mono);font-size:11.5px;color:#767676">
+      <span style="letter-spacing:.14em;font-size:9.5px;color:#A0A0A0">실행</span>
+      <span>평가 <b style="color:#000;font-weight:600;font-variant-numeric:tabular-nums">500</b></span>
+      <span>표면 정확도 <b style="color:#000;font-weight:600;font-variant-numeric:tabular-nums">82.6%</b></span>
+      <span>상세 타일 <b style="color:#000;font-weight:600;font-variant-numeric:tabular-nums">6,571</b></span>
+      <span>심사 <b style="color:{{accent}};font-weight:600">WARN</b> · 지적 2</span>
+    </div>
+    <a class="lnk" href="#" style="font-family:var(--mono);font-size:11px;letter-spacing:.08em">표지 전체 보기 →</a>
+  </div>
+
+  <div style="display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:16px;padding:26px 40px 34px;font-family:var(--mono);font-size:10.5px;line-height:1.8;color:#A0A0A0">
+    <span>사람 판정 원장 <b style="color:#767676;font-weight:500">runs/bag-category-gender/review/decisions.json</b> — 사용자가 확정한 것만 들어간다</span>
+    <span>속성 2 · 실행 1</span>
+  </div>
+
+</div>
+</x-dc>
+
+<script data-dc-script data-props='{"accent":{"editor":"color","default":"#D62300","options":["#D62300","#000000","#1D4ED8","#8C2B18"],"section":"색"},"$preview":{"width":1440,"height":1040}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const accent = this.props.accent ?? '#D62300';
+    return {
+      accent,
+      rootStyle: '--accent:' + accent + ";--mono:'IBM Plex Mono',ui-monospace,'SF Mono',monospace;"
+        + 'background:#fff;color:#000;min-height:100%;',
+    };
+  }
+}
+</script>
+</body>
+</html>

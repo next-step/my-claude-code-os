@@ -1,0 +1,246 @@
+{
+  "basedOn": {
+    "arbiterVerdicts": ".claude/os/runs/bag-category-gender/review/verdicts.jsonl",
+    "file": ".claude/os/runs/bag-category-gender/run-summary.json",
+    "generatedAt": "2026-09-06T10:00:55.890214+00:00"
+  },
+  "excluded": [
+    {
+      "nextProductKeys": [
+        "MUSINSA:6221028",
+        "MUSINSA:4888023"
+      ],
+      "products": 2,
+      "reason": "--limit-gt 상한에 걸렸다. 상한을 올리면 그대로 이어서 나온다"
+    },
+    {
+      "clusters": 2,
+      "nextClusterKeys": [
+        "GOAL:P2_COMBINED_DESIGN:POLICY_GOLDEN_CONFLICT",
+        "PRECEDENT:BG-0001+BG-0003"
+      ],
+      "reason": "--limit-clusters 상한에 걸렸다. 상한을 올리면 그대로 이어서 나온다"
+    }
+  ],
+  "gtCandidates": [
+    {
+      "arbiterReason": "정책의 강한 근거와 실행이 같은데 골든셋만 다르다.",
+      "citedSceneIds": [
+        "D01T02",
+        "D01T04",
+        "D02T04"
+      ],
+      "currentGoldLabel": "MALE",
+      "id": "GT-01",
+      "ownerAction": "골든셋을 고친다",
+      "policyRule": "P3_MIXED_WEARER",
+      "policyStrength": "STRONG",
+      "productKey": "MUSINSA:5336216",
+      "productName": "NEEDLE STONE WALLET [KHAKI]",
+      "queueReason": "두 GT 계보가 서로 다른 확정 라벨을 가져 원장이 순위로 갈랐다.",
+      "queues": [
+        "golden-source-conflict.jsonl",
+        "interaction-policy-recovered.jsonl"
+      ],
+      "runLabel": "UNISEX",
+      "signals": [
+        "GOLDEN_SOURCE_CONFLICT",
+        "INTERACTION_POLICY_RECOVERED"
+      ]
+    },
+    {
+      "arbiterReason": "정책의 강한 근거와 실행이 같은데 골든셋만 다르다.",
+      "citedSceneIds": [
+        "D01T01",
+        "D05T13"
+      ],
+      "currentGoldLabel": "FEMALE",
+      "id": "GT-02",
+      "ownerAction": "골든셋을 고친다",
+      "policyRule": "P3_MIXED_WEARER",
+      "policyStrength": "STRONG",
+      "productKey": "EGOOCM:3446802",
+      "productName": "0007 Layered Pouch Hobo Bag_Suede Olive",
+      "queueReason": "백팩·숄더백을 몸에 멘 WORN 장면을 기존 가방 정책이 버렸지만, 실제 가방 상호작용으로 인정해 판정을 복구했다.",
+      "queues": [
+        "interaction-policy-recovered.jsonl"
+      ],
+      "runLabel": "UNISEX",
+      "signals": [
+        "INTERACTION_POLICY_RECOVERED"
+      ]
+    },
+    {
+      "arbiterReason": "정책의 강한 근거와 실행이 같은데 골든셋만 다르다.",
+      "citedSceneIds": [
+        "D02T03",
+        "D02T09"
+      ],
+      "currentGoldLabel": "FEMALE",
+      "id": "GT-03",
+      "ownerAction": "골든셋을 고친다",
+      "policyRule": "P3_MIXED_WEARER",
+      "policyStrength": "STRONG",
+      "productKey": "MUSINSA:5365574",
+      "productName": "0007 레이어드 파우치 호보 백_도트블랙",
+      "queueReason": "백팩·숄더백을 몸에 멘 WORN 장면을 기존 가방 정책이 버렸지만, 실제 가방 상호작용으로 인정해 판정을 복구했다.",
+      "queues": [
+        "interaction-policy-recovered.jsonl"
+      ],
+      "runLabel": "UNISEX",
+      "signals": [
+        "INTERACTION_POLICY_RECOVERED"
+      ]
+    },
+    {
+      "arbiterReason": "정책의 강한 근거와 실행이 같은데 골든셋만 다르다.",
+      "citedSceneIds": [
+        "D01T03",
+        "D01T06"
+      ],
+      "currentGoldLabel": "FEMALE",
+      "id": "GT-04",
+      "ownerAction": "골든셋을 고친다",
+      "policyRule": "P3_MIXED_WEARER",
+      "policyStrength": "STRONG",
+      "productKey": "MUSINSA:5385148",
+      "productName": "WO 스튜디오 펠라인 볼링백20x14x11",
+      "queueReason": "백팩·숄더백을 몸에 멘 WORN 장면을 기존 가방 정책이 버렸지만, 실제 가방 상호작용으로 인정해 판정을 복구했다.",
+      "queues": [
+        "interaction-policy-recovered.jsonl"
+      ],
+      "runLabel": "UNISEX",
+      "signals": [
+        "INTERACTION_POLICY_RECOVERED"
+      ]
+    }
+  ],
+  "handoff": [
+    {
+      "note": "심판이 충돌 없다고 본 건이다. 개선 포인트가 아니다.",
+      "owner": "NONE",
+      "products": 211
+    },
+    {
+      "note": "정책이 아니라 실행이 어긴 건이다. 이 프로세스의 몫은 분리해 넘기는 것까지다.",
+      "owner": "RUNTIME",
+      "products": 50
+    }
+  ],
+  "labels": [
+    "MALE",
+    "FEMALE",
+    "UNISEX",
+    "UNCLASSIFIED"
+  ],
+  "policyClusters": [
+    {
+      "arbiterReasons": [
+        "정책을 기계로 적용할 수 없다. 사람이 목표 기준으로 정한다.",
+        "골든셋과 실행이 같은데 정책만 다르다. 정책이 목표를 옮기지 못했다."
+      ],
+      "blockedBy": [
+        "BG-0003"
+      ],
+      "clusterKey": "PRECEDENT:BG-0003",
+      "id": "PC-01",
+      "owner": "GOAL",
+      "ownerAction": "사람이 목표 기준으로 경계를 정한다",
+      "policyRules": [
+        "NO_APPLICABLE_RULE",
+        "P1_DIRECT_TEXT"
+      ],
+      "products": 29,
+      "queues": [
+        "golden-source-conflict.jsonl"
+      ],
+      "sampleProductKeys": [
+        "EGOOCM:3412663",
+        "EGOOCM:3412762",
+        "EGOOCM:3413967",
+        "EGOOCM:3415594",
+        "EGOOCM:3430473"
+      ],
+      "signals": [
+        "GOLDEN_SOURCE_CONFLICT"
+      ]
+    },
+    {
+      "arbiterReasons": [
+        "정책을 기계로 적용할 수 없다. 사람이 목표 기준으로 정한다."
+      ],
+      "blockedBy": [],
+      "clusterKey": "GOAL:NO_APPLICABLE_RULE:POLICY_GOLDEN_CONFLICT",
+      "id": "PC-02",
+      "owner": "GOAL",
+      "ownerAction": "사람이 목표 기준으로 경계를 정한다",
+      "policyRules": [
+        "NO_APPLICABLE_RULE"
+      ],
+      "products": 10,
+      "queues": [
+        "policy-golden-conflict.jsonl"
+      ],
+      "sampleProductKeys": [
+        "EGOOCM:3425317",
+        "EGOOCM:3447598",
+        "EGOOCM:3474392",
+        "MUSINSA:3539191",
+        "MUSINSA:3588401"
+      ],
+      "signals": [
+        "POLICY_GOLDEN_CONFLICT"
+      ]
+    },
+    {
+      "arbiterReasons": [
+        "약한 근거라 골든셋을 의심할지 판례가 먼저 답해야 한다.",
+        "약한 근거라 정책을 의심할지 판례가 먼저 답해야 한다."
+      ],
+      "blockedBy": [
+        "BG-0001"
+      ],
+      "clusterKey": "PRECEDENT:BG-0001",
+      "id": "PC-03",
+      "owner": "PENDING_PRECEDENT",
+      "ownerAction": "미결 판례가 답해야 정해진다",
+      "policyRules": [
+        "P3_WEARER"
+      ],
+      "products": 10,
+      "queues": [
+        "golden-policy-violation-candidate.jsonl",
+        "interaction-policy-recovered.jsonl"
+      ],
+      "sampleProductKeys": [
+        "EGOOCM:3420094",
+        "EGOOCM:3458125",
+        "EGOOCM:3460326",
+        "EGOOCM:3484743",
+        "MUSINSA:4459402"
+      ],
+      "signals": [
+        "GOLDEN_POLICY_VIOLATION_CANDIDATE",
+        "INTERACTION_POLICY_RECOVERED"
+      ]
+    }
+  ],
+  "profile": ".claude/os/attributes/bag-category-gender/profile.json",
+  "profileId": "bag-category-gender",
+  "run": ".claude/os/runs/bag-category-gender",
+  "schemaVersion": "catalog-improvement-worklist-v1",
+  "selection": {
+    "gtLane": [
+      "GOLDEN"
+    ],
+    "limitClusters": 3,
+    "limitGt": 4,
+    "policyLane": [
+      "POLICY",
+      "GOAL",
+      "PENDING_PRECEDENT"
+    ],
+    "rankedGtCandidates": 6,
+    "rankedPolicyClusters": 5
+  }
+}

@@ -1,0 +1,543 @@
+{
+  "basedOn": "2026-09-06T10:00:55.890214+00:00",
+  "fanout": "product",
+  "missing": [],
+  "tasks": [
+    {
+      "productKey": "EGOOCM:3446802",
+      "productName": "0007 Layered Pouch Hobo Bag_Suede Olive",
+      "reference": "run-review/scenes/EGOOCM-3446802/_reference.jpg",
+      "scenes": [
+        {
+          "path": "run-review/scenes/EGOOCM-3446802/D01T01.jpg",
+          "sceneId": "D01T01"
+        },
+        {
+          "path": "run-review/scenes/EGOOCM-3446802/D04T01.jpg",
+          "sceneId": "D04T01"
+        },
+        {
+          "path": "run-review/scenes/EGOOCM-3446802/D04T02.jpg",
+          "sceneId": "D04T02"
+        },
+        {
+          "path": "run-review/scenes/EGOOCM-3446802/D04T03.jpg",
+          "sceneId": "D04T03"
+        },
+        {
+          "path": "run-review/scenes/EGOOCM-3446802/D05T01.jpg",
+          "sceneId": "D05T01"
+        },
+        {
+          "path": "run-review/scenes/EGOOCM-3446802/D05T02.jpg",
+          "sceneId": "D05T02"
+        },
+        {
+          "path": "run-review/scenes/EGOOCM-3446802/D05T03.jpg",
+          "sceneId": "D05T03"
+        },
+        {
+          "path": "run-review/scenes/EGOOCM-3446802/D05T04.jpg",
+          "sceneId": "D05T04"
+        },
+        {
+          "path": "run-review/scenes/EGOOCM-3446802/D05T05.jpg",
+          "sceneId": "D05T05"
+        },
+        {
+          "path": "run-review/scenes/EGOOCM-3446802/D05T06.jpg",
+          "sceneId": "D05T06"
+        },
+        {
+          "path": "run-review/scenes/EGOOCM-3446802/D05T07.jpg",
+          "sceneId": "D05T07"
+        },
+        {
+          "path": "run-review/scenes/EGOOCM-3446802/D05T08.jpg",
+          "sceneId": "D05T08"
+        },
+        {
+          "path": "run-review/scenes/EGOOCM-3446802/D05T09.jpg",
+          "sceneId": "D05T09"
+        },
+        {
+          "path": "run-review/scenes/EGOOCM-3446802/D05T10.jpg",
+          "sceneId": "D05T10"
+        },
+        {
+          "path": "run-review/scenes/EGOOCM-3446802/D05T11.jpg",
+          "sceneId": "D05T11"
+        },
+        {
+          "path": "run-review/scenes/EGOOCM-3446802/D05T12.jpg",
+          "sceneId": "D05T12"
+        },
+        {
+          "path": "run-review/scenes/EGOOCM-3446802/D05T13.jpg",
+          "sceneId": "D05T13"
+        },
+        {
+          "path": "run-review/scenes/EGOOCM-3446802/D05T14.jpg",
+          "sceneId": "D05T14"
+        },
+        {
+          "path": "run-review/scenes/EGOOCM-3446802/D05T15.jpg",
+          "sceneId": "D05T15"
+        },
+        {
+          "path": "run-review/scenes/EGOOCM-3446802/D05T16.jpg",
+          "sceneId": "D05T16"
+        },
+        {
+          "path": "run-review/scenes/EGOOCM-3446802/D05T17.jpg",
+          "sceneId": "D05T17"
+        },
+        {
+          "path": "run-review/scenes/EGOOCM-3446802/D05T18.jpg",
+          "sceneId": "D05T18"
+        },
+        {
+          "path": "run-review/scenes/EGOOCM-3446802/D05T19.jpg",
+          "sceneId": "D05T19"
+        },
+        {
+          "path": "run-review/scenes/EGOOCM-3446802/D07T01.jpg",
+          "sceneId": "D07T01"
+        },
+        {
+          "path": "run-review/scenes/EGOOCM-3446802/D07T02.jpg",
+          "sceneId": "D07T02"
+        },
+        {
+          "path": "run-review/scenes/EGOOCM-3446802/D07T03.jpg",
+          "sceneId": "D07T03"
+        },
+        {
+          "path": "run-review/scenes/EGOOCM-3446802/D08T01.jpg",
+          "sceneId": "D08T01"
+        },
+        {
+          "path": "run-review/scenes/EGOOCM-3446802/D08T02.jpg",
+          "sceneId": "D08T02"
+        },
+        {
+          "path": "run-review/scenes/EGOOCM-3446802/D08T03.jpg",
+          "sceneId": "D08T03"
+        },
+        {
+          "path": "run-review/scenes/EGOOCM-3446802/D08T04.jpg",
+          "sceneId": "D08T04"
+        },
+        {
+          "path": "run-review/scenes/EGOOCM-3446802/D09T01.jpg",
+          "sceneId": "D09T01"
+        },
+        {
+          "path": "run-review/scenes/EGOOCM-3446802/D09T02.jpg",
+          "sceneId": "D09T02"
+        },
+        {
+          "path": "run-review/scenes/EGOOCM-3446802/D09T03.jpg",
+          "sceneId": "D09T03"
+        },
+        {
+          "path": "run-review/scenes/EGOOCM-3446802/D09T04.jpg",
+          "sceneId": "D09T04"
+        }
+      ],
+      "taskId": "EGOOCM:3446802"
+    },
+    {
+      "productKey": "MUSINSA:4888023",
+      "productName": "Edition6. 로고 스트링 피그먼트 라지핏 쇼퍼백 (7col)",
+      "reference": "run-review/scenes/MUSINSA-4888023/_reference.jpg",
+      "scenes": [
+        {
+          "path": "run-review/scenes/MUSINSA-4888023/D01T01.jpg",
+          "sceneId": "D01T01"
+        },
+        {
+          "path": "run-review/scenes/MUSINSA-4888023/D01T02.jpg",
+          "sceneId": "D01T02"
+        },
+        {
+          "path": "run-review/scenes/MUSINSA-4888023/D01T03.jpg",
+          "sceneId": "D01T03"
+        },
+        {
+          "path": "run-review/scenes/MUSINSA-4888023/D01T04.jpg",
+          "sceneId": "D01T04"
+        },
+        {
+          "path": "run-review/scenes/MUSINSA-4888023/D01T05.jpg",
+          "sceneId": "D01T05"
+        },
+        {
+          "path": "run-review/scenes/MUSINSA-4888023/D01T06.jpg",
+          "sceneId": "D01T06"
+        },
+        {
+          "path": "run-review/scenes/MUSINSA-4888023/D01T07.jpg",
+          "sceneId": "D01T07"
+        },
+        {
+          "path": "run-review/scenes/MUSINSA-4888023/D01T08.jpg",
+          "sceneId": "D01T08"
+        },
+        {
+          "path": "run-review/scenes/MUSINSA-4888023/D01T09.jpg",
+          "sceneId": "D01T09"
+        },
+        {
+          "path": "run-review/scenes/MUSINSA-4888023/D01T10.jpg",
+          "sceneId": "D01T10"
+        },
+        {
+          "path": "run-review/scenes/MUSINSA-4888023/D01T11.jpg",
+          "sceneId": "D01T11"
+        },
+        {
+          "path": "run-review/scenes/MUSINSA-4888023/D01T12.jpg",
+          "sceneId": "D01T12"
+        },
+        {
+          "path": "run-review/scenes/MUSINSA-4888023/D02T01.jpg",
+          "sceneId": "D02T01"
+        },
+        {
+          "path": "run-review/scenes/MUSINSA-4888023/D02T02.jpg",
+          "sceneId": "D02T02"
+        },
+        {
+          "path": "run-review/scenes/MUSINSA-4888023/D02T03.jpg",
+          "sceneId": "D02T03"
+        },
+        {
+          "path": "run-review/scenes/MUSINSA-4888023/D02T04.jpg",
+          "sceneId": "D02T04"
+        },
+        {
+          "path": "run-review/scenes/MUSINSA-4888023/D02T05.jpg",
+          "sceneId": "D02T05"
+        },
+        {
+          "path": "run-review/scenes/MUSINSA-4888023/D02T06.jpg",
+          "sceneId": "D02T06"
+        },
+        {
+          "path": "run-review/scenes/MUSINSA-4888023/D02T07.jpg",
+          "sceneId": "D02T07"
+        },
+        {
+          "path": "run-review/scenes/MUSINSA-4888023/D02T08.jpg",
+          "sceneId": "D02T08"
+        },
+        {
+          "path": "run-review/scenes/MUSINSA-4888023/TARGET_REFERENCE.jpg",
+          "sceneId": "TARGET_REFERENCE"
+        }
+      ],
+      "taskId": "MUSINSA:4888023"
+    },
+    {
+      "productKey": "MUSINSA:5336216",
+      "productName": "NEEDLE STONE WALLET [KHAKI]",
+      "reference": "run-review/scenes/MUSINSA-5336216/_reference.jpg",
+      "scenes": [
+        {
+          "path": "run-review/scenes/MUSINSA-5336216/D01T01.jpg",
+          "sceneId": "D01T01"
+        },
+        {
+          "path": "run-review/scenes/MUSINSA-5336216/D01T02.jpg",
+          "sceneId": "D01T02"
+        },
+        {
+          "path": "run-review/scenes/MUSINSA-5336216/D01T03.jpg",
+          "sceneId": "D01T03"
+        },
+        {
+          "path": "run-review/scenes/MUSINSA-5336216/D01T04.jpg",
+          "sceneId": "D01T04"
+        },
+        {
+          "path": "run-review/scenes/MUSINSA-5336216/D01T05.jpg",
+          "sceneId": "D01T05"
+        },
+        {
+          "path": "run-review/scenes/MUSINSA-5336216/D01T06.jpg",
+          "sceneId": "D01T06"
+        },
+        {
+          "path": "run-review/scenes/MUSINSA-5336216/D02T01.jpg",
+          "sceneId": "D02T01"
+        },
+        {
+          "path": "run-review/scenes/MUSINSA-5336216/D02T02.jpg",
+          "sceneId": "D02T02"
+        },
+        {
+          "path": "run-review/scenes/MUSINSA-5336216/D02T03.jpg",
+          "sceneId": "D02T03"
+        },
+        {
+          "path": "run-review/scenes/MUSINSA-5336216/D02T04.jpg",
+          "sceneId": "D02T04"
+        }
+      ],
+      "taskId": "MUSINSA:5336216"
+    },
+    {
+      "productKey": "MUSINSA:5365574",
+      "productName": "0007 레이어드 파우치 호보 백_도트블랙",
+      "reference": "run-review/scenes/MUSINSA-5365574/_reference.jpg",
+      "scenes": [
+        {
+          "path": "run-review/scenes/MUSINSA-5365574/D01T01.jpg",
+          "sceneId": "D01T01"
+        },
+        {
+          "path": "run-review/scenes/MUSINSA-5365574/D01T02.jpg",
+          "sceneId": "D01T02"
+        },
+        {
+          "path": "run-review/scenes/MUSINSA-5365574/D01T03.jpg",
+          "sceneId": "D01T03"
+        },
+        {
+          "path": "run-review/scenes/MUSINSA-5365574/D02T01.jpg",
+          "sceneId": "D02T01"
+        },
+        {
+          "path": "run-review/scenes/MUSINSA-5365574/D02T02.jpg",
+          "sceneId": "D02T02"
+        },
+        {
+          "path": "run-review/scenes/MUSINSA-5365574/D02T03.jpg",
+          "sceneId": "D02T03"
+        },
+        {
+          "path": "run-review/scenes/MUSINSA-5365574/D02T04.jpg",
+          "sceneId": "D02T04"
+        },
+        {
+          "path": "run-review/scenes/MUSINSA-5365574/D02T05.jpg",
+          "sceneId": "D02T05"
+        },
+        {
+          "path": "run-review/scenes/MUSINSA-5365574/D02T06.jpg",
+          "sceneId": "D02T06"
+        },
+        {
+          "path": "run-review/scenes/MUSINSA-5365574/D02T07.jpg",
+          "sceneId": "D02T07"
+        },
+        {
+          "path": "run-review/scenes/MUSINSA-5365574/D02T08.jpg",
+          "sceneId": "D02T08"
+        },
+        {
+          "path": "run-review/scenes/MUSINSA-5365574/D02T09.jpg",
+          "sceneId": "D02T09"
+        },
+        {
+          "path": "run-review/scenes/MUSINSA-5365574/D02T10.jpg",
+          "sceneId": "D02T10"
+        },
+        {
+          "path": "run-review/scenes/MUSINSA-5365574/D02T11.jpg",
+          "sceneId": "D02T11"
+        },
+        {
+          "path": "run-review/scenes/MUSINSA-5365574/D02T12.jpg",
+          "sceneId": "D02T12"
+        },
+        {
+          "path": "run-review/scenes/MUSINSA-5365574/D02T13.jpg",
+          "sceneId": "D02T13"
+        },
+        {
+          "path": "run-review/scenes/MUSINSA-5365574/D02T14.jpg",
+          "sceneId": "D02T14"
+        },
+        {
+          "path": "run-review/scenes/MUSINSA-5365574/D03T01.jpg",
+          "sceneId": "D03T01"
+        },
+        {
+          "path": "run-review/scenes/MUSINSA-5365574/D03T02.jpg",
+          "sceneId": "D03T02"
+        },
+        {
+          "path": "run-review/scenes/MUSINSA-5365574/D03T03.jpg",
+          "sceneId": "D03T03"
+        },
+        {
+          "path": "run-review/scenes/MUSINSA-5365574/D04T01.jpg",
+          "sceneId": "D04T01"
+        },
+        {
+          "path": "run-review/scenes/MUSINSA-5365574/D04T02.jpg",
+          "sceneId": "D04T02"
+        },
+        {
+          "path": "run-review/scenes/MUSINSA-5365574/D04T03.jpg",
+          "sceneId": "D04T03"
+        },
+        {
+          "path": "run-review/scenes/MUSINSA-5365574/D05T01.jpg",
+          "sceneId": "D05T01"
+        },
+        {
+          "path": "run-review/scenes/MUSINSA-5365574/D05T02.jpg",
+          "sceneId": "D05T02"
+        },
+        {
+          "path": "run-review/scenes/MUSINSA-5365574/D05T03.jpg",
+          "sceneId": "D05T03"
+        },
+        {
+          "path": "run-review/scenes/MUSINSA-5365574/D05T04.jpg",
+          "sceneId": "D05T04"
+        }
+      ],
+      "taskId": "MUSINSA:5365574"
+    },
+    {
+      "productKey": "MUSINSA:5385148",
+      "productName": "WO 스튜디오 펠라인 볼링백20x14x11",
+      "reference": "run-review/scenes/MUSINSA-5385148/_reference.jpg",
+      "scenes": [
+        {
+          "path": "run-review/scenes/MUSINSA-5385148/D01T01.jpg",
+          "sceneId": "D01T01"
+        },
+        {
+          "path": "run-review/scenes/MUSINSA-5385148/D01T02.jpg",
+          "sceneId": "D01T02"
+        },
+        {
+          "path": "run-review/scenes/MUSINSA-5385148/D01T03.jpg",
+          "sceneId": "D01T03"
+        },
+        {
+          "path": "run-review/scenes/MUSINSA-5385148/D01T04.jpg",
+          "sceneId": "D01T04"
+        },
+        {
+          "path": "run-review/scenes/MUSINSA-5385148/D01T05.jpg",
+          "sceneId": "D01T05"
+        },
+        {
+          "path": "run-review/scenes/MUSINSA-5385148/D01T06.jpg",
+          "sceneId": "D01T06"
+        },
+        {
+          "path": "run-review/scenes/MUSINSA-5385148/D01T07.jpg",
+          "sceneId": "D01T07"
+        },
+        {
+          "path": "run-review/scenes/MUSINSA-5385148/D02T01.jpg",
+          "sceneId": "D02T01"
+        },
+        {
+          "path": "run-review/scenes/MUSINSA-5385148/D02T02.jpg",
+          "sceneId": "D02T02"
+        },
+        {
+          "path": "run-review/scenes/MUSINSA-5385148/D02T03.jpg",
+          "sceneId": "D02T03"
+        },
+        {
+          "path": "run-review/scenes/MUSINSA-5385148/D02T04.jpg",
+          "sceneId": "D02T04"
+        },
+        {
+          "path": "run-review/scenes/MUSINSA-5385148/D02T05.jpg",
+          "sceneId": "D02T05"
+        },
+        {
+          "path": "run-review/scenes/MUSINSA-5385148/D02T06.jpg",
+          "sceneId": "D02T06"
+        },
+        {
+          "path": "run-review/scenes/MUSINSA-5385148/D02T07.jpg",
+          "sceneId": "D02T07"
+        }
+      ],
+      "taskId": "MUSINSA:5385148"
+    },
+    {
+      "productKey": "MUSINSA:6221028",
+      "productName": "Mono 에코백",
+      "reference": "run-review/scenes/MUSINSA-6221028/_reference.jpg",
+      "scenes": [
+        {
+          "path": "run-review/scenes/MUSINSA-6221028/D01T01.jpg",
+          "sceneId": "D01T01"
+        },
+        {
+          "path": "run-review/scenes/MUSINSA-6221028/D02T01.jpg",
+          "sceneId": "D02T01"
+        },
+        {
+          "path": "run-review/scenes/MUSINSA-6221028/D02T02.jpg",
+          "sceneId": "D02T02"
+        },
+        {
+          "path": "run-review/scenes/MUSINSA-6221028/D03T01.jpg",
+          "sceneId": "D03T01"
+        },
+        {
+          "path": "run-review/scenes/MUSINSA-6221028/D03T02.jpg",
+          "sceneId": "D03T02"
+        },
+        {
+          "path": "run-review/scenes/MUSINSA-6221028/D03T03.jpg",
+          "sceneId": "D03T03"
+        },
+        {
+          "path": "run-review/scenes/MUSINSA-6221028/D03T04.jpg",
+          "sceneId": "D03T04"
+        },
+        {
+          "path": "run-review/scenes/MUSINSA-6221028/D03T05.jpg",
+          "sceneId": "D03T05"
+        },
+        {
+          "path": "run-review/scenes/MUSINSA-6221028/D03T06.jpg",
+          "sceneId": "D03T06"
+        },
+        {
+          "path": "run-review/scenes/MUSINSA-6221028/D03T07.jpg",
+          "sceneId": "D03T07"
+        },
+        {
+          "path": "run-review/scenes/MUSINSA-6221028/D03T08.jpg",
+          "sceneId": "D03T08"
+        },
+        {
+          "path": "run-review/scenes/MUSINSA-6221028/D04T01.jpg",
+          "sceneId": "D04T01"
+        },
+        {
+          "path": "run-review/scenes/MUSINSA-6221028/D04T02.jpg",
+          "sceneId": "D04T02"
+        },
+        {
+          "path": "run-review/scenes/MUSINSA-6221028/D04T03.jpg",
+          "sceneId": "D04T03"
+        },
+        {
+          "path": "run-review/scenes/MUSINSA-6221028/D05T01.jpg",
+          "sceneId": "D05T01"
+        },
+        {
+          "path": "run-review/scenes/MUSINSA-6221028/D06T01.jpg",
+          "sceneId": "D06T01"
+        }
+      ],
+      "taskId": "MUSINSA:6221028"
+    }
+  ]
+}

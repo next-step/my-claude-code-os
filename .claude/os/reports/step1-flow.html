@@ -1,0 +1,522 @@
+<title>가방 성별 감사 사이클</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+KR:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#F4F5F7; --surface:#FFFFFF; --surface-2:#EDEFF3;
+    --ink:#1A1D24; --ink-2:#4A5160; --ink-3:#767E8E;
+    --rule:#DCDFE5; --rule-2:#C7CCD6;
+    --policy:#2F6099; --golden:#8C6828; --open:#A8443A; --good:#3B6A53;
+    --sans:'IBM Plex Sans KR',-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Malgun Gothic',sans-serif;
+    --mono:'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
+  }
+  @media (prefers-color-scheme:dark){
+    :root:not([data-theme="light"]){
+      --bg:#14161B; --surface:#1B1E25; --surface-2:#22262E;
+      --ink:#E8EAEE; --ink-2:#A8AFBC; --ink-3:#767E8E;
+      --rule:#2C313A; --rule-2:#3A414C;
+      --policy:#7FA9DC; --golden:#D3AA63; --open:#E0857A; --good:#7FB894;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#14161B; --surface:#1B1E25; --surface-2:#22262E;
+    --ink:#E8EAEE; --ink-2:#A8AFBC; --ink-3:#767E8E;
+    --rule:#2C313A; --rule-2:#3A414C;
+    --policy:#7FA9DC; --golden:#D3AA63; --open:#E0857A; --good:#7FB894;
+  }
+
+  *{box-sizing:border-box}
+  body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-weight:400;
+       -webkit-font-smoothing:antialiased;line-height:1.75}
+  .shell{max-width:1060px;margin:0 auto;padding:56px 28px 96px;display:flex;flex-direction:column;gap:52px}
+  .prose{max-width:66ch}
+  p{margin:0 0 14px}
+  p:last-child{margin-bottom:0}
+  a{color:var(--policy);text-decoration:none;border-bottom:1px solid color-mix(in srgb,var(--policy) 35%,transparent)}
+  a:hover{border-bottom-color:var(--policy)}
+  a:focus-visible,summary:focus-visible{outline:2px solid var(--policy);outline-offset:3px;border-radius:2px}
+  code,.mono{font-family:var(--mono);font-size:0.8125em;font-weight:450}
+  code{background:var(--surface-2);padding:0.12em 0.4em;border-radius:3px;color:var(--ink-2)}
+
+  .eyebrow{font-family:var(--mono);font-size:0.6875rem;font-weight:500;letter-spacing:0.14em;
+           text-transform:uppercase;color:var(--ink-3);margin:0 0 12px}
+  h1{font-size:clamp(1.85rem,4.4vw,2.6rem);font-weight:700;letter-spacing:-0.025em;line-height:1.2;
+     margin:0 0 16px;text-wrap:balance}
+  h2{font-size:1.1875rem;font-weight:600;letter-spacing:-0.012em;margin:0 0 6px;text-wrap:balance}
+  .lede{font-size:1.0625rem;font-weight:300;color:var(--ink-2);line-height:1.7;max-width:60ch;margin:0}
+
+  header.masthead{border-bottom:1px solid var(--rule);padding-bottom:32px}
+
+  .ident{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:1px;
+         background:var(--rule);border:1px solid var(--rule);border-radius:6px;overflow:hidden;margin-top:32px}
+  .ident div{background:var(--surface);padding:13px 16px;display:flex;flex-direction:column;gap:3px}
+  .ident dt{font-family:var(--mono);font-size:0.625rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--ink-3)}
+  .ident dd{margin:0;font-size:0.9375rem;font-weight:500;font-variant-numeric:tabular-nums}
+  .ident dd.sm{font-family:var(--mono);font-size:0.8125rem;font-weight:450}
+  .ok{color:var(--good)}
+
+  section{display:flex;flex-direction:column;gap:20px}
+  .shead{display:flex;flex-direction:column;gap:2px;max-width:66ch}
+  .shead p{color:var(--ink-2);font-size:0.9375rem;margin:0}
+
+  figure{margin:0;background:var(--surface);border:1px solid var(--rule);border-radius:8px;
+         padding:24px 20px 18px;overflow-x:auto}
+  figure svg{display:block;width:100%;min-width:760px;max-width:1000px;height:auto;margin:0 auto;color:var(--ink-2)}
+  figcaption{margin-top:18px;padding-top:14px;border-top:1px solid var(--rule);
+             font-size:0.875rem;color:var(--ink-2);line-height:1.65;max-width:74ch}
+  .bx{fill:var(--surface);stroke:var(--rule-2);stroke-width:1}
+  .bt{fill:var(--ink);font-family:var(--sans);font-size:12.5px;font-weight:600}
+  .bs{fill:var(--ink-3);font-family:var(--mono);font-size:10px}
+  .al{fill:var(--ink-3);font-family:var(--sans);font-size:10.5px}
+  .ln{stroke:var(--ink-3);stroke-width:1.4;fill:none}
+
+  ol.stages{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:1px;
+            background:var(--rule);border:1px solid var(--rule);border-radius:8px;overflow:hidden}
+  ol.stages li{background:var(--surface);padding:20px 22px;display:grid;
+               grid-template-columns:38px minmax(0,1fr);gap:0 18px;align-items:start}
+  .num{font-family:var(--mono);font-size:0.8125rem;font-weight:600;color:var(--ink-3);
+       padding-top:2px;font-variant-numeric:tabular-nums}
+  .stage-b h2{margin-bottom:3px}
+  .cmd{font-family:var(--mono);font-size:0.75rem;color:var(--policy);margin:0 0 9px;word-break:break-all}
+  .stage-b p{font-size:0.9375rem;color:var(--ink-2);max-width:62ch}
+  .io{display:flex;flex-wrap:wrap;gap:6px;margin-top:11px}
+  .chip{font-family:var(--mono);font-size:0.6875rem;padding:3px 8px;border-radius:3px;
+        background:var(--surface-2);color:var(--ink-2);border:1px solid var(--rule)}
+
+  table{width:100%;border-collapse:collapse;font-size:0.875rem}
+  .tw{overflow-x:auto;border:1px solid var(--rule);border-radius:8px;background:var(--surface)}
+  th,td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--rule);vertical-align:middle}
+  thead th{font-family:var(--mono);font-size:0.625rem;letter-spacing:0.1em;text-transform:uppercase;
+           color:var(--ink-3);font-weight:500;white-space:nowrap;background:var(--surface-2)}
+  tbody tr:last-child td{border-bottom:none}
+  td.p{font-family:var(--mono);color:var(--ink-3);font-variant-numeric:tabular-nums;width:34px}
+  td.n{font-family:var(--mono);font-variant-numeric:tabular-nums;text-align:right;width:52px;font-weight:500}
+  td.sig{white-space:nowrap}
+  td.sig b{font-weight:600;font-size:0.9375rem}
+  td.sig span{display:block;font-family:var(--mono);font-size:0.625rem;color:var(--ink-3);letter-spacing:0.03em}
+  td.why{color:var(--ink-2);min-width:230px}
+  td.bar{width:130px;padding-right:18px}
+  .bar i{display:block;height:7px;border-radius:2px;min-width:3px;background:var(--ink-3);opacity:0.55}
+  tr.rec .bar i{background:var(--good)}
+  tr.adj .bar i{background:var(--golden);opacity:0.8}
+  tr.top{background:color-mix(in srgb,var(--golden) 8%,transparent)}
+  tr.top td.sig b{color:var(--golden)}
+  .grp td{background:var(--surface-2);font-family:var(--mono);font-size:0.6875rem;letter-spacing:0.1em;
+          text-transform:uppercase;color:var(--ink-3);padding:8px 14px}
+
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(268px,1fr));gap:14px}
+  .card{background:var(--surface);border:1px solid var(--rule);border-radius:8px;padding:18px 20px;
+        display:flex;flex-direction:column;gap:7px}
+  .card .qid{font-family:var(--mono);font-size:0.6875rem;letter-spacing:0.08em;color:var(--ink-3)}
+  .card h3{margin:0;font-size:0.9375rem;font-weight:600;line-height:1.5}
+  .card p{font-size:0.8438rem;color:var(--ink-2);margin:0}
+  .card .imp{font-family:var(--mono);font-size:0.75rem;color:var(--ink-3);font-variant-numeric:tabular-nums}
+
+  .gate{display:grid;grid-template-columns:auto minmax(0,1fr);gap:0 28px;align-items:center;
+        background:var(--surface);border:1px solid var(--rule);border-radius:8px;padding:24px 26px}
+  .meter{display:flex;flex-direction:column;gap:8px;min-width:190px}
+  .meter b{font-family:var(--mono);font-size:2rem;font-weight:600;line-height:1;font-variant-numeric:tabular-nums}
+  .meter .track{height:8px;background:var(--surface-2);border-radius:4px;overflow:hidden;border:1px solid var(--rule)}
+  .meter .track i{display:block;height:100%;width:0.4%;background:var(--golden)}
+  .meter small{font-family:var(--mono);font-size:0.6875rem;color:var(--ink-3);letter-spacing:0.05em}
+  .gate p{font-size:0.9375rem;color:var(--ink-2);max-width:56ch}
+
+  .flag{border:1px solid color-mix(in srgb,var(--open) 40%,var(--rule));border-radius:8px;
+        background:var(--surface);padding:22px 24px;display:flex;flex-direction:column;gap:11px;
+        border-left:3px solid var(--open)}
+  .flag h2{color:var(--open)}
+  .flag p{font-size:0.9375rem;color:var(--ink-2);max-width:64ch}
+  .checks{display:flex;flex-wrap:wrap;gap:8px}
+  .checks span{font-family:var(--mono);font-size:0.75rem;padding:5px 11px;border-radius:4px;
+               border:1px solid var(--rule);background:var(--surface);color:var(--ink-2)}
+  .checks span.pass{border-color:color-mix(in srgb,var(--good) 45%,var(--rule));color:var(--good)}
+
+  footer{border-top:1px solid var(--rule);padding-top:24px;font-family:var(--mono);
+         font-size:0.75rem;color:var(--ink-3);line-height:1.9}
+
+  @media (max-width:620px){
+    .shell{padding:36px 18px 64px;gap:40px}
+    ol.stages li{grid-template-columns:1fr;gap:8px}
+    .num{padding-top:0}
+    .gate{grid-template-columns:1fr;gap:20px}
+  }
+  @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+  .fold{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:1px;background:var(--rule);
+        border:1px solid var(--rule);border-radius:8px;overflow:hidden}
+  .fold>div{background:var(--surface);padding:20px 22px;display:flex;flex-direction:column;gap:4px}
+  .fold b{font-family:var(--mono);font-size:2.25rem;font-weight:600;line-height:1;
+          font-variant-numeric:tabular-nums;color:var(--ink-3)}
+  .fold span{font-size:0.875rem;font-weight:600}
+  .fold em{font-style:normal;font-family:var(--mono);font-size:0.6875rem;color:var(--ink-3);line-height:1.6}
+  .fold .hit{background:color-mix(in srgb,var(--golden) 9%,var(--surface))}
+  .fold .hit b{color:var(--golden)}
+  td.n.hi{color:var(--golden);font-weight:600}
+  table.plist td{padding:9px 14px}
+  td.k{font-family:var(--mono);font-size:0.6875rem;color:var(--ink-3);white-space:nowrap}
+  td.nm{font-size:0.8438rem;min-width:220px}
+  td.nm a{color:var(--ink);border-bottom-color:transparent}
+  td.nm a:hover{border-bottom-color:var(--rule-2)}
+  td.mvc{white-space:nowrap;width:150px}
+  .mv{font-family:var(--mono);font-size:0.75rem;letter-spacing:0.02em}
+  .mv em{font-style:normal;color:var(--ink-3)}
+  .mv b{font-weight:600;color:var(--golden)}
+  td.tag{font-family:var(--mono);font-size:0.6875rem;color:var(--ink-3);white-space:nowrap}
+</style>
+
+<div class="shell">
+
+  <header class="masthead">
+    <p class="eyebrow">catalog data os · step 1 · profile bag-category-gender</p>
+    <h1>가방 성별 감사 사이클</h1>
+    <p class="lede">명령 하나가 원본 레포를 읽어 스냅샷으로 고정하고, 정책·실행·골든셋의 차이를 11개 신호로 갈라
+      사람이 답해야 닫히는 질문만 남긴다. 아래는 그 한 번의 실행에서 실제로 일어난 일이다.</p>
+
+    <dl class="ident">
+      <div><dt>프로필</dt><dd class="sm">bag-category-gender</dd></div>
+      <div><dt>원본 커밋</dt><dd class="sm">9fbfbfc4 · clean</dd></div>
+      <div><dt>평가 상품</dt><dd>500</dd></div>
+      <div><dt>GT 대비 정확도</dt><dd>82.80%</dd></div>
+      <div><dt>실행 시간</dt><dd>3.3초</dd></div>
+      <div><dt>상태</dt><dd class="ok">completed</dd></div>
+    </dl>
+  </header>
+
+  <section>
+    <div class="shead">
+      <h2>전체 메커니즘</h2>
+      <p>정책과 골든셋은 서로 다른 원천이다. 둘이 만나는 지점과, 아직 이어지지 않은 지점을 함께 본다.</p>
+    </div>
+
+    <figure>
+      <svg viewBox="0 0 1000 390" role="img"
+           aria-label="원본 정책과 원본 결과·GT가 각각 스냅샷이 된 뒤 감사기에서 만나지만, 정책은 규칙 존재 확인에만 쓰이고 신호는 골든 대조에서 나온다. 큐는 중복 제거를 거쳐 사람 판정 게이트로 가며, 사람 판정이 정책으로 돌아가는 경로는 아직 없다.">
+        <defs>
+          <marker id="ah" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <polygon points="0,1 8,4 0,7" fill="currentColor"></polygon>
+          </marker>
+          <marker id="ahp" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <polygon points="0,1 8,4 0,7" fill="var(--policy)"></polygon>
+          </marker>
+          <marker id="ahg" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <polygon points="0,1 8,4 0,7" fill="var(--golden)"></polygon>
+          </marker>
+          <marker id="aho" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <polygon points="0,1 8,4 0,7" fill="var(--open)"></polygon>
+          </marker>
+        </defs>
+
+        <text class="al" x="188" y="40" text-anchor="middle">SHA 고정</text>
+        <text class="al" x="188" y="170" text-anchor="middle">SHA 고정</text>
+
+        <rect class="bx" x="28" y="48" width="140" height="56" rx="4"></rect>
+        <rect x="28" y="48" width="3" height="56" fill="var(--policy)"></rect>
+        <text class="bt" x="44" y="72">원본 정책</text>
+        <text class="bs" x="44" y="89">bag-role-aware-judge</text>
+
+        <rect class="bx" x="28" y="178" width="140" height="56" rx="4"></rect>
+        <rect x="28" y="178" width="3" height="56" fill="var(--golden)"></rect>
+        <text class="bt" x="44" y="202">원본 결과 · GT</text>
+        <text class="bs" x="44" y="219">파일 10개</text>
+
+        <rect class="bx" x="208" y="48" width="140" height="56" rx="4"></rect>
+        <rect x="208" y="48" width="3" height="56" fill="var(--policy)"></rect>
+        <text class="bt" x="224" y="72">정책 스냅샷</text>
+        <text class="bs" x="224" y="89">policy/bag-category-gender.md</text>
+
+        <rect class="bx" x="208" y="178" width="140" height="56" rx="4"></rect>
+        <rect x="208" y="178" width="3" height="56" fill="var(--golden)"></rect>
+        <text class="bt" x="224" y="202">골든 스냅샷</text>
+        <text class="bs" x="224" y="219">500 · 410 · 100건</text>
+
+        <rect class="bx" x="442" y="48" width="126" height="186" rx="4"></rect>
+        <text class="bt" x="505" y="130" text-anchor="middle">감사기</text>
+        <text class="bs" x="505" y="148" text-anchor="middle">audit_bag_category_gender</text>
+        <text class="bs" x="505" y="163" text-anchor="middle">신호 11종</text>
+
+        <rect class="bx" x="608" y="44" width="150" height="64" rx="4"></rect>
+        <text class="bt" x="624" y="70">복구 큐 · 4종</text>
+        <text class="bs" x="624" y="88">234행 · 판정 불요</text>
+
+        <rect class="bx" x="608" y="174" width="150" height="64" rx="4"></rect>
+        <text class="bt" x="624" y="200">판정 필요 큐 · 7종</text>
+        <text class="bs" x="624" y="218">144행</text>
+
+        <rect class="bx" x="802" y="110" width="170" height="64" rx="4"></rect>
+        <text class="bt" x="818" y="136">중복 제거</text>
+        <text class="bs" x="818" y="154">378행 → 305 상품</text>
+
+        <rect class="bx" x="802" y="240" width="170" height="64" rx="4"></rect>
+        <rect x="802" y="240" width="3" height="64" fill="var(--open)"></rect>
+        <text class="bt" x="818" y="266">사람 판정 게이트</text>
+        <text class="bs" x="818" y="284">0 / 305 · 실제 26건</text>
+
+        <line class="ln" x1="168" y1="76" x2="202" y2="76" marker-end="url(#ah)"></line>
+        <line class="ln" x1="168" y1="206" x2="202" y2="206" marker-end="url(#ah)"></line>
+
+        <line x1="348" y1="76" x2="436" y2="76" stroke="var(--policy)" stroke-width="1.2"
+              stroke-dasharray="4 4" fill="none" marker-end="url(#ahp)"></line>
+        <text class="al" x="392" y="68" text-anchor="middle" fill="var(--policy)">존재 확인만</text>
+
+        <line x1="348" y1="206" x2="436" y2="206" stroke="var(--golden)" stroke-width="2"
+              fill="none" marker-end="url(#ahg)"></line>
+        <text class="al" x="392" y="198" text-anchor="middle" fill="var(--golden)">근거 · 라벨 대조</text>
+
+        <line class="ln" x1="568" y1="100" x2="602" y2="80" marker-end="url(#ah)"></line>
+        <line class="ln" x1="568" y1="182" x2="602" y2="202" marker-end="url(#ah)"></line>
+        <line class="ln" x1="758" y1="80" x2="796" y2="128" marker-end="url(#ah)"></line>
+        <line class="ln" x1="758" y1="206" x2="796" y2="158" marker-end="url(#ah)"></line>
+        <line class="ln" x1="887" y1="174" x2="887" y2="234" marker-end="url(#ah)"></line>
+
+        <path d="M 887 304 V 350 H 10 V 76 H 22" stroke="var(--open)" stroke-width="1.4"
+              stroke-dasharray="5 5" fill="none" marker-end="url(#aho)"></path>
+        <text class="al" x="452" y="366" text-anchor="middle" fill="var(--open)">사람 판례 → 정책 재컴파일 · 아직 경로 없음</text>
+      </svg>
+
+      <figcaption>두 원천은 각자 스냅샷으로 고정된 뒤 감사기에서 만난다. 다만 정책 스냅샷은
+        <b>필수 규칙 3문장이 살아 있는지 확인하는 가드로만</b> 쓰이고(점선), 11개 신호는 전부 골든셋 대조에서 나온다(실선).
+        그래서 정책 문장을 고쳐도 이 사이클의 숫자는 움직이지 않는다. 사람 판정을 정책으로 되돌리는 화살표도 아직 비어 있다.</figcaption>
+    </figure>
+  </section>
+
+  <section>
+    <div class="shead">
+      <h2>실행 단계</h2>
+      <p><code>run_cycle.sh</code> 한 줄이 여는 여섯 단계. 순서가 곧 의존성이라 번호가 의미를 갖는다.</p>
+    </div>
+
+    <ol class="stages">
+      <li>
+        <span class="num">01</span>
+        <div class="stage-b">
+          <h2>오케스트레이터 기동</h2>
+          <p class="cmd">run_cycle.sh → run_catalog_cycle.py --profile bag-category-gender.json</p>
+          <p>프로필에서 어댑터 두 개와 출력 루트, 신호 11종의 라벨·우선순위를 읽는다. 공통 실행기는 가방을 모른다.
+            가방 지식은 전부 프로필과 어댑터 쪽에 있고, 다른 속성은 프로필만 갈아 끼우면 된다.</p>
+          <div class="io"><span class="chip">in profiles/bag-category-gender.json</span><span class="chip">out 어댑터 경로 2개</span></div>
+        </div>
+      </li>
+      <li>
+        <span class="num">02</span>
+        <div class="stage-b">
+          <h2>원본 스냅샷</h2>
+          <p class="cmd">import_bag_category_gender_sources.py --source-repo ../core-catalog-platfom</p>
+          <p>원본 레포에서 파일 11개를 <b>읽기만</b> 하고 프로젝트 안으로 복사한다. 각 파일의 SHA-256과
+            <code>sourceCommit</code>, <code>sourceDirty</code>를 매니페스트에 박아 두기 때문에, 나중에 결과를 의심할 때
+            어떤 원본을 봤는지 되짚을 수 있다.</p>
+          <div class="io"><span class="chip">out policy/bag-category-gender.md</span><span class="chip">out golden 평가 500</span><span class="chip">out golden 상세근거 410</span><span class="chip">out golden GT 100</span><span class="chip">out manifest.json</span></div>
+        </div>
+      </li>
+      <li>
+        <span class="num">03</span>
+        <div class="stage-b">
+          <h2>결정론적 감사</h2>
+          <p class="cmd">audit_bag_category_gender.py --output-root runs/bag-category-gender</p>
+          <p>정책 스냅샷에 필수 규칙 3문장이 남아 있는지 먼저 확인하고 없으면 즉시 멈춘다. 그다음 실행 결과와 상세 근거를
+            상품 단위로 합쳐 GT와 대조하고, 차이를 11개 신호로 가른다. LLM 호출도 네트워크도 없다.</p>
+          <div class="io"><span class="chip">out queue 11종 · 378행</span><span class="chip">out bag-category-gender-audit.md</span><span class="chip">out policy-questions.json</span></div>
+        </div>
+      </li>
+      <li>
+        <span class="num">04</span>
+        <div class="stage-b">
+          <h2>사람 원장 보존</h2>
+          <p class="cmd">review/decisions.json — 없을 때만 생성</p>
+          <p>이미 원장이 있으면 오케스트레이터는 손대지 않는다. 재실행이 사람 판정을 지우지 않는 지점이 정확히 여기다.
+            판정을 바꿀 때도 덮어쓰지 않고 이전 <code>decisionId</code>를 <code>supersedes</code>로 남긴다.</p>
+          <div class="io"><span class="chip">schema catalog-review-v1</span><span class="chip">append-only</span></div>
+        </div>
+      </li>
+      <li>
+        <span class="num">05</span>
+        <div class="stage-b">
+          <h2>진행률 병합</h2>
+          <p class="cmd">build_review_progress.py --profile bag-category-gender.json</p>
+          <p>큐 378행을 <code>productKey</code>로 접어 305개 상품으로 만들고 원장의 최신 결정과 join한다.
+            큐에서 빠진 과거 판정은 삭제하지 않고 <code>staleDecisionProductKeys</code>로 보존한다.
+            AI 추천은 이 분모·분자 어디에도 들어가지 않는다.</p>
+          <div class="io"><span class="chip">out review-progress.md</span><span class="chip">out review/status.json</span></div>
+        </div>
+      </li>
+      <li>
+        <span class="num">06</span>
+        <div class="stage-b">
+          <h2>보고서 렌더</h2>
+          <p class="cmd">render_catalog_report.py → reports/catalog-audit.html</p>
+          <p>큐·질문·진행률을 검색과 필터가 되는 정적 HTML 한 장으로 묶는다. 349KB, 외부 의존 없음.
+            데이터 운영팀이 열어 보는 최종 화면이다.</p>
+          <div class="io"><span class="chip">out catalog-audit.html</span></div>
+        </div>
+      </li>
+    </ol>
+  </section>
+
+  <section>
+    <div class="shead">
+      <h2>신호 11종</h2>
+      <p>앞의 4종은 파이프라인이 스스로 복구한 기록이라 판정할 게 없다. 뒤의 7종이 사람 시간을 쓰는 대상이다.</p>
+    </div>
+
+    <div class="tw">
+      <table>
+        <thead>
+          <tr><th>우선</th><th>신호</th><th>뜻</th><th colspan="2">건수</th></tr>
+        </thead>
+        <tbody>
+          <tr class="grp"><td colspan="5">복구 · 234행 — 실행이 스스로 되살린 판정</td></tr>
+          <tr class="rec"><td class="p">1</td><td class="sig"><b>상세 이미지 수집 복구</b><span>IMAGE_COLLECTION_RECOVERED</span></td><td class="why">공개 HTML에 없던 BFF 이미지를 수집해 판정을 되살렸다</td><td class="bar"><i style="width:1%"></i></td><td class="n">1</td></tr>
+          <tr class="rec"><td class="p">2</td><td class="sig"><b>WORN 정책 복구</b><span>INTERACTION_POLICY_RECOVERED</span></td><td class="why">몸에 멘 백팩·숄더백을 실제 가방 상호작용으로 인정했다</td><td class="bar"><i style="width:100%"></i></td><td class="n">223</td></tr>
+          <tr class="rec"><td class="p">3</td><td class="sig"><b>잘못된 직접 문구 제거</b><span>INVALID_TEXT_EVIDENCE_DROPPED</span></td><td class="why">성별 표지가 없는 상품명을 직접 문구로 오인한 출력만 걷어냈다</td><td class="bar"><i style="width:2.7%"></i></td><td class="n">6</td></tr>
+          <tr class="rec"><td class="p">4</td><td class="sig"><b>공유 이미지 필터 복구</b><span>EVIDENCE_PIPELINE_RECOVERED</span></td><td class="why">같은 상품군 변형이 공유한 PDP 이미지를 보존했다</td><td class="bar"><i style="width:1.8%"></i></td><td class="n">4</td></tr>
+
+          <tr class="grp"><td colspan="5">판정 필요 · 144행 — 사람이 답해야 닫힌다</td></tr>
+          <tr class="adj top"><td class="p">5</td><td class="sig"><b>GT 오류 후보</b><span>GOLDEN_POLICY_VIOLATION_CANDIDATE</span></td><td class="why">상세 이미지·직접 문구가 단일 성별을 지지하는데 GT가 다르다 — 이번 실행의 최대 신호</td><td class="bar"><i style="width:9%"></i></td><td class="n">20</td></tr>
+          <tr class="adj"><td class="p">6</td><td class="sig"><b>추론 결과·근거 모순</b><span>MODEL_POLICY_CONTRADICTION</span></td><td class="why">실행이 기록한 근거와 최종 라벨이 서로 반대다 — GT가 아니라 실행 버그</td><td class="bar"><i style="width:1%"></i></td><td class="n">1</td></tr>
+          <tr class="adj"><td class="p">7</td><td class="sig"><b>골든 소스 충돌</b><span>GOLDEN_SOURCE_CONFLICT</span></td><td class="why">같은 상품의 정답 소스가 서로 다르다 (라벨↔라벨 5, 미분류→라벨 5)</td><td class="bar"><i style="width:4.5%"></i></td><td class="n">10</td></tr>
+          <tr class="adj"><td class="p">8</td><td class="sig"><b>정책·실행 모순</b><span>POLICY_RUNTIME_CONTRADICTION</span></td><td class="why">근거 부족을 UNISEX로 대신하지 말라는 정책 문장과 변환 로직이 어긋난다</td><td class="bar"><i style="width:21.5%"></i></td><td class="n">48</td></tr>
+          <tr class="adj"><td class="p">9</td><td class="sig"><b>근거 없는 일치</b><span>GOLDEN_UNSUPPORTED_AGREEMENT</span></td><td class="why">결과와 정답은 같지만 정책 근거가 없어 우연일 수 있다</td><td class="bar"><i style="width:7.2%"></i></td><td class="n">16</td></tr>
+          <tr class="adj"><td class="p">10</td><td class="sig"><b>정책 공백</b><span>POLICY_GOLDEN_GAP</span></td><td class="why">사람 GT에는 답이 있으나 정책은 답을 만들 근거가 없다</td><td class="bar"><i style="width:14.3%"></i></td><td class="n">32</td></tr>
+          <tr class="adj"><td class="p">11</td><td class="sig"><b>정책·골든 충돌</b><span>POLICY_GOLDEN_CONFLICT</span></td><td class="why">정책 실행의 확정 결과와 사람 정답이 다르다</td><td class="bar"><i style="width:7.6%"></i></td><td class="n">17</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="gate">
+    <div class="shead">
+      <h2>사람이 판정할 것 · 26건</h2>
+      <p>진행률이 말하는 305건은 복구 기록까지 포함한 분모다. 신호 중복을 접고 코드로 닫히는 것을 걷어내면,
+        사람의 눈이 실제로 필요한 건 26건으로 줄어든다.</p>
+    </div>
+
+    <div class="fold">
+      <div><b>305</b><span>진행률 분모</span><em>복구 신호만 붙은 상품까지 포함</em></div>
+      <div><b>93</b><span>판정 필요 고유 상품</span><em>144행 중 96행이 같은 48건의 중복</em></div>
+      <div class="hit"><b>26</b><span>사람 케이스 판정</span><em>나머지 67건은 질문 3개와 코드 2건</em></div>
+    </div>
+
+    <div class="tw">
+      <table>
+        <thead><tr><th>군</th><th>건수</th><th>감사기가 이미 붙인 분류</th><th>닫는 방법</th><th>사람 케이스</th></tr></thead>
+        <tbody>
+          <tr class="top"><td class="sig"><b>GT 오류 후보</b></td><td class="n">20</td><td class="why">GT_CONFLICT 19 · MODEL_ERROR 1</td><td class="why">상세 이미지 검수 후 GT 수정 판정</td><td class="n hi">19</td></tr>
+          <tr><td class="sig"><b>골든 소스 충돌</b></td><td class="n">10</td><td class="why">라벨↔라벨 5 · 정본 미분류 5</td><td class="why">정본 지정(GQ-SOURCE-001) 뒤 라벨 충돌만 판정</td><td class="n hi">5</td></tr>
+          <tr><td class="sig"><b>정책·골든 충돌</b></td><td class="n">17</td><td class="why">MODEL_ERROR 15 · GT_CONFLICT 2</td><td class="why">디자인 단독 추론 허용 여부를 정책으로</td><td class="n hi">2</td></tr>
+          <tr><td class="sig"><b>근거 없는 UNISEX</b></td><td class="n">48</td><td class="why">전부 상세 근거 없음 · 예측 전부 UNISEX</td><td class="why">GQ-RUN-001 한 번이면 48건이 닫힌다</td><td class="n">0</td></tr>
+          <tr><td class="sig"><b>결과·근거 모순</b></td><td class="n">1</td><td class="why">MODEL_ERROR</td><td class="why">GT가 아니라 실행 버그 — 코드에서 수정</td><td class="n">0</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="shead" style="margin-top:8px">
+      <h2>최우선 19건</h2>
+      <p>19건 모두 같은 조건이다. 근거가 <b>실제 착용자 이미지</b>이고, 충돌하는 GT는 이미 사람이 <code>REVIEWED</code>로 검수한 값이다.
+        골든셋 자체를 의심해야 하는 자리라 다른 어떤 큐보다 레버리지가 크다.</p>
+    </div>
+    <div class="tw">
+      <table class="plist">
+        <thead><tr><th>상품</th><th>이름</th><th>GT → 실행</th></tr></thead>
+        <tbody>
+          <tr><td class="k">EGOOCM:3398529</td><td class="nm"><a href="https://www.29cm.co.kr/products/3398529" target="_blank" rel="noopener">세이프선데이 스트랩 숄더백 (오간자네이비)</a></td><td class="mvc"><span class="mv"><em>UNISEX</em>→<b>FEMALE</b></span></td></tr>
+          <tr><td class="k">EGOOCM:3399281</td><td class="nm"><a href="https://www.29cm.co.kr/products/3399281" target="_blank" rel="noopener">홀로홀로 원터치 밀크 텀블러 보온보냉병 구름파우치 - 핑크</a></td><td class="mvc"><span class="mv"><em>UNISEX</em>→<b>FEMALE</b></span></td></tr>
+          <tr><td class="k">EGOOCM:3399286</td><td class="nm"><a href="https://www.29cm.co.kr/products/3399286" target="_blank" rel="noopener">홀로홀로 원터치 밀크 텀블러 보온보냉병 구름파우치 - 코코아</a></td><td class="mvc"><span class="mv"><em>UNISEX</em>→<b>FEMALE</b></span></td></tr>
+          <tr><td class="k">EGOOCM:3404922</td><td class="nm"><a href="https://www.29cm.co.kr/products/3404922" target="_blank" rel="noopener">스윗 도트 스트링 짐색 (아이보리)</a></td><td class="mvc"><span class="mv"><em>UNISEX</em>→<b>FEMALE</b></span></td></tr>
+          <tr><td class="k">EGOOCM:3417183</td><td class="nm"><a href="https://www.29cm.co.kr/products/3417183" target="_blank" rel="noopener">[본사직영]컬럼비아 공용 본레 포레스트 20L 패커블 경량 백팩 라이트그레이 (</a></td><td class="mvc"><span class="mv"><em>UNISEX</em>→<b>FEMALE</b></span></td></tr>
+          <tr><td class="k">EGOOCM:3442201</td><td class="nm"><a href="https://www.29cm.co.kr/products/3442201" target="_blank" rel="noopener">[루즈앤라운지] 모데나 호보 패브릭 RA2F7ABG024WP1BK</a></td><td class="mvc"><span class="mv"><em>UNISEX</em>→<b>FEMALE</b></span></td></tr>
+          <tr><td class="k">EGOOCM:3448548</td><td class="nm"><a href="https://www.29cm.co.kr/products/3448548" target="_blank" rel="noopener">NIMO_5color</a></td><td class="mvc"><span class="mv"><em>UNISEX</em>→<b>FEMALE</b></span></td></tr>
+          <tr><td class="k">EGOOCM:3458963</td><td class="nm"><a href="https://www.29cm.co.kr/products/3458963" target="_blank" rel="noopener">[루즈앤라운지] 모데나 숄더 RA2F7ABG023WBK</a></td><td class="mvc"><span class="mv"><em>UNISEX</em>→<b>FEMALE</b></span></td></tr>
+          <tr><td class="k">EGOOCM:3483889</td><td class="nm"><a href="https://www.29cm.co.kr/products/3483889" target="_blank" rel="noopener">스탁사인 인비즈 크로스백</a></td><td class="mvc"><span class="mv"><em>UNISEX</em>→<b>FEMALE</b></span></td></tr>
+          <tr><td class="k">MUSINSA:4870915</td><td class="nm"><a href="https://www.musinsa.com/products/4870915" target="_blank" rel="noopener">A90 28인치 화물용 도어식오픈 확장형 캐리어</a></td><td class="mvc"><span class="mv"><em>UNISEX</em>→<b>FEMALE</b></span></td></tr>
+          <tr><td class="k">MUSINSA:5370224</td><td class="nm"><a href="https://www.musinsa.com/products/5370224" target="_blank" rel="noopener">필로우백 브라운</a></td><td class="mvc"><span class="mv"><em>UNISEX</em>→<b>FEMALE</b></span></td></tr>
+          <tr><td class="k">MUSINSA:5384846</td><td class="nm"><a href="https://www.musinsa.com/products/5384846" target="_blank" rel="noopener">WO 글로시 로얄 볼링백20x14x11</a></td><td class="mvc"><span class="mv"><em>UNISEX</em>→<b>FEMALE</b></span></td></tr>
+          <tr><td class="k">EGOOCM:3400602</td><td class="nm"><a href="https://www.29cm.co.kr/products/3400602" target="_blank" rel="noopener">소가죽 버티컬 힙색 크로스백 IB25Z3MBH2689</a></td><td class="mvc"><span class="mv"><em>UNISEX</em>→<b>MALE</b></span></td></tr>
+          <tr><td class="k">EGOOCM:3400648</td><td class="nm"><a href="https://www.29cm.co.kr/products/3400648" target="_blank" rel="noopener">소가죽 메탈 브리프 케이스 IB25A3MBR1237</a></td><td class="mvc"><span class="mv"><em>UNISEX</em>→<b>MALE</b></span></td></tr>
+          <tr><td class="k">MUSINSA:4886329</td><td class="nm"><a href="https://www.musinsa.com/products/4886329" target="_blank" rel="noopener">험프 에센셜 백팩 L - 베이지</a></td><td class="mvc"><span class="mv"><em>UNISEX</em>→<b>MALE</b></span></td></tr>
+          <tr><td class="k">MUSINSA:4924741</td><td class="nm"><a href="https://www.musinsa.com/products/4924741" target="_blank" rel="noopener">로프 키링 짐색 [브라운 비즈]</a></td><td class="mvc"><span class="mv"><em>UNISEX</em>→<b>MALE</b></span></td></tr>
+          <tr><td class="k">MUSINSA:4999988</td><td class="nm"><a href="https://www.musinsa.com/products/4999988" target="_blank" rel="noopener">SOLA FIDE Multi Pocket Cross Bag</a></td><td class="mvc"><span class="mv"><em>UNISEX</em>→<b>MALE</b></span></td></tr>
+          <tr><td class="k">MUSINSA:5385027</td><td class="nm"><a href="https://www.musinsa.com/products/5385027" target="_blank" rel="noopener">하이드 더블 포켓 백팩 [BLACK]</a></td><td class="mvc"><span class="mv"><em>UNISEX</em>→<b>MALE</b></span></td></tr>
+          <tr><td class="k">EGOOCM:3411572</td><td class="nm"><a href="https://www.29cm.co.kr/products/3411572" target="_blank" rel="noopener">데님 방패 포켓 백팩 인디고 다크</a></td><td class="mvc"><span class="mv"><em>MALE</em>→<b>FEMALE</b></span></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="shead" style="margin-top:8px">
+      <h2>나머지 7건</h2>
+      <p>성격이 달라 같은 화면에서 처리하면 안 되는 것들. 앞의 5건은 이미지가 아니라 두 원장 중 무엇이 정본인지의 문제고,
+        뒤의 2건은 착용자 없이 가방 디자인만으로 성별을 민 사례다.</p>
+    </div>
+    <div class="tw">
+      <table class="plist">
+        <thead><tr><th>상품</th><th>이름</th><th>정본 → 상대</th><th>성격</th></tr></thead>
+        <tbody>
+          <tr><td class="k">MUSINSA:6167240</td><td class="nm"><a href="https://www.musinsa.com/products/6167240" target="_blank" rel="noopener">볼컴 투톤 캐리어 24인치 아이보리 [VA244BG613IV][무신사]</a></td><td class="mvc"><span class="mv"><em>FEMALE</em>→<b>UNISEX</b></span></td><td class="tag">소스 충돌</td></tr>
+          <tr><td class="k">MUSINSA:6221028</td><td class="nm"><a href="https://www.musinsa.com/products/6221028" target="_blank" rel="noopener">Mono 에코백</a></td><td class="mvc"><span class="mv"><em>UNISEX</em>→<b>FEMALE</b></span></td><td class="tag">소스 충돌</td></tr>
+          <tr><td class="k">MUSINSA:6547369</td><td class="nm"><a href="https://www.musinsa.com/products/6547369" target="_blank" rel="noopener">BOTARI / BLACK</a></td><td class="mvc"><span class="mv"><em>MALE</em>→<b>UNISEX</b></span></td><td class="tag">소스 충돌</td></tr>
+          <tr><td class="k">MUSINSA:6710977</td><td class="nm"><a href="https://www.musinsa.com/products/6710977" target="_blank" rel="noopener">듀오 플랩 백팩 W (3color)</a></td><td class="mvc"><span class="mv"><em>FEMALE</em>→<b>UNISEX</b></span></td><td class="tag">소스 충돌</td></tr>
+          <tr><td class="k">MUSINSA:6746326</td><td class="nm"><a href="https://www.musinsa.com/products/6746326" target="_blank" rel="noopener">UA 트라이엄프 유틸리티6000948-001</a></td><td class="mvc"><span class="mv"><em>MALE</em>→<b>UNISEX</b></span></td><td class="tag">소스 충돌</td></tr>
+          <tr><td class="k">EGOOCM:3447598</td><td class="nm"><a href="https://www.29cm.co.kr/products/3447598" target="_blank" rel="noopener">Light Duffle Bag (M) White</a></td><td class="mvc"><span class="mv"><em>UNISEX</em>→<b>MALE</b></span></td><td class="tag">디자인 근거</td></tr>
+          <tr><td class="k">EGOOCM:3474392</td><td class="nm"><a href="https://www.29cm.co.kr/products/3474392" target="_blank" rel="noopener">Blue garden basic pouch(M)</a></td><td class="mvc"><span class="mv"><em>UNISEX</em>→<b>MALE</b></span></td><td class="tag">디자인 근거</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="shead" style="margin-top:8px">
+      <h2>67건을 닫는 질문 3개</h2>
+      <p>케이스를 하나씩 라벨링하는 대신, 경계를 한 번 정한다. 답 하나가 수십 건을 동시에 닫는다.</p>
+    </div>
+    <div class="cards">
+      <div class="card">
+        <span class="qid">GQ-RUN-001 · 48건</span>
+        <h3>근거가 없을 때 내부 UNDETERMINED를 최종 UNISEX로 바꿔도 되는가?</h3>
+        <p class="imp">GT 불일치 32 · 우연 일치 16</p>
+        <p>48건 전부 상세 근거가 비어 있는데 예측만 UNISEX로 채워졌다. 우연히 맞은 16건이 82.80%라는 정확도를 부풀리고 있다.
+          평가에서는 UNDETERMINED를 보존하고 저장 호환 변환은 별도 projection으로 분리한다.</p>
+      </div>
+      <div class="card">
+        <span class="qid">GQ-GT-001 · 19건</span>
+        <h3>착용자 근거가 단일 성별을 지지하는데 GT가 UNISEX면 GT를 고칠 것인가?</h3>
+        <p class="imp">UNISEX→FEMALE 12 · UNISEX→MALE 6 · MALE→FEMALE 1</p>
+        <p>답이 "고친다"면 위 19건은 검수 후 일괄 반영된다. "공용 판매 의도가 있으면 UNISEX 유지"라면
+          그 판단 기준을 정책에 판례로 적어야 다음 실행에서 같은 큐가 다시 뜨지 않는다.</p>
+      </div>
+      <div class="card">
+        <span class="qid">GQ-SOURCE-001 · 10건</span>
+        <h3>두 GT 소스 중 어느 버전을 정본으로 쓸 것인가?</h3>
+        <p class="imp">라벨↔라벨 5 · 정본 미분류 5</p>
+        <p>정본이 미분류인 5건은 충돌이 아니라 정본 결측이라 자동으로 닫힌다.
+          정본을 지정하고 datasetVersion과 라벨 해시를 평가 입력에 기록하면 남는 판정은 5건뿐이다.</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="shead">
+      <h2>검증과 열린 지점</h2>
+    </div>
+
+    <div class="checks">
+      <span class="pass">연속 3회 실행 — 차이는 generatedAt 뿐</span>
+      <span class="pass">pytest 6건 통과</span>
+      <span class="pass">상세 타일 410 / 410 처리</span>
+      <span class="pass">sourceDirty false</span>
+      <span>수집 타일 6,956 → 보존 6,571</span>
+      <span>GT 분포 F 288 · M 39 · U 173</span>
+    </div>
+
+    <div class="flag">
+      <h2>정책을 고쳐도 숫자가 움직이지 않는다</h2>
+      <p>원본 프롬프트는 이 실행 직전에 두 번 바뀌었는데(8/31, 9/1), 11개 신호 카운트는 8/30 실행과 완전히 동일했다.
+        감사기가 정책 텍스트를 규칙 존재 확인에만 쓰고 실제 신호는 고정된 하니스 결과 스냅샷에서 뽑기 때문이다.
+        원본 레포에서 하니스를 다시 돌려야 새 정책이 지표에 반영된다. <b>정책 → 재실행 → 결과 변화</b> 루프가 아직 닫혀 있지 않다.</p>
+      <p>같은 성격의 작은 구멍이 하나 더 있다. 매니페스트가 고정한 원본 11개 중 <code>targetReference</code> 한 건은
+        원본 레포 밖의 별도 워크트리를 가리킨다. 그만큼은 <code>sourceCommit</code>이 보장하지 못한다.</p>
+    </div>
+  </section>
+
+  <footer>
+    .claude/os/runs/bag-category-gender · 2026-09-02 실행 · 원본 core-catalog-platfom@9fbfbfc4<br>
+    산출물 — reports/catalog-audit.html · reports/bag-category-gender-audit.md · reports/review-progress.md · review/decisions.json
+  </footer>
+
+</div>

@@ -1,0 +1,18 @@
+{
+  "artboards": [
+    {
+      "file": "Main.dc.html",
+      "x": 0,
+      "y": 0,
+      "w": 1240,
+      "h": 2400,
+      "title": "GT 정정 후보 — 무신사 스토어프론트 톤",
+      "expand": "fill",
+      "print": "flow",
+      "is_interactive": true
+    }
+  ],
+  "launch": {
+    "view": "canvas"
+  }
+}

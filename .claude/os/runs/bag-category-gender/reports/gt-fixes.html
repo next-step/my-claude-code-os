@@ -1,0 +1,794 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>GT 정정 후보 · 가방 성별 정책·골든셋 감사</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&family=Gothic+A1:wght@400;500;700;800&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  color-scheme:light;
+  /* 순흑백에 액센트 하나. 그 하나는 "고치자는 방향"과 "판독기가 인용한 사진"에만 쓴다 —
+     화면에서 빨간 것이 보이면 그 자리가 곧 조치할 자리라는 뜻이 되어야 한다.
+     --faint와 --muted는 캔버스 시안(#A3A3A3·#B8B8B8)보다 어둡다. 시안 값은 흰 배경에서
+     2.5:1·2.0:1이라 본문으로 읽히지 않는다. 톤은 지키되 읽히는 선까지 내렸다. */
+  --paper:#FFFFFF; --inset:#F7F7F7; --ink:#000000; --muted:#5C5C5C; --faint:#767676;
+  --rule:#E4E4E4; --rule-soft:#F0F0F0; --ghost:#8A8A8A;
+  --accent:#D62300; --accent-soft:#FDEDEA;
+  --display:"Archivo","Gothic A1","Apple SD Gothic Neo",sans-serif;
+  --sans:"Archivo","Gothic A1","Apple SD Gothic Neo",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,monospace;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html{background:var(--paper)}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);font-weight:400;font-size:14.5px;line-height:1.6;-webkit-font-smoothing:antialiased}
+h1,h2,h3,h4,p,ul,ol,dl,dd,figure{margin:0}
+a{color:inherit;text-decoration:none;border-bottom:1px solid var(--rule);transition:border-color .18s}
+a:hover{border-color:var(--accent)}
+button{font:inherit;color:inherit}
+button:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.wrap{width:min(1360px,calc(100% - 56px));margin:0 auto}
+.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.kicker{font-family:var(--mono);font-size:10px;font-weight:500;letter-spacing:.18em;text-transform:uppercase;color:var(--faint)}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums;font-weight:500;letter-spacing:-.02em}
+
+/* 귀책을 색이 아니라 형태로 구분한다. 인쇄해도 남는다. */
+.mark{display:inline-block;width:9px;height:9px;border:1.25px solid var(--ink);flex:0 0 auto;translate:0 -1px}
+.mark.GT{background:var(--ink)}
+.mark.POLICY{background:transparent}
+.mark.RUNTIME{border-radius:50%;background:transparent}
+.mark.OPEN{background:linear-gradient(135deg,var(--ink) 0 50%,transparent 50% 100%)}
+.mark.NONE{border-style:dotted}
+
+/* masthead */
+.masthead{padding:36px 0 0}
+.masthead-top{display:flex;justify-content:space-between;align-items:baseline;gap:24px;padding-bottom:10px;font-family:var(--mono);font-size:10.5px;color:var(--faint)}
+.masthead-top .dirty{color:var(--accent)}
+.masthead-top nav a{margin-left:14px;border-bottom-color:var(--faint);color:var(--muted)}
+.masthead h1{font-family:var(--display);font-weight:800;letter-spacing:-.045em;line-height:.98;font-size:clamp(2.4rem,5.4vw,4.6rem);padding:20px 0 10px;border-top:2px solid var(--ink)}
+.masthead h1 small{display:block;font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);margin-bottom:10px}
+.runbar{display:flex;flex-wrap:wrap;margin-top:18px;border-top:1px solid var(--ink);border-bottom:1px solid var(--ink)}
+.runbar div{flex:1 1 130px;padding:9px 14px 10px;border-left:1px solid var(--rule)}
+.runbar div:first-child{border-left:0;padding-left:0}
+.runbar dt{font-family:var(--mono);font-size:9.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--faint)}
+.runbar dd{margin:2px 0 0;font-family:var(--mono);font-size:14px;font-weight:500;font-variant-numeric:tabular-nums}
+
+/* 표지: 두 목록 */
+.lanes{display:grid;grid-template-columns:1fr 1fr;margin-top:44px}
+.lane{padding:0 34px 22px 0}
+.lane + .lane{border-left:1px solid var(--rule);padding:0 0 22px 34px}
+.lane-head{display:flex;align-items:baseline;gap:10px}
+.lane-head h2{font-family:var(--display);font-weight:700;font-size:1.5rem;letter-spacing:-.035em}
+.lane-head small{font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--faint)}
+.lane-count{margin:6px 0 4px;display:flex;align-items:baseline;gap:10px}
+.lane-count .num{font-size:3.2rem;font-weight:300;line-height:1}
+.lane-count span{font-size:12.5px;color:var(--muted);font-family:var(--mono)}
+.sig{display:grid;grid-template-columns:1fr auto;gap:2px 16px;padding:10px 0;border-top:1px solid var(--rule)}
+.sig strong{font-weight:500;font-size:13px}
+.sig strong i{font-style:normal;font-family:var(--mono);font-size:10px;letter-spacing:.08em;color:var(--accent);margin-right:8px}
+.sig .num{font-size:14px}
+.lane-open{display:inline-block;margin-top:16px;padding:9px 14px;border:1px solid var(--ink);font-family:var(--mono);font-size:11px;letter-spacing:.06em}
+.lane-open:hover{background:var(--ink);color:var(--paper)}
+.aside-strip{display:grid;grid-template-columns:repeat(3,1fr);border-top:1px solid var(--ink);border-bottom:1px solid var(--ink)}
+.aside-strip div{display:grid;grid-template-columns:auto 1fr;gap:0 14px;align-items:center;padding:14px 18px;border-left:1px solid var(--rule)}
+.aside-strip div:first-child{border-left:0;padding-left:0}
+.aside-strip .num{font-size:1.9rem;font-weight:300;line-height:1}
+.aside-strip p{display:flex;align-items:center;gap:7px;font-size:12.5px;font-weight:500}
+
+.sec{margin-top:60px}
+.sec-head{display:flex;align-items:baseline;justify-content:space-between;gap:20px;padding-bottom:10px;border-bottom:1.5px solid var(--ink)}
+.sec-head h2{font-family:var(--display);font-weight:700;font-size:1.55rem;letter-spacing:-.035em}
+.sec-head h2 small{display:block;font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);margin-bottom:6px}
+.map{width:100%;border-collapse:collapse;margin-top:6px}
+.map th,.map td{text-align:left;padding:9px 16px 9px 0;border-bottom:1px solid var(--rule);vertical-align:top;font-size:13px}
+.map th{font-family:var(--mono);font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--faint);font-weight:500;padding-top:0}
+.map td.id{font-family:var(--mono);font-size:10.5px;color:var(--muted);word-break:break-all}
+.map td.desc{color:var(--muted)}
+.map td.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.map td.where,.map td.mono{font-family:var(--mono);font-size:10.5px;color:var(--muted)}
+.map td.lbl{font-family:var(--mono);font-size:11px;font-weight:600;white-space:nowrap}
+
+/* 사례 보고서: 툴바 */
+.toolbar{position:sticky;top:0;z-index:5;display:flex;flex-wrap:wrap;align-items:center;margin-top:28px;background:var(--paper);border-top:1.5px solid var(--ink);border-bottom:1px solid var(--rule)}
+.toolbar button{appearance:none;background:none;border:0;border-right:1px solid var(--rule);font-family:var(--mono);font-size:11px;letter-spacing:.04em;color:var(--muted);padding:10px 14px;cursor:pointer;display:flex;align-items:center;gap:7px;transition:color .16s,background .16s}
+.toolbar button:hover{background:var(--inset);color:var(--ink)}
+.toolbar button[aria-pressed=true]{background:var(--ink);color:var(--paper)}
+.toolbar button[aria-pressed=true] .mark{border-color:var(--paper)}
+.toolbar button[aria-pressed=true] .mark.GT{background:var(--paper)}
+.toolbar button[aria-pressed=true] .mark.OPEN{background:linear-gradient(135deg,var(--paper) 0 50%,transparent 50% 100%)}
+.toolbar .search{margin-left:auto;display:flex;align-items:center;gap:10px}
+.toolbar input{border:0;border-left:1px solid var(--rule);background:transparent;padding:10px 12px;font-family:var(--mono);font-size:11.5px;min-width:280px}
+.toolbar input::placeholder{color:var(--faint)}
+.toolbar .shown{font-family:var(--mono);font-size:11px;color:var(--faint);padding-right:4px}
+
+/* 군집 머리 */
+.cluster{margin-top:44px}
+.cluster-head{display:grid;grid-template-columns:184px 1fr;gap:0 34px;padding:16px 0 18px;border-top:1.5px solid var(--ink)}
+.cluster-rail .cid{font-family:var(--mono);font-size:12px;font-weight:600;color:var(--accent);letter-spacing:.04em}
+.cluster-rail .cid.plain{color:var(--ink)}
+.cluster-rail .ccount{margin-top:6px;font-family:var(--mono);font-size:11px;color:var(--muted)}
+.cluster-rail .ccount .num{font-size:1.6rem;font-weight:300;display:block;line-height:1;color:var(--ink);margin-bottom:2px}
+.cluster-rail .status{display:inline-block;margin-top:8px;padding:2px 6px;border:1px solid var(--accent);color:var(--accent);font-family:var(--mono);font-size:9.5px;letter-spacing:.1em}
+.cluster-rail .status.DECIDED{border-color:var(--ink);color:var(--ink)}
+.cluster-body h2{font-family:var(--display);font-weight:700;font-size:1.24rem;line-height:1.42;letter-spacing:-.025em;max-width:64ch}
+.cluster-body .sub{margin-top:4px;font-size:12.5px;color:var(--muted)}
+.q-impact{display:flex;flex-wrap:wrap;margin-top:12px;border:1px solid var(--rule);width:fit-content;max-width:100%}
+.q-impact div{padding:5px 13px 6px;border-left:1px solid var(--rule)}
+.q-impact div:first-child{border-left:0}
+.q-impact dt{font-family:var(--mono);font-size:9px;letter-spacing:.11em;text-transform:uppercase;color:var(--faint)}
+.q-impact dd{font-family:var(--mono);font-size:13px;font-weight:600}
+.q-rec{margin-top:10px;font-size:13px;max-width:72ch}
+.q-rec b{font-family:var(--mono);font-size:10px;letter-spacing:.11em;text-transform:uppercase;color:var(--faint);display:block;margin-bottom:2px}
+.q-rec b i{font-style:normal;color:var(--accent)}
+.p-more h4 small{font-weight:400;letter-spacing:.06em;text-transform:none;color:var(--accent)}
+
+/* 정정 후보: 한 제안이 한 장이다. 제목 다음이 바로 필터이고, 그 다음이 제안이다 —
+   머리에 리포트 자신을 설명하는 말도, 리포트 자신을 세는 숫자도 두지 않는다.
+   이 화면이 묻는 것은 "이 GT가 틀렸나" 하나뿐이고, 나머지는 그 답에 기여하지 않는다. */
+.fx{display:grid;grid-template-columns:96px minmax(0,1fr);gap:0 32px;padding:60px 0 68px;
+    border-top:1px solid var(--ink);animation:fx-rise .45s cubic-bezier(.2,.7,.3,1) both}
+@keyframes fx-rise{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+@media(prefers-reduced-motion:reduce){.fx{animation:none}}
+
+/* 왼쪽 — 일련번호. 카드를 세는 유일한 자리다 */
+.fx-rail{position:sticky;top:64px;align-self:start}
+.fx-rail .ord{display:block;font-family:var(--mono);font-size:40px;font-weight:600;letter-spacing:-.03em;
+              line-height:.85;color:var(--rule);font-variant-numeric:tabular-nums}
+.fx-rail .chips{margin-top:20px}
+.stamp{display:inline-block;margin-top:18px;padding:5px 10px 4px;font-family:var(--mono);font-size:10px;
+       font-weight:700;letter-spacing:.14em;border:1px solid var(--rule);color:var(--muted)}
+.stamp.SURE{border-color:var(--accent);color:var(--accent)}
+.stamp.POLICY{border-color:var(--ink);color:var(--ink)}
+.stamp.ASK,.stamp.OPEN{border-style:dashed}
+
+.fx-body{min-width:0}
+.fx-meta{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;margin-bottom:14px;
+         font-family:var(--mono);font-size:11px;letter-spacing:.07em;color:var(--ghost)}
+.fx-meta a{font-weight:600;letter-spacing:.1em;color:var(--ink);border:0}
+.fx-meta a:hover{color:var(--accent)}
+.fx h3{font-family:var(--display);font-weight:700;font-size:26px;line-height:1.3;letter-spacing:-.02em;
+       max-width:34ch;overflow-wrap:anywhere}
+
+/* 주문 — 현재 GT는 그어지고, 제안만 색을 갖는다 */
+.ruling{display:flex;flex-wrap:wrap;align-items:flex-end;gap:16px 44px;margin-top:32px;padding:26px 0;
+        border-top:1px solid var(--ink);border-bottom:1px solid var(--rule)}
+.ruling>div{min-width:0}
+.ruling dt{font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:.15em;color:var(--ghost);margin-bottom:10px}
+.ruling dd{font-family:var(--display);font-size:42px;font-weight:800;letter-spacing:-.03em;line-height:.95;
+           font-variant-numeric:tabular-nums}
+.ruling .was dd{color:#8A8A8A;text-decoration:line-through;text-decoration-thickness:2px}
+.ruling .now dd{color:var(--accent)}
+.ruling .keep dd{color:var(--ink);font-size:32px}
+.ruling small{display:block;margin-top:12px;font-family:var(--mono);font-size:10.5px;letter-spacing:.05em;
+              line-height:1.55;color:var(--muted);overflow-wrap:anywhere}
+.ruling .to{align-self:center;margin-bottom:24px;color:var(--rule);line-height:0}
+.ruling .to svg{display:block}
+
+/* 판독기와 리뷰어를 섞지 않는다 */
+.fx-say{display:grid;grid-template-columns:104px minmax(0,1fr);gap:20px;padding:19px 0;
+        border-bottom:1px solid var(--rule-soft)}
+.fx-say:last-of-type{border-bottom:0}
+.fx-say b{font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:.13em;color:var(--ghost);padding-top:3px}
+.fx-say p{font-size:15px;line-height:1.75;color:var(--ink);max-width:76ch;overflow-wrap:anywhere}
+.fx-say.mut p{color:var(--muted)}
+.fx-say .src{font-family:var(--mono);font-size:11px;letter-spacing:.04em;color:var(--ghost)}
+
+/* 판정 — 읽는 자리에서 그대로 답한다.
+   액센트는 «조치할 자리»에만 쓴다는 이 화면의 규칙 그대로, 승인 버튼 하나가 그 자리다. */
+.act{margin-top:36px;padding-top:22px;border-top:1px solid var(--ink)}
+.act-head{display:flex;flex-wrap:wrap;align-items:baseline;gap:10px;margin-bottom:16px;
+          font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--ghost)}
+.act-form{display:grid;gap:12px;max-width:760px}
+.act-bind{display:grid;grid-template-columns:104px minmax(0,1fr);gap:12px;align-items:center}
+.act-bind>span{font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:.13em;color:var(--ghost)}
+.act select,.act input[type=text]{width:100%;padding:10px 12px;border:1px solid var(--rule);background:var(--paper);
+  color:var(--ink);font-family:var(--sans);font-size:14px;border-radius:0}
+.act select:focus,.act input[type=text]:focus{outline:0;border-color:var(--ink)}
+.act select[disabled]{background:var(--inset);color:var(--muted)}
+/* 규칙 칸은 판례를 고르면 잠긴다. 왜 잠겼는지가 옆에 적혀야 «고장」으로 안 읽힌다. */
+.act-rule{display:block;min-width:0}
+.act-rule small{display:block;margin-top:6px;font-family:var(--mono);font-size:10.5px;
+  letter-spacing:.04em;color:var(--faint)}
+.act-buttons{display:flex;flex-wrap:wrap;gap:10px;margin-top:2px}
+.act button{padding:12px 18px;border:1px solid var(--ink);background:var(--paper);color:var(--ink);
+  font-family:var(--sans);font-size:13.5px;font-weight:600;cursor:pointer;transition:background .15s,color .15s}
+.act button:hover{background:var(--ink);color:var(--paper)}
+.act button.go{background:var(--accent);border-color:var(--accent);color:#fff}
+.act button.go:hover{background:#B01D00;border-color:#B01D00}
+.act button[disabled]{opacity:.45;cursor:default}
+.act button[disabled]:hover{background:var(--paper);color:var(--ink)}
+.act .out{font-family:var(--mono);font-size:11.5px;line-height:1.6;letter-spacing:.02em;color:var(--muted);
+  padding:12px 14px;background:var(--inset);overflow-wrap:anywhere}
+.act .out.bad{background:var(--accent-soft);color:#8C1800}
+/* 이미 답한 건. 폼을 지우고 무엇을 언제 답했는지만 남긴다 — 두 번 누를 자리를 없앤다. */
+.act.settled{border-top-color:var(--rule)}
+.act .stamp-done{display:grid;gap:6px;padding:14px 16px;background:var(--inset);
+  font-family:var(--mono);font-size:11.5px;line-height:1.7;color:var(--ink);overflow-wrap:anywhere}
+.act .stamp-done b{font-size:12px;letter-spacing:.06em}
+.act .stamp-done .held{color:var(--accent)}
+/* 서버 없이 파일로 열었을 때. 버튼을 그려 놓고 안 눌리는 것보다 왜 안 되는지 적는 편이 낫다. */
+.act .offline{font-family:var(--mono);font-size:11.5px;line-height:1.7;color:var(--faint);
+  padding:12px 14px;border:1px dashed var(--rule)}
+
+/* 증거판 — 인용된 장면이 먼저 온다 */
+.plate{margin-top:34px}
+.plate-head{display:flex;flex-wrap:wrap;align-items:baseline;gap:10px;margin-bottom:14px;
+            font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--ghost)}
+.plate .shots{display:grid;grid-template-columns:repeat(auto-fill,minmax(232px,1fr));gap:20px;overflow:visible;padding:0}
+.plate .shots figure{margin:0;min-width:0}
+.plate .frame{display:block;width:100%;padding:0;border:1px solid var(--rule);background:#fff;
+              cursor:zoom-in;position:relative;transition:border-color .16s,transform .16s}
+.plate .frame:hover{border-color:var(--ink);transform:translateY(-2px)}
+/* 높이를 고정하면 세로로 긴 상세컷이 가운데 실오라기 한 줄로 줄어든다 — 증거를 못 읽는다.
+   폭을 채우고 높이는 사진이 정한다. 격자가 들쭉날쭉해지지만, 보이는 편이 낫다. */
+/* 긴 상세 원본에서 이 장면이 실제로 차지한 자리만 보여준다. 타일 높이는 폭×1.5라
+   (`DxxTyy` 경계 규칙), 액자를 2:3으로 잡으면 액자 높이가 곧 타일 한 칸이다.
+   그러면 `top`의 100%가 정확히 한 타일이라 원본 높이를 몰라도 잘라 낼 수 있다.
+   자르지 않으면 한 원본에서 나온 열 장이 전부 같은 그림으로 보이고,
+   「어느 사진이 남성 근거인가」에 답할 수 없다. */
+.plate .frame.tiled{position:relative;aspect-ratio:2/3;overflow:hidden;border-width:0;
+  outline:1px solid var(--rule);outline-offset:-1px}
+.plate figure.cited .frame.tiled{border-width:0;outline:2px solid var(--accent);outline-offset:-2px}
+.plate .frame.tiled img{position:absolute;left:0;top:calc(var(--tile) * -100%);
+  width:100%;height:auto;min-height:0;max-height:none}
+.plate .frame img{display:block;width:100%;height:auto;min-height:200px;max-height:520px;
+                  object-fit:contain;background:#fff}
+.plate figure.cited .frame{border:2px solid var(--accent)}
+.plate figure.cited .frame::after{content:"근거";position:absolute;top:0;left:0;background:var(--accent);color:#fff;
+              font-family:var(--mono);font-size:9.5px;font-weight:700;letter-spacing:.14em;padding:5px 9px 4px}
+.plate figcaption{margin-top:9px;font-family:var(--mono);font-size:10px;letter-spacing:.09em;color:var(--ghost)}
+.plate figcaption .scene{display:block}
+/* 판독기가 이 장면에서 본 것. 주장과 사진을 잇는 한 줄이라 캡션에서 가장 크게 읽혀야 한다 */
+/* 판독 기록은 사진에 붙어야 한다. 캡션 한 줄로 떨어뜨리면 어느 사진의 말인지 흐려진다. */
+.plate .seen{position:absolute;left:0;right:0;bottom:0;padding:7px 9px;
+  font-family:var(--sans);font-size:12px;line-height:1.35;text-align:left;
+  background:rgba(255,255,255,.94);border-top:1px solid var(--rule)}
+.plate .seen b{font-weight:600}
+.plate .seen.male b{color:#1449b8}
+.plate .seen.female b{color:#c0134a}
+.plate .seen.none{color:var(--ghost);font-style:italic}
+/* 인용하지 않았는데 판독기가 무언가 적어 둔 장면. 근거로 채택된 것과 같은 무게로 보이면
+   안 되지만, 숨기면 반증이 사라진다 — 실행의 주장과 어긋나는 기록이 여기 있었다. */
+.plate .seen.aside{background:rgba(255,255,255,.9);border-top:1px dashed var(--rule)}
+.plate figure:not(.cited) .frame{outline:1px dashed var(--rule);outline-offset:-1px}
+.plate .frame.missing{position:relative;aspect-ratio:2/3;display:grid;place-items:center;
+  border:1px dashed var(--rule);background:var(--inset);padding:14px;text-align:center}
+.plate .frame.missing .seen{position:static;background:none;border:0;text-align:center}
+.plate figcaption .derived{display:block;margin-top:3px;font-family:var(--sans);font-size:11.5px;color:var(--muted)}
+.plate figure.cited figcaption .scene{color:var(--accent)}
+.plate figcaption .fail{display:none;margin-top:4px;color:var(--accent)}
+.plate figure.gone .frame{border-style:dashed;background:var(--inset);cursor:default}
+.plate figure.gone .frame img{height:44px;opacity:0}
+.plate figure.gone figcaption .fail{display:block}
+.plate details{margin-top:16px;border-top:1px solid var(--rule-soft);padding-top:14px}
+.plate summary{cursor:pointer;font-family:var(--mono);font-size:10.5px;letter-spacing:.06em;color:var(--muted)}
+.plate summary:hover{color:var(--accent)}
+.plate details .shots{margin-top:14px}
+.plate .noshot{padding:26px;border:1px dashed var(--rule);background:var(--inset);color:var(--ghost);
+               font-family:var(--mono);font-size:11px;text-align:center}
+.fx .chips{margin-top:8px}
+
+/* 확대 뷰어 */
+dialog.viewer{max-width:96vw;max-height:96vh;padding:0;border:1.5px solid var(--ink);background:var(--paper)}
+dialog.viewer::backdrop{background:rgba(23,21,15,.86)}
+dialog.viewer img{display:block;max-width:92vw;max-height:84vh;object-fit:contain;background:#fff}
+dialog.viewer .bar{display:flex;justify-content:space-between;align-items:center;gap:20px;padding:8px 12px;
+                   border-top:1px solid var(--rule);font-family:var(--mono);font-size:11px;color:var(--muted)}
+dialog.viewer button{appearance:none;background:none;border:1px solid var(--rule);font-family:var(--mono);
+                     font-size:11px;padding:4px 10px;cursor:pointer;color:var(--ink)}
+dialog.viewer button:hover{background:var(--ink);color:var(--paper)}
+
+/* 상품 카드: 하네스 리포트처럼 상품 단위로 이미지를 밀집한다 */
+.product{display:grid;grid-template-columns:184px 1fr;gap:0 34px;padding:22px 0 26px;border-top:1px solid var(--rule)}
+.p-rail{font-family:var(--mono);font-size:11px;color:var(--muted);line-height:1.7}
+.p-rail .idx{display:flex;align-items:center;gap:8px;color:var(--ink);font-weight:500;letter-spacing:.08em}
+.p-rail .key{margin-top:8px;color:var(--ink);font-size:11.5px;word-break:break-all}
+.p-rail .cat{font-size:10.5px;color:var(--faint);word-break:break-all}
+.p-rail .chips{margin-top:10px}
+.p-body{min-width:0}
+.p-head{display:flex;justify-content:space-between;align-items:flex-start;gap:20px}
+.p-head h3{font-family:var(--display);font-weight:700;font-size:1.18rem;line-height:1.34;letter-spacing:-.025em}
+.p-head .pdp{flex:0 0 auto;font-family:var(--mono);font-size:10.5px;padding:5px 9px;border:1px solid var(--rule)}
+.p-head .pdp:hover{border-color:var(--ink)}
+.labels{display:flex;align-items:stretch;border:1px solid var(--rule);width:fit-content;max-width:100%;margin-top:12px;background:var(--paper)}
+.labels > div{padding:7px 14px 8px;border-left:1px solid var(--rule)}
+.labels > div:first-child{border-left:0}
+.labels dt{font-family:var(--mono);font-size:8.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--faint)}
+.labels dd{margin-top:1px;font-family:var(--mono);font-size:14px;font-weight:600;letter-spacing:-.01em}
+.labels dd small{display:block;font-size:9px;font-weight:400;color:var(--muted);letter-spacing:.02em}
+.labels .verdict{background:var(--ink);color:var(--paper)}
+.labels .verdict dt{color:rgba(250,249,245,.6)}
+.labels .verdict dd small{color:rgba(250,249,245,.7)}
+.labels .verdict.pending{background:var(--accent-soft);color:var(--accent)}
+.labels .verdict.pending dt,.labels .verdict.pending dd small{color:rgba(140,43,24,.7)}
+/* 판독기가 쓴 것과 리뷰어가 쓴 것을 한 칸에 섞지 않는다. 누가 쓴 문장인지가 판정을 가른다. */
+.p-split{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:0;margin-top:14px;border:1px solid var(--rule)}
+.voice{padding:11px 14px 13px;min-width:0}
+.voice + .voice{border-left:1px solid var(--rule)}
+.voice.review{background:var(--inset)}
+.voice > h4{display:flex;align-items:baseline;gap:8px;margin-bottom:8px;font-family:var(--mono);font-size:9.5px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--ink)}
+.voice > h4 small{font-weight:400;letter-spacing:.06em;text-transform:none;color:var(--faint);font-size:9.5px}
+.voice p{font-size:13px;line-height:1.55}
+.voice p + p{margin-top:6px}
+.voice .said{font-weight:500}
+.voice .aside{color:var(--muted);font-size:12.5px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.voice .chips{margin-top:8px}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:2px 7px;border:1px solid var(--rule);font-family:var(--mono);font-size:10px;letter-spacing:.04em;background:var(--paper)}
+/* 액센트는 "고치자는 방향"과 "판독기가 인용한 사진"에만 쓴다. 미결 판례는 맥락이지
+   주장이 아니다 — 빨강을 여기에 쓰면 화면에서 빨간 것을 찾는 눈이 흐려진다.
+   대신 굵기로 가른다: 미결은 검은 테두리, 확정은 회색. */
+.chip.open,.chip.dual{border-color:var(--ink);color:var(--ink)}
+.chip a{border:0}
+.trail{display:flex;flex-wrap:wrap;border:1px solid var(--rule);width:fit-content;background:var(--paper);margin-bottom:8px}
+.trail div{padding:5px 12px 6px;border-left:1px solid var(--rule)}
+.trail div:first-child{border-left:0}
+.trail dt{font-family:var(--mono);font-size:8.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--faint)}
+.trail dd{font-family:var(--mono);font-size:12px;font-weight:600}
+.trail div.final{background:var(--ink);color:var(--paper)}
+.trail div.final dt{color:rgba(250,249,245,.6)}
+.trail-src{font-family:var(--mono);font-size:10px;color:var(--muted);margin-top:6px}
+.quote{padding-left:12px;border-left:2px solid var(--ink);font-family:var(--serif);font-size:14.5px;font-weight:300;line-height:1.5}
+.quote span{display:block;margin-top:3px;font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint)}
+.quote.absent{border-left-color:var(--rule);color:var(--muted);font-size:13px;font-family:var(--sans)}
+.shots-head{display:flex;align-items:baseline;gap:8px;margin:16px 0 6px;font-family:var(--mono);font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--faint)}
+.shots-head b{color:var(--ink);font-weight:500}
+.shots-head i{font-style:normal;color:var(--accent)}
+.shots{display:flex;gap:6px;overflow-x:auto;padding-bottom:6px;scrollbar-color:var(--rule) transparent}
+.shots.detail{background:var(--inset);padding:6px 6px 8px}
+.shot{flex:0 0 124px;width:124px;margin:0;border:1px solid var(--rule);background:#fff;position:relative}
+.shot a{display:block;border:0}
+.shot img{display:block;width:100%;height:140px;object-fit:contain;background:#fff}
+.shot figcaption{padding:4px 6px 5px;font-family:var(--mono);font-size:9px;line-height:1.4;color:var(--muted);border-top:1px solid var(--rule);min-height:30px;overflow-wrap:anywhere}
+.shot figcaption b{display:block;color:var(--ink);font-weight:600;font-size:9.5px}
+.shot.evidence{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+.shot.evidence figcaption b{color:var(--accent)}
+.shot.evidence::after{content:"근거";position:absolute;top:4px;left:4px;padding:1px 5px;background:var(--accent);color:var(--paper);font-family:var(--mono);font-size:8.5px;letter-spacing:.1em}
+.shot.missing{display:grid;place-items:center;height:172px;color:var(--faint);font-family:var(--mono);font-size:10px;text-align:center;padding:8px;background:var(--inset)}
+.p-more{margin-top:12px;font-size:12.5px}
+.p-more summary{cursor:pointer;font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--faint);list-style:none}
+.p-more summary::before{content:"+ ";color:var(--ink)}
+.p-more[open] summary::before{content:"− "}
+.p-more .grid{display:grid;grid-template-columns:1fr 1fr;gap:0 28px;margin-top:8px;padding-top:8px;border-top:1px solid var(--rule)}
+.p-more h4{font-family:var(--mono);font-size:9.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--faint);margin:10px 0 4px}
+.sigrow{padding:6px 0;border-top:1px dashed var(--rule)}
+.sigrow:first-of-type{border-top:0}
+.sigrow strong{display:block;font-weight:500;font-size:12.5px}
+.sigrow p{font-size:12px;color:var(--muted);line-height:1.5}
+.sentence{font-size:12.5px;line-height:1.5;padding:4px 0}
+.kv{font-family:var(--mono);font-size:10.5px;color:var(--muted);line-height:1.8}
+.kv b{color:var(--ink);font-weight:500}
+.recovery{margin-top:6px;padding:6px 9px;background:var(--accent-soft);color:#75401F;font-size:11.5px;line-height:1.5}
+.empty{padding:48px 22px;color:var(--muted);text-align:center;font-size:13px}
+
+footer{margin-top:64px;padding:22px 0 70px;border-top:1.5px solid var(--ink);color:var(--muted);font-size:12px;line-height:1.75}
+footer .mono{color:var(--ink)}
+footer nav a{margin-right:16px;border-bottom-color:var(--faint)}
+
+@keyframes rise{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+@media (max-width:900px){
+  .wrap{width:min(1360px,calc(100% - 28px))}
+  .lanes,.aside-strip{grid-template-columns:1fr}
+  .aside-strip div{border-left:0;border-top:1px solid var(--rule)}
+  .aside-strip div:first-child{border-top:0}
+  .aside-strip div{padding-left:0}
+  .lane{padding:0 0 22px}
+  .lane + .lane{border-left:0;border-top:1px solid var(--rule);padding:22px 0}
+  .sec-head{flex-direction:column;align-items:flex-start}
+  .sec-head p{text-align:left}
+  .cluster-head,.product{grid-template-columns:1fr;gap:10px}
+  .fx{grid-template-columns:1fr;gap:14px 0;padding:22px 0 28px}
+  .fx-rail{position:static;display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px}
+  .fx-rail .chips{margin-top:0}
+  .stamp{transform:none}
+  .plate .shots{grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+  .plate .frame img{height:200px}
+  .p-rail{display:flex;flex-wrap:wrap;gap:4px 16px;align-items:center}
+  .p-rail .key,.p-rail .chips{margin-top:0}
+  .p-split{grid-template-columns:1fr}
+  .voice + .voice{border-left:0;border-top:1px solid var(--rule)}
+  .p-more .grid{grid-template-columns:1fr}
+  .toolbar{position:static}
+  .toolbar .search{margin-left:0;width:100%}
+  .toolbar input{min-width:0;flex:1}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+@media print{
+  body{font-size:10pt}
+  .toolbar,.p-head .pdp{display:none}
+  .product,.cluster-head,.fx{break-inside:avoid}
+  .plate figure{break-inside:avoid}
+  .shots{flex-wrap:wrap;overflow:visible}
+  a{border:0}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="masthead">
+    <div class="masthead-top"><nav><a href="catalog-audit.html">표지 →</a><a href="suspect-gt.html">의심되는 GT 찾기 →</a><a href="policy-gaps.html">빈 정책 찾기 →</a></nav></div>
+    <h1>GT 정정 후보</h1>
+  </header>
+  <div class="toolbar" role="group" aria-label="도장 선택"><div id="grade-tabs" style="display:contents"></div><label class="search"><input id="search" type="search" placeholder="상품명 · 키 · 라벨 · GT 출처 · 사유 검색" aria-label="검색"><span class="shown" id="shown"></span></label></div>
+  <div id="fixes"></div>
+  <noscript><p class="empty">제안을 보려면 JavaScript를 켠다.</p></noscript>
+  <dialog class="viewer" id="viewer"><img id="viewer-img" alt="증거 사진 확대"><div class="bar"><span id="viewer-cap"></span><button type="button" onclick="document.getElementById('viewer').close()">닫기 ×</button></div></dialog>
+  <footer><nav><a href="catalog-audit.html">표지 →</a><a href="suspect-gt.html">의심되는 GT 찾기 →</a><a href="policy-gaps.html">빈 정책 찾기 →</a></nav>목표 <span class="mono">.claude/os/attributes/bag-category-gender/goal.md</span><br>심판 추천 <span class="mono">.claude/os/runs/bag-category-gender/review/verdicts.jsonl</span><br>사람 판정 원장 <span class="mono">.claude/os/runs/bag-category-gender/review/decisions.json</span><br><span class="mono">생성 2026-09-07T07:43:24.313966+00:00 · 원본 e9344a9c <span class="dirty">미커밋 변경 있음</span></span></footer>
+</div>
+<script id="audit-data" type="application/json">{"strings":["GOLDEN_POLICY_VIOLATION_CANDIDATE","PENDING_PRECEDENT","약한 근거라 골든셋을 의심할지 판례가 먼저 답해야 한다.","3순위 착용자 근거뿐이다. 이 근거만으로 골든셋을 뒤집을지는 판례가 답한다.","https://image.msscdn.net/images/prd_img/202503201849161307565224067dbe49c1feca.jpg","INTERACTION_POLICY_RECOVERED","POLICY_LABEL_SILENT","여성 모델만 동일 대상 상품을 실제 착용한 이미지가 확인됨.","https://img.29cm.co.kr/item/202508/11f0771738126c50889391c8dbc4e17f.jpeg","https://img.29cm.co.kr/item/202508/11f0824c175447b88403a53cfd4ad0ea.jpg","https://sbskorea.esellersimg.co.kr/President/A90/Files/A90_01.jpg","GOLDEN_LABEL_PRECONDITION","https://img.29cm.co.kr/item/202508/11f07746310bd35888937f19efb42428.jpeg","남성 모델만 동일 대상 상품을 실제 착용한 이미지가 확인됨.","https://sbskorea.esellersimg.co.kr/President/A90/Files/A90_03.jpg","GOLDEN_SOURCE_CONFLICT","https://egarden1.dothome.co.kr/img/EGARDEN/%ED%8A%B8%EB%9E%98%EB%B8%94%EB%9F%AC%EC%B2%B4%EC%BB%A4%EB%B3%B4%EB%93%9C%EC%97%90%EB%94%94%EC%85%98%ED%8C%A8%EC%8A%A4%ED%8F%AC%ED%8A%B8/%ED%83%80%EC%82%AC%EB%AA%B0(%EC%98%B5%EC%85%98o)/01.jpg","https://image.msscdn.net/images/prd_img/202503061539477203238311567c94333afdcc.jpg","https://sbskorea.esellersimg.co.kr/President/A90/Files/A90_02.jpg"],"data":{"mode":"fixes","profile":{"id":"bag-category-gender","attributeName":"대상 고객 성별","subjectName":"가방 상품"},"lanes":[{"id":"GT","title":"의심되는 GT","unit":"건 단위"},{"id":"POLICY","title":"의심되는 정책","unit":"군집 단위"},{"id":"RUNTIME","title":"실행 결함","unit":"분리"},{"id":"OPEN","title":"미확정","unit":"심판 없음"},{"id":"NONE","title":"충돌 없음","unit":"기록"}],"grades":[{"id":"SURE","label":"확신","note":"정책 직접 근거로 GT가 틀렸다"},{"id":"POLICY","label":"정책적용","note":"정책을 그대로 적용하면 뒤집힌다"},{"id":"ASK","label":"판단필요","note":"미결 판례·근거 부족이라 한 답을 못 고른다"},{"id":"OPEN","label":"미확정","note":"심판 결과가 없다"}],"precedents":[{"id":"BG-0001","status":"OPEN","href":"../../../attributes/bag-category-gender/policy/precedents/BG-0001.md","question":"정책의 직접 근거가 단일 성별을 지지하는데 GT가 UNISEX인 사례를 GT 오류로 확정할 것인가?","answers":["GQ-GT-001"],"rules":["P3_WEARER"]},{"id":"BG-0002","status":"OPEN","href":"../../../attributes/bag-category-gender/policy/precedents/BG-0002.md","question":"근거가 없을 때 내부 UNDETERMINED를 최종 UNISEX로 바꿔도 되는가?","answers":["GQ-RUN-001"],"rules":["P0_NO_EVIDENCE","P0_CATEGORY_NOT_UNISEX"]},{"id":"BG-0003","status":"OPEN","href":"../../../attributes/bag-category-gender/policy/precedents/BG-0003.md","question":"두 GT 소스 중 어느 버전을 정본으로 사용할 것인가?","answers":["GQ-SOURCE-001"],"rules":[]}],"rules":[{"id":"P1_DIRECT_TEXT","section":"근거 우선순위","summary":"직접 상품 성별 문구. 대상 판매 가방을 직접 수식하는 여성용·우먼즈·남성용·맨즈·남녀공용·유니섹스 문구."},{"id":"P2_COMBINED_DESIGN","section":"근거 우선순위","summary":"여성용 결합 디자인. 가방 자체의 구조·크기·형태·장식이 여성용으로 강하게 결합된 경우."},{"id":"P3_WEARER","section":"근거 우선순위","summary":"대상 가방 착용자의 외형 성별 표현. 위 둘이 성립하지 않을 때만 쓴다."},{"id":"P3_MIXED_WEARER","section":"근거 우선순위","summary":"남성과 여성이 같은 가방을 모두 착용했으면 `UNISEX`를 낸다."},{"id":"U1_SIGNAL_CONFLICT","section":"판정 불가 조건","summary":"여성 신호와 남성 신호가 충돌한다"},{"id":"U2_UNLINKED_EVIDENCE","section":"판정 불가 조건","summary":"근거와 대상 상품의 연결이 불명확하다"},{"id":"P0_NO_EVIDENCE","section":"판정 불가 조건","summary":"명확한 공용 표기도, 남녀 착용 조합도, 공용 기능 구조도 없다"},{"id":"P0_FUNCTION_UNISEX","section":"판정 불가 조건","summary":"표준 백팩·캐리어·브리프케이스처럼 기능과 구조가 명확히 공용인 경우에만 디자인 근거로 `UNISEX`를 고려한다"},{"id":"P0_CATEGORY_NOT_UNISEX","section":"판정 불가 조건","summary":"일반 토트·숄더·크로스백은 남녀 모두 쓸 수 있다는 상식만으로 `UNISEX`가 아니다"}],"signals":[{"id":"IMAGE_COLLECTION_RECOVERED","label":"29CM 상세 이미지 수집 복구","description":"공개 HTML에 없던 product-detail BFF 이미지를 수집해 상세 판정을 복구했습니다.","priority":1,"count":1},{"id":{"$":5},"label":"가방 WORN 정책 복구","description":"몸에 멘 백팩·숄더백을 실제 가방 상호작용으로 인정해 판정을 복구했습니다.","priority":2,"count":223},{"id":"INVALID_TEXT_EVIDENCE_DROPPED","label":"잘못된 직접 문구 제거","description":"성별 표지가 없는 상품명을 직접 성별 문구로 오인한 출력만 제거했습니다.","priority":3,"count":6},{"id":"EVIDENCE_PIPELINE_RECOVERED","label":"공유 이미지 필터 복구","description":"같은 상품군의 변형이 공유한 PDP 이미지를 보존해 상세 추론을 복구했습니다.","priority":4,"count":4},{"id":{"$":0},"label":"정책 근거가 있는 GT 오류 후보","description":"상세 이미지나 직접 문구가 단일 성별을 지지하지만 현재 GT가 다릅니다.","priority":5,"count":12},{"id":"MODEL_POLICY_CONTRADICTION","label":"추론 결과·근거 모순","description":"실행이 기록한 상세 근거와 최종 실행 라벨이 서로 반대입니다.","priority":6,"count":1},{"id":{"$":15},"label":"골든 소스 충돌","description":"같은 상품의 정답 소스가 서로 다릅니다.","priority":7,"count":51},{"id":"POLICY_RUNTIME_CONTRADICTION","label":"정책·실행 모순","description":"정책 문장과 실제 변환 로직이 정면으로 어긋납니다.","priority":8,"count":48},{"id":"POLICY_GOLDEN_CONFLICT","label":"정책·골든 충돌","description":"정책 실행의 확정 결과와 사람 정답이 다릅니다.","priority":9,"count":12},{"id":"POLICY_GOLDEN_GAP","label":"정책 공백","description":"골든셋에는 답이 있지만 정책은 답을 만들 근거가 부족합니다.","priority":10,"count":28},{"id":"GOLDEN_UNSUPPORTED_AGREEMENT","label":"근거 없는 일치","description":"결과와 정답은 같지만 정책 근거가 없어 우연히 맞았을 수 있습니다.","priority":11,"count":20},{"id":{"$":11},"label":"정책이 배제한 자리의 GT 라벨","description":"정책이 «이 계열은 그 라벨이 아니다»로 명시했는데 GT가 그 라벨입니다. 실행을 거치지 않고 GT를 정책과 직접 대조해 찾습니다.","priority":12,"count":32},{"id":{"$":6},"label":"정책이 말하지 않은 자리의 GT 라벨","description":"GT가 그 라벨인데 정책이 이 계열을 허용에도 배제에도 넣지 않았습니다. 건이 아니라 정책의 공백입니다.","priority":13,"count":72}],"evidenceHref":"suspect-gt.html","rows":[{"productKey":"EGOOCM:3407206","productName":"스포츠 미니 크로스백 - 블랙(QQ323ABG81)","lane":"GT","referenceLabel":"UNISEX","observedLabel":"FEMALE","verdict":{"owner":{"$":1},"ownerShort":"판례 대기","action":"미결 판례가 답해야 정해진다","reason":{"$":2},"policyAnswer":"FEMALE","ruleId":"P3_WEARER","strength":"WEAK","note":{"$":3},"blockedBy":["BG-0001","BG-0003"]},"evidence":{"text":{"$":7},"type":"HUMAN","sceneIds":["D04T01","D03T01"],"images":["https://img.dk-on.com/contents/editor_images/20250728/QQ323ABG81_20250728095508.jpg","https://img.dk-on.com/contents/editor_images/20250728/1.%20%EB%A5%B4%EA%BC%AC%EB%81%84%20%EC%9D%B8%ED%8A%B8%EB%A1%9C_20250728095447.jpg"],"notes":{"D03T01":"직접 성별 문구","D04T01":"여성 · 착용"}},"sourceConflict":{"kind":"LABEL_TO_LABEL"},"fix":{"grade":"ASK","proposed":"FEMALE","fromPolicy":true},"plate":[{"url":"../asset/thumbnails/EGOOCM-3407206-1.jpg","caption":"대표 판매 사진","role":"TARGET"},{"url":"https://img.dk-on.com/contents/editor_images/20250728/QQ323ABG81_20250728095508.jpg","caption":"D03T01","role":"DETAIL","cited":true,"note":"직접 성별 문구","tile":0},{"url":"https://img.dk-on.com/contents/editor_images/20250909/lcs_76020_20250909111315.jpg","caption":"D04T01","role":"DETAIL","cited":true,"note":"여성 · 착용","tile":0},{"url":"https://img.dk-on.com/product/Q/Q3/QQ323ABG81/550/QQ323ABG81_BLK0_N01.JPG","caption":"D05T01","role":"DETAIL","tile":0},{"url":"https://img.dk-on.com/product/Q/Q3/QQ323ABG81/550/QQ323ABG81_BLK0_N02.JPG","caption":"D06T01","role":"DETAIL","tile":0},{"url":"https://img.dk-on.com/product/Q/Q3/QQ323ABG81/550/QQ323ABG81_BLK0_N03.JPG","caption":"D07T01","role":"DETAIL","tile":0}],"signals":["INVALID_TEXT_EVIDENCE_DROPPED",{"$":0},{"$":15},{"$":11}]},{"productKey":"EGOOCM:3420094","productName":"TOTE BROCLE [SUEDE MOCHA COMBI]","lane":"GT","referenceLabel":"UNISEX","observedLabel":"FEMALE","verdict":{"owner":{"$":1},"ownerShort":"판례 대기","action":"미결 판례가 답해야 정해진다","reason":{"$":2},"policyAnswer":"FEMALE","ruleId":"P3_WEARER","strength":"WEAK","note":{"$":3},"blockedBy":["BG-0001"]},"evidence":{"text":{"$":7},"type":"HUMAN","sceneIds":["D01T01"],"images":["https://img.29cm.co.kr/item/202508/11f077462d9dd5e4964a717eef47d68a.jpg"],"notes":{"D01T01":"여성 · 착용"}},"fix":{"grade":"ASK","proposed":"FEMALE","fromPolicy":true},"plate":[{"url":"../asset/thumbnails/EGOOCM-3420094-1.jpg","caption":"대표 판매 사진","role":"TARGET"},{"url":"https://img.29cm.co.kr/item/202508/11f077462d9dd5e4964a717eef47d68a.jpg","caption":"D01T01","role":"DETAIL","cited":true,"note":"여성 · 착용","tile":0},{"url":"https://img.29cm.co.kr/item/202508/11f077462d9e4b16964a75f82bb304a6.jpg","caption":"D02T01","role":"DETAIL","tile":0},{"url":"https://img.29cm.co.kr/item/202508/11f077462d9e4ae688936368840a6e38.jpg","caption":"D03T01","role":"DETAIL","tile":0},{"url":{"$":8},"caption":"D04T01","role":"DETAIL","tile":1},{"url":{"$":8},"caption":"D04T02","role":"DETAIL","tile":2},{"url":{"$":8},"caption":"D04T03","role":"DETAIL","tile":3},{"url":{"$":8},"caption":"D04T04","role":"DETAIL","tile":4},{"url":{"$":8},"caption":"D04T05","role":"DETAIL","tile":5},{"url":{"$":12},"caption":"D05T02","role":"DETAIL","tile":2},{"url":{"$":12},"caption":"D05T03","role":"DETAIL","tile":3},{"url":{"$":12},"caption":"D05T06","role":"DETAIL","tile":6},{"url":{"$":12},"caption":"D05T07","role":"DETAIL","tile":7}],"signals":[{"$":5},{"$":0},{"$":11}]},{"productKey":"EGOOCM:3458125","productName":"Leather Strap Double Pouch (Black)","brand":"네세서리","category":"가방>클러치백/파우치","url":"https://www.29cm.co.kr/products/3458125","lane":"GT","referenceLabel":"UNISEX","observedLabel":"FEMALE","goldSource":"MJ_EXPLICIT_POUCH_BOUNDARY_REVIEW_2026-09-05","verdict":{"owner":{"$":1},"ownerShort":"판례 대기","action":"미결 판례가 답해야 정해진다","reason":{"$":2},"policyAnswer":"FEMALE","ruleId":"P3_WEARER","strength":"WEAK","note":{"$":3},"blockedBy":["BG-0001"]},"evidence":{"text":{"$":7},"type":"HUMAN","sceneIds":["D02T01"],"images":["https://img.29cm.co.kr/item/202508/11f083d5ab671f1bab5d896afc1263b3.jpg"],"notes":{"D02T01":"여성 · 휴대"}},"fix":{"grade":"ASK","proposed":"FEMALE","fromPolicy":true},"plate":[{"url":"../asset/thumbnails/EGOOCM-3458125-1.jpg","caption":"대표 판매 사진","role":"TARGET"},{"url":"https://img.29cm.co.kr/item/202508/11f083d5ab671f1bab5d896afc1263b3.jpg","caption":"D02T01","role":"DETAIL","cited":true,"note":"여성 · 휴대","tile":0},{"url":"https://img.29cm.co.kr/item/202509/11f086ce241e5d01ab5dc710f61ebb1f.jpg","caption":"D01T01","role":"DETAIL","tile":0},{"url":"https://img.29cm.co.kr/item/202508/11f083d5ad81739fab5dfd79dab142d4.jpg","caption":"D03T01","role":"DETAIL","tile":0}],"decisionSource":"DETAIL_IMAGE","signals":[{"$":0},{"$":6}]},{"productKey":"EGOOCM:3460326","productName":"Rio Square Middle Bag_2colors","brand":"리오므","category":"가방>캔버스백/에코백","url":"https://www.29cm.co.kr/products/3460326","lane":"GT","referenceLabel":"UNISEX","observedLabel":"FEMALE","goldSource":"DO_SHEET_91_AQ_FINAL_REVIEW_20260902","verdict":{"owner":{"$":1},"ownerShort":"판례 대기","action":"미결 판례가 답해야 정해진다","reason":{"$":2},"policyAnswer":"FEMALE","ruleId":"P3_WEARER","strength":"WEAK","note":{"$":3},"blockedBy":["BG-0001"]},"evidence":{"text":{"$":7},"type":"HUMAN","sceneIds":["D01T01"],"images":["https://img.29cm.co.kr/item/202508/11f0824c0b9ba4208893dfe931f02a26.jpg"],"notes":{"D01T01":"여성 · 착용"}},"fix":{"grade":"ASK","proposed":"FEMALE","fromPolicy":true},"plate":[{"url":"../asset/thumbnails/EGOOCM-3460326-1.jpg","caption":"대표 판매 사진","role":"TARGET"},{"url":"https://img.29cm.co.kr/item/202508/11f0824c0b9ba4208893dfe931f02a26.jpg","caption":"D01T01","role":"DETAIL","cited":true,"note":"여성 · 착용","tile":0},{"url":{"$":9},"caption":"D02T01","role":"DETAIL","tile":1},{"url":{"$":9},"caption":"D02T02","role":"DETAIL","tile":2},{"url":{"$":9},"caption":"D02T03","role":"DETAIL","tile":3},{"url":{"$":9},"caption":"D02T04","role":"DETAIL","tile":4},{"url":{"$":9},"caption":"D02T05","role":"DETAIL","tile":5},{"url":"https://img.29cm.co.kr/item/202508/11f0824c0f303c968893cfc6f725a514.jpg","caption":"D03T01","role":"DETAIL","tile":0}],"decisionSource":"DETAIL_IMAGE","signals":[{"$":5},{"$":0},{"$":6}]},{"productKey":"EGOOCM:3484743","productName":"트래블러 패스포트 RFID차단 개인정보 보호 여행지갑 여권 케이스 지갑 - 체커보드","brand":"EGARDEN","category":"가방>지갑/머니클립","url":"https://www.29cm.co.kr/products/3484743","lane":"GT","referenceLabel":"UNISEX","observedLabel":"FEMALE","goldSource":"GOOGLE_DRIVE_HUMAN_REVIEW_2026-08-31","verdict":{"owner":{"$":1},"ownerShort":"판례 대기","action":"미결 판례가 답해야 정해진다","reason":{"$":2},"policyAnswer":"FEMALE","ruleId":"P3_WEARER","strength":"WEAK","note":{"$":3},"blockedBy":["BG-0001"]},"evidence":{"text":{"$":7},"type":"HUMAN","sceneIds":["D01T01"],"images":[{"$":16}],"notes":{"D01T01":"여성 · 착용","D06T01":"남성 · 대상 상품 아님"}},"fix":{"grade":"ASK","proposed":"FEMALE","fromPolicy":true},"plate":[{"url":"../asset/thumbnails/EGOOCM-3484743-1.jpg","caption":"대표 판매 사진","role":"TARGET"},{"url":{"$":16},"caption":"D01T01","role":"DETAIL","cited":true,"note":"여성 · 착용","tile":1},{"url":{"$":16},"caption":"D01T03","role":"DETAIL","tile":3},{"url":"https://egarden1.dothome.co.kr/img/EGARDEN/%ED%8A%B8%EB%9E%98%EB%B8%94%EB%9F%AC%EC%B2%B4%EC%BB%A4%EB%B3%B4%EB%93%9C%EC%97%90%EB%94%94%EC%85%98%ED%8C%A8%EC%8A%A4%ED%8F%AC%ED%8A%B8/%ED%83%80%EC%82%AC%EB%AA%B0(%EC%98%B5%EC%85%98o)/02.jpg","caption":"D02T03","role":"DETAIL","tile":0},{"url":"https://egarden1.dothome.co.kr/img/EGARDEN/%ED%8A%B8%EB%9E%98%EB%B8%94%EB%9F%AC%EC%B2%B4%EC%BB%A4%EB%B3%B4%EB%93%9C%EC%97%90%EB%94%94%EC%85%98%ED%8C%A8%EC%8A%A4%ED%8F%AC%ED%8A%B8/%ED%83%80%EC%82%AC%EB%AA%B0(%EC%98%B5%EC%85%98o)/03.jpg","caption":"D03T02","role":"DETAIL","tile":0},{"url":"https://egarden1.dothome.co.kr/img/EGARDEN/%ED%8A%B8%EB%9E%98%EB%B8%94%EB%9F%AC%EC%B2%B4%EC%BB%A4%EB%B3%B4%EB%93%9C%EC%97%90%EB%94%94%EC%85%98%ED%8C%A8%EC%8A%A4%ED%8F%AC%ED%8A%B8/%ED%83%80%EC%82%AC%EB%AA%B0(%EC%98%B5%EC%85%98o)/04.jpg","caption":"D04T01","role":"DETAIL","tile":0},{"url":"https://egarden1.dothome.co.kr/img/EGARDEN/%ED%8A%B8%EB%9E%98%EB%B8%94%EB%9F%AC%EC%B2%B4%EC%BB%A4%EB%B3%B4%EB%93%9C%EC%97%90%EB%94%94%EC%85%98%ED%8C%A8%EC%8A%A4%ED%8F%AC%ED%8A%B8/%ED%83%80%EC%82%AC%EB%AA%B0(%EC%98%B5%EC%85%98o)/05.jpg","caption":"D05T01","role":"DETAIL","tile":0},{"url":"https://egarden1.dothome.co.kr/img/EGARDEN/%ED%8A%B8%EB%9E%98%EB%B8%94%EB%9F%AC%EC%B2%B4%EC%BB%A4%EB%B3%B4%EB%93%9C%EC%97%90%EB%94%94%EC%85%98%ED%8C%A8%EC%8A%A4%ED%8F%AC%ED%8A%B8/%ED%83%80%EC%82%AC%EB%AA%B0(%EC%98%B5%EC%85%98o)/06.jpg","caption":"D06T01","role":"DETAIL","note":"남성 · 대상 상품 아님","tile":0},{"url":"https://egarden1.dothome.co.kr/img/EGARDEN/%ED%8A%B8%EB%9E%98%EB%B8%94%EB%9F%AC%EC%B2%B4%EC%BB%A4%EB%B3%B4%EB%93%9C%EC%97%90%EB%94%94%EC%85%98%ED%8C%A8%EC%8A%A4%ED%8F%AC%ED%8A%B8/%ED%83%80%EC%82%AC%EB%AA%B0(%EC%98%B5%EC%85%98o)/07.jpg","caption":"D07T02","role":"DETAIL","tile":0},{"url":"https://egarden1.dothome.co.kr/img/EGARDEN/%ED%8A%B8%EB%9E%98%EB%B8%94%EB%9F%AC%EC%B2%B4%EC%BB%A4%EB%B3%B4%EB%93%9C%EC%97%90%EB%94%94%EC%85%98%ED%8C%A8%EC%8A%A4%ED%8F%AC%ED%8A%B8/%ED%83%80%EC%82%AC%EB%AA%B0(%EC%98%B5%EC%85%98o)/08.jpg","caption":"D08T01","role":"DETAIL","tile":1},{"url":"https://egarden1.dothome.co.kr/img/EGARDEN/%ED%8A%B8%EB%9E%98%EB%B8%94%EB%9F%AC%EC%B2%B4%EC%BB%A4%EB%B3%B4%EB%93%9C%EC%97%90%EB%94%94%EC%85%98%ED%8C%A8%EC%8A%A4%ED%8F%AC%ED%8A%B8/%ED%83%80%EC%82%AC%EB%AA%B0(%EC%98%B5%EC%85%98o)/08.jpg","caption":"D08T03","role":"DETAIL","tile":3},{"url":"https://egarden1.dothome.co.kr/img/EGARDEN/%ED%8A%B8%EB%9E%98%EB%B8%94%EB%9F%AC%EC%B2%B4%EC%BB%A4%EB%B3%B4%EB%93%9C%EC%97%90%EB%94%94%EC%85%98%ED%8C%A8%EC%8A%A4%ED%8F%AC%ED%8A%B8/%ED%83%80%EC%82%AC%EB%AA%B0(%EC%98%B5%EC%85%98o)/10.jpg","caption":"D10T01","role":"DETAIL","tile":0},{"url":"https://egarden1.dothome.co.kr/img/EGARDEN/%ED%8A%B8%EB%9E%98%EB%B8%94%EB%9F%AC%EC%B2%B4%EC%BB%A4%EB%B3%B4%EB%93%9C%EC%97%90%EB%94%94%EC%85%98%ED%8C%A8%EC%8A%A4%ED%8F%AC%ED%8A%B8/%ED%83%80%EC%82%AC%EB%AA%B0(%EC%98%B5%EC%85%98o)/11.jpg","caption":"D11T02","role":"DETAIL","tile":0}],"decisionSource":"DETAIL_IMAGE","signals":[{"$":5},{"$":0},{"$":6}]},{"productKey":"MUSINSA:4459402","productName":"MULTI POUCH 003 Olive Green","brand":"스위치","category":"가방>클러치/파우치>파우치","url":"https://www.musinsa.com/products/4459402","lane":"GT","referenceLabel":"UNISEX","observedLabel":"MALE","goldSource":"CODEX_PRODUCT_USE_POLICY_REVIEW_2026-09-05","verdict":{"owner":{"$":1},"ownerShort":"판례 대기","action":"미결 판례가 답해야 정해진다","reason":{"$":2},"policyAnswer":"MALE","ruleId":"P3_WEARER","strength":"WEAK","note":{"$":3},"blockedBy":["BG-0001"]},"evidence":{"text":{"$":13},"type":"HUMAN","sceneIds":["D03T01"],"images":[{"$":17}],"notes":{"D03T01":"남성 · 착용"}},"fix":{"grade":"ASK","proposed":"MALE","fromPolicy":true},"plate":[{"url":"https://image.msscdn.net/thumbnails/images/goods_img/20240924/4459402/4459402_17280093826671_500.jpg","caption":"대표 판매 사진","role":"TARGET"},{"url":"https://image.msscdn.net/thumbnails/images/prd_img/20240924/4459402/detail_4459402_17290573623889_500.jpg","caption":"대표 판매 사진","role":"TARGET"},{"url":"https://image.msscdn.net/thumbnails/images/prd_img/20240924/4459402/detail_4459402_17290573633517_500.jpg","caption":"대표 판매 사진","role":"TARGET"},{"url":"https://image.msscdn.net/thumbnails/images/prd_img/20240924/4459402/detail_4459402_17280093874550_500.jpg","caption":"대표 판매 사진","role":"TARGET"},{"url":"https://image.msscdn.net/thumbnails/images/prd_img/20240924/4459402/detail_4459402_17280093882018_500.jpg","caption":"대표 판매 사진","role":"TARGET"},{"url":{"$":17},"caption":"D03T01","role":"DETAIL","cited":true,"note":"남성 · 착용","tile":1},{"url":"https://image.msscdn.net/images/prd_img/202503061539462955099849667c943324825f.jpg","caption":"D01T01","role":"DETAIL","tile":0},{"url":{"$":17},"caption":"D03T03","role":"DETAIL","tile":3},{"url":"https://image.msscdn.net/images/prd_img/202503061539457047638216967c94331ac104.jpg","caption":"D04T01","role":"DETAIL","tile":0},{"url":"https://image.msscdn.net/images/prd_img/202503061539465045213132367c943327b2d1.jpg","caption":"D05T02","role":"DETAIL","tile":0},{"url":"https://image.msscdn.net/images/prd_img/202503061539471822008856667c943332c7c3.jpg","caption":"D06T03","role":"DETAIL","tile":0},{"url":"https://image.msscdn.net/images/prd_img/202503061539476946436074667c94333a997e.jpg","caption":"D08T01","role":"DETAIL","tile":1},{"url":"https://image.msscdn.net/images/prd_img/202503061539476946436074667c94333a997e.jpg","caption":"D08T04","role":"DETAIL","tile":4},{"url":"https://image.msscdn.net/images/prd_img/202503061539477983396034067c94333c2e8c.jpg","caption":"D09T01","role":"DETAIL","tile":1},{"url":"https://image.msscdn.net/images/prd_img/202503061539477983396034067c94333c2e8c.jpg","caption":"D09T04","role":"DETAIL","tile":4},{"url":"https://image.msscdn.net/images/prd_img/202503061539469106314497067c94332de532.jpg","caption":"D10T01","role":"DETAIL","tile":0},{"url":"https://image.msscdn.net/images/prd_img/202503061539465021329512267c943327a97e.jpg","caption":"D11T02","role":"DETAIL","tile":0}],"decisionSource":"DETAIL_IMAGE","signals":[{"$":5},{"$":0},{"$":6}]},{"productKey":"MUSINSA:4870915","productName":"A90 28인치 화물용 도어식오픈 확장형 캐리어","brand":"프레지던트","category":"가방>캐리어/여행용 백","url":"https://www.musinsa.com/products/4870915","lane":"GT","referenceLabel":"UNISEX","observedLabel":"FEMALE","goldSource":"GOOGLE_DRIVE_HUMAN_REVIEW_2026-08-31","verdict":{"owner":{"$":1},"ownerShort":"판례 대기","action":"미결 판례가 답해야 정해진다","reason":{"$":2},"policyAnswer":"FEMALE","ruleId":"P3_WEARER","strength":"WEAK","note":{"$":3},"blockedBy":["BG-0001"]},"evidence":{"text":{"$":7},"type":"HUMAN","sceneIds":["D03T03"],"images":[{"$":10}],"notes":{"D03T03":"여성 · 휴대"}},"fix":{"grade":"ASK","proposed":"FEMALE","fromPolicy":true},"plate":[{"url":"../asset/thumbnails/MUSINSA-4870915-1.jpg","caption":"대표 판매 사진","role":"TARGET"},{"url":{"$":18},"caption":"D03T03","role":"DETAIL","cited":true,"note":"여성 · 휴대","tile":3},{"url":"https://sbskorea.esellersimg.co.kr/Banner/carrier_TOP.jpg","caption":"D01T01","role":"DETAIL","tile":0},{"url":{"$":10},"caption":"D02T02","role":"DETAIL","tile":2},{"url":{"$":10},"caption":"D02T03","role":"DETAIL","tile":3},{"url":{"$":10},"caption":"D02T05","role":"DETAIL","tile":5},{"url":{"$":10},"caption":"D02T07","role":"DETAIL","tile":7},{"url":{"$":18},"caption":"D03T02","role":"DETAIL","tile":2},{"url":{"$":18},"caption":"D03T05","role":"DETAIL","tile":5},{"url":{"$":14},"caption":"D04T01","role":"DETAIL","tile":1},{"url":{"$":14},"caption":"D04T03","role":"DETAIL","tile":3},{"url":{"$":14},"caption":"D04T04","role":"DETAIL","tile":4},{"url":{"$":14},"caption":"D04T06","role":"DETAIL","tile":6}],"decisionSource":"DETAIL_IMAGE","signals":[{"$":0}]},{"productKey":"MUSINSA:4924741","productName":"로프 키링 짐색 [브라운 비즈]","brand":"아더월들리","category":"가방>백팩","url":"https://www.musinsa.com/products/4924741","lane":"GT","referenceLabel":"FEMALE","observedLabel":"MALE","goldSource":"MJ_CHAT_REVIEW_2026-09-04","verdict":{"owner":{"$":1},"ownerShort":"판례 대기","action":"미결 판례가 답해야 정해진다","reason":{"$":2},"policyAnswer":"MALE","ruleId":"P3_WEARER","strength":"WEAK","note":{"$":3},"blockedBy":["BG-0001","BG-0003"]},"evidence":{"text":{"$":13},"type":"HUMAN","sceneIds":["D01T07"],"images":[{"$":4}],"notes":{"D01T07":"남성 · 착용"}},"sourceConflict":{"kind":"LABEL_TO_LABEL"},"fix":{"grade":"ASK","proposed":"MALE","fromPolicy":true},"plate":[{"url":"../asset/thumbnails/MUSINSA-4924741-1.jpg","caption":"대표 판매 사진","role":"TARGET"},{"url":{"$":4},"caption":"D01T07","role":"DETAIL","cited":true,"note":"남성 · 착용","tile":7},{"url":{"$":4},"caption":"D01T01","role":"DETAIL","tile":1},{"url":{"$":4},"caption":"D01T02","role":"DETAIL","tile":2},{"url":{"$":4},"caption":"D01T03","role":"DETAIL","tile":3},{"url":{"$":4},"caption":"D01T04","role":"DETAIL","tile":4},{"url":{"$":4},"caption":"D01T05","role":"DETAIL","tile":5},{"url":{"$":4},"caption":"D01T06","role":"DETAIL","tile":6},{"url":{"$":4},"caption":"D01T08","role":"DETAIL","tile":8},{"url":{"$":4},"caption":"D01T09","role":"DETAIL","tile":9}],"decisionSource":"DETAIL_IMAGE","signals":[{"$":5},{"$":0},{"$":15}]},{"productKey":"MUSINSA:4973361","productName":"아비스코 힙팩 6 (23200306)","brand":"피엘라벤","category":"가방>클러치백/파우치","url":"https://www.musinsa.com/products/4973361","lane":"GT","referenceLabel":"UNISEX","observedLabel":"FEMALE","goldSource":"MANUFACTURER_EXPLICIT_GENDER_REVIEW_2026-09-05","verdict":{"owner":{"$":1},"ownerShort":"판례 대기","action":"미결 판례가 답해야 정해진다","reason":{"$":2},"policyAnswer":"FEMALE","ruleId":"P3_WEARER","strength":"WEAK","note":{"$":3},"blockedBy":["BG-0001"]},"evidence":{"text":{"$":7},"type":"HUMAN","sceneIds":["D09T01"],"images":["https://image2.fjallraven.co.kr/images/prd_img/bess/acc/23200306/prd/23200306_prd_03.jpg"],"notes":{"D09T01":"여성 · 착용"}},"fix":{"grade":"ASK","proposed":"FEMALE","fromPolicy":true},"plate":[{"url":"../asset/thumbnails/MUSINSA-4973361-1.jpg","caption":"대표 판매 사진","role":"TARGET"},{"url":"https://image2.fjallraven.co.kr/images/prd_img/bess/acc/23200306/prd/23200306_prd_03.jpg","caption":"D09T01","role":"DETAIL","cited":true,"note":"여성 · 착용","tile":0},{"url":"https://image2.fjallraven.co.kr/images/prd_img/bess/acc/23200306/prd/23200306_prd_bk_01.jpg","caption":"D01T01","role":"DETAIL","tile":0},{"url":"https://image2.fjallraven.co.kr/images/prd_img/bess/acc/23200306/prd/23200306_prd_6q_01.jpg","caption":"D03T01","role":"DETAIL","tile":0},{"url":"https://image2.fjallraven.co.kr/images/prd_img/bess/acc/23200306/prd/23200306_prd_02.jpg","caption":"D08T01","role":"DETAIL","tile":0}],"decisionSource":"DETAIL_IMAGE","signals":[{"$":5},{"$":0},{"$":6}]},{"productKey":"MUSINSA:5356269","productName":"라운드 볼륨 무지 에코백 RVS-147 데님 블랙","brand":"세인트크루","category":"가방>캔버스백/에코백>에코백","url":"https://www.musinsa.com/products/5356269","lane":"GT","referenceLabel":"UNISEX","observedLabel":"MALE","goldSource":"DO_SHEET_91_AQ_FINAL_REVIEW_20260902","verdict":{"owner":{"$":1},"ownerShort":"판례 대기","action":"미결 판례가 답해야 정해진다","reason":{"$":2},"policyAnswer":"MALE","ruleId":"P3_WEARER","strength":"WEAK","note":{"$":3},"blockedBy":["BG-0001"]},"evidence":{"text":{"$":13},"type":"HUMAN","sceneIds":["D01T01"],"images":["https://image.msscdn.net/images/prd_img/20251029150025025558851976901ad79063e4.jpg"],"notes":{"D01T01":"남성 · 착용"}},"fix":{"grade":"ASK","proposed":"MALE","fromPolicy":true},"plate":[{"url":"https://image.msscdn.net/thumbnails/images/goods_img/20250822/5356269/5356269_17617175803900_500.jpg","caption":"대표 판매 사진","role":"TARGET"},{"url":"https://image.msscdn.net/thumbnails/images/prd_img/20250822/5356269/detail_5356269_17617175897284_500.jpg","caption":"대표 판매 사진","role":"TARGET"},{"url":"https://image.msscdn.net/thumbnails/images/prd_img/20250822/5356269/detail_5356269_17617175910659_500.jpg","caption":"대표 판매 사진","role":"TARGET"},{"url":"https://image.msscdn.net/thumbnails/images/prd_img/20250822/5356269/detail_5356269_17617175933611_500.jpg","caption":"대표 판매 사진","role":"TARGET"},{"url":"https://image.msscdn.net/thumbnails/images/prd_img/20250822/5356269/detail_5356269_17617175948632_500.jpg","caption":"대표 판매 사진","role":"TARGET"},{"url":"https://image.msscdn.net/thumbnails/images/prd_img/20250822/5356269/detail_5356269_17617175964940_500.jpg","caption":"대표 판매 사진","role":"TARGET"},{"url":"https://image.msscdn.net/thumbnails/images/prd_img/20250822/5356269/detail_5356269_17617175985665_500.jpg","caption":"대표 판매 사진","role":"TARGET"},{"url":"https://image.msscdn.net/thumbnails/images/prd_img/20250822/5356269/detail_5356269_17617176007064_500.jpg","caption":"대표 판매 사진","role":"TARGET"},{"url":"https://image.msscdn.net/images/prd_img/20251029150025025558851976901ad79063e4.jpg","caption":"D01T01","role":"DETAIL","cited":true,"note":"남성 · 착용","tile":0},{"url":"https://image.msscdn.net/images/prd_img/20251029150025318644363636901ad794dcc0.jpg","caption":"D02T01","role":"DETAIL","tile":0},{"url":"https://image.msscdn.net/images/prd_img/20251029150025381465948096901ad795d225.jpg","caption":"D03T01","role":"DETAIL","tile":0},{"url":"https://image.msscdn.net/images/prd_img/20251029150025084299949856901ad7914959.jpg","caption":"D04T01","role":"DETAIL","tile":0},{"url":"https://image.msscdn.net/images/prd_img/20251029150025456275651296901ad796f65e.jpg","caption":"D05T01","role":"DETAIL","tile":0},{"url":"https://image.msscdn.net/images/prd_img/20251029150025344112402396901ad7954048.jpg","caption":"D06T01","role":"DETAIL","tile":0},{"url":"https://image.msscdn.net/images/prd_img/20251029150025286182324476901ad7945df0.jpg","caption":"D07T01","role":"DETAIL","tile":0}],"decisionSource":"DETAIL_IMAGE","signals":[{"$":5},{"$":0},{"$":6}]},{"productKey":"MUSINSA:5356353","productName":"라운드 볼륨 펜타곤포켓 크로스백 RVP-150 차콜","lane":"GT","referenceLabel":"UNISEX","observedLabel":"MALE","verdict":{"owner":{"$":1},"ownerShort":"판례 대기","action":"미결 판례가 답해야 정해진다","reason":{"$":2},"policyAnswer":"MALE","ruleId":"P3_WEARER","strength":"WEAK","note":{"$":3},"blockedBy":["BG-0001"]},"evidence":{"text":{"$":13},"type":"HUMAN","sceneIds":["D01T01"],"images":["https://image.msscdn.net/images/prd_img/202510281648028145713497469007532c6df6.jpg"],"notes":{"D01T01":"남성 · 착용"}},"fix":{"grade":"ASK","proposed":"MALE","fromPolicy":true},"plate":[{"url":"../asset/thumbnails/MUSINSA-5356353-1.jpg","caption":"대표 판매 사진","role":"TARGET"},{"url":"https://image.msscdn.net/images/prd_img/202510281648028145713497469007532c6df6.jpg","caption":"D01T01","role":"DETAIL","cited":true,"note":"남성 · 착용","tile":0},{"url":"https://image.msscdn.net/images/prd_img/202510281648028378408054769007532cc8d9.jpg","caption":"D02T01","role":"DETAIL","tile":0},{"url":"https://image.msscdn.net/images/prd_img/202510281648027928264517769007532c1902.jpg","caption":"D03T01","role":"DETAIL","tile":0},{"url":"https://image.msscdn.net/images/prd_img/202510281648029603716547469007532ea77a.jpg","caption":"D04T01","role":"DETAIL","tile":0},{"url":"https://image.msscdn.net/images/prd_img/2025102816480300038623280690075330018b.jpg","caption":"D05T01","role":"DETAIL","tile":0},{"url":"https://image.msscdn.net/images/prd_img/202510281648029001411717869007532dbc38.jpg","caption":"D06T01","role":"DETAIL","tile":0},{"url":"https://image.msscdn.net/images/prd_img/202510281648029781356514569007532eece0.jpg","caption":"D07T01","role":"DETAIL","tile":0},{"url":"https://image.msscdn.net/images/prd_img/202510281648027891619463069007532c0ab5.jpg","caption":"D08T01","role":"DETAIL","tile":0}],"signals":[{"$":5},{"$":0},{"$":11}]}]}}</script>
+<script>
+const packed=JSON.parse(document.getElementById('audit-data').textContent);
+const thaw=v=>Array.isArray(v)?v.map(thaw):(v&&typeof v==='object')?(('$' in v&&Object.keys(v).length===1)?packed.strings[v.$]:Object.fromEntries(Object.entries(v).map(([k,x])=>[k,thaw(x)]))):v;
+const data=thaw(packed.data);
+const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmt=n=>Number(n||0).toLocaleString('ko-KR');
+const words=k=>String(k).replace(/([a-z0-9])([A-Z])/g,'$1 $2').replace(/[_-]+/g,' ');
+const laneById=Object.fromEntries(data.lanes.map(l=>[l.id,l]));
+const signalById=Object.fromEntries((data.signals||[]).map(s=>[s.id,s]));
+const precedentById=Object.fromEntries((data.precedents||[]).map(p=>[p.id,p]));
+const questionsByPrecedent={};
+for(const q of (data.questions||[])) for(const p of (q.precedents||[])) (questionsByPrecedent[p.id]=questionsByPrecedent[p.id]||[]).push(q);
+const inLane=(row,laneId)=>laneId==='ALL'||row.lane===laneId||(laneId==='POLICY'&&row.dual);
+const anchor=k=>'p-'+String(k).replace(/[^A-Za-z0-9_-]+/g,'-');
+function precedentChip(pid){
+  const p=precedentById[pid]; const label=p?`${esc(pid)} · ${esc(p.status)}`:esc(pid);
+  return `<span class="chip ${p&&p.status==='OPEN'?'open':''}">${p&&p.href?`<a href="${esc(p.href)}">${label}</a>`:label}</span>`;
+}
+
+const gradeById=Object.fromEntries(data.grades.map(g=>[g.id,g]));
+const rank=Object.fromEntries(data.grades.map((g,i)=>[g.id,i]));
+const rows=[...data.rows].sort((a,b)=>(rank[a.fix.grade]??9)-(rank[b.fix.grade]??9)||String(a.productKey).localeCompare(String(b.productKey)));
+let grade='ALL', query='';
+
+function matches(row){
+  if(grade!=='ALL'&&row.fix.grade!==grade) return false;
+  const q=query.trim().toLowerCase(); if(!q) return true;
+  return [row.productName,row.productKey,row.brand,row.category,row.referenceLabel,row.observedLabel,
+          row.fix.proposed,row.goldSource,row.evidence&&row.evidence.text,row.verdict&&row.verdict.reason]
+    .filter(Boolean).join(' ').toLowerCase().includes(q);
+}
+
+// 원본의 **마지막 조각**은 한 타일보다 짧다. 액자가 2:3을 강제하면 그만큼 아래가 빈칸으로 남아,
+// 근거 사진이 «비어 있다»로 보인다. 실제로는 조각이 짧은 것뿐이다.
+// 이미지가 뜬 뒤 실제 남은 높이를 재서 액자를 거기에 맞춘다 — CSS만으로는 원본 높이를 모른다.
+function fitTile(img){
+  const frame = img.closest('.frame.tiled');
+  if(!frame) return;
+  const rendered = img.naturalHeight * (img.clientWidth / img.naturalWidth);
+  const offset = -parseFloat(getComputedStyle(img).top) || 0;
+  const left = rendered - offset;
+  if(left > 0 && left < frame.getBoundingClientRect().height){
+    frame.style.aspectRatio = 'auto';
+    frame.style.height = left + 'px';
+  }
+}
+
+function shot(item){
+  // 원본이 사라진 사진은 빈 액자로 남기지 않는다. 자리를 접고 "못 불러왔다"고 적는다 —
+  // 빈 액자는 "근거가 없다"로 읽히고, 그건 사실이 아니다.
+  // 인용된 장면에는 «여기서 무엇을 봤는가»를 사진 위에 얹는다. 인용해 놓고 기록이 없으면
+  // 그 사실을 적는다 — 빈칸은 «볼 게 없었다»로 읽히지만 실제로는 «적지 않았다»이고, 둘은 다르다.
+  // **판독기가 적은 것은 인용 여부와 무관하게 보여준다.** 전에는 인용된 장면의 기록만
+  // 실었는데, 그 자리가 정확히 반증이 숨는 자리였다 — 실행이 「여성 모델만 착용」이라
+  // 주장한 상품에서 판독기 자신이 다른 장면에 「남성 · 대상 상품 아님」을 적어 두었고,
+  // 그 남성이 실제로는 대상 상품을 들고 있었다. 인용 안 했다는 이유로 접힌 채였다.
+  // 인용하지 않은 장면의 기록이 주장과 어긋날 때가 가장 중요하다. 그때 접으면 못 본다.
+  const tone = /남성/.test(item.note||'') ? 'male' : /여성/.test(item.note||'') ? 'female' : '';
+  const seen = item.note
+    ? `<span class="seen ${tone}${item.cited?'':' aside'}">판독기가 본 것 <b>${esc(item.note)}</b></span>`
+    : (item.cited ? `<span class="seen none">인용했지만 이 장면의 판독 기록이 없다</span>` : '');
+  // 인용했는데 원본조차 못 찾은 장면. 빈자리로 접으면 «근거가 없었다»로 읽히지만
+  // 사실은 «사진을 못 구했다»이다. 자리를 남기고 그렇게 적는다.
+  if(item.absent) return `<figure class="cited absent"><div class="frame missing">`
+    + `<span class="seen none">인용했지만 이 장면이 스냅샷에 없다</span></div>`
+    + `<figcaption><span class="scene">${esc(item.caption)} · 인용</span></figcaption></figure>`;
+  return `<figure class="${item.cited?'cited':''}"><button class="frame${item.tile?' tiled':''}" type="button"`
+    + (item.tile?` style="--tile:${item.tile-1}"`:'')
+    + ` onclick="zoom(this)" aria-label="${esc(item.caption)} 크게 보기">`
+    + `<img loading="lazy" src="${esc(item.url)}" referrerpolicy="no-referrer" alt="${esc(item.caption)}${item.cited?' — 판독기가 인용한 근거 장면':' — 판독기에 함께 들어간 장면'}"`
+    + ` onload="fitTile(this)" onerror="this.closest('figure').classList.add('gone')">${seen}</button>`
+    + `<figcaption><span class="scene">${esc(item.caption)}${item.cited?' · 인용':''}${item.tile?` · 원본 ${item.tile}번째 조각`:''}</span>`
+    + (item.derived?`<span class="derived">갤러리에 없어 같은 원본에서 되짚었다</span>`:'')
+    + `<span class="fail">원본을 못 불러왔다</span></figcaption></figure>`;
+}
+
+
+function plate(row){
+  const all=row.plate||[];
+  if(!all.length) return '<div class="plate"><div class="noshot">판독기가 본 사진이 스냅샷에 없다. 사진 없이 GT를 뒤집지 않는다.</div></div>';
+  // 대표 사진이 여러 장인 상품이 있다. 전부 앞에 깔면 인용된 장면이 맨 뒤로 밀려,
+  // 사람이 제일 먼저 봐야 할 사진을 제일 나중에 보게 된다. 대표는 한 장만 세우고
+  // 나머지는 접는다 — 무엇을 반박해야 하는지가 먼저 보여야 한다.
+  // **판독기가 기록을 남긴 장면은 접지 않는다.** 인용하지 않았어도 무언가 적었다는 것은
+  // 그 장면을 실제로 봤다는 뜻이고, 그 기록이 주장과 어긋날 때가 사람이 가장 먼저 봐야 할
+  // 자리다. 접어 두면 «인용 1장»만 보고 주장이 서 있다고 읽는다.
+  const firstTarget=all.find(x=>x.role==='TARGET');
+  const lead=all.filter(x=>x===firstTarget||x.cited||x.note);
+  const rest=all.filter(x=>lead.indexOf(x)<0);
+  const cited=all.filter(x=>x.cited).length;
+  const noted=all.filter(x=>x.note&&!x.cited).length;
+  return `<div class="plate">
+    <div class="plate-head"><span>증거</span><span>${cited?`인용 ${fmt(cited)}장`:'인용 표시 없음'}${noted?` · 인용 안 한 판독 기록 ${fmt(noted)}장`:''} · 전체 ${fmt(all.length)}장 · 클릭하면 확대</span></div>
+    <div class="shots">${lead.map(shot).join('')}</div>
+    ${rest.length?`<details><summary>판독기에 함께 들어간 나머지 ${fmt(rest.length)}장 보기</summary><div class="shots">${rest.map(shot).join('')}</div></details>`:''}
+  </div>`;
+}
+
+// 딩벳 글리프(→, ↗)는 폰트마다 다르게 그려지고 없으면 두부가 된다. 도형은 도형으로 그린다.
+const ARROW='<svg width="46" height="12" viewBox="0 0 46 12" fill="none" aria-hidden="true">'
+  + '<path d="M0 6h43M38 1l5 5-5 5" stroke="currentColor" stroke-width="1.5"/></svg>';
+const OUTLINK='<svg width="9" height="9" viewBox="0 0 10 10" fill="none" aria-hidden="true" style="margin-left:3px">'
+  + '<path d="M3 1h6v6M9 1L1 9" stroke="currentColor" stroke-width="1.4"/></svg>';
+
+function ruling(row){
+  const src=[row.goldSource?esc(row.goldSource):'', row.gtReviewStatus?esc(row.gtReviewStatus):''].filter(Boolean).join(' · ');
+  const why=row.fix.fromPolicy
+    ? `정책이 낸 답 · ${esc((row.verdict&&row.verdict.ruleId)||'—')}`
+    : (row.fix.policyStuck ? '정책은 답을 못 냈다 · 판독기 값' : `판독기 값${row.decisionSource?' · '+esc(row.decisionSource):''}`);
+  if(row.fix.unchanged){
+    return `<dl class="ruling"><div class="keep"><dt>현재 GT · 유지</dt><dd>${esc(row.referenceLabel)||'—'}</dd>`
+      + `<small>${src||'출처 기록 없음'}</small></div>`
+      + `<div class="keep"><dt>왜 여기 있나</dt><dd style="font-size:1.05rem">고칠 대상이 GT가 아니다</dd><small>${why}</small></div></dl>`;
+  }
+  return `<dl class="ruling">
+    <div class="was"><dt>현재 GT</dt><dd>${esc(row.referenceLabel)||'—'}</dd><small>${src||'출처 기록 없음'}</small></div>
+    <div class="to">${ARROW}</div>
+    <div class="now"><dt>이렇게 고치자</dt><dd>${esc(row.fix.proposed)||'—'}</dd><small>${why}</small></div>
+  </dl>`;
+}
+
+function say(label, text, muted, extra){
+  return `<div class="fx-say${muted?' mut':''}"><b>${esc(label)}</b><p>${esc(text)}${extra||''}</p></div>`;
+}
+
+/* ── 판정 ──────────────────────────────────────────────────────────────────
+   이 화면은 "이 GT가 틀렸다"는 주장 열 건을 늘어놓는다. 답할 자리가 없으면 사람은
+   터미널을 열고 상품 키를 옮겨 적어야 했고, 그래서 답이 안 쌓였다. 답은 여기서 한다.
+
+   승인은 라벨만으로 서지 않는다. **어느 정책 경계 위에 선 판정인가**를 함께 고른다.
+   그 규격은 화면이 정하지 않는다 — 서버의 기록기가 정하고, 어긴 요청은 문장으로 돌아온다. */
+const ONLINE = location.protocol === 'http:' || location.protocol === 'https:';
+const PROFILE = (data.profile||{}).id||'';
+const PRECEDENTS = data.precedents||[];
+const RULES = data.rules||[];
+const answered = p => String(p&&p.status||'') === 'DECIDED';
+let ledger = {};   /* 상품 → 지금 유효한 판정 */
+let waiting = {};  /* 상품 → 이 판정을 붙잡고 있는 미결 판례 */
+let reviewer = '';
+try{ reviewer = localStorage.getItem('catalog-os-reviewer')||''; }catch(err){}
+
+async function pullDecided(){
+  if(!ONLINE) return;
+  try{
+    const answer = await fetch('/decided?a='+encodeURIComponent(PROFILE), {headers:{Accept:'application/json'}});
+    if(!answer.ok) return;
+    const body = await answer.json();
+    /* 원장은 이력이라 한 상품에 여러 줄이 쌓인다. 화면이 보일 것은 마지막 하나다. */
+    ledger = {};
+    for(const entry of (body.decisions||[])) ledger[entry.productKey] = entry;
+    waiting = body.waiting||{};
+  }catch(err){}
+}
+
+function precedentField(row){
+  const blocked = (row.verdict&&row.verdict.blockedBy)||[];
+  /* 심판이 «이 건은 이 판례가 답해야 한다»고 본 것이 있으면 그것을 미리 세운다.
+     코드를 외워서 고르게 두면 아무거나 고르고, 그 순간 매핑은 장식이 된다. */
+  const preferred = blocked[0]||'';
+  const options = PRECEDENTS.map(p=>{
+    const q = (p.question||'').replace(/\s+/g,' ').trim();
+    const head = p.id+' · '+(answered(p)?'답한 판례':'미결 — 답할 때까지 GT에 반영 안 됨');
+    return `<option value="${esc(p.id)}"${p.id===preferred?' selected':''}>${esc(q?head+' — '+q:head)}</option>`;
+  }).join('');
+  return `<option value=""${preferred?'':' selected'}>— 근거가 된 판례를 고른다 —</option>${options}`
+    + `<option value="NONE">해당 판례 없음 — 새 판례가 필요하다</option>`;
+}
+
+/* 판정이 선 정책 규칙. 판례를 고르면 판례가 알려 주므로 잠긴다 — 두 곳에서 고르게 하면
+   서로 어긋난 판정이 원장에 들어온다. 「판례 없음」일 때만 사람이 직접 고르고, 그때
+   이 값이 곧 «이 규칙에 판례가 필요하다»는 신호로 남는다. */
+function ruleField(row){
+  const options = RULES.map(r=>{
+    const s=(r.summary||'').replace(/\s+/g,' ').trim();
+    return `<option value="${esc(r.id)}">${esc(r.id + (s?' — '+s:''))}</option>`;
+  }).join('');
+  return `<option value="">— 어느 규칙 위의 판단인가 —</option>${options}`;
+}
+
+function ruleOf(precedentId){
+  const found = PRECEDENTS.find(p=>p.id===precedentId);
+  return (found && (found.rules||[])[0]) || '';
+}
+
+/* 판례 선택이 바뀌면 규칙 칸을 따라오게 한다. 판례가 규칙을 갖고 있으면 그 값으로 잠그고,
+   「판례 없음」이면 풀어서 사람이 고르게 한다. */
+function syncRule(panel){
+  const pick = panel.querySelector('[data-role=precedent]').value;
+  const rule = panel.querySelector('[data-role=rule]');
+  const hint = panel.querySelector('[data-role=rule-hint]');
+  if(pick && pick!=='NONE'){
+    const bound = ruleOf(pick);
+    rule.value = bound; rule.disabled = true;
+    hint.textContent = bound ? '판례가 걸린 규칙이다' : '이 판례는 특정 규칙 위에 서지 않는다';
+  }else{
+    rule.disabled = false;
+    hint.textContent = pick==='NONE' ? '판례가 없으므로 규칙이 유일한 정책 앵커다' : '';
+  }
+}
+
+function settledPanel(row){
+  const d = ledger[row.productKey]; if(!d) return '';
+  const held = waiting[row.productKey]||'';
+  const what = d.decision==='GOLDEN_CORRECTION_NEEDED'
+    ? `${esc(row.referenceLabel)||'—'} → ${esc(d.correctedLabel)||'—'}로 정정`
+    : d.decision==='GOLDEN_CONFIRMED' ? `현재 GT «${esc(d.goldLabelAtDecision)||'—'}»가 맞다`
+    : esc(d.decision);
+  const bind = d.precedentId
+    ? `근거 판례 ${esc(d.precedentId)}${d.policyRuleId?' · 규칙 '+esc(d.policyRuleId):''}`
+    : `걸리는 판례 없음 · 규칙 ${esc(d.policyRuleId)||'—'} — 이 규칙에 판례가 필요하다`;
+  return `<div class="act settled" data-key="${esc(row.productKey)}"><div class="act-head"><span>판정됨</span></div>
+    <div class="stamp-done"><b>${what}</b>
+      <span>${bind}${d.policyQuestionId?' · 질문 '+esc(d.policyQuestionId):''}</span>
+      <span>${esc(d.reviewer)||'—'} · ${esc(String(d.reviewedAt||'').slice(0,19).replace('T',' '))}</span>
+      <span>${esc(d.reason)||''}</span>
+      ${held?`<span class="held">${esc(held)} — 이 판례가 답할 때까지 GT에 반영되지 않는다. 판례를 닫으면 기다리던 건이 한꺼번에 나간다.</span>`
+            :'<span>GT 원장으로 나갔다.</span>'}
+    </div>
+    <div class="act-buttons"><button type="button" data-act="redo">판정 바꾸기</button></div></div>`;
+}
+
+function actPanel(row, force){
+  if(ledger[row.productKey] && !force) return settledPanel(row);
+  if(!ONLINE) return `<div class="act"><div class="act-head"><span>판정</span></div>
+    <p class="offline">파일로 직접 열면 판정을 기록할 수 없다. <b>./serve.sh start</b> 뒤 로컬 서버 주소로 연다.</p></div>`;
+  const keep = esc(row.referenceLabel)||'—', to = esc(row.fix.proposed)||'';
+  /* 판정을 바꿀 때는 이전 판정을 지우지 않고 덮는다. 원장은 이력이라 «무엇을 왜 뒤집었나»가
+     남아야 하고, 그래서 이전 decisionId를 함께 보낸다. */
+  const prior = ledger[row.productKey];
+  return `<div class="act" data-key="${esc(row.productKey)}"${prior?` data-supersedes="${esc(prior.decisionId)}"`:''}>
+    <div class="act-head"><span>판정</span><span>${prior?'이전 판정을 덮는다 — 지우지 않고 이력으로 남는다':'어느 경계 위에 선 판정인지 함께 남긴다'}</span></div>
+    <div class="act-form">
+      <label class="act-bind"><span>근거 판례</span><select data-role="precedent">${precedentField(row)}</select></label>
+      <label class="act-bind"><span>정책 규칙</span><span class="act-rule"><select data-role="rule">${ruleField(row)}</select><small data-role="rule-hint"></small></span></label>
+      <label class="act-bind"><span>사유</span><input type="text" data-role="reason" placeholder="무엇을 보고 그렇게 판단했는가"></label>
+      <label class="act-bind"><span>판정자</span><input type="text" data-role="reviewer" value="${esc(reviewer)}" placeholder="이름"></label>
+      <div class="act-buttons">
+        ${to&&!row.fix.unchanged?`<button type="button" class="go" data-act="fix">${to}로 정정 승인</button>`:''}
+        <button type="button" data-act="keep">현재 GT «${keep}»가 맞다</button>
+      </div>
+      <div class="out" data-role="out" hidden></div>
+    </div></div>`;
+}
+
+async function submit(panel, kind){
+  const key = panel.dataset.key, row = rows.find(r=>r.productKey===key);
+  const pick = panel.querySelector('[data-role=precedent]').value;
+  const rule = panel.querySelector('[data-role=rule]').value;
+  const reason = panel.querySelector('[data-role=reason]').value.trim();
+  const who = panel.querySelector('[data-role=reviewer]').value.trim();
+  const out = panel.querySelector('[data-role=out]');
+  const show = (text, bad) => {out.hidden=false; out.textContent=text; out.classList.toggle('bad',!!bad);};
+  if(!pick) return show('근거가 된 판례를 고른다. 걸리는 것이 없다면 «해당 판례 없음»을 고른다.', true);
+  if(pick==='NONE'&&!rule) return show('판례가 없다면 어느 규칙 위의 판단인지는 고른다. 그래야 «이 규칙에 판례가 필요하다»가 남는다.', true);
+  if(!reason) return show('사유가 필요하다. 라벨만 남으면 다음 사람이 되짚지 못한다.', true);
+  if(!who) return show('판정자가 필요하다.', true);
+  try{ localStorage.setItem('catalog-os-reviewer', who); }catch(err){}
+  reviewer = who;
+
+  panel.querySelectorAll('button').forEach(b=>b.disabled=true);
+  show('기록하는 중…');
+  const body = {attribute:PROFILE, productKey:key, reviewer:who, reason,
+    decision: kind==='fix'?'GOLDEN_CORRECTION_NEEDED':'GOLDEN_CONFIRMED',
+    precedentId: pick==='NONE'?null:pick, noPrecedent: pick==='NONE',
+    ruleId: rule||null,
+    supersedes: panel.dataset.supersedes||null};
+  if(kind==='fix') body.correctedLabel = row.fix.proposed; else body.confirmedLabel = row.referenceLabel;
+  try{
+    const answer = await fetch('/decide', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)});
+    const result = await answer.json();
+    if(!result.ok){
+      panel.querySelectorAll('button').forEach(b=>b.disabled=false);
+      /* 거절 문장은 서버가 준 것을 그대로 쓴다. 화면이 다시 쓰면 규격을 고쳐도 안내는 옛말을 한다. */
+      return show(result.error||'기록하지 못했다.', true);
+    }
+    ledger[key] = result.decision;
+    if(result.waitingOn) waiting[key] = result.waitingOn; else delete waiting[key];
+    panel.outerHTML = settledPanel(row);
+  }catch(err){
+    panel.querySelectorAll('button').forEach(b=>b.disabled=false);
+    show('서버에 닿지 못했다: '+err, true);
+  }
+}
+
+function line(row, ordinal){
+  const g=gradeById[row.fix.grade]||{label:row.fix.grade,note:''};
+  const e=row.evidence||{}, v=row.verdict, sc=row.sourceConflict;
+  // 판례 칩은 싣지 않는다. `BG-0003` 같은 코드는 뜻이 안 읽히고, 걸려 있던 링크는
+  // 저장소 안의 .md를 가리켜 브라우저에서 원문이 뜨거나 보고서를 넘기면 아예 끊긴다.
+  // "왜 지금 판정할 수 없는가"는 도장(판단필요)이 이미 말한다.
+  const chips=row.dual?'<span class="chip dual">양쪽 계류</span>':'';
+  const said=[
+    e.text?say('판독기', e.text, false):'',
+    (v&&v.reason)?say('리뷰어', v.reason+(v.note?' '+v.note:''), true):'',
+    (!e.text&&!(v&&v.reason))?say('근거', '기록된 문장이 없다.', true):'',
+    sc?say('갈린 GT', sc.canonical||'—',  true,
+        ` <span class="src">${esc(sc.canonicalSource)||'출처 없음'}${sc.canonicalVersion?' · '+esc(sc.canonicalVersion):''}</span>`
+        + ' — 현재 GT와 갈린다. 어느 쪽을 정본으로 볼지가 먼저다.'):''
+  ].join('');
+  const meta=[
+    row.url?`<a href="${esc(row.url)}" target="_blank" rel="noreferrer">${esc(row.productKey)}${OUTLINK}</a>`:esc(row.productKey),
+    [row.brand,row.category].filter(Boolean).map(esc).join(' · '),
+    (row.signals||[]).map(id=>esc((signalById[id]||{}).label||id)).join(' · ')
+  ].filter(Boolean).map(x=>`<span>${x}</span>`).join('');
+  return `<article class="fx" id="${esc(anchor(row.productKey))}">
+    <div class="fx-rail">
+      <span class="ord">${String(ordinal).padStart(2,'0')}</span>
+      <span class="stamp ${esc(row.fix.grade)}" title="${esc(g.note)}">${esc(g.label)}</span>
+      ${chips?`<div class="chips">${chips}</div>`:''}
+    </div>
+    <div class="fx-body">
+      <div class="fx-meta">${meta}</div>
+      <h3>${esc(row.productName)}</h3>
+      ${ruling(row)}
+      ${said}
+      ${plate(row)}
+      ${actPanel(row)}
+    </div>
+  </article>`;
+}
+
+function zoom(button){
+  const img=button.querySelector('img');
+  document.getElementById('viewer-img').src=img.src;
+  document.getElementById('viewer-cap').textContent=img.alt||'';
+  document.getElementById('viewer').showModal();
+}
+function renderTabs(){
+  const bar=document.getElementById('grade-tabs');
+  const total=id=>rows.filter(r=>id==='ALL'||r.fix.grade===id).length;
+  bar.innerHTML=[{id:'ALL',label:'전체'},...data.grades].map(g=>{
+    const n=total(g.id); if(g.id!=='ALL'&&!n) return '';
+    return `<button type="button" data-grade="${esc(g.id)}" aria-pressed="${g.id===grade}">${esc(g.label)} ${fmt(n)}</button>`;
+  }).join('');
+  bar.querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>{grade=b.dataset.grade;renderTabs();renderList();}));
+}
+function renderList(){
+  const shown=rows.filter(matches);
+  const host=document.getElementById('fixes');
+  host.innerHTML=shown.map((r,i)=>line(r,i+1)).join('')||'<p class="empty">조건에 맞는 제안이 없다.</p>';
+  host.querySelectorAll('.fx').forEach((el,i)=>{el.style.animationDelay=Math.min(i,8)*45+'ms';});
+  document.getElementById('shown').textContent=`${fmt(shown.length)} / ${fmt(rows.length)}`;
+}
+document.getElementById('search').addEventListener('input',ev=>{query=ev.target.value;renderList();});
+// 머리의 계기판은 없앴다. 남아 있으면 채우고, 없으면 그냥 넘어간다.
+const put=(id,n)=>{const el=document.getElementById(id); if(el) el.textContent=fmt(n);};
+put('report-count',rows.length);
+document.getElementById('viewer').addEventListener('click',e=>{if(e.target.id==='viewer')e.target.close()});
+// 판정 버튼은 목록이 다시 그려질 때마다 새로 생긴다. 목록에 한 번만 걸어 둔다.
+document.getElementById('fixes').addEventListener('click',ev=>{
+  const button=ev.target.closest('button[data-act]'); if(!button) return;
+  const panel=button.closest('.act'); if(!panel) return;
+  if(button.dataset.act==='redo'){
+    // 한 번 누르면 끝인 화면은 오누름을 되돌릴 길이 없다. 폼을 다시 연다.
+    const row=rows.find(r=>r.productKey===panel.dataset.key);
+    if(row){ panel.outerHTML=actPanel(row, true); syncAll(); }
+    return;
+  }
+  submit(panel, button.dataset.act);
+});
+// 판례를 바꾸면 규칙 칸이 따라온다. 두 곳에서 고르게 하면 어긋난 판정이 원장에 들어온다.
+document.getElementById('fixes').addEventListener('change',ev=>{
+  if(!ev.target.matches('[data-role=precedent]')) return;
+  const panel=ev.target.closest('.act'); if(panel) syncRule(panel);
+});
+function syncAll(){document.querySelectorAll('.act[data-key] [data-role=rule]').forEach(el=>syncRule(el.closest('.act')));}
+renderTabs();renderList();syncAll();
+// 이미 답한 건은 폼 대신 판정 자국을 보여준다. 원장을 읽고 나서 한 번 더 그린다 —
+// 안 그러면 새로고침할 때마다 답한 건에 다시 «승인» 버튼이 뜬다.
+pullDecided().then(()=>{renderList();syncAll();});
+</script>
+</body>
+</html>

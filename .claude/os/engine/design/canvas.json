@@ -1,0 +1,25 @@
+{
+  "artboards": [
+    {
+      "file": "Main.dc.html",
+      "x": 0,
+      "y": 0,
+      "w": 1440,
+      "h": 1040,
+      "title": "메인 홈 — 메뉴 셋",
+      "expand": "fill",
+      "print": "fixed"
+    },
+    {
+      "file": "Policy.dc.html",
+      "x": 1560,
+      "y": 0,
+      "w": 1440,
+      "h": 1500,
+      "title": "정책 보기 — 새 화면",
+      "expand": "fill",
+      "print": "flow"
+    }
+  ],
+  "launch": { "view": "canvas" }
+}

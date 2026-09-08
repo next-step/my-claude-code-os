@@ -1,0 +1,154 @@
+{
+  "schemaVersion": "catalog-reading-cases-v1",
+  "note": "판독자가 잘 추론하는지 재는 시험 사례. 기대값의 근거를 truthBasis로 밝힌다 — 근거의 종류가 다르면 틀렸을 때 뜻도 다르다.",
+  "truthBasisMeaning": {
+    "STRUCTURAL": "사진에 찍힌 사실이라 사람이 즉시 확인한다. 라벨 문구, 프레임에 물건이 있는지 없는지. 틀리면 판독기가 사진을 못 본 것이다",
+    "CONTRAST": "같은 프레임·같은 조명의 두 대상이 서로 달라야 한다는 사실. 절대값이 아니라 «갈리는가»를 잰다. 한쪽으로 쏠린 판독기를 잡는다",
+    "CORROBORATED": "서로 모르는 판독자 여럿이 같은 답을 냈다. 가장 약한 근거다 — 같은 편향을 공유하면 같이 틀린다"
+  },
+  "cases": [
+    {
+      "id": "L1-banner-no-object",
+      "agent": "catalog-carrier-link-reader",
+      "product": "MUSINSA:6221028",
+      "scenes": [
+        "run-review/scenes/MUSINSA-6221028/D01T01.jpg"
+      ],
+      "reference": "run-review/scenes/MUSINSA-6221028/_reference.jpg",
+      "ask": "이 컷의 사람들이 대상(노랑 에코백)을 지녔는가",
+      "expect": {
+        "isTarget": "NO_OBJECT",
+        "holds": "NONE"
+      },
+      "truthBasis": "STRUCTURAL",
+      "why": "긴소매 티셔츠 컬렉션 배너다. 1400px에서 프레임 전체(배너 띠·두 인물의 어깨·팔·손·여백)를 훑어도 어떤 색의 가방도 없다. 실행 판독기는 이 컷을 「남성 · 착용」으로 인용했다",
+      "trap": "사람이 둘 서 있어 «착용 컷»으로 보이기 쉽다. 사람이 있다는 것과 물건이 있다는 것은 다르다"
+    },
+    {
+      "id": "L2-variant-colorway",
+      "agent": "catalog-carrier-link-reader",
+      "product": "MUSINSA:5336216",
+      "scenes": [
+        "run-review/scenes/MUSINSA-5336216/D01T04.jpg"
+      ],
+      "reference": "run-review/scenes/MUSINSA-5336216/_reference.jpg",
+      "ask": "이 컷의 사람이 지닌 지갑이 대상(카키 스웨이드)인가",
+      "expect": {
+        "isTarget": "VARIANT"
+      },
+      "truthBasis": "STRUCTURAL",
+      "why": "같은 상세에 BLACK·KHAKI 두 컬러웨이가 캡션과 함께 실려 있고, 대표 사진은 카키다. 이 컷의 지갑은 검정이다",
+      "trap": "형태·별 자수·하드웨어가 대상과 전부 같다. 색과 소재 하나로만 갈린다"
+    },
+    {
+      "id": "L3-two-prints-one-tile",
+      "agent": "catalog-carrier-link-reader",
+      "product": "MUSINSA:5385148",
+      "scenes": [
+        "run-review/scenes/MUSINSA-5385148/D01T05.jpg"
+      ],
+      "reference": "run-review/scenes/MUSINSA-5385148/_reference.jpg",
+      "ask": "이 타일의 컷마다 사람이 지닌 가방이 대상(레오파드)인가",
+      "expect": {
+        "cuts": 2,
+        "cut1": "VARIANT",
+        "cut2": "MATCH"
+      },
+      "truthBasis": "STRUCTURAL",
+      "why": "한 타일에 촬영 둘이 이어 붙어 있다. 위 컷은 검정 플로럴, 아래 컷은 레오파드다. 대표 사진은 레오파드",
+      "trap": "타일 단위로 한 답만 내면 두 컷 중 하나가 지워진다. 컷 번호로 갈라야 한다"
+    },
+    {
+      "id": "L4-true-carry",
+      "agent": "catalog-carrier-link-reader",
+      "product": "MUSINSA:5365574",
+      "scenes": [
+        "run-review/scenes/MUSINSA-5365574/D02T02.jpg"
+      ],
+      "reference": "run-review/scenes/MUSINSA-5365574/_reference.jpg",
+      "ask": "이 컷의 사람이 대상(도트블랙 호보백)을 지녔는가",
+      "expect": {
+        "isTarget": "MATCH",
+        "holdsIn": [
+          "WORN",
+          "CARRIED"
+        ]
+      },
+      "truthBasis": "STRUCTURAL",
+      "why": "도트 프린트·회색 안감·팥죽색 POTE 태그가 대표 사진과 같고, 스트랩이 어깨를 지난다. 이 사례는 «전부 아니라고 답하는» 판독기를 잡는다",
+      "trap": "반증 사례만 있으면 전부 NO로 답해도 만점이 나온다. 이 사례가 그걸 막는다"
+    },
+    {
+      "id": "G1-banner-left",
+      "agent": "catalog-single-model-reader",
+      "product": "MUSINSA:6221028",
+      "scenes": [
+        "run-review/scenes/MUSINSA-6221028/D01T01.jpg"
+      ],
+      "personRef": "왼쪽 인물",
+      "ask": "이 사람의 외형 관측값",
+      "expect": {
+        "appearance": "FEMININE",
+        "faceVisibility": "VISIBLE"
+      },
+      "truthBasis": "CONTRAST",
+      "why": "같은 프레임·같은 조명에 선 두 사람 중 왼쪽. G2와 반드시 갈려야 한다 — 둘이 같은 값이면 판독기가 한쪽으로 쏠린 것이다",
+      "trap": "오버사이즈 흰 롱슬리브 + 와이드 데님. 옷으로는 못 가른다",
+      "contrastWith": "G2-banner-right"
+    },
+    {
+      "id": "G2-banner-right",
+      "agent": "catalog-single-model-reader",
+      "product": "MUSINSA:6221028",
+      "scenes": [
+        "run-review/scenes/MUSINSA-6221028/D01T01.jpg"
+      ],
+      "personRef": "오른쪽 인물",
+      "ask": "이 사람의 외형 관측값",
+      "expect": {
+        "appearance": "MASCULINE",
+        "faceVisibility": "VISIBLE"
+      },
+      "truthBasis": "CONTRAST",
+      "why": "G1과 같은 프레임의 오른쪽. 이 사례가 MASCULINE 가지가 살아 있는지를 잰다 — 12건 판독에서 MASCULINE이 0건이었다",
+      "trap": "옷차림이 왼쪽 사람과 거의 같다(오버사이즈 롱슬리브 + 와이드 데님). 얼굴로만 갈린다",
+      "contrastWith": "G1-banner-left"
+    },
+    {
+      "id": "G3-no-face-but-a-person",
+      "agent": "catalog-single-model-reader",
+      "product": "MUSINSA:4888023",
+      "scenes": [
+        "run-review/scenes/MUSINSA-4888023/D01T09.jpg",
+        "run-review/scenes/MUSINSA-4888023/D02T02.jpg"
+      ],
+      "personRef": "M1",
+      "ask": "이 사람의 외형 관측값",
+      "expect": {
+        "presence": "WORN",
+        "appearance": "AMBIGUOUS"
+      },
+      "truthBasis": "STRUCTURAL",
+      "why": "이 상품의 인물 컷은 전부 목 아래 크롭이다. 그렇다고 «사람이 안 보인다»가 아니다 — 등과 팔다리 배치가 또렷해 사람은 분명히 있다. 얼굴이 없다는 이유만으로 값을 안 내던 것이 옛 규칙이었고, 그 규칙 때문에 사진이 멀쩡한데 근거가 하나도 없는 건이 쌓였다. 지금은 축 둘 이상이 같은 쪽이면 값을 낸다. 이 컷은 검정 오버사이즈 상하라 체형도 착장도 어느 쪽으로도 안 기울므로 AMBIGUOUS가 정답이다.",
+      "trap": "«사람이 없다»(NO_PERSON)로 답하면 오답이다 — 사람은 있고 값이 안 풀리는 것이다. 반대로 값을 내야 한다는 압박에 중성적 오버사이즈 착장을 한쪽 신호로 쓰면 그것도 오답이다. 중성적 연출은 «단서 없음»이지 «반대쪽 증거»가 아니다."
+    },
+    {
+      "id": "G4-clear-face",
+      "agent": "catalog-single-model-reader",
+      "product": "MUSINSA:5365574",
+      "scenes": [
+        "run-review/scenes/MUSINSA-5365574/D02T05.jpg",
+        "run-review/scenes/MUSINSA-5365574/D02T02.jpg"
+      ],
+      "personRef": "M1",
+      "ask": "이 사람의 외형 관측값",
+      "expect": {
+        "appearance": "FEMININE",
+        "faceVisibility": "VISIBLE"
+      },
+      "truthBasis": "CORROBORATED",
+      "why": "얼굴이 준정면 근접으로 또렷하다. 이 사례는 «얼굴이 보이는데 AMBIGUOUS로 미는» 옛 쏠림을 잡는다",
+      "trap": "올리브 니트·와이드 팬츠가 중성적이다. 옷으로 깎으면 AMBIGUOUS가 나온다"
+    }
+  ]
+}

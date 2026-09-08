@@ -1,0 +1,1769 @@
+{
+  "basedOn": "2026-09-06T10:00:55.890214+00:00",
+  "products": [
+    {
+      "citedSceneIds": [
+        "D01T01",
+        "D05T13"
+      ],
+      "goldLabel": "FEMALE",
+      "judgeClaim": "동일 대상 상품을 실제 착용한 남성·여성 모델이 모두 확인됨.",
+      "judgeSceneNotes": {
+        "D01T01": "여성 · 착용",
+        "D05T13": "남성 · 착용"
+      },
+      "observedLabel": "UNISEX",
+      "owner": "GOLDEN",
+      "ownerAction": "골든셋을 고친다",
+      "policyRule": "P3_MIXED_WEARER",
+      "policyStrength": "STRONG",
+      "productKey": "EGOOCM:3446802",
+      "productName": "0007 Layered Pouch Hobo Bag_Suede Olive",
+      "reference": {
+        "path": "run-review/scenes/EGOOCM-3446802/_reference.jpg",
+        "sourceUrl": "asset/thumbnails/EGOOCM-3446802-1.jpg"
+      },
+      "scenes": [
+        {
+          "citedByJudge": true,
+          "crop": {
+            "bottom": 1000,
+            "top": 0,
+            "width": 1000
+          },
+          "judgeSceneNote": "여성 · 착용",
+          "path": "run-review/scenes/EGOOCM-3446802/D01T01.jpg",
+          "sceneId": "D01T01",
+          "source": "ARTIFACT",
+          "sourceUrl": "https://img.29cm.co.kr/item/202509/11f099db3902aefeb56303a558c75dd5.jpg"
+        },
+        {
+          "citedByJudge": false,
+          "crop": {
+            "bottom": 1350,
+            "top": 0,
+            "width": 900
+          },
+          "judgeSceneNote": null,
+          "path": "run-review/scenes/EGOOCM-3446802/D04T01.jpg",
+          "sceneId": "D04T01",
+          "source": "ARTIFACT",
+          "sourceUrl": "https://img.29cm.co.kr/item/202510/11f0a96e1d74dcf4a9187d5580a0061f.jpeg"
+        },
+        {
+          "citedByJudge": false,
+          "crop": {
+            "bottom": 2700,
+            "top": 1350,
+            "width": 900
+          },
+          "judgeSceneNote": null,
+          "path": "run-review/scenes/EGOOCM-3446802/D04T02.jpg",
+          "sceneId": "D04T02",
+          "source": "ARTIFACT",
+          "sourceUrl": "https://img.29cm.co.kr/item/202510/11f0a96e1d74dcf4a9187d5580a0061f.jpeg"
+        },
+        {
+          "citedByJudge": false,
+          "crop": {
+            "bottom": 3970,
+            "top": 2700,
+            "width": 900
+          },
+          "judgeSceneNote": null,
+          "path": "run-review/scenes/EGOOCM-3446802/D04T03.jpg",
+          "sceneId": "D04T03",
+          "source": "ARTIFACT",
+          "sourceUrl": "https://img.29cm.co.kr/item/202510/11f0a96e1d74dcf4a9187d5580a0061f.jpeg"
+        },
+        {
+          "citedByJudge": false,
+          "crop": {
+            "bottom": 1350,
+            "top": 0,
+            "width": 900
+          },
+          "judgeSceneNote": null,
+          "path": "run-review/scenes/EGOOCM-3446802/D05T01.jpg",
+          "sceneId": "D05T01",
+          "source": "ARTIFACT",
+          "sourceUrl": "https://img.29cm.co.kr/item/202509/11f08dedf8699630be170d68b945a5e9.jpeg"
+        },
+        {
+          "citedByJudge": false,
+          "crop": {
+            "bottom": 2700,
+            "top": 1350,
+            "width": 900
+          },
+          "judgeSceneNote": null,
+          "path": "run-review/scenes/EGOOCM-3446802/D05T02.jpg",
+          "sceneId": "D05T02",
+          "source": "ARTIFACT",
+          "sourceUrl": "https://img.29cm.co.kr/item/202509/11f08dedf8699630be170d68b945a5e9.jpeg"
+        },
+        {
+          "citedByJudge": false,
+          "crop": {
+            "bottom": 4050,
+            "top": 2700,
+            "width": 900
+          },
+          "judgeSceneNote": null,
+          "path": "run-review/scenes/EGOOCM-3446802/D05T03.jpg",
+          "sceneId": "D05T03",
+          "source": "ARTIFACT",
+          "sourceUrl": "https://img.29cm.co.kr/item/202509/11f08dedf8699630be170d68b945a5e9.jpeg"
+        },
+        {
+          "citedByJudge": false,
+          "crop": {
+            "bottom": 5400,
+            "top": 4050,
+            "width": 900
+          },
+          "judgeSceneNote": null,
+          "path": "run-review/scenes/EGOOCM-3446802/D05T04.jpg",
+          "sceneId": "D05T04",
+          "source": "ARTIFACT",
+          "sourceUrl": "https://img.29cm.co.kr/item/202509/11f08dedf8699630be170d68b945a5e9.jpeg"
+        },
+        {
+          "citedByJudge": false,
+          "crop": {
+            "bottom": 6750,
+            "top": 5400,
+            "width": 900
+          },
+          "judgeSceneNote": null,
+          "path": "run-review/scenes/EGOOCM-3446802/D05T05.jpg",
+          "sceneId": "D05T05",
+          "source": "ARTIFACT",
+          "sourceUrl": "https://img.29cm.co.kr/item/202509/11f08dedf8699630be170d68b945a5e9.jpeg"
+        },
+        {
+          "citedByJudge": false,
+          "crop": {
+            "bottom": 8100,
+            "top": 6750,
+            "width": 900
+          },
+          "judgeSceneNote": null,
+          "path": "run-review/scenes/EGOOCM-3446802/D05T06.jpg",
+          "sceneId": "D05T06",
+          "source": "ARTIFACT",
+          "sourceUrl": "https://img.29cm.co.kr/item/202509/11f08dedf8699630be170d68b945a5e9.jpeg"
+        },
+        {
+          "citedByJudge": false,
+          "crop": {
+            "bottom": 9450,
+            "top": 8100,
+            "width": 900
+          },
+          "judgeSceneNote": null,
+          "path": "run-review/scenes/EGOOCM-3446802/D05T07.jpg",
+          "sceneId": "D05T07",
+          "source": "ARTIFACT",
+          "sourceUrl": "https://img.29cm.co.kr/item/202509/11f08dedf8699630be170d68b945a5e9.jpeg"
+        },
+        {
+          "citedByJudge": false,
+          "crop": {
+            "bottom": 10800,
+            "top": 9450,
+            "width": 900
+          },
+          "judgeSceneNote": null,
+          "path": "run-review/scenes/EGOOCM-3446802/D05T08.jpg",
+          "sceneId": "D05T08",
+          "source": "ARTIFACT",
+          "sourceUrl": "https://img.29cm.co.kr/item/202509/11f08dedf8699630be170d68b945a5e9.jpeg"
+        },
+        {
+          "citedByJudge": false,
+          "crop": {
+            "bottom": 12150,
+            "top": 10800,
+            "width": 900
+          },
+          "judgeSceneNote": null,
+          "path": "run-review/scenes/EGOOCM-3446802/D05T09.jpg",
+          "sceneId": "D05T09",
+          "source": "ARTIFACT",
+          "sourceUrl": "https://img.29cm.co.kr/item/202509/11f08dedf8699630be170d68b945a5e9.jpeg"
+        },
+        {
+          "citedByJudge": false,
+          "crop": {
+            "bottom": 13500,
+            "top": 12150,
+            "width": 900
+          },
+          "judgeSceneNote": null,
+          "path": "run-review/scenes/EGOOCM-3446802/D05T10.jpg",
+          "sceneId": "D05T10",
+          "source": "ARTIFACT",
+          "sourceUrl": "https://img.29cm.co.kr/item/202509/11f08dedf8699630be170d68b945a5e9.jpeg"
+        },
+        {
+          "citedByJudge": false,
+          "crop": {
+            "bottom": 14850,
+            "top": 13500,
+            "width": 900
+          },
+          "judgeSceneNote": null,
+          "path": "run-review/scenes/EGOOCM-3446802/D05T11.jpg",
+          "sceneId": "D05T11",
+          "source": "ARTIFACT",
+          "sourceUrl": "https://img.29cm.co.kr/item/202509/11f08dedf8699630be170d68b945a5e9.jpeg"
+        },
+        {
+          "citedByJudge": false,
+          "crop": {
+            "bottom": 16200,
+            "top": 14850,
+            "width": 900
+          },
+          "judgeSceneNote": null,
+          "path": "run-review/scenes/EGOOCM-3446802/D05T12.jpg",
+          "sceneId": "D05T12",
+          "source": "ARTIFACT",
+          "sourceUrl": "https://img.29cm.co.kr/item/202509/11f08dedf8699630be170d68b945a5e9.jpeg"
+        },
+        {
+          "citedByJudge": true,
+          "crop": {
+            "bottom": 17550,
+            "top": 16200,
+            "width": 900
+          },
+          "judgeSceneNote": "남성 · 착용",
+          "path": "run-review/scenes/EGOOCM-3446802/D05T13.jpg",
+          "sceneId": "D05T13",
+          "source": "ARTIFACT",
+          "sourceUrl": "https://img.29cm.co.kr/item/202509/11f08dedf8699630be170d68b945a5e9.jpeg"
+        },
+        {
+          "citedByJudge": false,
+          "crop": {
+            "bottom": 18900,
+            "top": 17550,
+            "width": 900
+          },
+          "judgeSceneNote": null,
+          "path": "run-review/scenes/EGOOCM-3446802/D05T14.jpg",
+          "sceneId": "D05T14",
+          "source": "ARTIFACT",
+          "sourceUrl": "https://img.29cm.co.kr/item/202509/11f08dedf8699630be170d68b945a5e9.jpeg"
+        },
+        {
+          "citedByJudge": false,
+          "crop": {
+            "bottom": 20250,
+            "top": 18900,
+            "width": 900
+          },
+          "judgeSceneNote": null,
+          "path": "run-review/scenes/EGOOCM-3446802/D05T15.jpg",
+          "sceneId": "D05T15",
+          "source": "ARTIFACT",
+          "sourceUrl": "https://img.29cm.co.kr/item/202509/11f08dedf8699630be170d68b945a5e9.jpeg"
+        },
+        {
+          "citedByJudge": false,
+          "crop": {
+            "bottom": 21600,
+            "top": 20250,
+            "width": 900
+          },
+          "judgeSceneNote": null,
+          "path": "run-review/scenes/EGOOCM-3446802/D05T16.jpg",
+          "sceneId": "D05T16",
+          "source": "ARTIFACT",
+          "sourceUrl": "https://img.29cm.co.kr/item/202509/11f08dedf8699630be170d68b945a5e9.jpeg"
+        },
+        {
+          "citedByJudge": false,
+          "crop": {
+            "bottom": 22950,
+            "top": 21600,
+            "width": 900
+          },
+          "judgeSceneNote": null,
+          "path": "run-review/scenes/EGOOCM-3446802/D05T17.jpg",
+          "sceneId": "D05T17",
+          "source": "ARTIFACT",
+          "sourceUrl": "https://img.29cm.co.kr/item/202509/11f08dedf8699630be170d68b945a5e9.jpeg"
+        },
+        {
+          "citedByJudge": false,
+          "crop": {
+            "bottom": 24300,
+            "top": 22950,
+            "width": 900
+          },
+          "judgeSceneNote": null,
+          "path": "run-review/scenes/EGOOCM-3446802/D05T18.jpg",
+          "sceneId": "D05T18",
+          "source": "ARTIFACT",
+          "sourceUrl": "https://img.29cm.co.kr/item/202509/11f08dedf8699630be170d68b945a5e9.jpeg"
+        },
+        {
+          "citedByJudge": false,
+          "crop": {
+            "bottom": 24900,
+            "top": 24300,
+            "width": 900
+          },
+          "judgeSceneNote": null,
+          "path": "run-review/scenes/EGOOCM-3446802/D05T19.jpg",
+          "sceneId": "D05T19",
+          "source": "ARTIFACT",
+          "sourceUrl": "https://img.29cm.co.kr/item/202509/11f08dedf8699630be170d68b945a5e9.jpeg"
+        },
+        {
+          "citedByJudge": false,
+          "crop": {
+            "bottom": 1350,
+            "top": 0,
+            "width": 900
+          },
+          "judgeSceneNote": null,
+          "path": "run-review/scenes/EGOOCM-3446802/D07T01.jpg",
+          "sceneId": "D07T01",
+          "source": "ARTIFACT",
+          "sourceUrl": "https://img.29cm.co.kr/item/202511/11f0bf8026f784828388ad5a338594da.jpeg"
+        },
+        {
+          "citedByJudge": false,
+          "crop": {
+            "bottom": 2700,
+            "top": 1350,
+            "width": 900
+          },
+          "judgeSceneNote": null,
+          "path": "run-review/scenes/EGOOCM-3446802/D07T02.jpg",
+          "sceneId": "D07T02",
+          "source": "ARTIFACT",
+          "sourceUrl": "https://img.29cm.co.kr/item/202511/11f0bf8026f784828388ad5a338594da.jpeg"
+        },
+        {
+          "citedByJudge": false,
+          "crop": {
+            "bottom": 3744,
+            "top": 2700,
+            "width": 900
+          },
+          "judgeSceneNote": null,
+          "path": "run-review/scenes/EGOOCM-3446802/D07T03.jpg",
+          "sceneId": "D07T03",
+          "source": "ARTIFACT",
+          "sourceUrl": "https://img.29cm.co.kr/item/202511/11f0bf8026f784828388ad5a338594da.jpeg"
+        },
+        {
+          "citedByJudge": false,
+          "crop": {
+            "bottom": 1350,
+            "top": 0,
+            "width": 900
+          },
+          "judgeSceneNote": null,
+          "path": "run-review/scenes/EGOOCM-3446802/D08T01.jpg",
+          "sceneId": "D08T01",
+          "source": "ARTIFACT",
+          "sourceUrl": "https://img.29cm.co.kr/item/202510/11f0ab17a6dbdee6a91849275a54f2ee.jpeg"
+        },
+        {
+          "citedByJudge": false,
+          "crop": {
+            "bottom": 2700,
+            "top": 1350,
+            "width": 900
+          },
+          "judgeSceneNote": null,
+          "path": "run-review/scenes/EGOOCM-3446802/D08T02.jpg",
+          "sceneId": "D08T02",
+          "source": "ARTIFACT",
+          "sourceUrl": "https://img.29cm.co.kr/item/202510/11f0ab17a6dbdee6a91849275a54f2ee.jpeg"
+        },
+        {
+          "citedByJudge": false,
+          "crop": {
+            "bottom": 4050,
+            "top": 2700,
+            "width": 900
+          },
+          "judgeSceneNote": null,
+          "path": "run-review/scenes/EGOOCM-3446802/D08T03.jpg",
+          "sceneId": "D08T03",
+          "source": "ARTIFACT",
+          "sourceUrl": "https://img.29cm.co.kr/item/202510/11f0ab17a6dbdee6a91849275a54f2ee.jpeg"
+        },
+        {
+          "citedByJudge": false,
+          "crop": {
+            "bottom": 4852,
+            "top": 4050,
+            "width": 900
+          },
+          "judgeSceneNote": null,
+          "path": "run-review/scenes/EGOOCM-3446802/D08T04.jpg",
+          "sceneId": "D08T04",
+          "source": "ARTIFACT",
+          "sourceUrl": "https://img.29cm.co.kr/item/202510/11f0ab17a6dbdee6a91849275a54f2ee.jpeg"
+        },
+        {
+          "citedByJudge": false,
+          "crop": {
+            "bottom": 2250,
+            "top": 0,
+            "width": 1500
+          },
+          "judgeSceneNote": null,
+          "path": "run-review/scenes/EGOOCM-3446802/D09T01.jpg",
+          "sceneId": "D09T01",
+          "source": "ARTIFACT",
+          "sourceUrl": "https://img.29cm.co.kr/item/202509/11f08dee0f8d0bc894a2435a3931b9ba.jpeg"
+        },
+        {
+          "citedByJudge": false,
+          "crop": {
+            "bottom": 4500,
+            "top": 2250,
+            "width": 1500
+          },
+          "judgeSceneNote": null,
+          "path": "run-review/scenes/EGOOCM-3446802/D09T02.jpg",
+          "sceneId": "D09T02",
+          "source": "ARTIFACT",
+          "sourceUrl": "https://img.29cm.co.kr/item/202509/11f08dee0f8d0bc894a2435a3931b9ba.jpeg"
+        },
+        {
+          "citedByJudge": false,
+          "crop": {
+            "bottom": 6750,
+            "top": 4500,
+            "width": 1500
+          },
+          "judgeSceneNote": null,
+          "path": "run-review/scenes/EGOOCM-3446802/D09T03.jpg",
+          "sceneId": "D09T03",
+          "source": "ARTIFACT",
+          "sourceUrl": "https://img.29cm.co.kr/item/202509/11f08dee0f8d0bc894a2435a3931b9ba.jpeg"
+        },
+        {
+          "citedByJudge": false,
+          "crop": {
+            "bottom": 7299,
+            "top": 6750,
+            "width": 1500
+          },
+          "judgeSceneNote": null,
+          "path": "run-review/scenes/EGOOCM-3446802/D09T04.jpg",
+          "sceneId": "D09T04",
+          "source": "ARTIFACT",
+          "sourceUrl": "https://img.29cm.co.kr/item/202509/11f08dee0f8d0bc894a2435a3931b9ba.jpeg"
+        }
+      ],
+      "unresolvedSceneIds": []
+    },
+    {
+      "citedSceneIds": [
+        "TARGET_REFERENCE"
+      ],
+      "goldLabel": "MALE",
+      "judgeClaim": "동일 대상 상품을 실제 착용한 남성·여성 모델이 모두 확인됨.",
+      "judgeSceneNotes": {
+        "TARGET_REFERENCE": "여성 · 착용"
+      },
+      "maxWidth": 640,
+      "observedLabel": "UNISEX",
+      "owner": "GOLDEN",
+      "ownerAction": "골든셋을 고친다",
+      "policyRule": "P3_MIXED_WEARER",
+      "policyStrength": "STRONG",
+      "productKey": "MUSINSA:4888023",
+      "productName": "Edition6. 로고 스트링 피그먼트 라지핏 쇼퍼백 (7col)",
+      "reference": {
+        "from": "TARGET_REFERENCE",
+        "path": "run-review/scenes/MUSINSA-4888023/_reference.jpg",
+        "size": [
+          500,
+          600
+        ],
+        "sourceUrl": "https://image.msscdn.net/thumbnails/images/goods_img/20250312/4888023/4888023_17417668820090_500.jpg"
+      },
+      "scenes": [
+        {
+          "citedByJudge": false,
+          "crop": {
+            "bottom": 1500,
+            "top": 0,
+            "width": 1000
+          },
+          "judgeSceneNote": null,
+          "path": "run-review/scenes/MUSINSA-4888023/D01T01.jpg",
+          "sceneId": "D01T01",
+          "source": "ARTIFACT",
+          "sourceUrl": "https://a10tionrow0421.cafe24.com/web/25%EC%97%90%EB%94%94%EC%85%986/%EC%97%90%EC%BD%94%EB%B0%B1%20%EC%83%81%EC%84%B8%ED%8E%98%EC%9D%B4%EC%A7%80(1)_1.jpg"
+        },
+        {
+          "citedByJudge": false,
+          "crop": {
+            "bottom": 3000,
+            "top": 1500,
+            "width": 1000
+          },
+          "judgeSceneNote": null,
+          "path": "run-review/scenes/MUSINSA-4888023/D01T02.jpg",
+          "sceneId": "D01T02",
+          "source": "ARTIFACT",
+          "sourceUrl": "https://a10tionrow0421.cafe24.com/web/25%EC%97%90%EB%94%94%EC%85%986/%EC%97%90%EC%BD%94%EB%B0%B1%20%EC%83%81%EC%84%B8%ED%8E%98%EC%9D%B4%EC%A7%80(1)_1.jpg"
+        },
+        {
+          "citedByJudge": false,
+          "crop": {
+            "bottom": 4500,
+            "top": 3000,
+            "width": 1000
+          },
+          "judgeSceneNote": null,
+          "path": "run-review/scenes/MUSINSA-4888023/D01T03.jpg",
+          "sceneId": "D01T03",
+          "source": "ARTIFACT",
+          "sourceUrl": "https://a10tionrow0421.cafe24.com/web/25%EC%97%90%EB%94%94%EC%85%986/%EC%97%90%EC%BD%94%EB%B0%B1%20%EC%83%81%EC%84%B8%ED%8E%98%EC%9D%B4%EC%A7%80(1)_1.jpg"
+        },
+        {
+          "citedByJudge": false,
+          "crop": {
+            "bottom": 6000,
+            "top": 4500,
+            "width": 1000
+          },
+          "judgeSceneNote": null,
+          "path": "run-review/scenes/MUSINSA-4888023/D01T04.jpg",
+          "sceneId": "D01T04",
+          "source": "ARTIFACT",
+          "sourceUrl": "https://a10tionrow0421.cafe24.com/web/25%EC%97%90%EB%94%94%EC%85%986/%EC%97%90%EC%BD%94%EB%B0%B1%20%EC%83%81%EC%84%B8%ED%8E%98%EC%9D%B4%EC%A7%80(1)_1.jpg"
+        },
+        {
+          "citedByJudge": false,
+          "crop": {
+            "bottom": 7500,
+            "top": 6000,
+            "width": 1000
+          },
+          "judgeSceneNote": null,
+          "path": "run-review/scenes/MUSINSA-4888023/D01T05.jpg",
+          "sceneId": "D01T05",
+          "source": "ARTIFACT",
+          "sourceUrl": "https://a10tionrow0421.cafe24.com/web/25%EC%97%90%EB%94%94%EC%85%986/%EC%97%90%EC%BD%94%EB%B0%B1%20%EC%83%81%EC%84%B8%ED%8E%98%EC%9D%B4%EC%A7%80(1)_1.jpg"
+        },
+        {
+          "citedByJudge": false,
+          "crop": {
+            "bottom": 9000,
+            "top": 7500,
+            "width": 1000
+          },
+          "judgeSceneNote": null,
+          "path": "run-review/scenes/MUSINSA-4888023/D01T06.jpg",
+          "sceneId": "D01T06",
+          "source": "ARTIFACT",
+          "sourceUrl": "https://a10tionrow0421.cafe24.com/web/25%EC%97%90%EB%94%94%EC%85%986/%EC%97%90%EC%BD%94%EB%B0%B1%20%EC%83%81%EC%84%B8%ED%8E%98%EC%9D%B4%EC%A7%80(1)_1.jpg"
+        },
+        {
+          "citedByJudge": false,
+          "crop": {
+            "bottom": 10500,
+            "top": 9000,
+            "width": 1000
+          },
+          "judgeSceneNote": null,
+          "path": "run-review/scenes/MUSINSA-4888023/D01T07.jpg",
+          "sceneId": "D01T07",
+          "source": "ARTIFACT",
+          "sourceUrl": "https://a10tionrow0421.cafe24.com/web/25%EC%97%90%EB%94%94%EC%85%986/%EC%97%90%EC%BD%94%EB%B0%B1%20%EC%83%81%EC%84%B8%ED%8E%98%EC%9D%B4%EC%A7%80(1)_1.jpg"
+        },
+        {
+          "citedByJudge": false,
+          "crop": {
+            "bottom": 12000,
+            "top": 10500,
+            "width": 1000
+          },
+          "judgeSceneNote": null,
+          "path": "run-review/scenes/MUSINSA-4888023/D01T08.jpg",
+          "sceneId": "D01T08",
+          "source": "ARTIFACT",
+          "sourceUrl": "https://a10tionrow0421.cafe24.com/web/25%EC%97%90%EB%94%94%EC%85%986/%EC%97%90%EC%BD%94%EB%B0%B1%20%EC%83%81%EC%84%B8%ED%8E%98%EC%9D%B4%EC%A7%80(1)_1.jpg"
+        },
+        {
+          "citedByJudge": false,
+          "crop": {
+            "bottom": 13500,
+            "top": 12000,
+            "width": 1000
+          },
+          "judgeSceneNote": null,
+          "path": "run-review/scenes/MUSINSA-4888023/D01T09.jpg",
+          "sceneId": "D01T09",
+          "source": "ARTIFACT",
+          "sourceUrl": "https://a10tionrow0421.cafe24.com/web/25%EC%97%90%EB%94%94%EC%85%986/%EC%97%90%EC%BD%94%EB%B0%B1%20%EC%83%81%EC%84%B8%ED%8E%98%EC%9D%B4%EC%A7%80(1)_1.jpg"
+        },
+        {
+          "citedByJudge": false,
+          "crop": {
+            "bottom": 15000,
+            "top": 13500,
+            "width": 1000
+          },
+          "judgeSceneNote": null,
+          "path": "run-review/scenes/MUSINSA-4888023/D01T10.jpg",
+          "sceneId": "D01T10",
+          "source": "ARTIFACT",
+          "sourceUrl": "https://a10tionrow0421.cafe24.com/web/25%EC%97%90%EB%94%94%EC%85%986/%EC%97%90%EC%BD%94%EB%B0%B1%20%EC%83%81%EC%84%B8%ED%8E%98%EC%9D%B4%EC%A7%80(1)_1.jpg"
+        },
+        {
+          "citedByJudge": false,
+          "crop": {
+            "bottom": 16500,
+            "top": 15000,
+            "width": 1000
+          },
+          "judgeSceneNote": null,
+          "path": "run-review/scenes/MUSINSA-4888023/D01T11.jpg",
+          "sceneId": "D01T11",
+          "source": "ARTIFACT",
+          "sourceUrl": "https://a10tionrow0421.cafe24.com/web/25%EC%97%90%EB%94%94%EC%85%986/%EC%97%90%EC%BD%94%EB%B0%B1%20%EC%83%81%EC%84%B8%ED%8E%98%EC%9D%B4%EC%A7%80(1)_1.jpg"
+        },
+        {
+          "citedByJudge": false,
+          "crop": {
+            "bottom": 16746,
+            "top": 16500,
+            "width": 1000
+          },
+          "judgeSceneNote": null,
+          "path": "run-review/scenes/MUSINSA-4888023/D01T12.jpg",
+          "sceneId": "D01T12",
+          "source": "ARTIFACT",
+          "sourceUrl": "https://a10tionrow0421.cafe24.com/web/25%EC%97%90%EB%94%94%EC%85%986/%EC%97%90%EC%BD%94%EB%B0%B1%20%EC%83%81%EC%84%B8%ED%8E%98%EC%9D%B4%EC%A7%80(1)_1.jpg"
+        },
+        {
+          "citedByJudge": false,
+          "crop": {
+            "bottom": 1500,
+            "top": 0,
+            "width": 1000
+          },
+          "judgeSceneNote": null,
+          "path": "run-review/scenes/MUSINSA-4888023/D02T01.jpg",
+          "sceneId": "D02T01",
+          "source": "ARTIFACT",
+          "sourceUrl": "https://a10tionrow0421.cafe24.com/web/25%EC%97%90%EB%94%94%EC%85%986/%EC%97%90%EC%BD%94%EB%B0%B1%20%EC%83%81%EC%84%B8%ED%8E%98%EC%9D%B4%EC%A7%80(2).jpg"
+        },
+        {
+          "citedByJudge": false,
+          "crop": {
+            "bottom": 3000,
+            "top": 1500,
+            "width": 1000
+          },
+          "judgeSceneNote": null,
+          "path": "run-review/scenes/MUSINSA-4888023/D02T02.jpg",
+          "sceneId": "D02T02",
+          "source": "ARTIFACT",
+          "sourceUrl": "https://a10tionrow0421.cafe24.com/web/25%EC%97%90%EB%94%94%EC%85%986/%EC%97%90%EC%BD%94%EB%B0%B1%20%EC%83%81%EC%84%B8%ED%8E%98%EC%9D%B4%EC%A7%80(2).jpg"
+        },
+        {
+          "citedByJudge": false,
+          "crop": {
+            "bottom": 4500,
+            "top": 3000,
+            "width": 1000
+          },
+          "judgeSceneNote": null,
+          "path": "run-review/scenes/MUSINSA-4888023/D02T03.jpg",
+          "sceneId": "D02T03",
+          "source": "ARTIFACT",
+          "sourceUrl": "https://a10tionrow0421.cafe24.com/web/25%EC%97%90%EB%94%94%EC%85%986/%EC%97%90%EC%BD%94%EB%B0%B1%20%EC%83%81%EC%84%B8%ED%8E%98%EC%9D%B4%EC%A7%80(2).jpg"
+        },
+        {
+          "citedByJudge": false,
+          "crop": {
+            "bottom": 6000,
+            "top": 4500,
+            "width": 1000
+          },
+          "judgeSceneNote": null,
+          "path": "run-review/scenes/MUSINSA-4888023/D02T04.jpg",
+          "sceneId": "D02T04",
+          "source": "ARTIFACT",
+          "sourceUrl": "https://a10tionrow0421.cafe24.com/web/25%EC%97%90%EB%94%94%EC%85%986/%EC%97%90%EC%BD%94%EB%B0%B1%20%EC%83%81%EC%84%B8%ED%8E%98%EC%9D%B4%EC%A7%80(2).jpg"
+        },
+        {
+          "citedByJudge": false,
+          "crop": {
+            "bottom": 7500,
+            "top": 6000,
+            "width": 1000
+          },
+          "judgeSceneNote": null,
+          "path": "run-review/scenes/MUSINSA-4888023/D02T05.jpg",
+          "sceneId": "D02T05",
+          "source": "ARTIFACT",
+          "sourceUrl": "https://a10tionrow0421.cafe24.com/web/25%EC%97%90%EB%94%94%EC%85%986/%EC%97%90%EC%BD%94%EB%B0%B1%20%EC%83%81%EC%84%B8%ED%8E%98%EC%9D%B4%EC%A7%80(2).jpg"
+        },
+        {
+          "citedByJudge": false,
+          "crop": {
+            "bottom": 9000,
+            "top": 7500,
+            "width": 1000
+          },
+          "judgeSceneNote": null,
+          "path": "run-review/scenes/MUSINSA-4888023/D02T06.jpg",
+          "sceneId": "D02T06",
+          "source": "ARTIFACT",
+          "sourceUrl": "https://a10tionrow0421.cafe24.com/web/25%EC%97%90%EB%94%94%EC%85%986/%EC%97%90%EC%BD%94%EB%B0%B1%20%EC%83%81%EC%84%B8%ED%8E%98%EC%9D%B4%EC%A7%80(2).jpg"
+        },
+        {
+          "citedByJudge": false,
+          "crop": {
+            "bottom": 10500,
+            "top": 9000,
+            "width": 1000
+          },
+          "judgeSceneNote": null,
+          "path": "run-review/scenes/MUSINSA-4888023/D02T07.jpg",
+          "sceneId": "D02T07",
+          "source": "ARTIFACT",
+          "sourceUrl": "https://a10tionrow0421.cafe24.com/web/25%EC%97%90%EB%94%94%EC%85%986/%EC%97%90%EC%BD%94%EB%B0%B1%20%EC%83%81%EC%84%B8%ED%8E%98%EC%9D%B4%EC%A7%80(2).jpg"
+        },
+        {
+          "citedByJudge": false,
+          "crop": {
+            "bottom": 10876,
+            "top": 10500,
+            "width": 1000
+          },
+          "judgeSceneNote": null,
+          "path": "run-review/scenes/MUSINSA-4888023/D02T08.jpg",
+          "sceneId": "D02T08",
+          "source": "ARTIFACT",
+          "sourceUrl": "https://a10tionrow0421.cafe24.com/web/25%EC%97%90%EB%94%94%EC%85%986/%EC%97%90%EC%BD%94%EB%B0%B1%20%EC%83%81%EC%84%B8%ED%8E%98%EC%9D%B4%EC%A7%80(2).jpg"
+        },
+        {
+          "citedByJudge": true,
+          "crop": {
+            "bottom": 600,
+            "top": 0,
+            "width": 500
+          },
+          "judgeSceneNote": "여성 · 착용",
+          "path": "run-review/scenes/MUSINSA-4888023/TARGET_REFERENCE.jpg",
+          "sceneId": "TARGET_REFERENCE",
+          "source": "LEDGER",
+          "sourceUrl": "https://image.msscdn.net/thumbnails/images/goods_img/20250312/4888023/4888023_17417668820090_500.jpg"
+        }
+      ],
+      "unresolvedSceneIds": []
+    },
+    {
+      "citedSceneIds": [
+        "D01T02",
+        "D01T04",
+        "D02T04"
+      ],
+      "goldLabel": "MALE",
+      "judgeClaim": "동일 대상 상품을 실제 착용한 남성·여성 모델이 모두 확인됨.",
+      "judgeSceneNotes": {
+        "D01T02": "여성 · 착용",
+        "D01T04": "남성 · 착용",
+        "D02T04": "사이즈표 성별 표기"
+      },
+      "observedLabel": "UNISEX",
+      "owner": "GOLDEN",
+      "ownerAction": "골든셋을 고친다",
+      "policyRule": "P3_MIXED_WEARER",
+      "policyStrength": "STRONG",
+      "productKey": "MUSINSA:5336216",
+      "productName": "NEEDLE STONE WALLET [KHAKI]",
+      "reference": {
+        "path": "run-review/scenes/MUSINSA-5336216/_reference.jpg",
+        "sourceUrl": "asset/thumbnails/MUSINSA-5336216-1.jpg"
+      },
+      "scenes": [
+        {
+          "citedByJudge": false,
+          "crop": {
+            "bottom": 1500,
+            "top": 0,
+            "width": 1000
+          },
+          "judgeSceneNote": null,
+          "path": "run-review/scenes/MUSINSA-5336216/D01T01.jpg",
+          "sceneId": "D01T01",
+          "source": "ARTIFACT",
+          "sourceUrl": "https://defgarments.openhost.cafe24.com/web/upload/25fw/p-27-1.jpg"
+        },
+        {
+          "citedByJudge": true,
+          "crop": {
+            "bottom": 3000,
+            "top": 1500,
+            "width": 1000
+          },
+          "judgeSceneNote": "여성 · 착용",
+          "path": "run-review/scenes/MUSINSA-5336216/D01T02.jpg",
+          "sceneId": "D01T02",
+          "source": "ARTIFACT",
+          "sourceUrl": "https://defgarments.openhost.cafe24.com/web/upload/25fw/p-27-1.jpg"
+        },
+        {
+          "citedByJudge": false,
+          "crop": {
+            "bottom": 4500,
+            "top": 3000,
+            "width": 1000
+          },
+          "judgeSceneNote": null,
+          "path": "run-review/scenes/MUSINSA-5336216/D01T03.jpg",
+          "sceneId": "D01T03",
+          "source": "ARTIFACT",
+          "sourceUrl": "https://defgarments.openhost.cafe24.com/web/upload/25fw/p-27-1.jpg"
+        },
+        {
+          "citedByJudge": true,
+          "crop": {
+            "bottom": 6000,
+            "top": 4500,
+            "width": 1000
+          },
+          "judgeSceneNote": "남성 · 착용",
+          "path": "run-review/scenes/MUSINSA-5336216/D01T04.jpg",
+          "sceneId": "D01T04",
+          "source": "ARTIFACT",
+          "sourceUrl": "https://defgarments.openhost.cafe24.com/web/upload/25fw/p-27-1.jpg"
+        },
+        {
+          "citedByJudge": false,
+          "crop": {
+            "bottom": 7500,
+            "top": 6000,
+            "width": 1000
+          },
+          "judgeSceneNote": null,
+          "path": "run-review/scenes/MUSINSA-5336216/D01T05.jpg",
+          "sceneId": "D01T05",
+          "source": "ARTIFACT",
+          "sourceUrl": "https://defgarments.openhost.cafe24.com/web/upload/25fw/p-27-1.jpg"
+        },
+        {
+          "citedByJudge": false,
+          "crop": {
+            "bottom": 7959,
+            "top": 7500,
+            "width": 1000
+          },
+          "judgeSceneNote": null,
+          "path": "run-review/scenes/MUSINSA-5336216/D01T06.jpg",
+          "sceneId": "D01T06",
+          "source": "ARTIFACT",
+          "sourceUrl": "https://defgarments.openhost.cafe24.com/web/upload/25fw/p-27-1.jpg"
+        },
+        {
+          "citedByJudge": false,
+          "crop": {
+            "bottom": 1500,
+            "top": 0,
+            "width": 1000
+          },
+          "judgeSceneNote": null,
+          "path": "run-review/scenes/MUSINSA-5336216/D02T01.jpg",
+          "sceneId": "D02T01",
+          "source": "ARTIFACT",
+          "sourceUrl": "https://defgarments.openhost.cafe24.com/web/upload/25fw/p-27-2.jpg"
+        },
+        {
+          "citedByJudge": false,
+          "crop": {
+            "bottom": 3000,
+            "top": 1500,
+            "width": 1000
+          },
+          "judgeSceneNote": null,
+          "path": "run-review/scenes/MUSINSA-5336216/D02T02.jpg",
+          "sceneId": "D02T02",
+          "source": "ARTIFACT",
+          "sourceUrl": "https://defgarments.openhost.cafe24.com/web/upload/25fw/p-27-2.jpg"
+        },
+        {
+          "citedByJudge": false,
+          "crop": {
+            "bottom": 4500,
+            "top": 3000,
+            "width": 1000
+          },
+          "judgeSceneNote": null,
+          "path": "run-review/scenes/MUSINSA-5336216/D02T03.jpg",
+          "sceneId": "D02T03",
+          "source": "ARTIFACT",
+          "sourceUrl": "https://defgarments.openhost.cafe24.com/web/upload/25fw/p-27-2.jpg"
+        },
+        {
+          "citedByJudge": true,
+          "crop": {
+            "bottom": 5461,
+            "top": 4500,
+            "width": 1000
+          },
+          "judgeSceneNote": "사이즈표 성별 표기",
+          "path": "run-review/scenes/MUSINSA-5336216/D02T04.jpg",
+          "sceneId": "D02T04",
+          "source": "ARTIFACT",
+          "sourceUrl": "https://defgarments.openhost.cafe24.com/web/upload/25fw/p-27-2.jpg"
+        }
+      ],
+      "unresolvedSceneIds": []
+    },
+    {
+      "citedSceneIds": [
+        "D02T03",
+        "D02T09"
+      ],
+      "goldLabel": "FEMALE",
+      "judgeClaim": "동일 대상 상품을 실제 착용한 남성·여성 모델이 모두 확인됨.",
+      "judgeSceneNotes": {
+        "D02T03": "여성 · 착용",
+        "D02T09": "남성 · 착용"
+      },
+      "observedLabel": "UNISEX",
+      "owner": "GOLDEN",
+      "ownerAction": "골든셋을 고친다",
+      "policyRule": "P3_MIXED_WEARER",
+      "policyStrength": "STRONG",
+      "productKey": "MUSINSA:5365574",
+      "productName": "0007 레이어드 파우치 호보 백_도트블랙",
+      "reference": {
+        "path": "run-review/scenes/MUSINSA-5365574/_reference.jpg",
+        "sourceUrl": "asset/thumbnails/MUSINSA-5365574-1.jpg"
+      },
+      "scenes": [
+        {
+          "citedByJudge": false,
+          "crop": {
+            "bottom": 1350,
+            "top": 0,
+            "width": 900
+          },
+          "judgeSceneNote": null,
+          "path": "run-review/scenes/MUSINSA-5365574/D01T01.jpg",
+          "sceneId": "D01T01",
+          "source": "ARTIFACT",
+          "sourceUrl": "https://image.msscdn.net/images/prd_img/2025103114190789476516866690446cbda736.jpg"
+        },
+        {
+          "citedByJudge": false,
+          "crop": {
+            "bottom": 2700,
+            "top": 1350,
+            "width": 900
+          },
+          "judgeSceneNote": null,
+          "path": "run-review/scenes/MUSINSA-5365574/D01T02.jpg",
+          "sceneId": "D01T02",
+          "source": "ARTIFACT",
+          "sourceUrl": "https://image.msscdn.net/images/prd_img/2025103114190789476516866690446cbda736.jpg"
+        },
+        {
+          "citedByJudge": false,
+          "crop": {
+            "bottom": 3955,
+            "top": 2700,
+            "width": 900
+          },
+          "judgeSceneNote": null,
+          "path": "run-review/scenes/MUSINSA-5365574/D01T03.jpg",
+          "sceneId": "D01T03",
+          "source": "ARTIFACT",
+          "sourceUrl": "https://image.msscdn.net/images/prd_img/2025103114190789476516866690446cbda736.jpg"
+        },
+        {
+          "citedByJudge": false,
+          "crop": {
+            "bottom": 1350,
+            "top": 0,
+            "width": 900
+          },
+          "judgeSceneNote": null,
+          "path": "run-review/scenes/MUSINSA-5365574/D02T01.jpg",
+          "sceneId": "D02T01",
+          "source": "ARTIFACT",
+          "sourceUrl": "https://image.msscdn.net/images/prd_img/2025103114191103658587266690446cf08ef1.jpg"
+        },
+        {
+          "citedByJudge": false,
+          "crop": {
+            "bottom": 2700,
+            "top": 1350,
+            "width": 900
+          },
+          "judgeSceneNote": null,
+          "path": "run-review/scenes/MUSINSA-5365574/D02T02.jpg",
+          "sceneId": "D02T02",
+          "source": "ARTIFACT",
+          "sourceUrl": "https://image.msscdn.net/images/prd_img/2025103114191103658587266690446cf08ef1.jpg"
+        },
+        {
+          "citedByJudge": true,
+          "crop": {
+            "bottom": 4050,
+            "top": 2700,
+            "width": 900
+          },
+          "judgeSceneNote": "여성 · 착용",
+          "path": "run-review/scenes/MUSINSA-5365574/D02T03.jpg",
+          "sceneId": "D02T03",
+          "source": "ARTIFACT",
+          "sourceUrl": "https://image.msscdn.net/images/prd_img/2025103114191103658587266690446cf08ef1.jpg"
+        },
+        {
+          "citedByJudge": false,
+          "crop": {
+            "bottom": 5400,
+            "top": 4050,
+            "width": 900
+          },
+          "judgeSceneNote": null,
+          "path": "run-review/scenes/MUSINSA-5365574/D02T04.jpg",
+          "sceneId": "D02T04",
+          "source": "ARTIFACT",
+          "sourceUrl": "https://image.msscdn.net/images/prd_img/2025103114191103658587266690446cf08ef1.jpg"
+        },
+        {
+          "citedByJudge": false,
+          "crop": {
+            "bottom": 6750,
+            "top": 5400,
+            "width": 900
+          },
+          "judgeSceneNote": null,
+          "path": "run-review/scenes/MUSINSA-5365574/D02T05.jpg",
+          "sceneId": "D02T05",
+          "source": "ARTIFACT",
+          "sourceUrl": "https://image.msscdn.net/images/prd_img/2025103114191103658587266690446cf08ef1.jpg"
+        },
+        {
+          "citedByJudge": false,
+          "crop": {
+            "bottom": 8100,
+            "top": 6750,
+            "width": 900
+          },
+          "judgeSceneNote": null,
+          "path": "run-review/scenes/MUSINSA-5365574/D02T06.jpg",
+          "sceneId": "D02T06",
+          "source": "ARTIFACT",
+          "sourceUrl": "https://image.msscdn.net/images/prd_img/2025103114191103658587266690446cf08ef1.jpg"
+        },
+        {
+          "citedByJudge": false,
+          "crop": {
+            "bottom": 9450,
+            "top": 8100,
+            "width": 900
+          },
+          "judgeSceneNote": null,
+          "path": "run-review/scenes/MUSINSA-5365574/D02T07.jpg",
+          "sceneId": "D02T07",
+          "source": "ARTIFACT",
+          "sourceUrl": "https://image.msscdn.net/images/prd_img/2025103114191103658587266690446cf08ef1.jpg"
+        },
+        {
+          "citedByJudge": false,
+          "crop": {
+            "bottom": 10800,
+            "top": 9450,
+            "width": 900
+          },
+          "judgeSceneNote": null,
+          "path": "run-review/scenes/MUSINSA-5365574/D02T08.jpg",
+          "sceneId": "D02T08",
+          "source": "ARTIFACT",
+          "sourceUrl": "https://image.msscdn.net/images/prd_img/2025103114191103658587266690446cf08ef1.jpg"
+        },
+        {
+          "citedByJudge": true,
+          "crop": {
+            "bottom": 12150,
+            "top": 10800,
+            "width": 900
+          },
+          "judgeSceneNote": "남성 · 착용",
+          "path": "run-review/scenes/MUSINSA-5365574/D02T09.jpg",
+          "sceneId": "D02T09",
+          "source": "ARTIFACT",
+          "sourceUrl": "https://image.msscdn.net/images/prd_img/2025103114191103658587266690446cf08ef1.jpg"
+        },
+        {
+          "citedByJudge": false,
+          "crop": {
+            "bottom": 13500,
+            "top": 12150,
+            "width": 900
+          },
+          "judgeSceneNote": null,
+          "path": "run-review/scenes/MUSINSA-5365574/D02T10.jpg",
+          "sceneId": "D02T10",
+          "source": "ARTIFACT",
+          "sourceUrl": "https://image.msscdn.net/images/prd_img/2025103114191103658587266690446cf08ef1.jpg"
+        },
+        {
+          "citedByJudge": false,
+          "crop": {
+            "bottom": 14850,
+            "top": 13500,
+            "width": 900
+          },
+          "judgeSceneNote": null,
+          "path": "run-review/scenes/MUSINSA-5365574/D02T11.jpg",
+          "sceneId": "D02T11",
+          "source": "ARTIFACT",
+          "sourceUrl": "https://image.msscdn.net/images/prd_img/2025103114191103658587266690446cf08ef1.jpg"
+        },
+        {
+          "citedByJudge": false,
+          "crop": {
+            "bottom": 16200,
+            "top": 14850,
+            "width": 900
+          },
+          "judgeSceneNote": null,
+          "path": "run-review/scenes/MUSINSA-5365574/D02T12.jpg",
+          "sceneId": "D02T12",
+          "source": "ARTIFACT",
+          "sourceUrl": "https://image.msscdn.net/images/prd_img/2025103114191103658587266690446cf08ef1.jpg"
+        },
+        {
+          "citedByJudge": false,
+          "crop": {
+            "bottom": 17550,
+            "top": 16200,
+            "width": 900
+          },
+          "judgeSceneNote": null,
+          "path": "run-review/scenes/MUSINSA-5365574/D02T13.jpg",
+          "sceneId": "D02T13",
+          "source": "ARTIFACT",
+          "sourceUrl": "https://image.msscdn.net/images/prd_img/2025103114191103658587266690446cf08ef1.jpg"
+        },
+        {
+          "citedByJudge": false,
+          "crop": {
+            "bottom": 18710,
+            "top": 17550,
+            "width": 900
+          },
+          "judgeSceneNote": null,
+          "path": "run-review/scenes/MUSINSA-5365574/D02T14.jpg",
+          "sceneId": "D02T14",
+          "source": "ARTIFACT",
+          "sourceUrl": "https://image.msscdn.net/images/prd_img/2025103114191103658587266690446cf08ef1.jpg"
+        },
+        {
+          "citedByJudge": false,
+          "crop": {
+            "bottom": 1350,
+            "top": 0,
+            "width": 900
+          },
+          "judgeSceneNote": null,
+          "path": "run-review/scenes/MUSINSA-5365574/D03T01.jpg",
+          "sceneId": "D03T01",
+          "source": "ARTIFACT",
+          "sourceUrl": "https://image.msscdn.net/images/prd_img/20260513152348632696446966a0418f49a783.jpg"
+        },
+        {
+          "citedByJudge": false,
+          "crop": {
+            "bottom": 2700,
+            "top": 1350,
+            "width": 900
+          },
+          "judgeSceneNote": null,
+          "path": "run-review/scenes/MUSINSA-5365574/D03T02.jpg",
+          "sceneId": "D03T02",
+          "source": "ARTIFACT",
+          "sourceUrl": "https://image.msscdn.net/images/prd_img/20260513152348632696446966a0418f49a783.jpg"
+        },
+        {
+          "citedByJudge": false,
+          "crop": {
+            "bottom": 3549,
+            "top": 2700,
+            "width": 900
+          },
+          "judgeSceneNote": null,
+          "path": "run-review/scenes/MUSINSA-5365574/D03T03.jpg",
+          "sceneId": "D03T03",
+          "source": "ARTIFACT",
+          "sourceUrl": "https://image.msscdn.net/images/prd_img/20260513152348632696446966a0418f49a783.jpg"
+        },
+        {
+          "citedByJudge": false,
+          "crop": {
+            "bottom": 1350,
+            "top": 0,
+            "width": 900
+          },
+          "judgeSceneNote": null,
+          "path": "run-review/scenes/MUSINSA-5365574/D04T01.jpg",
+          "sceneId": "D04T01",
+          "source": "ARTIFACT",
+          "sourceUrl": "https://image.msscdn.net/images/prd_img/2025103114190769705753521690446cbaa2ee.jpg"
+        },
+        {
+          "citedByJudge": false,
+          "crop": {
+            "bottom": 2700,
+            "top": 1350,
+            "width": 900
+          },
+          "judgeSceneNote": null,
+          "path": "run-review/scenes/MUSINSA-5365574/D04T02.jpg",
+          "sceneId": "D04T02",
+          "source": "ARTIFACT",
+          "sourceUrl": "https://image.msscdn.net/images/prd_img/2025103114190769705753521690446cbaa2ee.jpg"
+        },
+        {
+          "citedByJudge": false,
+          "crop": {
+            "bottom": 4010,
+            "top": 2700,
+            "width": 900
+          },
+          "judgeSceneNote": null,
+          "path": "run-review/scenes/MUSINSA-5365574/D04T03.jpg",
+          "sceneId": "D04T03",
+          "source": "ARTIFACT",
+          "sourceUrl": "https://image.msscdn.net/images/prd_img/2025103114190769705753521690446cbaa2ee.jpg"
+        },
+        {
+          "citedByJudge": false,
+          "crop": {
+            "bottom": 1440,
+            "top": 0,
+            "width": 960
+          },
+          "judgeSceneNote": null,
+          "path": "run-review/scenes/MUSINSA-5365574/D05T01.jpg",
+          "sceneId": "D05T01",
+          "source": "ARTIFACT",
+          "sourceUrl": "https://image.msscdn.net/images/prd_img/2025103114190899423381175690446ccf2bc1.jpg"
+        },
+        {
+          "citedByJudge": false,
+          "crop": {
+            "bottom": 2880,
+            "top": 1440,
+            "width": 960
+          },
+          "judgeSceneNote": null,
+          "path": "run-review/scenes/MUSINSA-5365574/D05T02.jpg",
+          "sceneId": "D05T02",
+          "source": "ARTIFACT",
+          "sourceUrl": "https://image.msscdn.net/images/prd_img/2025103114190899423381175690446ccf2bc1.jpg"
+        },
+        {
+          "citedByJudge": false,
+          "crop": {
+            "bottom": 4320,
+            "top": 2880,
+            "width": 960
+          },
+          "judgeSceneNote": null,
+          "path": "run-review/scenes/MUSINSA-5365574/D05T03.jpg",
+          "sceneId": "D05T03",
+          "source": "ARTIFACT",
+          "sourceUrl": "https://image.msscdn.net/images/prd_img/2025103114190899423381175690446ccf2bc1.jpg"
+        },
+        {
+          "citedByJudge": false,
+          "crop": {
+            "bottom": 4672,
+            "top": 4320,
+            "width": 960
+          },
+          "judgeSceneNote": null,
+          "path": "run-review/scenes/MUSINSA-5365574/D05T04.jpg",
+          "sceneId": "D05T04",
+          "source": "ARTIFACT",
+          "sourceUrl": "https://image.msscdn.net/images/prd_img/2025103114190899423381175690446ccf2bc1.jpg"
+        }
+      ],
+      "unresolvedSceneIds": []
+    },
+    {
+      "citedSceneIds": [
+        "D01T03",
+        "D01T06"
+      ],
+      "goldLabel": "FEMALE",
+      "judgeClaim": "동일 대상 상품을 실제 착용한 남성·여성 모델이 모두 확인됨.",
+      "judgeSceneNotes": {
+        "D01T03": "여성 · 착용",
+        "D01T06": "남성 · 착용"
+      },
+      "observedLabel": "UNISEX",
+      "owner": "GOLDEN",
+      "ownerAction": "골든셋을 고친다",
+      "policyRule": "P3_MIXED_WEARER",
+      "policyStrength": "STRONG",
+      "productKey": "MUSINSA:5385148",
+      "productName": "WO 스튜디오 펠라인 볼링백20x14x11",
+      "reference": {
+        "path": "run-review/scenes/MUSINSA-5385148/_reference.jpg",
+        "sourceUrl": "asset/thumbnails/MUSINSA-5385148-1.jpg"
+      },
+      "scenes": [
+        {
+          "citedByJudge": false,
+          "crop": {
+            "bottom": 1125,
+            "top": 0,
+            "width": 750
+          },
+          "judgeSceneNote": null,
+          "path": "run-review/scenes/MUSINSA-5385148/D01T01.jpg",
+          "sceneId": "D01T01",
+          "source": "ARTIFACT",
+          "sourceUrl": "https://lifestyle2017.cafe24.com/web/upload/NNEditor/20250827/copy-1756286732-25FW20WO_STUDIO_BOWLING20BAG_WO_DAILY_SMALL20POUCH_1.jpg"
+        },
+        {
+          "citedByJudge": false,
+          "crop": {
+            "bottom": 2250,
+            "top": 1125,
+            "width": 750
+          },
+          "judgeSceneNote": null,
+          "path": "run-review/scenes/MUSINSA-5385148/D01T02.jpg",
+          "sceneId": "D01T02",
+          "source": "ARTIFACT",
+          "sourceUrl": "https://lifestyle2017.cafe24.com/web/upload/NNEditor/20250827/copy-1756286732-25FW20WO_STUDIO_BOWLING20BAG_WO_DAILY_SMALL20POUCH_1.jpg"
+        },
+        {
+          "citedByJudge": true,
+          "crop": {
+            "bottom": 3375,
+            "top": 2250,
+            "width": 750
+          },
+          "judgeSceneNote": "여성 · 착용",
+          "path": "run-review/scenes/MUSINSA-5385148/D01T03.jpg",
+          "sceneId": "D01T03",
+          "source": "ARTIFACT",
+          "sourceUrl": "https://lifestyle2017.cafe24.com/web/upload/NNEditor/20250827/copy-1756286732-25FW20WO_STUDIO_BOWLING20BAG_WO_DAILY_SMALL20POUCH_1.jpg"
+        },
+        {
+          "citedByJudge": false,
+          "crop": {
+            "bottom": 4500,
+            "top": 3375,
+            "width": 750
+          },
+          "judgeSceneNote": null,
+          "path": "run-review/scenes/MUSINSA-5385148/D01T04.jpg",
+          "sceneId": "D01T04",
+          "source": "ARTIFACT",
+          "sourceUrl": "https://lifestyle2017.cafe24.com/web/upload/NNEditor/20250827/copy-1756286732-25FW20WO_STUDIO_BOWLING20BAG_WO_DAILY_SMALL20POUCH_1.jpg"
+        },
+        {
+          "citedByJudge": false,
+          "crop": {
+            "bottom": 5625,
+            "top": 4500,
+            "width": 750
+          },
+          "judgeSceneNote": null,
+          "path": "run-review/scenes/MUSINSA-5385148/D01T05.jpg",
+          "sceneId": "D01T05",
+          "source": "ARTIFACT",
+          "sourceUrl": "https://lifestyle2017.cafe24.com/web/upload/NNEditor/20250827/copy-1756286732-25FW20WO_STUDIO_BOWLING20BAG_WO_DAILY_SMALL20POUCH_1.jpg"
+        },
+        {
+          "citedByJudge": true,
+          "crop": {
+            "bottom": 6750,
+            "top": 5625,
+            "width": 750
+          },
+          "judgeSceneNote": "남성 · 착용",
+          "path": "run-review/scenes/MUSINSA-5385148/D01T06.jpg",
+          "sceneId": "D01T06",
+          "source": "ARTIFACT",
+          "sourceUrl": "https://lifestyle2017.cafe24.com/web/upload/NNEditor/20250827/copy-1756286732-25FW20WO_STUDIO_BOWLING20BAG_WO_DAILY_SMALL20POUCH_1.jpg"
+        },
+        {
+          "citedByJudge": false,
+          "crop": {
+            "bottom": 7026,
+            "top": 6750,
+            "width": 750
+          },
+          "judgeSceneNote": null,
+          "path": "run-review/scenes/MUSINSA-5385148/D01T07.jpg",
+          "sceneId": "D01T07",
+          "source": "ARTIFACT",
+          "sourceUrl": "https://lifestyle2017.cafe24.com/web/upload/NNEditor/20250827/copy-1756286732-25FW20WO_STUDIO_BOWLING20BAG_WO_DAILY_SMALL20POUCH_1.jpg"
+        },
+        {
+          "citedByJudge": false,
+          "crop": {
+            "bottom": 1125,
+            "top": 0,
+            "width": 750
+          },
+          "judgeSceneNote": null,
+          "path": "run-review/scenes/MUSINSA-5385148/D02T01.jpg",
+          "sceneId": "D02T01",
+          "source": "ARTIFACT",
+          "sourceUrl": "https://lifestyle2017.cafe24.com/web/upload/NNEditor/20250827/copy-1756286732-25FW20WO_STUDIO_BOWLING20BAG_WO_DAILY_SMALL20POUCH_2.jpg"
+        },
+        {
+          "citedByJudge": false,
+          "crop": {
+            "bottom": 2250,
+            "top": 1125,
+            "width": 750
+          },
+          "judgeSceneNote": null,
+          "path": "run-review/scenes/MUSINSA-5385148/D02T02.jpg",
+          "sceneId": "D02T02",
+          "source": "ARTIFACT",
+          "sourceUrl": "https://lifestyle2017.cafe24.com/web/upload/NNEditor/20250827/copy-1756286732-25FW20WO_STUDIO_BOWLING20BAG_WO_DAILY_SMALL20POUCH_2.jpg"
+        },
+        {
+          "citedByJudge": false,
+          "crop": {
+            "bottom": 3375,
+            "top": 2250,
+            "width": 750
+          },
+          "judgeSceneNote": null,
+          "path": "run-review/scenes/MUSINSA-5385148/D02T03.jpg",
+          "sceneId": "D02T03",
+          "source": "ARTIFACT",
+          "sourceUrl": "https://lifestyle2017.cafe24.com/web/upload/NNEditor/20250827/copy-1756286732-25FW20WO_STUDIO_BOWLING20BAG_WO_DAILY_SMALL20POUCH_2.jpg"
+        },
+        {
+          "citedByJudge": false,
+          "crop": {
+            "bottom": 4500,
+            "top": 3375,
+            "width": 750
+          },
+          "judgeSceneNote": null,
+          "path": "run-review/scenes/MUSINSA-5385148/D02T04.jpg",
+          "sceneId": "D02T04",
+          "source": "ARTIFACT",
+          "sourceUrl": "https://lifestyle2017.cafe24.com/web/upload/NNEditor/20250827/copy-1756286732-25FW20WO_STUDIO_BOWLING20BAG_WO_DAILY_SMALL20POUCH_2.jpg"
+        },
+        {
+          "citedByJudge": false,
+          "crop": {
+            "bottom": 5625,
+            "top": 4500,
+            "width": 750
+          },
+          "judgeSceneNote": null,
+          "path": "run-review/scenes/MUSINSA-5385148/D02T05.jpg",
+          "sceneId": "D02T05",
+          "source": "ARTIFACT",
+          "sourceUrl": "https://lifestyle2017.cafe24.com/web/upload/NNEditor/20250827/copy-1756286732-25FW20WO_STUDIO_BOWLING20BAG_WO_DAILY_SMALL20POUCH_2.jpg"
+        },
+        {
+          "citedByJudge": false,
+          "crop": {
+            "bottom": 6750,
+            "top": 5625,
+            "width": 750
+          },
+          "judgeSceneNote": null,
+          "path": "run-review/scenes/MUSINSA-5385148/D02T06.jpg",
+          "sceneId": "D02T06",
+          "source": "ARTIFACT",
+          "sourceUrl": "https://lifestyle2017.cafe24.com/web/upload/NNEditor/20250827/copy-1756286732-25FW20WO_STUDIO_BOWLING20BAG_WO_DAILY_SMALL20POUCH_2.jpg"
+        },
+        {
+          "citedByJudge": false,
+          "crop": {
+            "bottom": 7623,
+            "top": 6750,
+            "width": 750
+          },
+          "judgeSceneNote": null,
+          "path": "run-review/scenes/MUSINSA-5385148/D02T07.jpg",
+          "sceneId": "D02T07",
+          "source": "ARTIFACT",
+          "sourceUrl": "https://lifestyle2017.cafe24.com/web/upload/NNEditor/20250827/copy-1756286732-25FW20WO_STUDIO_BOWLING20BAG_WO_DAILY_SMALL20POUCH_2.jpg"
+        }
+      ],
+      "unresolvedSceneIds": []
+    },
+    {
+      "citedSceneIds": [
+        "D01T01",
+        "D05T01"
+      ],
+      "goldLabel": "FEMALE",
+      "judgeClaim": "동일 대상 상품을 실제 착용한 남성·여성 모델이 모두 확인됨.",
+      "judgeSceneNotes": {
+        "D01T01": "남성 · 착용",
+        "D05T01": "사이즈표 성별 표기"
+      },
+      "maxWidth": 1400,
+      "observedLabel": "UNISEX",
+      "owner": "GOLDEN",
+      "ownerAction": "골든셋을 고친다",
+      "policyRule": "P3_MIXED_WEARER",
+      "policyStrength": "STRONG",
+      "productKey": "MUSINSA:6221028",
+      "productName": "Mono 에코백",
+      "reference": {
+        "path": "run-review/scenes/MUSINSA-6221028/_reference.jpg",
+        "sourceUrl": "https://image.msscdn.net/thumbnails/images/goods_img/20260330/6221028/6221028_17756242723192_500.jpg"
+      },
+      "scenes": [
+        {
+          "citedByJudge": true,
+          "crop": {
+            "bottom": 1438,
+            "top": 0,
+            "width": 960
+          },
+          "judgeSceneNote": "남성 · 착용",
+          "path": "run-review/scenes/MUSINSA-6221028/D01T01.jpg",
+          "sceneId": "D01T01",
+          "source": "ARTIFACT",
+          "sourceUrl": "https://image.msscdn.net/images/prd_img/202603310925042166359745169cb146034e43.jpg"
+        },
+        {
+          "citedByJudge": false,
+          "crop": {
+            "bottom": 1440,
+            "top": 0,
+            "width": 960
+          },
+          "judgeSceneNote": null,
+          "path": "run-review/scenes/MUSINSA-6221028/D02T01.jpg",
+          "sceneId": "D02T01",
+          "source": "ARTIFACT",
+          "sourceUrl": "https://image.msscdn.net/images/prd_img/202603310925043648804891069cb146059158.jpg"
+        },
+        {
+          "citedByJudge": false,
+          "crop": {
+            "bottom": 2401,
+            "top": 1440,
+            "width": 960
+          },
+          "judgeSceneNote": null,
+          "path": "run-review/scenes/MUSINSA-6221028/D02T02.jpg",
+          "sceneId": "D02T02",
+          "source": "ARTIFACT",
+          "sourceUrl": "https://image.msscdn.net/images/prd_img/202603310925043648804891069cb146059158.jpg"
+        },
+        {
+          "citedByJudge": false,
+          "crop": {
+            "bottom": 1440,
+            "top": 0,
+            "width": 960
+          },
+          "judgeSceneNote": null,
+          "path": "run-review/scenes/MUSINSA-6221028/D03T01.jpg",
+          "sceneId": "D03T01",
+          "source": "ARTIFACT",
+          "sourceUrl": "https://image.msscdn.net/images/prd_img/202603310925049694021022469cb1460ecac1.jpg"
+        },
+        {
+          "citedByJudge": false,
+          "crop": {
+            "bottom": 2880,
+            "top": 1440,
+            "width": 960
+          },
+          "judgeSceneNote": null,
+          "path": "run-review/scenes/MUSINSA-6221028/D03T02.jpg",
+          "sceneId": "D03T02",
+          "source": "ARTIFACT",
+          "sourceUrl": "https://image.msscdn.net/images/prd_img/202603310925049694021022469cb1460ecac1.jpg"
+        },
+        {
+          "citedByJudge": false,
+          "crop": {
+            "bottom": 4320,
+            "top": 2880,
+            "width": 960
+          },
+          "judgeSceneNote": null,
+          "path": "run-review/scenes/MUSINSA-6221028/D03T03.jpg",
+          "sceneId": "D03T03",
+          "source": "ARTIFACT",
+          "sourceUrl": "https://image.msscdn.net/images/prd_img/202603310925049694021022469cb1460ecac1.jpg"
+        },
+        {
+          "citedByJudge": false,
+          "crop": {
+            "bottom": 5760,
+            "top": 4320,
+            "width": 960
+          },
+          "judgeSceneNote": null,
+          "path": "run-review/scenes/MUSINSA-6221028/D03T04.jpg",
+          "sceneId": "D03T04",
+          "source": "ARTIFACT",
+          "sourceUrl": "https://image.msscdn.net/images/prd_img/202603310925049694021022469cb1460ecac1.jpg"
+        },
+        {
+          "citedByJudge": false,
+          "crop": {
+            "bottom": 7200,
+            "top": 5760,
+            "width": 960
+          },
+          "judgeSceneNote": null,
+          "path": "run-review/scenes/MUSINSA-6221028/D03T05.jpg",
+          "sceneId": "D03T05",
+          "source": "ARTIFACT",
+          "sourceUrl": "https://image.msscdn.net/images/prd_img/202603310925049694021022469cb1460ecac1.jpg"
+        },
+        {
+          "citedByJudge": false,
+          "crop": {
+            "bottom": 8640,
+            "top": 7200,
+            "width": 960
+          },
+          "judgeSceneNote": null,
+          "path": "run-review/scenes/MUSINSA-6221028/D03T06.jpg",
+          "sceneId": "D03T06",
+          "source": "ARTIFACT",
+          "sourceUrl": "https://image.msscdn.net/images/prd_img/202603310925049694021022469cb1460ecac1.jpg"
+        },
+        {
+          "citedByJudge": false,
+          "crop": {
+            "bottom": 10080,
+            "top": 8640,
+            "width": 960
+          },
+          "judgeSceneNote": null,
+          "path": "run-review/scenes/MUSINSA-6221028/D03T07.jpg",
+          "sceneId": "D03T07",
+          "source": "ARTIFACT",
+          "sourceUrl": "https://image.msscdn.net/images/prd_img/202603310925049694021022469cb1460ecac1.jpg"
+        },
+        {
+          "citedByJudge": false,
+          "crop": {
+            "bottom": 10728,
+            "top": 10080,
+            "width": 960
+          },
+          "judgeSceneNote": null,
+          "path": "run-review/scenes/MUSINSA-6221028/D03T08.jpg",
+          "sceneId": "D03T08",
+          "source": "ARTIFACT",
+          "sourceUrl": "https://image.msscdn.net/images/prd_img/202603310925049694021022469cb1460ecac1.jpg"
+        },
+        {
+          "citedByJudge": false,
+          "crop": {
+            "bottom": 1440,
+            "top": 0,
+            "width": 960
+          },
+          "judgeSceneNote": null,
+          "path": "run-review/scenes/MUSINSA-6221028/D04T01.jpg",
+          "sceneId": "D04T01",
+          "source": "ARTIFACT",
+          "sourceUrl": "https://image.msscdn.net/images/prd_img/202603310925052053484557269cb14613222a.png"
+        },
+        {
+          "citedByJudge": false,
+          "crop": {
+            "bottom": 2880,
+            "top": 1440,
+            "width": 960
+          },
+          "judgeSceneNote": null,
+          "path": "run-review/scenes/MUSINSA-6221028/D04T02.jpg",
+          "sceneId": "D04T02",
+          "source": "ARTIFACT",
+          "sourceUrl": "https://image.msscdn.net/images/prd_img/202603310925052053484557269cb14613222a.png"
+        },
+        {
+          "citedByJudge": false,
+          "crop": {
+            "bottom": 3878,
+            "top": 2880,
+            "width": 960
+          },
+          "judgeSceneNote": null,
+          "path": "run-review/scenes/MUSINSA-6221028/D04T03.jpg",
+          "sceneId": "D04T03",
+          "source": "ARTIFACT",
+          "sourceUrl": "https://image.msscdn.net/images/prd_img/202603310925052053484557269cb14613222a.png"
+        },
+        {
+          "citedByJudge": true,
+          "crop": {
+            "bottom": 843,
+            "top": 0,
+            "width": 960
+          },
+          "judgeSceneNote": "사이즈표 성별 표기",
+          "path": "run-review/scenes/MUSINSA-6221028/D05T01.jpg",
+          "sceneId": "D05T01",
+          "source": "ARTIFACT",
+          "sourceUrl": "https://image.msscdn.net/images/prd_img/202603310925041565483263569cb14602638e.jpg"
+        },
+        {
+          "citedByJudge": false,
+          "crop": {
+            "bottom": 1234,
+            "top": 0,
+            "width": 960
+          },
+          "judgeSceneNote": null,
+          "path": "run-review/scenes/MUSINSA-6221028/D06T01.jpg",
+          "sceneId": "D06T01",
+          "source": "ARTIFACT",
+          "sourceUrl": "https://image.msscdn.net/images/prd_img/202603310925041951722780669cb14602fa6d.jpg"
+        }
+      ],
+      "unresolvedSceneIds": []
+    }
+  ],
+  "selector": {
+    "allScenes": true,
+    "fanout": "product",
+    "ledger": true,
+    "maxWidth": 640,
+    "owner": "GOLDEN",
+    "products": [
+      "MUSINSA:4888023"
+    ]
+  },
+  "skipped": [],
+  "tileRule": {
+    "aspect": 1.5,
+    "minTilePx": 64
+  }
+}

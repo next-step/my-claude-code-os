@@ -1,0 +1,20 @@
+{
+  "schemaVersion": "catalog-data-profile-v1",
+  "id": "accessories-category-gender",
+  "displayName": "잡화 성별 골든셋 스냅샷",
+  "attributeName": "대상 고객 성별",
+  "subjectName": "잡화 상품",
+  "outputRoot": ".claude/os/runs/accessories-category-gender",
+  "source": {
+    "repository": "../core-catalog-platfom"
+  },
+  "labels": [
+    "MALE",
+    "FEMALE",
+    "UNISEX",
+    "UNDETERMINED"
+  ],
+  "adapters": {
+    "import": ".claude/os/attributes/accessories-category-gender/adapters/import_accessories_category_gender_sources.py"
+  }
+}

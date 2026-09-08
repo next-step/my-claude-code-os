@@ -1,0 +1,31 @@
+{
+  "schemaVersion": "catalog-label-preconditions-v2",
+  "encodes": "policy.md § 판정 불가 조건 — 「근거 부족을 UNISEX로 대신하지 않는다」",
+  "why": "지금까지 감사는 «실행이 낸 값 ↔ GT»만 비교했다. 그래서 실행이 GT와 같은 값을 내면 둘 다 정책을 어겨도 조용하고, 그 자리가 그대로 지나갔다. 이 파일은 실행을 거치지 않고 **GT를 정책과 직접** 대조하는 술어다.",
+  "caution": "손으로 쓴 정책 문장을 기계가 훑을 수 있게 옮긴 것이다. **이 파일이 정책을 이기지 않는다** — 다투면 policy.md가 정본이다.",
+  "rules": [
+    {
+      "label": "UNISEX",
+      "quote": [
+        "표준 백팩·캐리어·브리프케이스처럼 기능과 구조가 명확히 공용인 경우에만 디자인 근거로 `UNISEX`를 고려한다",
+        "일반 토트·숄더·크로스백은 남녀 모두 쓸 수 있다는 상식만으로 `UNISEX`가 아니다"
+      ],
+      "tokenRule": "`policyWord`는 위 인용문에 **글자 그대로** 있어야 한다. 유추한 낱말을 넣으면 검사가 정책보다 넓게 잡고, 그 차이가 아무 데도 안 적힌다 — 실제로 호보·버킷·슬링·메신저를 넣었다가 정책에 없는 근거로 다섯 건을 지목한 적이 있다. `categoryTokens`는 그 낱말이 분류 체계에서 쓰이는 표현이고, 대응이 눈에 보이게 여기 나란히 둔다.",
+      "matchField": "standardCategory",
+      "matchOn": "leaf",
+      "matchOnWhy": "분류 경로 전체로 맞추면 부모 마디에 걸린다 — `가방>숄더백/쇼퍼백>쇼퍼백`이 부모의 «숄더» 때문에 지목됐다. 정책이 말한 것은 그 상품이 무엇인가이지 어느 묶음에 속하는가가 아니다.",
+      "allow": [
+        { "policyWord": "표준 백팩", "categoryTokens": ["스탠다드 백팩"] },
+        { "policyWord": "캐리어", "categoryTokens": ["캐리어"] },
+        { "policyWord": "브리프케이스", "categoryTokens": ["브리프케이스", "브리프"] }
+      ],
+      "deny": [
+        { "policyWord": "토트", "categoryTokens": ["토트백"] },
+        { "policyWord": "숄더", "categoryTokens": ["숄더백"] },
+        { "policyWord": "크로스백", "categoryTokens": ["크로스백"] }
+      ],
+      "denyReason": "정책이 이 계열을 «상식만으로 UNISEX가 아니다»로 명시했는데 GT가 UNISEX다. 공용이라는 적극적 근거가 이 건에 있는지 확인해야 한다.",
+      "silentReason": "정책이 이 계열을 허용에도 배제에도 넣지 않았다. GT가 UNISEX인데 그 근거를 정책에서 찾을 수 없다 — 건이 아니라 정책의 공백이다."
+    }
+  ]
+}

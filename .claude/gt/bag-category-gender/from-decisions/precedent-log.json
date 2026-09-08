@@ -1,0 +1,19 @@
+{
+  "builtAt": "2026-09-07T07:43:24.479226+00:00",
+  "byPrecedent": {},
+  "byQuestion": {},
+  "byRule": {},
+  "counts": {
+    "byDecision": {},
+    "decisions": 0,
+    "precedents": 0,
+    "questions": 0,
+    "rules": 0,
+    "unassigned": 0
+  },
+  "note": "결정 원장에서 파생됐다. 정본은 review/decisions.json이고 여기서 고치지 않는다.",
+  "profileId": "bag-category-gender",
+  "ruleWithoutPrecedent": {},
+  "schemaVersion": "catalog-precedent-log-v1",
+  "unassigned": []
+}

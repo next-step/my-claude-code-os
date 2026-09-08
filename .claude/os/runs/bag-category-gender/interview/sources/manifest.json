@@ -1,0 +1,47 @@
+{
+  "importedAt": "2026-09-02T13:01:27.322008+00:00",
+  "profileId": "bag-category-gender",
+  "schemaVersion": "catalog-interview-sources-v1",
+  "sources": [
+    {
+      "bytes": 33788,
+      "id": "lld",
+      "kind": "LLD",
+      "missing": false,
+      "note": "정책·스코프·인수 조건 정본. 다른 문서들이 이 문서를 정본으로 가리킨다",
+      "sha256": "2bb7b783033c56dfd6b06a3159f0077ff15a52a75011397a9b0aab5c2eb9201e",
+      "snapshot": ".claude/os/runs/bag-category-gender/interview/sources/lld.md",
+      "sourcePath": "../core-catalog-platfom/docs/gender/gender-inference-lld.md"
+    },
+    {
+      "bytes": 18818,
+      "id": "registry",
+      "kind": "LLD",
+      "missing": false,
+      "note": "프롬프트·평가 버전 정본. 어느 프롬프트가 현재인지",
+      "sha256": "8574d31be07225ed25d1c4a909b5b0995cc406b2a07367d97d021cf390930af6",
+      "snapshot": ".claude/os/runs/bag-category-gender/interview/sources/registry.md",
+      "sourcePath": "../core-catalog-platfom/docs/gender/version-registry.md"
+    },
+    {
+      "bytes": 23301,
+      "id": "validation",
+      "kind": "OTHER",
+      "missing": false,
+      "note": "검증 계획. 목표 품질(SLOT-QUALITY) 후보 숫자가 있을 수 있다",
+      "sha256": "0c7c70ad6ff551f53f30b63c948f68af997f357f64ebe51da57e2432a5e6d404",
+      "snapshot": ".claude/os/runs/bag-category-gender/interview/sources/validation.md",
+      "sourcePath": "../core-catalog-platfom/docs/gender/v502-validation-plan.md"
+    },
+    {
+      "bytes": 9495,
+      "id": "coreai",
+      "kind": "OTHER",
+      "missing": false,
+      "note": "외부 구현의 판정 재료 대조. 근거 우선순위 후보",
+      "sha256": "ce095227d325c333f6ab8ff6f505f0f3b5ab0a162c0aa77f535a384baf6a7c28",
+      "snapshot": ".claude/os/runs/bag-category-gender/interview/sources/coreai.md",
+      "sourcePath": "../core-catalog-platfom/docs/gender/core-ai-infer-logic.md"
+    }
+  ]
+}

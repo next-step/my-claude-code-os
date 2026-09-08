@@ -1,0 +1,205 @@
+{
+  "generatedAt": "2026-09-07T07:43:23.983258+00:00",
+  "goldenLineages": {
+    "reviewSheet": {
+      "datasetVersion": "2026-09-03",
+      "path": "tool/image-gender/gt-harness/data/bags-product-gt-20260903.jsonl",
+      "role": "정본 GT 스냅샷. 검수 탭 라벨과 리뷰어 이름."
+    },
+    "scoring": {
+      "datasetVersion": "2026-09-03",
+      "path": "tool/image-gender/gt-harness/data/bags-product-context-gt-20260903.jsonl",
+      "role": "감사가 실행과 대조하는 GT. 하네스가 정확도를 재는 라벨."
+    },
+    "userCorrections": {
+      "datasetVersion": "2026-09-05",
+      "path": "tool/image-gender/gt-harness/data/bags-product-gt-user-corrections-20260905.jsonl",
+      "role": "두 계보에 얹힌 사람 정정 이력."
+    }
+  },
+  "integrity": {
+    "goldLabelConflicts": [],
+    "goldLabelRefreshed": [
+      "EGOOCM:3398529",
+      "EGOOCM:3399281",
+      "EGOOCM:3399286",
+      "EGOOCM:3400602",
+      "EGOOCM:3400648",
+      "EGOOCM:3404922",
+      "EGOOCM:3407206",
+      "EGOOCM:3411572",
+      "EGOOCM:3412663",
+      "EGOOCM:3412762",
+      "EGOOCM:3420004",
+      "EGOOCM:3420094",
+      "EGOOCM:3424883",
+      "EGOOCM:3425317",
+      "EGOOCM:3426183",
+      "EGOOCM:3430473",
+      "EGOOCM:3440294",
+      "EGOOCM:3442201",
+      "EGOOCM:3442337",
+      "EGOOCM:3443954",
+      "EGOOCM:3443997",
+      "EGOOCM:3448296",
+      "EGOOCM:3448339",
+      "EGOOCM:3448515",
+      "EGOOCM:3448530",
+      "EGOOCM:3448548",
+      "EGOOCM:3451405",
+      "EGOOCM:3456202",
+      "EGOOCM:3458125",
+      "EGOOCM:3458963",
+      "EGOOCM:3460326",
+      "EGOOCM:3462938",
+      "EGOOCM:3466795",
+      "EGOOCM:3468811",
+      "EGOOCM:3469334",
+      "EGOOCM:3469341",
+      "EGOOCM:3469345",
+      "EGOOCM:3469359",
+      "EGOOCM:3477555",
+      "EGOOCM:3482935",
+      "EGOOCM:3483889",
+      "MUSINSA:3539191",
+      "MUSINSA:3588401",
+      "MUSINSA:4437008",
+      "MUSINSA:4459402",
+      "MUSINSA:4815378",
+      "MUSINSA:4870916",
+      "MUSINSA:4881578",
+      "MUSINSA:4881768",
+      "MUSINSA:4886329",
+      "MUSINSA:4888023",
+      "MUSINSA:4901560",
+      "MUSINSA:4924741",
+      "MUSINSA:4944670",
+      "MUSINSA:4956426",
+      "MUSINSA:4956475",
+      "MUSINSA:4956623",
+      "MUSINSA:4956711",
+      "MUSINSA:4973361",
+      "MUSINSA:4982054",
+      "MUSINSA:4999626",
+      "MUSINSA:4999988",
+      "MUSINSA:5336216",
+      "MUSINSA:5355267",
+      "MUSINSA:5355278",
+      "MUSINSA:5355281",
+      "MUSINSA:5356269",
+      "MUSINSA:5356353",
+      "MUSINSA:5356803",
+      "MUSINSA:5357570",
+      "MUSINSA:5361574",
+      "MUSINSA:5367524",
+      "MUSINSA:5369605",
+      "MUSINSA:5370224",
+      "MUSINSA:5377935",
+      "MUSINSA:5377941",
+      "MUSINSA:5384846",
+      "MUSINSA:5385027",
+      "MUSINSA:5389049",
+      "MUSINSA:5400801",
+      "MUSINSA:5401392",
+      "MUSINSA:5519263",
+      "MUSINSA:6056063",
+      "MUSINSA:6547369",
+      "MUSINSA:6746326",
+      "MUSINSA:6799310"
+    ],
+    "overlappingProducts": 500,
+    "productsMissingScoringGt": []
+  },
+  "snapshots": {
+    "bagPolicyDetailEvidence": {
+      "count": 410,
+      "path": ".claude/os/runs/bag-category-gender/golden/bag-policy-detail-evidence.jsonl"
+    },
+    "bagPolicyEvaluation": {
+      "count": 500,
+      "path": ".claude/os/runs/bag-category-gender/golden/bag-policy-evaluation.jsonl"
+    },
+    "bagProductGallery": {
+      "count": 500,
+      "path": ".claude/os/runs/bag-category-gender/golden/bag-product-gallery.jsonl"
+    },
+    "canonicalBagProductGt": {
+      "count": 500,
+      "path": ".claude/os/runs/bag-category-gender/golden/bag-product-gt.jsonl"
+    },
+    "policy": ".claude/os/runs/bag-category-gender/policy/bag-category-gender.md"
+  },
+  "sourceCommit": "e9344a9c5e53aa0ca292ad1e4ca2498b25d66518",
+  "sourceDirty": true,
+  "sourceRepository": "/Users/mj/musinsa/dev/core-catalog-platfom",
+  "sources": {
+    "currentCollectionErrors": {
+      "path": "tool/image-gender/gt-harness/results/multi-category-image-complete-2026-08-31/bags-detail-manifest.errors.json",
+      "sha256": "bd01cfe226d2fc4c76e6bde27e5a51a8228d69f6ee953e416b7aaf2bf39c1f50"
+    },
+    "detailImageManifest": {
+      "path": "tool/image-gender/gt-harness/results/multi-category-image-complete-2026-08-31/bags-detail-manifest-complete-resolved.json",
+      "sha256": "5c31c9265a36e5e0c21f841f6320ecf4165a7be9a5feccf3d04635555680f1e7"
+    },
+    "detailTrace": {
+      "path": "tool/image-gender/gt-harness/results/bags-v1000-two-stage-image-complete-2026-08-31/detail-complete.jsonl",
+      "sha256": "613903d46d7b8b2997df6451f4d7821b84037c9c6c4f3bf47b7993af6b261155"
+    },
+    "evaluation": {
+      "path": "tool/image-gender/gt-harness/results/bags-v1000-two-stage-image-complete-2026-08-31/final-complete.jsonl",
+      "sha256": "89a204f1677ef1928794f07252b691a15623782535e89be0c15f83ee77afa39b"
+    },
+    "evaluationSummary": {
+      "path": "tool/image-gender/gt-harness/results/bags-v1000-two-stage-image-complete-2026-08-31/summary-complete.json",
+      "sha256": "5aaf437ab95a4240b665d466cdc9447150e72d0b52b7b6036b731a47e182f8f1"
+    },
+    "gtLedger": {
+      "path": "/Users/mj/musinsa/dev/my-claude-code-os/.claude/gt/bag-category-gender/gt.jsonl",
+      "sha256": "66173b826894d884a7ec257c38fd95fb7f5c46d26b962a68b165dd677dd18430"
+    },
+    "gtUserCorrections": {
+      "path": "tool/image-gender/gt-harness/data/bags-product-gt-user-corrections-20260905.jsonl",
+      "sha256": "3547c90c1b2fb71169c55bc077d86add8b5bf9740fa3236e0601f20f6ca1ebf2"
+    },
+    "harnessProductResults": {
+      "path": "tool/image-gender/gt-harness/results/bags-v1000-two-stage-image-complete-2026-08-31/harness-product-results.jsonl",
+      "sha256": "d8d86b079dff5b79b6069dce547948e9f21a9876c09140ea6225fac85f99ee5c"
+    },
+    "invalidExplicitTextRecoveries": {
+      "path": "tool/image-gender/gt-harness/results/bags-v1000-two-stage-image-complete-2026-08-31/invalid-explicit-text-recovered-ids.json",
+      "sha256": "d39a94a5319a51a61dfb8b3f8a9bdbf7353bb85cf156d9fd402345207da5093e"
+    },
+    "policy": {
+      "path": "core/src/main/resources/prompts/image-gender/v1000/bag-role-aware-judge.txt",
+      "sha256": "46da3e482a94f8b1d71daa3661e5245fcd7294613918cf5c7eb116a70b054b4b"
+    },
+    "policyPartial:BAG_OBSERVATION_PREFIX": {
+      "path": "core/src/main/resources/prompts/image-gender/v1000/bag-observation-prefix.txt",
+      "sha256": "9d28dd91ba1c011bff5dbacd3b1aff5855e93f8573d49de3bc7ae735936b40ce"
+    },
+    "policyPartial:BAG_OBSERVATION_SAFETY": {
+      "path": "core/src/main/resources/prompts/image-gender/v1000/bag-observation-safety.txt",
+      "sha256": "0afd9375ac6a0552b15a337726346667a035783fe8cbf15afea10464bf7f2af1"
+    },
+    "previousCollectionErrors": {
+      "path": "tool/image-gender/gt-harness/results/multi-category-budgeted-v1-full500-2026-08-28/bags-detail-manifest.errors.json",
+      "sha256": "6d1d8e663d41acd92629390731b8b4e374b2da699f41467d08845455679bdd04"
+    },
+    "reviewSheetGt": {
+      "path": "tool/image-gender/gt-harness/data/bags-product-gt-20260903.jsonl",
+      "sha256": "a98344e23c4760a6f42873b7621c0d65467098ae826873551b1c825df25c46f4"
+    },
+    "scoringGt": {
+      "path": "tool/image-gender/gt-harness/data/bags-product-context-gt-20260903.jsonl",
+      "sha256": "7394c58a03b6d76a436e6909c513e970e221d7fb594c6020916fb618c048733b"
+    },
+    "targetReference": {
+      "path": "/Users/mj/.codex/worktrees/gender-budgeted-v1-20260828/tool/image-gender/gt-harness/results/bags-v9.1-recommerce-filtered-2026-08-28/target-reference-non-used500.jsonl",
+      "sha256": "3ceb7de91c528620535a6fccbab1e809878fcc29c51f7f48e1acdf7eb1b7e7ed"
+    },
+    "wornInteractionRecoveries": {
+      "path": "tool/image-gender/gt-harness/results/bags-v1000-two-stage-image-complete-2026-08-31/worn-interaction-recovered-ids.json",
+      "sha256": "c35fa68f8a02737ed348f25182182af132b65960a3d5bfd8d8dd288199d1c055"
+    }
+  }
+}

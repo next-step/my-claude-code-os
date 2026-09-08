@@ -1,0 +1,760 @@
+{
+  "basedOn": "2026-09-06T10:00:55.890214+00:00",
+  "composer": {
+    "cell": 384,
+    "jpegQuality": 85,
+    "labelHeight": 30,
+    "perSheet": 4
+  },
+  "skipped": [],
+  "tasks": [
+    {
+      "omitted": [
+        {
+          "achromaticRatio": 1.0,
+          "personLikely": "NO",
+          "sceneId": "D09T01",
+          "skinRatio": 0.0,
+          "why": "살색 픽셀이 사실상 없고 화면이 거의 무채색이다"
+        },
+        {
+          "achromaticRatio": 0.9998,
+          "personLikely": "NO",
+          "sceneId": "D09T02",
+          "skinRatio": 0.0,
+          "why": "살색 픽셀이 사실상 없고 화면이 거의 무채색이다"
+        }
+      ],
+      "productKey": "EGOOCM:3446802",
+      "productName": "0007 Layered Pouch Hobo Bag_Suede Olive",
+      "reference": "run-review/scenes/EGOOCM-3446802/_reference.jpg",
+      "sceneCount": 32,
+      "sheets": [
+        {
+          "cells": [
+            {
+              "cell": 1,
+              "sceneId": "D01T01"
+            },
+            {
+              "cell": 2,
+              "sceneId": "D04T01"
+            },
+            {
+              "cell": 3,
+              "sceneId": "D04T02"
+            },
+            {
+              "cell": 4,
+              "sceneId": "D04T03"
+            }
+          ],
+          "path": "run-review/scenes/sheets/EGOOCM-3446802/sheet-01.jpg"
+        },
+        {
+          "cells": [
+            {
+              "cell": 1,
+              "sceneId": "D05T01"
+            },
+            {
+              "cell": 2,
+              "sceneId": "D05T02"
+            },
+            {
+              "cell": 3,
+              "sceneId": "D05T03"
+            },
+            {
+              "cell": 4,
+              "sceneId": "D05T04"
+            }
+          ],
+          "path": "run-review/scenes/sheets/EGOOCM-3446802/sheet-02.jpg"
+        },
+        {
+          "cells": [
+            {
+              "cell": 1,
+              "sceneId": "D05T05"
+            },
+            {
+              "cell": 2,
+              "sceneId": "D05T06"
+            },
+            {
+              "cell": 3,
+              "sceneId": "D05T07"
+            },
+            {
+              "cell": 4,
+              "sceneId": "D05T08"
+            }
+          ],
+          "path": "run-review/scenes/sheets/EGOOCM-3446802/sheet-03.jpg"
+        },
+        {
+          "cells": [
+            {
+              "cell": 1,
+              "sceneId": "D05T09"
+            },
+            {
+              "cell": 2,
+              "sceneId": "D05T10"
+            },
+            {
+              "cell": 3,
+              "sceneId": "D05T11"
+            },
+            {
+              "cell": 4,
+              "sceneId": "D05T12"
+            }
+          ],
+          "path": "run-review/scenes/sheets/EGOOCM-3446802/sheet-04.jpg"
+        },
+        {
+          "cells": [
+            {
+              "cell": 1,
+              "sceneId": "D05T13"
+            },
+            {
+              "cell": 2,
+              "sceneId": "D05T14"
+            },
+            {
+              "cell": 3,
+              "sceneId": "D05T15"
+            },
+            {
+              "cell": 4,
+              "sceneId": "D05T16"
+            }
+          ],
+          "path": "run-review/scenes/sheets/EGOOCM-3446802/sheet-05.jpg"
+        },
+        {
+          "cells": [
+            {
+              "cell": 1,
+              "sceneId": "D05T17"
+            },
+            {
+              "cell": 2,
+              "sceneId": "D05T18"
+            },
+            {
+              "cell": 3,
+              "sceneId": "D05T19"
+            },
+            {
+              "cell": 4,
+              "sceneId": "D07T01"
+            }
+          ],
+          "path": "run-review/scenes/sheets/EGOOCM-3446802/sheet-06.jpg"
+        },
+        {
+          "cells": [
+            {
+              "cell": 1,
+              "sceneId": "D07T02"
+            },
+            {
+              "cell": 2,
+              "sceneId": "D07T03"
+            },
+            {
+              "cell": 3,
+              "sceneId": "D08T01"
+            },
+            {
+              "cell": 4,
+              "sceneId": "D08T02"
+            }
+          ],
+          "path": "run-review/scenes/sheets/EGOOCM-3446802/sheet-07.jpg"
+        },
+        {
+          "cells": [
+            {
+              "cell": 1,
+              "sceneId": "D08T03"
+            },
+            {
+              "cell": 2,
+              "sceneId": "D08T04"
+            },
+            {
+              "cell": 3,
+              "sceneId": "D09T03"
+            },
+            {
+              "cell": 4,
+              "sceneId": "D09T04"
+            }
+          ],
+          "path": "run-review/scenes/sheets/EGOOCM-3446802/sheet-08.jpg"
+        }
+      ],
+      "sourceMaxWidth": null,
+      "taskId": "EGOOCM:3446802"
+    },
+    {
+      "omitted": [],
+      "productKey": "MUSINSA:4888023",
+      "productName": "Edition6. 로고 스트링 피그먼트 라지핏 쇼퍼백 (7col)",
+      "reference": "run-review/scenes/MUSINSA-4888023/_reference.jpg",
+      "sceneCount": 21,
+      "sheets": [
+        {
+          "cells": [
+            {
+              "cell": 1,
+              "sceneId": "D01T01"
+            },
+            {
+              "cell": 2,
+              "sceneId": "D01T02"
+            },
+            {
+              "cell": 3,
+              "sceneId": "D01T03"
+            },
+            {
+              "cell": 4,
+              "sceneId": "D01T04"
+            }
+          ],
+          "path": "run-review/scenes/sheets/MUSINSA-4888023/sheet-01.jpg"
+        },
+        {
+          "cells": [
+            {
+              "cell": 1,
+              "sceneId": "D01T05"
+            },
+            {
+              "cell": 2,
+              "sceneId": "D01T06"
+            },
+            {
+              "cell": 3,
+              "sceneId": "D01T07"
+            },
+            {
+              "cell": 4,
+              "sceneId": "D01T08"
+            }
+          ],
+          "path": "run-review/scenes/sheets/MUSINSA-4888023/sheet-02.jpg"
+        },
+        {
+          "cells": [
+            {
+              "cell": 1,
+              "sceneId": "D01T09"
+            },
+            {
+              "cell": 2,
+              "sceneId": "D01T10"
+            },
+            {
+              "cell": 3,
+              "sceneId": "D01T11"
+            },
+            {
+              "cell": 4,
+              "sceneId": "D01T12"
+            }
+          ],
+          "path": "run-review/scenes/sheets/MUSINSA-4888023/sheet-03.jpg"
+        },
+        {
+          "cells": [
+            {
+              "cell": 1,
+              "sceneId": "D02T01"
+            },
+            {
+              "cell": 2,
+              "sceneId": "D02T02"
+            },
+            {
+              "cell": 3,
+              "sceneId": "D02T03"
+            },
+            {
+              "cell": 4,
+              "sceneId": "D02T04"
+            }
+          ],
+          "path": "run-review/scenes/sheets/MUSINSA-4888023/sheet-04.jpg"
+        },
+        {
+          "cells": [
+            {
+              "cell": 1,
+              "sceneId": "D02T05"
+            },
+            {
+              "cell": 2,
+              "sceneId": "D02T06"
+            },
+            {
+              "cell": 3,
+              "sceneId": "D02T07"
+            },
+            {
+              "cell": 4,
+              "sceneId": "D02T08"
+            }
+          ],
+          "path": "run-review/scenes/sheets/MUSINSA-4888023/sheet-05.jpg"
+        },
+        {
+          "cells": [
+            {
+              "cell": 1,
+              "sceneId": "TARGET_REFERENCE"
+            }
+          ],
+          "path": "run-review/scenes/sheets/MUSINSA-4888023/sheet-06.jpg"
+        }
+      ],
+      "sourceMaxWidth": 640,
+      "taskId": "MUSINSA:4888023"
+    },
+    {
+      "omitted": [
+        {
+          "achromaticRatio": 0.9992,
+          "personLikely": "NO",
+          "sceneId": "D01T06",
+          "skinRatio": 0.0,
+          "why": "살색 픽셀이 사실상 없고 화면이 거의 무채색이다"
+        },
+        {
+          "achromaticRatio": 0.9829,
+          "personLikely": "NO",
+          "sceneId": "D02T01",
+          "skinRatio": 0.0003,
+          "why": "살색 픽셀이 사실상 없고 화면이 거의 무채색이다"
+        },
+        {
+          "achromaticRatio": 1.0,
+          "personLikely": "NO",
+          "sceneId": "D02T04",
+          "skinRatio": 0.0,
+          "why": "살색 픽셀이 사실상 없고 화면이 거의 무채색이다"
+        }
+      ],
+      "productKey": "MUSINSA:5336216",
+      "productName": "NEEDLE STONE WALLET [KHAKI]",
+      "reference": "run-review/scenes/MUSINSA-5336216/_reference.jpg",
+      "sceneCount": 7,
+      "sheets": [
+        {
+          "cells": [
+            {
+              "cell": 1,
+              "sceneId": "D01T01"
+            },
+            {
+              "cell": 2,
+              "sceneId": "D01T02"
+            },
+            {
+              "cell": 3,
+              "sceneId": "D01T03"
+            },
+            {
+              "cell": 4,
+              "sceneId": "D01T04"
+            }
+          ],
+          "path": "run-review/scenes/sheets/MUSINSA-5336216/sheet-01.jpg"
+        },
+        {
+          "cells": [
+            {
+              "cell": 1,
+              "sceneId": "D01T05"
+            },
+            {
+              "cell": 2,
+              "sceneId": "D02T02"
+            },
+            {
+              "cell": 3,
+              "sceneId": "D02T03"
+            }
+          ],
+          "path": "run-review/scenes/sheets/MUSINSA-5336216/sheet-02.jpg"
+        }
+      ],
+      "sourceMaxWidth": null,
+      "taskId": "MUSINSA:5336216"
+    },
+    {
+      "omitted": [
+        {
+          "achromaticRatio": 1.0,
+          "personLikely": "NO",
+          "sceneId": "D04T01",
+          "skinRatio": 0.0,
+          "why": "살색 픽셀이 사실상 없고 화면이 거의 무채색이다"
+        },
+        {
+          "achromaticRatio": 1.0,
+          "personLikely": "NO",
+          "sceneId": "D04T02",
+          "skinRatio": 0.0,
+          "why": "살색 픽셀이 사실상 없고 화면이 거의 무채색이다"
+        },
+        {
+          "achromaticRatio": 1.0,
+          "personLikely": "NO",
+          "sceneId": "D04T03",
+          "skinRatio": 0.0,
+          "why": "살색 픽셀이 사실상 없고 화면이 거의 무채색이다"
+        },
+        {
+          "achromaticRatio": 1.0,
+          "personLikely": "NO",
+          "sceneId": "D05T01",
+          "skinRatio": 0.0,
+          "why": "살색 픽셀이 사실상 없고 화면이 거의 무채색이다"
+        },
+        {
+          "achromaticRatio": 0.9997,
+          "personLikely": "NO",
+          "sceneId": "D05T02",
+          "skinRatio": 0.0,
+          "why": "살색 픽셀이 사실상 없고 화면이 거의 무채색이다"
+        }
+      ],
+      "productKey": "MUSINSA:5365574",
+      "productName": "0007 레이어드 파우치 호보 백_도트블랙",
+      "reference": "run-review/scenes/MUSINSA-5365574/_reference.jpg",
+      "sceneCount": 22,
+      "sheets": [
+        {
+          "cells": [
+            {
+              "cell": 1,
+              "sceneId": "D01T01"
+            },
+            {
+              "cell": 2,
+              "sceneId": "D01T02"
+            },
+            {
+              "cell": 3,
+              "sceneId": "D01T03"
+            },
+            {
+              "cell": 4,
+              "sceneId": "D02T01"
+            }
+          ],
+          "path": "run-review/scenes/sheets/MUSINSA-5365574/sheet-01.jpg"
+        },
+        {
+          "cells": [
+            {
+              "cell": 1,
+              "sceneId": "D02T02"
+            },
+            {
+              "cell": 2,
+              "sceneId": "D02T03"
+            },
+            {
+              "cell": 3,
+              "sceneId": "D02T04"
+            },
+            {
+              "cell": 4,
+              "sceneId": "D02T05"
+            }
+          ],
+          "path": "run-review/scenes/sheets/MUSINSA-5365574/sheet-02.jpg"
+        },
+        {
+          "cells": [
+            {
+              "cell": 1,
+              "sceneId": "D02T06"
+            },
+            {
+              "cell": 2,
+              "sceneId": "D02T07"
+            },
+            {
+              "cell": 3,
+              "sceneId": "D02T08"
+            },
+            {
+              "cell": 4,
+              "sceneId": "D02T09"
+            }
+          ],
+          "path": "run-review/scenes/sheets/MUSINSA-5365574/sheet-03.jpg"
+        },
+        {
+          "cells": [
+            {
+              "cell": 1,
+              "sceneId": "D02T10"
+            },
+            {
+              "cell": 2,
+              "sceneId": "D02T11"
+            },
+            {
+              "cell": 3,
+              "sceneId": "D02T12"
+            },
+            {
+              "cell": 4,
+              "sceneId": "D02T13"
+            }
+          ],
+          "path": "run-review/scenes/sheets/MUSINSA-5365574/sheet-04.jpg"
+        },
+        {
+          "cells": [
+            {
+              "cell": 1,
+              "sceneId": "D02T14"
+            },
+            {
+              "cell": 2,
+              "sceneId": "D03T01"
+            },
+            {
+              "cell": 3,
+              "sceneId": "D03T02"
+            },
+            {
+              "cell": 4,
+              "sceneId": "D03T03"
+            }
+          ],
+          "path": "run-review/scenes/sheets/MUSINSA-5365574/sheet-05.jpg"
+        },
+        {
+          "cells": [
+            {
+              "cell": 1,
+              "sceneId": "D05T03"
+            },
+            {
+              "cell": 2,
+              "sceneId": "D05T04"
+            }
+          ],
+          "path": "run-review/scenes/sheets/MUSINSA-5365574/sheet-06.jpg"
+        }
+      ],
+      "sourceMaxWidth": null,
+      "taskId": "MUSINSA:5365574"
+    },
+    {
+      "omitted": [],
+      "productKey": "MUSINSA:5385148",
+      "productName": "WO 스튜디오 펠라인 볼링백20x14x11",
+      "reference": "run-review/scenes/MUSINSA-5385148/_reference.jpg",
+      "sceneCount": 14,
+      "sheets": [
+        {
+          "cells": [
+            {
+              "cell": 1,
+              "sceneId": "D01T01"
+            },
+            {
+              "cell": 2,
+              "sceneId": "D01T02"
+            },
+            {
+              "cell": 3,
+              "sceneId": "D01T03"
+            },
+            {
+              "cell": 4,
+              "sceneId": "D01T04"
+            }
+          ],
+          "path": "run-review/scenes/sheets/MUSINSA-5385148/sheet-01.jpg"
+        },
+        {
+          "cells": [
+            {
+              "cell": 1,
+              "sceneId": "D01T05"
+            },
+            {
+              "cell": 2,
+              "sceneId": "D01T06"
+            },
+            {
+              "cell": 3,
+              "sceneId": "D01T07"
+            },
+            {
+              "cell": 4,
+              "sceneId": "D02T01"
+            }
+          ],
+          "path": "run-review/scenes/sheets/MUSINSA-5385148/sheet-02.jpg"
+        },
+        {
+          "cells": [
+            {
+              "cell": 1,
+              "sceneId": "D02T02"
+            },
+            {
+              "cell": 2,
+              "sceneId": "D02T03"
+            },
+            {
+              "cell": 3,
+              "sceneId": "D02T04"
+            },
+            {
+              "cell": 4,
+              "sceneId": "D02T05"
+            }
+          ],
+          "path": "run-review/scenes/sheets/MUSINSA-5385148/sheet-03.jpg"
+        },
+        {
+          "cells": [
+            {
+              "cell": 1,
+              "sceneId": "D02T06"
+            },
+            {
+              "cell": 2,
+              "sceneId": "D02T07"
+            }
+          ],
+          "path": "run-review/scenes/sheets/MUSINSA-5385148/sheet-04.jpg"
+        }
+      ],
+      "sourceMaxWidth": null,
+      "taskId": "MUSINSA:5385148"
+    },
+    {
+      "omitted": [
+        {
+          "achromaticRatio": 0.9853,
+          "personLikely": "NO",
+          "sceneId": "D02T02",
+          "skinRatio": 0.0,
+          "why": "살색 픽셀이 사실상 없고 화면이 거의 무채색이다"
+        },
+        {
+          "achromaticRatio": 0.9854,
+          "personLikely": "NO",
+          "sceneId": "D03T07",
+          "skinRatio": 0.0,
+          "why": "살색 픽셀이 사실상 없고 화면이 거의 무채색이다"
+        },
+        {
+          "achromaticRatio": 0.9942,
+          "personLikely": "NO",
+          "sceneId": "D03T08",
+          "skinRatio": 0.0,
+          "why": "살색 픽셀이 사실상 없고 화면이 거의 무채색이다"
+        },
+        {
+          "achromaticRatio": 1.0,
+          "personLikely": "NO",
+          "sceneId": "D05T01",
+          "skinRatio": 0.0,
+          "why": "살색 픽셀이 사실상 없고 화면이 거의 무채색이다"
+        },
+        {
+          "achromaticRatio": 1.0,
+          "personLikely": "NO",
+          "sceneId": "D06T01",
+          "skinRatio": 0.0,
+          "why": "살색 픽셀이 사실상 없고 화면이 거의 무채색이다"
+        }
+      ],
+      "productKey": "MUSINSA:6221028",
+      "productName": "Mono 에코백",
+      "reference": "run-review/scenes/MUSINSA-6221028/_reference.jpg",
+      "sceneCount": 11,
+      "sheets": [
+        {
+          "cells": [
+            {
+              "cell": 1,
+              "sceneId": "D01T01"
+            },
+            {
+              "cell": 2,
+              "sceneId": "D02T01"
+            },
+            {
+              "cell": 3,
+              "sceneId": "D03T01"
+            },
+            {
+              "cell": 4,
+              "sceneId": "D03T02"
+            }
+          ],
+          "path": "run-review/scenes/sheets/MUSINSA-6221028/sheet-01.jpg"
+        },
+        {
+          "cells": [
+            {
+              "cell": 1,
+              "sceneId": "D03T03"
+            },
+            {
+              "cell": 2,
+              "sceneId": "D03T04"
+            },
+            {
+              "cell": 3,
+              "sceneId": "D03T05"
+            },
+            {
+              "cell": 4,
+              "sceneId": "D03T06"
+            }
+          ],
+          "path": "run-review/scenes/sheets/MUSINSA-6221028/sheet-02.jpg"
+        },
+        {
+          "cells": [
+            {
+              "cell": 1,
+              "sceneId": "D04T01"
+            },
+            {
+              "cell": 2,
+              "sceneId": "D04T02"
+            },
+            {
+              "cell": 3,
+              "sceneId": "D04T03"
+            }
+          ],
+          "path": "run-review/scenes/sheets/MUSINSA-6221028/sheet-03.jpg"
+        }
+      ],
+      "sourceMaxWidth": 1400,
+      "taskId": "MUSINSA:6221028"
+    }
+  ]
+}

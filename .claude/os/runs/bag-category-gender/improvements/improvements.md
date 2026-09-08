@@ -1,0 +1,235 @@
+# 개선 포인트 — 가방 성별 정책·골든셋 감사
+
+> **여기 있는 것은 전부 제안이다.** 확정은 사람이 하고, 원장은 `review/decisions.json` 하나뿐이다 — 기록은 스킬 `catalog-review-decision`이 한다.
+
+- 기준선: `.claude/os/runs/bag-category-gender/run-summary.json` · 생성 `2026-09-06T10:00:55.890214+00:00`
+- 작업 목록: `.claude/os/runs/bag-category-gender/improvements/worklist.json`
+- 스윕 원본: `.claude/os/runs/bag-category-gender/improvements/sweep-raw.json`
+
+## A. 부족한 GT — 건 단위
+
+| id | 상품 | 현재 GT → 제안 | 분류 | 반증 | 상태 |
+|---|---|---|---|---|---|
+| GT-01 | `MUSINSA:5336216` NEEDLE STONE WALLET [KHAKI] | MALE → MALE | RUNTIME_CONTRADICTION | INCONCLUSIVE | **NEEDS_EVIDENCE** |
+| GT-02 | `EGOOCM:3446802` 0007 Layered Pouch Hobo Bag_Suede Olive | FEMALE → FEMALE | NEEDS_MORE_EVIDENCE | GT_STANDS | **NEEDS_EVIDENCE** |
+| GT-04 | `MUSINSA:5385148` WO 스튜디오 펠라인 볼링백20x14x11 | FEMALE → FEMALE | NEEDS_MORE_EVIDENCE | GT_STANDS | **NEEDS_EVIDENCE** |
+| GT-03 | `MUSINSA:5365574` 0007 레이어드 파우치 호보 백_도트블랙 | FEMALE → FEMALE | RUNTIME_CONTRADICTION | GT_STANDS | **MOVED_TO_POLICY** |
+
+### GT-01 · `MUSINSA:5336216`
+
+- 상태: **NEEDS_EVIDENCE** — 사진·원장을 더 봐야 갈린다. 근거를 다시 받는 절차로 넘긴다
+- 정책 문장: policy.md 근거 우선순위 3항 "보이지 않는 사람·문구·가방 특징은 추측하지 않는다. 선택되지 않은 이미지는 판정에 없는 것으로 본다." + 판정 불가 조건 "근거 부족을 `UNISEX`로 대신하지 않는다" + BG-0001 권고 "근거 이미지가 다른 가방의 것이면 이건 GT 오류가 아니라 실행 오류이고, 고칠 곳이 정반대다" (관련 미결 판례: BG-0001, BG-0003)
+- 확신: HIGH
+- 근거:
+  - 판독기가 UNISEX 근거로 든 장면은 D01T02·D01T04·D02T04다 (golden/bag-policy-detail-evidence.jsonl 306행 policyEvidenceSceneIds, evidence='동일 대상 상품을 실제 착용한 남성·여성 모델이 모두 확인됨', evidenceType=HUMAN)
+  - run-review/scenes/MUSINSA-5336216/D01T04.jpg를 직접 봤다. 판독기 노트는 '남성 · 착용'이지만, 타일 안에는 (a) 위쪽에 상체·얼굴 없이 잘린 검정 와이드 팬츠의 다리(가방 안 보임)와 (b) 아래쪽에 땋은 장발로 이 지갑을 스트랩으로 든 인물뿐이다. 남성 외형 표현으로 볼 대상 착용자가 이 타일에 없다
+  - 위쪽 다리의 주인은 바로 위 장면 D01T03에 있고, 판독기 자신이 D01T03을 mixedHumanSceneIds(모호)로 분류해 근거에서 뺐다 (같은 306행)
+  - run-review/scenes/MUSINSA-5336216/D02T04.jpg를 직접 봤다. 판독기 노트는 '사이즈표 성별 표기'인데 화면은 SIZE/①LENGTH/②HEIGHT에 행 하나 'F / 11 / 8.5'인 실측표이고 성별 문구가 없다. 같은 행의 directGenderWordIds=[]·textSignal=null과도 맞지 않는다
+  - run-review/scenes/MUSINSA-5336216/D01T02.jpg에는 벨트에 이 지갑을 건 인물이 있어 대상 상품 연결은 성립한다. 다만 이 컷의 지갑은 BLACK이고 대상 상품은 [KHAKI]다 (색상 변형이 상세 페이지를 공유)
+  - GT 원장 행(.claude/gt/bag-category-gender/gt.jsonl 358행)은 conflict=true, resolvedBy=LINEAGE_RANK, reviewer=null, reviewStatus=null, reviewNote=null이다. MALE은 scoring 계보의 MJ_POLICY_0904_SINGLE_WEARER, reviewSheet(FINAL_AQ_20260903)는 UNISEX이며 평가 스냅샷의 goldLabelBeforeRefresh도 UNISEX다 — 사람이 이 상품을 보고 확정한 라벨이 아니라 순위 규칙이 고른 값이다
+  - 이 상품 키는 lineage.json의 conflictProductKeys와 manifest.json의 integrity.goldLabelRefreshed에 함께 들어 있고, 무엇이 정본인가는 BG-0003(status: OPEN)이 아직 답하지 않았다. BG-0003 적용 예시의 'LABEL_TO_LABEL' 갈래에 해당한다
+  - review/verdicts.jsonl 240행은 blockedBy=['BG-0003']을 적어 두고도 owner=GOLDEN, ownerAction='골든셋을 고친다'를 함께 냈고, improvements/worklist.json의 gtCandidates[GT-01]에는 blockedBy 필드 자체가 없다 — 미결 판례에 막혔다는 사실이 워크리스트로 넘어오며 사라졌다
+  - 실행 자신의 중간값도 갈렸다. 평가 스냅샷(golden/bag-policy-evaluation.jsonl 358행)의 detailFold=FEMALE, baselineProductGender=FEMALE, thumbnailFold=UNDETERMINED인데 detailStageGender/prediction은 UNISEX다
+  - goal.md 귀책 원칙 4는 '정책이 답을 내는데 골든셋이 다르면 골든셋을 고친다'인데, 인용 사진을 읽으면 P3의 '남녀 모두 착용' 전제가 성립하지 않아 정책이 UNISEX라는 답을 내지 못한다. 원칙 4가 발동하지 않는다
+  - 부수: 같은 상품의 standardCategory가 큐마다 다르다(golden-source-conflict.jsonl·GT 원장='잡화>가죽소품>카드지갑', interaction-policy-recovered.jsonl·평가='가방>지갑/머니클립'). 복구 규칙 문장은 '백팩·숄더백을 몸에 멘 WORN'인데 대상은 벨트에 거는 카드지갑이다
+- 못 본 것:
+  - 같은 상품의 D01T03·D01T05 타일이 스냅샷에 없다. humanSceneIds에는 들어 있으므로 남성 외형 착용자가 그 장면에 있는지는 확인하지 못했다
+  - run-review/scenes/index.json에 MUSINSA:5336216 항목이 없다(현재 인덱스는 MUSINSA:5365574만 담고 있다). 그래서 세 jpg가 어느 원본 이미지의 어느 crop인지, sceneId 매핑이 맞는지를 파일명 말고는 스냅샷 안에서 검증할 수 없다
+  - scoring 계보의 MALE 근거 — MJ_POLICY_0904_SINGLE_WEARER가 어느 장면을 보고 '단일 착용자'로 판단했는지 — 가 스냅샷에 없다
+  - reviewSheet FINAL_AQ_20260903의 리뷰어 이름과 검수 상태가 원장 행에 null이라, BG-0003이 갈라 놓은 '시트의 named 리뷰어 결정을 뒤 판정이 덮은 건'인지 판별할 수 없다
+  - 같은 상품의 다른 색상(BLACK) 컷을 [KHAKI] 상품의 착용자 근거로 셀 수 있는지에 대한 정책 문장이 owned policy에 없다
+- 반증: **INCONCLUSIVE** — 가장 약한 고리: 앞 판정이 `.claude/gt/bag-category-gender/gt.jsonl` 358행의 `reviewer=null·reviewStatus=null`에서 "사람이 이 상품을 보고 확정한 라벨이 아니라 순위 규칙이 고른 값"을 끌어낸 고리가 가장 약하다. 그 null은 사람이 없다는 뜻이 아니라 필드명 아티팩트다 — `/Users/mj/musinsa/dev/my-claude-code-os/.claude/os/engine/scripts/build_gt.py:34`의 `REVIEW_FIELDS = ("reviewStatus", "reviewer", "reviewNote", "sourceSheet", "sheetRow")`를 이긴 계보 행에서만 복사하는데(같은 파일 104행), 이긴 scoring 행은 그 필드를 `gtReviewStatus`라는 다른 이름으로 갖고 있고 값은 `"REVIEWED"`다(`/Users/mj/musinsa/dev/core-catalog-platfom/tool/image-gender/gt-harness/data/bags-product-context-gt-20260903.jsonl:259`). 이 고리가 빠지면 앞 판정의 "GT는 사람 손을 안 탔다" 축이 사라진다. 다만 남은 갈림 — 이 PDP가 대상 지갑을 남녀가 모두 착용한 사진을 실제로 갖고 있는가 — 은 사진을 봐야 갈린다. 나는 이미지를 열지 않았고, `run-review/scenes/`에 잘린 타일은 인용된 3장(D01T02·D01T04·D02T04)뿐이며 판독기가 사람으로 센 D01T05·D01T03은 잘려 있지도 않다. 이 건은 사진을 다시 받아 되짚는 절차로 넘어간다.
+  - 유지 근거: 읽기 계약이 이 원장의 답을 하나로 못 박는다 — `/Users/mj/musinsa/dev/my-claude-code-os/.claude/os/engine/contracts/gt-layer.md:45,48` "`goldLabel` 말고 다른 필드를 정답으로 쓰지 않는다. `otherLineages`는 이력이지 후보가 아니다" · "계보가 갈렸다는 사실 자체는 `conflict` 플래그로만 읽는다. 파일 둘을 다시 비교하지 않는다." 이 문장대로면 진 계보의 UNISEX는 이 상품의 대안 라벨이 아니고, GT는 MALE 하나다.
+  - 유지 근거: 이긴 계보 행에 사람 검수 표시가 살아 있다 — `bags-product-context-gt-20260903.jsonl:259`의 `gtReviewStatus: "REVIEWED"`, `goldSource: "MJ_POLICY_0904_SINGLE_WEARER"`. 이 goldSource는 그 파일 500행 중 이 한 행에만 있고(다른 사람 검수 행들은 `MJ_CHAT_REVIEW_2026-09-04/05`로 따로 적힌다), 날짜상 검수 시트(09-03)보다 뒤다. BG-0003 선택지 A("최신 사람 검수 원장을 정본으로")를 그대로 적용하면 MALE이 남는다.
+  - 유지 근거: 프로필이 이긴 계보를 그렇게 규정한다 — `/Users/mj/musinsa/dev/my-claude-code-os/.claude/os/attributes/bag-category-gender/profile.json:28-34` `scoring` rank 1, role "명시적 사람 검수가 얹힌 계보. 순위가 가장 높다."
+  - 유지 근거: 이 상품에 사람 정정은 얹히지 않았다 — `lineage.json`의 corrections 파일(`bags-product-gt-user-corrections-20260905.jsonl`)에 이 productKey가 없고, GT 행의 `resolvedBy`도 `CORRECTION`이 아니다. 즉 GT를 바꾸라고 말한 사람 정정은 현재 없다.
+  - 유지 근거: MALE을 뒤집는 데 필요한 사실(P3 '남녀 모두 착용')은 이 실행에서 판독기의 장면 3개에만 걸려 있고, 색상 변형이 상세를 공유한다는 앞 판정의 지적은 이 실행 필드로는 뒷받침되지 않는다 — `queue/interaction-policy-recovered.jsonl:165`의 `variantSharedRetainedTileCount: 0`, `detailAssetRemovedSharedTileCount: 0`, `detailAssetFilterStatus: "UNCHANGED"`, `collectionSources: ["PDP_DESCRIPTION"]`. 공유 여부는 사진에서만 갈린다.
+  - 유지 근거: [반대로 선 것] 진 계보 행은 이름 있는 리뷰어의 건별 판단이다 — `/Users/mj/musinsa/dev/core-catalog-platfom/tool/image-gender/gt-harness/data/bags-product-gt-20260903.jsonl:259` `reviewer: "서성호"`, `reviewedAt: "2026. 9. 3"`, `reviewNote: "PDP에 남녀 모델 모두 착용하고 있는 사진이 존재"`, `goldLabel: "UNISEX"`. 이 문장은 판독기의 장면 인용과 독립적으로 P3 전제를 주장한다. 원장 `gt.jsonl` 358행에는 이 리뷰어 이름도 노트도 남지 않는다(build_gt.py는 진 계보에서 `goldLabel`·`goldSource`만 `otherLineages`로 옮긴다).
+  - 유지 근거: [반대로 선 것] MALE의 근거가 이 스냅샷에 없다 — GT를 만든 0903 행은 `decisionSource: "THUMBNAIL"`, `genderCounts: {MALE: 1, NO_PERSON: 2}`, `imageCount: 3`, `detailImageCount: 0`, `prodRepresentativeThumbnailChanged: true`인데, 이 실행의 갤러리(`golden/bag-product-gallery.jsonl:358`)에는 썸네일이 한 장뿐이고 평가 행(`golden/bag-policy-evaluation.jsonl:358`)의 `thumbnailFold`는 `UNDETERMINED`다. 앞 판정이 인용한 정책 문장 "선택되지 않은 이미지는 판정에 없는 것으로 본다"를 MALE 쪽에도 같이 대면, MALE을 세운 남성 착용 썸네일도 지금 판정에 없다.
+  - 유지 근거: [반대로 선 것] 정본이 어느 쪽인지 문서끼리 어긋난다 — `manifest.json:4-13`은 `reviewSheet`를 "정본 GT 스냅샷. 검수 탭 라벨과 리뷰어 이름."으로, `scoring`을 "감사가 실행과 대조하는 GT"로 적는다. 프로필의 rank와 방향이 반대다. 이 어긋남을 푸는 판례 BG-0003은 `status: OPEN`이고, 적용 예시 마지막 항목이 "시트의 named 리뷰어 결정을 뒤의 판정이 덮은 건은 A만으로 풀리지 않는다. C가 필요하다"로 이 건의 유형을 콕 집어 미결로 남겨 두었다.
+- 사람에게 물을 것: 판독기가 UNISEX 근거로 인용한 D01T04('남성 · 착용')와 D02T04('사이즈표 성별 표기')가 실제 사진에서 확인되지 않으므로, GT-01을 'GT를 고친다' 후보에서 빼고 판독 근거 오류(RUNTIME)로 넘긴 뒤 GT는 BG-0003이 정본 계보를 정할 때까지 MALE로 두어도 되겠습니까?
+
+### GT-02 · `EGOOCM:3446802`
+
+- 상태: **NEEDS_EVIDENCE** — 사진·원장을 더 봐야 갈린다. 근거를 다시 받는 절차로 넘긴다
+- 정책 문장: policy.md 근거 우선순위 3 «대상 가방 착용자의 외형 성별 표현 — 위 둘이 성립하지 않을 때만 쓴다» + «선택되지 않은 이미지는 판정에 없는 것으로 본다», 그리고 BG-0001 적용 예시 «3순위 근거는 약하다»
+- 확신: HIGH
+- 근거:
+  - queue/interaction-policy-recovered.jsonl 63행: goldLabel FEMALE(goldSource GOOGLE_DRIVE_HUMAN_REVIEW_2026-08-31), observedLabel UNISEX, decisionSource DETAIL_IMAGE, detailEvidenceType HUMAN, textSignal null. UNISEX의 근거는 오직 3순위 착용자 근거다
+  - golden/bag-policy-detail-evidence.jsonl 112행: policyEvidenceSceneIds는 [D01T01, D05T13]인데 selectedImageIds 12개(D01T01, D04T01, D05T02·T05·T08·T12·T15·T19, D07T01, D08T01, D09T01, D09T04)에 D05T13이 없다. 남성 근거로 인용된 타일이 omittedImageCount 26 쪽에 있다. humanSceneIds와 mixedHumanSceneIds는 둘 다 빈 배열이다
+  - adapters/arbiter_bag_category_gender.py: P3_MIXED_WEARER의 STRONG은 실행이 쓴 detailEvidence 문장을 _mixed_wearer()로 문자열 매칭해 나온 값이다. 같은 3순위 HUMAN 근거라도 단일 착용자면 P3_WEARER/WEAK에 blockedBy [BG-0001], 노트는 «3순위 착용자 근거뿐이다. BG-0001은 이 근거를 약한 것으로 본다»다. 즉 강도 등급이 근거의 종류가 아니라 실행의 문장 표현에서 갈린다
+  - run-review/scenes/EGOOCM-3446802/D01T01.jpg 실제 관찰: 올리브 스웨이드 호보백을 손에 든 인물, 머리·얼굴이 프레임 밖이다. 판독기 노트 «여성 · 착용»의 성별 근거는 코트·팬츠·부츠 스타일링뿐이다
+  - run-review/scenes/EGOOCM-3446802/D05T13.jpg 실제 관찰: 같은 올리브 스웨이드 백을 든 전신 인물. 짧은 머리·안경에 갈색 코트드레스, 맨다리, 무릎양말, 트레일 스니커즈다. 판독기 노트 «남성 · 착용»으로 단정하기 어려운 중성적 표현이다. 두 타일의 가방은 동일해 보이므로 BG-0001 권고가 말한 «다른 가방의 근거» 문제는 아니다
+  - run-review/scenes/index.json과 reader-view.json은 MUSINSA:5365574 하나만 담고 있다. EGOOCM:3446802에는 타일별 독립 판독 기록이 없다(두 jpg 파일만 있다)
+  - gt.jsonl 114행: conflict false, goldLineage scoring, resolvedBy LINEAGE_RANK. 다른 계보(reviewSheet)도 FEMALE이지만 goldSource가 ORIGINAL_H_FALLBACK이라 독립 확인이 아니고, reviewer·reviewNote·reviewStatus는 모두 null이다
+  - goal.md 귀책 원칙 2 «한 장면의 착용자 성별은 상품의 대상이 아니다. 연출일 수 있다» — UNISEX 결론은 각각 한 장면인 두 성별 판독 위에만 서 있다
+  - worklist.json의 PC-03은 같은 3순위 계열(P3_WEARER)을 owner PENDING_PRECEDENT·blockedBy BG-0001로 묶어 두었는데, 이 건만 GOLDEN(골든셋을 고친다)으로 갈렸다
+- 못 본 것:
+  - EGOOCM:3446802에 대한 타일별 독립 판독 — D01T01·D05T13의 착용자 성별 표현과 대상 가방 동일성을 판독기가 아닌 심사가 확인한 기록이 이 스냅샷에 없다(index.json·reader-view.json은 MUSINSA:5365574만 담는다)
+  - selectedImageIds의 결이 타일 단위인지 원본 이미지(Dxx) 단위인지 — D05 원본은 다른 타일로 선택되었지만 T13은 선택 목록에 없다. policy.md의 «선택되지 않은 이미지»가 어느 쪽을 가리키는지 문서에 없다
+  - D05T13이 실제로 판정 입력에 들어갔는지 여부(프롬프트 입력 목록). 들어가지 않았다면 이 건은 GT 오류가 아니라 실행이 안 본 타일을 인용한 문제다
+  - GT FEMALE을 확정한 사람과 그 판단 근거 — goldSource 이름 외에 reviewer·reviewNote가 비어 있어 무엇을 보고 FEMALE로 정했는지 알 수 없다
+  - 2순위(여성용 결합 디자인)를 검토했다가 기각한 기록. detailFold·thumbnailFold·baselineProductGender가 모두 FEMALE인데 그 값이 무엇을 근거로 나왔는지 이 스냅샷에 없다
+- 반증: **GT_STANDS** — 가장 약한 고리: UNISEX의 남성 절반이 실제로 성립하는지는 사진을 봐야 갈린다 — D05T13이 정말 같은 가방을 든 남성인지, 그리고 `selectedImageIds`가 판독기에게 실제로 보낸 요청 집합인지 이 스냅샷의 필드만으로는 확정되지 않고, `.claude/os/runs/bag-category-gender/run-review/scenes/index.json`은 MUSINSA:5365574만 담고 있어 EGOOCM:3446802에는 타일별 판독 기록이 없다(jpg 두 장뿐).
+  - 유지 근거: 정책 admissibility 문장이 UNISEX의 남성 절반을 걷어낸다 — policy.md 근거 우선순위 끝 «선택되지 않은 이미지는 판정에 없는 것으로 본다»(가져온 스냅샷 policy/bag-category-gender.md 13행도 «선택되지 않은 이미지는 이 요청에 포함되지 않으므로»로 같은 말을 한다). golden/bag-policy-detail-evidence.jsonl 112행에서 유일한 남성 관측 D05T13은 selectedImageIds에 없고 omitted 쪽에 있다. 이 문장을 적용하면 P3의 «남녀가 같은 가방을 모두 착용» 조건 자체가 성립하지 않는다.
+  - 유지 근거: 남은 근거를 정책에 그대로 넣으면 답이 GT와 같다 — D01T01은 selectedImageIds 안에 있고 sceneNotes가 «여성 · 착용»이며 «대상 상품 아님»·«확신 낮음» 꼬리가 없다(import_bag_category_gender_sources.py 304~307행은 targetProductMatch가 MATCH가 아니거나 genderConfidence가 LOW면 그 말을 붙인다). policy.md 3순위 첫 불릿 «한 성별만 이 가방을 착용했으면 그 성별을 낸다» → FEMALE, 즉 현재 GT와 같은 값이다.
+  - 유지 근거: 더 높은 순위 근거는 어느 쪽도 지지하지 않는다 — 상품명 «0007 Layered Pouch Hobo Bag_Suede Olive»에 1순위 성별 문구가 없고, 큐 63행 textSignal null, detail 112행 directGenderWordIds 빈 배열, evidenceType HUMAN이다. UNISEX를 떠받치는 1·2순위 문장이 없으므로 3순위만으로 GT를 뒤집는 셈이 된다.
+  - 유지 근거: 감사 어댑터는 이 행을 GT 결함 후보로 분류한 적이 없다 — audit_bag_category_gender.py 341~343행이 `prediction not in {MALE, FEMALE}`이면 건너뛰므로 productGender UNISEX인 이 행은 GOLDEN_POLICY_VIOLATION_CANDIDATE에도 POLICY_GOLDEN_CONFLICT에도 들어가지 않았다. 큐에 있는 유일한 이유는 interactionPolicyRecovered이고, engine/goal.md §6은 «*_RECOVERED ... 어느 목록도 아니다. 근거 수집 품질 기록이다»라고 못 박는다. GOLDEN 귀책은 심판이 근거 문장을 문자열로 재해석해 붙인 것이다.
+  - 유지 근거: GT 계보에 다툼이 없다 — gt.jsonl 114행 conflict false, scoring(FEMALE)·reviewSheet(FEMALE) 두 계보가 같은 라벨이고, lineage.json conflictProductKeys에 이 키가 없으며 manifest.json integrity.goldLabelConflicts는 빈 배열이다. 즉 BG-0003(무엇이 정본인가)이 이 건에 걸리지 않는다. lineage.json이 기록한 2026-09-05 사용자 정정은 원장에 적용됐고 이 행은 그 대상이 아니었다(114행에 correction 필드가 없다). review/decisions.json은 비어 있어 사람이 이 라벨을 놓고 결정한 적이 없다 — 뒤집을 근거도, 확정한 근거도 아직 없다.
+  - 유지 근거: 속성 goal.md 귀책 원칙 2 «한 장면의 착용자 성별은 상품의 대상이 아니다. 연출일 수 있다» — UNISEX는 성별당 한 장면씩 딱 두 장면 위에 서 있다. 귀책 원칙 4(«정책이 답을 내는데 골든셋이 다르면 골든셋을 고친다»)는 정책이 UNISEX를 낼 때만 발동하는데, 선택되지 않은 D05T13을 빼면 정책의 답은 FEMALE이다.
+  - 유지 근거: 같은 형태가 다른 상품에서도 반복된다 — detail-evidence 328행 MUSINSA:5365574(«0007 레이어드 파우치 호보 백_도트블랙»)도 근거 문장·P3_MIXED_WEARER STRONG·GT FEMALE이 같고, 인용된 남성 장면 D02T09 역시 selectedImageIds에 없다. engine/goal.md §5 «GT 결함은 건 단위, 정책 결함은 군집 단위»에 따르면 반복되는 이 형태는 상품 하나의 GT 정정이 아니라 군집 질문으로 가야 한다.
+- 사람에게 물을 것: UNISEX의 유일한 남성 근거인 D05T13은 실행이 기록한 선택 타일 12장에 없고 인물의 성별 표현도 중성적인데, 이 타일 하나를 3순위 착용자 근거로 인정해 사람이 확정한 GT(FEMALE)를 뒤집어도 되는가?
+
+### GT-04 · `MUSINSA:5385148`
+
+- 상태: **NEEDS_EVIDENCE** — 사진·원장을 더 봐야 갈린다. 근거를 다시 받는 절차로 넘긴다
+- 정책 문장: policy.md 근거 우선순위 3 — "위 둘이 성립하지 않을 때만 쓴다. 형태·스트랩·포켓·그래픽·장식이 TARGET_REFERENCE와 같은 가방을 실제로 착용하거나 휴대한 사람만 센다" / BG-0001 권고 — "GT를 고치기 전에 근거가 대상 가방에 실제로 연결되는지를 먼저 본다. 근거 이미지가 다른 가방의 것이면 이건 GT 오류가 아니라 실행 오류이고, 고칠 곳이 정반대다"
+- 확신: HIGH
+- 근거:
+  - queue/interaction-policy-recovered.jsonl 196행: goldLabel=FEMALE(goldSource=GOOGLE_DRIVE_HUMAN_REVIEW_2026-08-31), prediction=UNISEX, decisionSource=DETAIL_IMAGE, detailEvidenceType=HUMAN, sceneNotes={D01T03: 여성 · 착용, D01T06: 남성 · 착용}, textSignal=null
+  - golden/bag-policy-detail-evidence.jsonl 358행: directGenderWordIds=[] (1순위 직접 문구 없음), evidenceType=HUMAN — 판정이 3순위 착용자 근거만으로 서 있고, 2순위 여성용 결합 디자인을 평가했다는 기록(PRODUCT_ONLY 판단 필드)이 행 어디에도 없다
+  - policy.md 근거 우선순위 3은 조건부다 — '위 둘이 성립하지 않을 때만 쓴다'. 같은 절은 '결합이 성립하면 남성 모델이나 남녀 모델이 같은 가방을 휴대해도 FEMALE이다. 모델은 연출 근거일 뿐 이 결합을 MALE이나 UNISEX로 바꾸지 않는다'고 못박는다 — 즉 남녀 착용 관측은 2순위가 깨진 뒤에만 UNISEX를 만든다
+  - asset/thumbnails/MUSINSA-5385148-1.jpg(스냅샷에 있는 유일한 이 상품 이미지): 표범무늬가 표면을 덮은 소형 볼링백, 짧은 탑핸들 + 긴 숄더 스트랩. policy.md 결합 신호 표에는 '작은 구조적 탑핸들'(형태·크기)과 '작고 섬세한 반복 그래픽'(색·그래픽)이 있으나 표범·애니멀 프린트는 어느 묶음에도 적혀 있지 않다 — 2순위 성립 여부를 정책 문장으로 확정할 수 없다
+  - 인용된 상세 이미지 URL 파일명이 두 상품명을 담고 있다 — copy-1756286732-25FW20WO_STUDIO_BOWLING20BAG_WO_DAILY_SMALL20POUCH_1.jpg. 같은 행의 detailAssetFilterStatus=UNCHANGED, detailAssetRemovedSharedTileCount=0이라 공유 이미지 점검이 이 건에서 아무것도 걸러내지 않았다
+  - run-review/scenes/index.json에 실체화된 상품은 MUSINSA:5365574 하나뿐이다. 이 건이 인용한 D01T03·D01T06 타일은 스냅샷에 이미지로 존재하지 않고, gallery 행에도 원격 URL만 있고 label·note는 전부 빈 문자열이다
+  - golden/bag-policy-detail-evidence.jsonl 358행의 humanSceneIds에 D01T04가 들어 있으나 같은 행 selectedImageIds와 gallery details 목록에는 D01T04가 없다. policy.md는 '선택되지 않은 이미지는 판정에 없는 것으로 본다'고 하고, 가져온 프로덕션 스냅샷 보수 규칙은 '표시되지 않은 ID를 적으면 응답 전체가 무효'라고 한다
+  - gt.jsonl 425행: conflict=false, resolvedBy=LINEAGE_RANK, scoring 계보 FEMALE(GOOGLE_DRIVE_HUMAN_REVIEW_2026-08-31), reviewSheet 계보 FEMALE(ORIGINAL_H_FALLBACK), reviewer·reviewNote·reviewStatus 모두 null — 사람이 왜 FEMALE로 확정했는지가 원장에 남아 있지 않다
+  - manifest.json: 두 계보 모두 datasetVersion 2026-09-03, integrity.goldLabelConflicts 비어 있음, 정책 스냅샷·평가·GT 원장이 같은 generatedAt의 입력이다 — 계보나 버전 어긋남 문제는 아니다
+  - review/verdicts.jsonl 278행은 이 건을 policyRule=P3_MIXED_WEARER, policyStrength=STRONG, owner=GOLDEN로 놓았다. 그러나 같은 실행의 worklist PC-03 군집은 P3_WEARER를 '약한 근거라 골든셋을 의심할지 판례가 먼저 답해야 한다'며 BG-0001에 막힌 것으로 분류했고, BG-0001 적용 예시도 '3순위 근거는 약하다'고 적는다 — 같은 3순위 근거에 STRONG과 WEAK가 갈려 있고 그 배정 근거는 정책 문장에 없다
+- 못 본 것:
+  - D01T03·D01T06 타일 이미지 자체. run-review/scenes/에는 MUSINSA:5365574만 있고 이 상품 폴더가 없어, 남녀 모델이 든 가방이 대상 볼링백인지 확인할 방법이 스냅샷에 없다
+  - 2순위(여성용 결합 디자인) 판단 기록. 상세 근거 행에 가방 자체의 형태·장식·그래픽 관측이 한 줄도 없어, 3순위를 쓸 조건이 충족됐는지 확인할 수 없다
+  - GT가 FEMALE인 근거 문장. gt.jsonl의 reviewer·reviewNote가 비어 있어 사람이 디자인을 보고 정했는지 한 장면 착용자를 보고 정했는지 알 수 없다
+  - 표범·애니멀 프린트가 policy.md 결합 신호 표의 어느 묶음에 드는지(또는 들지 않는지)를 말하는 정책 문장
+  - 상세 페이지가 볼링백과 'WO DAILY SMALL POUCH' 두 상품을 함께 싣는지 여부. 파일명만 두 이름을 담고 있고, 이 실행 gallery에는 이 URL을 쓰는 다른 상품이 없다
+  - humanSceneIds가 판독기 출력인지 별도 관측 단계의 집계인지 — 스냅샷에 그 필드의 출처가 적혀 있지 않아 D01T04 불일치가 판독기 위반인지 파이프라인 집계 차이인지 가를 수 없다
+- 반증: **GT_STANDS** — 가장 약한 고리: 사진을 봐야 갈리는 건이다. 두 질문이 이미지에 걸려 있다 — (1) 펠라인(표범) 표면 패턴과 20x14x11 소형 몸체·짧은 탑핸들이 2순위 결합(소유 policy.md의 두 묶음) 또는 프로덕션 스냅샷의 '고우선 패턴·소재' 단일 신호에 드는가, (2) D01T06의 남성 착용자가 대상 볼링백을 든 것인가 아니면 같은 합성 상세컷에 함께 실린 'DAILY SMALL POUCH'를 든 것인가. 둘 다 문자 필드로는 확정할 수 없고(arbiter도 P2를 '이미지로 봐야 한다. 문자로 판정할 수 없다'로 둔다), run-review/scenes/index.json에 실체화된 상품은 MUSINSA:5365574뿐이라 D01T03·D01T06 타일이 이 스냅샷에 이미지로 없다. 이 워크플로우가 아니라 사진을 다시 받아 되짚는 절차로 넘어간다.
+  - 유지 근거: 3순위 근거의 전제 자체가 이 행에서 검증된 적이 없다. policy.md 근거 우선순위 3은 '위 둘이 성립하지 않을 때만 쓴다'로 시작하는데, arbiter_bag_category_gender.py의 policy_answer()는 P1(상품명 직접 문구) → P0(무근거) → detailEvidenceType이 HUMAN/TEXT/MIXED이면 곧바로 _mixed_wearer() 분기로 간다. 2순위 분기(P2_COMBINED_DESIGN)는 evidence_type == 'PRODUCT_ONLY'일 때만 도달한다. golden/bag-policy-detail-evidence.jsonl 358행의 evidenceType이 HUMAN이므로 이 상품에 대해 2순위는 구조적으로 한 번도 질문되지 않았다. 순위가 풀렸다는 확인 없이 3순위만으로 GT를 뒤집을 수 없다.
+  - 유지 근거: 정책은 남녀 동시 착용 관측이 FEMALE을 이길 수 없는 경우를 명시한다. policy.md: '결합이 성립하면 남성 모델이나 남녀 모델이 같은 가방을 휴대해도 FEMALE이다. 모델은 연출 근거일 뿐 이 결합을 MALE이나 UNISEX로 바꾸지 않는다.' 가져온 프로덕션 스냅샷 runs/.../policy/bag-category-gender.md도 같은 문장을 갖는다 — '고우선 여성향 디자인이나 강한 여성용 결합 디자인이 성립하면 남성 모델이나 남녀 모델이 같은 가방을 휴대해도 상품 대상 성별은 FEMALE + PRODUCT_ONLY입니다.' 즉 D01T03(여성·착용)·D01T06(남성·착용) 관측은 2순위가 깨졌다는 확인 뒤에만 UNISEX를 만든다.
+  - 유지 근거: GT를 고칠 권한을 주는 판례가 아직 열려 있다. precedents/BG-0001.md는 status: OPEN, 판정 [미정]이고, 권고는 'A. 다만 GT를 고치기 전에 근거가 대상 가방에 실제로 연결되는지를 먼저 본다. 근거 이미지가 다른 가방의 것이면 이건 GT 오류가 아니라 실행 오류이고, 고칠 곳이 정반대다'. 적용 예시는 '3순위 근거는 약하다'며 착용자 근거 건을 A(GT 수정)의 대상에서 빼둔다. 답이 없는 판례를 앞질러 GT를 바꾸지 않는다.
+  - 유지 근거: BG-0001이 요구하는 '대상 가방 연결' 확인이 이 스냅샷에서 성립하지 않는다. golden/bag-product-gallery.jsonl 425행의 상세 12타일은 단 두 장의 원본에서 잘렸고(D01Txx는 ..._1.jpg, D02Txx는 ..._2.jpg), 그 파일명이 두 품목을 담는다 — copy-1756286732-25FW20WO_STUDIO_BOWLING20BAG_WO_DAILY_SMALL20POUCH_1.jpg. 타일마다의 label은 전부 빈 문자열이라 어느 타일이 대상 볼링백인지 스냅샷이 말하지 않는다. 같은 행들의 detailAssetFilterStatus=UNCHANGED, detailAssetRemovedSharedTileCount=0, variantSharedRetainedTileCount=0이라 공유 이미지 점검도 아무것도 걸러내지 않았다. policy.md 3순위는 '같은 브랜드거나 비슷한 색이라는 이유로 다른 가방의 모델을 세지 않는다'고 못박는다.
+  - 유지 근거: 가져온 프로덕션 정책에는 소유 정책에 없는 2순위 상위 티어가 있고, 그것이 GT 쪽을 가리킨다. runs/.../policy/bag-category-gender.md '[여성용 가방 디자인의 결합 신호] 고우선 패턴·소재: 가방 표면을 지배하는 플로럴 등 여성향 패턴' + '고우선 신호는 상품 자체에서 명확히 확인되면 하나만으로도 FEMALE + PRODUCT_ONLY를 허용합니다.' 상품명은 gt.jsonl 425행 기준 'WO 스튜디오 펠라인 볼링백20x14x11'(펠라인=feline)이다. 표면을 지배하는 애니멀 패턴이 이 문장의 '여성향 패턴'에 들면 판단기가 읽은 문장만으로도 2순위 단일 신호 FEMALE이 나오고, 그 경우 착용 모델 관측은 무력화된다. 이 가능성은 실행도 앞 판정도 평가하지 않았다.
+  - 유지 근거: 계보에는 라벨을 흔들 근거가 없다. gt.jsonl 425행 conflict=false, resolvedBy=LINEAGE_RANK, scoring FEMALE(GOOGLE_DRIVE_HUMAN_REVIEW_2026-08-31) / reviewSheet FEMALE(ORIGINAL_H_FALLBACK)로 두 계보가 같은 답이다. manifest.json integrity.goldLabelConflicts는 비어 있고 goldLabelRefreshed 목록에 MUSINSA:5385148이 없다 — 2026-09-03 갱신에서 이 라벨은 움직이지 않았다. .claude/gt/bag-category-gender/lineage.json의 conflictProductKeys에도 없다. 즉 BG-0003(정본 다툼)이 걸리는 건이 아니다.
+  - 유지 근거: 앞 판정의 'STRONG/WEAK 배정 근거가 정책 문장에 없다'는 대목은 반증된다. policy.md 3순위 두 번째 불릿이 '남성과 여성이 같은 가방을 모두 착용했으면 UNISEX를 낸다. 두 성별이 함께 관측된 것은 공용이라는 적극적 근거다. 한쪽이 안 보이는 것은 촬영 컷 선택으로도 설명되지만, 둘 다 보이는 것은 그렇지 않다'고 이유까지 적는다. 그리고 improvements/worklist.json의 PC-03은 policyRules가 P3_WEARER(단일 성별)이고 이 건은 P3_MIXED_WEARER다 — 같은 규칙에 두 강도가 갈린 것이 아니라 서로 다른 두 규칙이다. 다만 이 반증은 UNISEX 쪽 근거의 강도를 살릴 뿐, 그 근거가 3순위라는 사실과 전제 미검증은 그대로다.
+- 사람에게 물을 것: 인용된 D01T03·D01T06 타일에서 남녀 모델이 실제로 착용한 가방이 이 표범무늬 볼링백(대상 상품)입니까, 아니면 같은 상세 페이지 파일명에 함께 적힌 'WO DAILY SMALL POUCH'입니까?
+
+### GT-03 · `MUSINSA:5365574`
+
+- 상태: **MOVED_TO_POLICY** — GT 문제가 아니라 정책·실행 문제로 갈렸다. B의 군집으로 옮겨 본다
+- 정책 문장: policy.md:41 「위 둘이 성립하지 않을 때만 쓴다」 · policy.md:49 「선택되지 않은 이미지는 판정에 없는 것으로 본다」 · policy.md:66 「결합이 성립하면 남성 모델이나 남녀 모델이 같은 가방을 휴대해도 FEMALE이다」
+- 확신: HIGH
+- 근거:
+  - golden/bag-policy-detail-evidence.jsonl:328 — UNISEX의 유일한 남성 근거인 D02T09가 selectedImageIds 12개(D01T01,D01T03,D02T03,D02T05,D02T07,D02T10,D02T12,D03T01,D03T03,D04T02,D05T02,D05T04)에 없다. 소유 정책 policy.md:49와 가져온 프롬프트 스냅샷 policy/bag-category-gender.md:13이 모두 '선택되지 않은 이미지는 판정에 없는 것으로 본다'고 적는다. 남성 관측을 빼면 남는 착용자 근거는 D02T03(여성 · 착용) 하나이고 3순위 첫 갈래로 FEMALE이 되어 현재 GT와 같다
+  - 같은 행에서 humanSceneIds와 mixedHumanSceneIds가 빈 배열이다. 같은 INTERACTION_POLICY_RECOVERED 신호의 형제 건 MUSINSA:5336216(:306)은 humanSceneIds 4개·mixedHumanSceneIds [D01T03], MUSINSA:5385148(:358)은 humanSceneIds 6개가 채워져 있고 인용 타일이 모두 selected 안에 있다
+  - run-review/scenes/MUSINSA-5365574/D02T09.jpg를 직접 봤다. 위쪽 조각은 체크셔츠 어깨와 도트 스트랩만 보여 성별 판단 요소가 없고, 아래쪽 조각은 카멜 코트·오렌지 터틀넥 인물이 같은 도트백을 든 컷으로 남성 외형 표현으로 단정할 근거가 보이지 않는다. D02T03.jpg는 같은 가방을 멘 여성 컷이 맞다
+  - 정책 3순위는 policy.md:41에 따라 1·2순위가 성립하지 않을 때만 쓴다. 그런데 심판 어댑터 arbiter_bag_category_gender.py:131은 evidenceType이 PRODUCT_ONLY일 때만 2순위에 닿고, 이 행은 HUMAN이라 2순위를 건너뛰었다. 어댑터 자신도 :136에서 '2순위 결합 디자인은 이미지로 봐야 한다. 문자로 판정할 수 없다'고 적는다
+  - 상품은 표면을 지배하는 도트 반복 패턴의 호보 백이다(D02T03·D02T09 사진에서 확인, 상품명 '0007 레이어드 파우치 호보 백_도트블랙', standardCategory 가방>버킷백/호보백>호보백). 가져온 프로덕션 정책은 도트 반복 패턴(:20)과 호보 실루엣(:22)을 각각 고우선 신호로 적고, 고우선 신호 하나만으로 FEMALE+PRODUCT_ONLY를 허용하며(:28) 남녀 모델이 휴대해도 FEMALE이라고 못박는다(:30)
+  - arbiter_bag_category_gender.py:55-66의 _mixed_wearer는 근거 문장에 '남성·여성' 문자열이 있는지만 본다. 타일 선택 여부나 관측 내용은 보지 않는다. 그 결과가 review/verdicts.jsonl:256의 policyStrength STRONG · blockedBy [] 다. 같은 3순위인데 단일 성별이면 WEAK + BG-0001 차단(:126-128), mixed면 무조건 STRONG인 비대칭이다
+  - GT 원장 .claude/gt/bag-category-gender/gt.jsonl:384 — scoring(GOOGLE_DRIVE_HUMAN_REVIEW_2026-08-31)과 reviewSheet(ORIGINAL_H_FALLBACK) 두 계보가 모두 FEMALE, conflict false. manifest.json의 integrity.goldLabelConflicts에도 이 상품 키가 없다
+  - golden/bag-policy-evaluation.jsonl:384 — baselineProductGender FEMALE, detailFold FEMALE인데 detailStageGender와 prediction만 UNISEX다. 이번 프롬프트의 detail 단계에서만 갈라섰다
+  - policyEvidenceSceneIds는 프로덕션 값이 아니라 우리 import 어댑터가 visibleWearerObservations에서 만든 값이다(import_bag_category_gender_sources.py:284-289). 그래서 어긋남의 원인은 두 갈래다 — 판독이 선택 밖 타일을 봤거나, 저장 변환이 판정기가 못 본 타일을 근거로 붙였거나. 두 갈래 모두 실행 쪽 결함이고 GT를 뒤집을 근거가 되지 않는다
+- 못 본 것:
+  - 타일별 판독 결과 파일이 없다. run-review/scenes/reader-view.json은 과업 목록만 담고 판독 문장이 없어 D02T09를 '남성'으로 본 판독 근거를 대조할 수 없다
+  - 원본 visibleWearerObservations와 rawMapperResponse가 압축에서 빠져, D02T09 관측이 어느 단계에서 나왔는지·이 행만 humanSceneIds가 빈 이유가 무엇인지 확인할 수 없다
+  - 행의 policyPromptSha256(c248a805…)이 manifest.json의 policy sha(46da3e…)나 partial sha 어느 것과도 일치하지 않고, 같은 promptVersion인데 상품마다 sha가 다르다(5336216 a4130dcd…, 5385148 fd2915f7…). 이 행이 실제로 받은 정책 문장을 스냅샷이 증명하지 못한다
+  - 2순위 결합 디자인의 최종 확인은 사람이 상품 컷(D01 계열·TARGET_REFERENCE)에서 도트가 표면을 지배하는지, 부착된 오벌 파우치가 구성품인지 봐야 한다. 이 스냅샷에는 그 사람 검수가 없다
+  - GT 원장의 reviewer·reviewStatus·reviewNote가 모두 null이라 GOOGLE_DRIVE_HUMAN_REVIEW_2026-08-31이 누구의 판정인지 원장에 남아 있지 않다
+- 반증: **GT_STANDS** — 가장 약한 고리: 앞 판정의 가장 약한 고리는 "run-review/scenes/MUSINSA-5365574/D02T09.jpg를 직접 봤고 남성 외형으로 단정할 근거가 없다"는 사진 판독이다. 나는 이미지를 열지 않으므로 이 고리를 확인도 반박도 하지 못한다. D02T09가 판독기에게 실제로 표시됐는지(선택 12장 밖)와 그 타일에 같은 도트백을 착용한 남성이 있는지는 소유 정책 policy.md:45-47(남녀가 같은 가방을 모두 착용하면 UNISEX)의 성립 여부를 직접 가르는데, 스냅샷 필드로는 "선택 밖"까지만 말할 수 있고 사진 내용은 말할 수 없다. 이 건을 GT 뒤집기로 끌고 가려면 사진을 다시 받아 되짚는 절차(catalog-evidence-recheck)로 넘겨야 한다 — 다만 GT를 '유지'하는 데는 사진이 필요하지 않다. 뒤집을 유효 근거가 없다는 판단만으로 충분하기 때문이다.
+  - 유지 근거: 판례 BG-0001:44 — 「남성 모델만 착용한 표준 백팩인데 GT가 UNISEX인 경우 → 이건 A의 대상이 아니다. 3순위 근거는 약하다」. 이 건에서 GT를 뒤집자는 유일한 근거는 review/verdicts.jsonl:256의 policyRule P3_MIXED_WEARER, 즉 3순위 착용자 관측뿐이다. 판례는 착용자 근거로 GT를 확정 수정하는 것을 대상 밖으로 둔다.
+  - 유지 근거: 판례 BG-0001:34 권고 — 「GT를 고치기 전에 근거가 대상 가방에 실제로 연결되는지를 먼저 본다. 근거 이미지가 다른 가방의 것이면 이건 GT 오류가 아니라 실행 오류이고, 고칠 곳이 정반대다」. 이 건은 근거 타일이 판정에 표시된 집합 밖이라 연결 자체가 확인되지 않는다.
+  - 유지 근거: 목표 문서 attributes/bag-category-gender/goal.md:17 귀책 원칙 2 — 「한 장면의 착용자 성별은 상품의 대상이 아니다. 연출일 수 있다」. 실행 라벨 UNISEX는 장면 두 개(D02T03·D02T09)의 착용자 성별에서만 나왔다. 목표는 정책보다 상위 심급이다(engine/goal.md:33 서열 목표 > 정책 > GT).
+  - 유지 근거: goal.md:18 귀책 원칙 3 — 「근거가 없으면 UNISEX가 아니라 UNDETERMINED다」. 남성 관측을 빼면 남는 답은 UNISEX가 아니다. 어느 갈래로 가도 UNISEX가 현재 GT를 대체할 자리가 없다.
+  - 유지 근거: GT 원장 /Users/mj/musinsa/dev/my-claude-code-os/.claude/gt/bag-category-gender/gt.jsonl:384 — rank-1 scoring 계보(profile.json:34이 「명시적 사람 검수가 얹힌 계보」로 정의)가 FEMALE(goldSource GOOGLE_DRIVE_HUMAN_REVIEW_2026-08-31), reviewSheet도 FEMALE, conflict false, resolvedBy LINEAGE_RANK. lineage.json의 conflictProductKeys에 이 키가 없고, manifest.json의 integrity.goldLabelRefreshed에도 없다 — 2026-09-03 갱신에서도 이 행의 라벨은 흔들리지 않았다.
+  - 유지 근거: 같은 제품 라인의 형제 상품이 같은 GT를 갖는다 — gt.jsonl:114 EGOOCM:3446802 「0007 Layered Pouch Hobo Bag_Suede Olive」(같은 브랜드 포테, 같은 0007 레이어드 파우치 호보 백 라인)도 goldLabel FEMALE이다. 그리고 worklist의 GT-02로 이 형제 역시 policyRule P3_MIXED_WEARER · policyStrength STRONG으로 「골든셋을 고친다」 후보에 올라 있다. 라벨은 라인 전체에 일관되고, 뒤집자는 제안 쪽이 같은 규칙 모양에서 반복 생성되고 있다.
+  - 유지 근거: 심판 어댑터의 비대칭이 이 건의 owner=GOLDEN을 만들었다 — arbiter_bag_category_gender.py:105-112은 mixed 문자열이면 STRONG·blockedBy [], :123-129은 같은 3순위라도 단일 성별이면 WEAK·blockedBy ["BG-0001"]에 「3순위 착용자 근거뿐이다. BG-0001은 이 근거를 약한 것으로 본다」를 붙인다. 남성 관측 하나가 빠지면 같은 행이 WEAK + 미결 판례 차단으로 내려앉고 「골든셋을 고친다」는 성립하지 않는다.
+  - 유지 근거: 가져온 프로덕션 스냅샷 runs/bag-category-gender/policy/bag-category-gender.md:37 — 「visibleWearerObservations의 sourceImageId와 exactProductGenderSourceImageId에는 이 요청에 표시된 이미지 ID만 적으세요. 표시되지 않은 ID를 적으면 응답 전체가 무효가 됩니다」. 앞 판정관이 든 :13보다 이 건에 더 직접적이고 더 강하다. 남성 관측 하나만 떼는 것이 아니라 이 응답 전체가 무효라는 뜻이고, 그러면 GT와 맞댈 실행 라벨 자체가 존재하지 않는다. golden/bag-policy-detail-evidence.jsonl:328에서 selectedImageCount와 omittedImageCount의 합이 preparedTileCount·allImageTileCount와 같아, 선택 집합이 곧 표시 집합이라는 읽기와 맞는다.
+- 사람에게 물을 것: 판독기가 유일한 남성 근거로 든 D02T09가 Mapper 선택 타일 밖이고 타일 안에서도 남성 외형이 확인되지 않는데, 이 건의 UNISEX 근거를 무효로 보고 GT FEMALE을 그대로 두어도 됩니까?
+
+## B. 부족한 정책 — 군집 단위
+
+| id | 결함 | 경계 | 영향 | 이미 물어본 것 |
+|---|---|---|---|---|
+| PC-01 | 공백 | 조건으로 쓸 수 있다. **같은 상품에 두 GT 계보가 서로 다른 확정 라벨을 적었고(`signal=GOLDEN_SOURCE_CONFLICT`, `conflictKind=LABEL_TO_LABEL`), 진 계보(`reviewSheet`)의 라벨이 비어 있지 않은 상품.** 이 조건 안에서 진 라벨의 출처가 두 종류로 갈리는데 지금은 한 규칙(`resolvedBy: LINEAGE_RANK`)이 둘을 똑같이 처리한다 — (a) 명시적 사람 검수 시트(`goldSource: FINAL_AQ` · `FINAL_AQ_20260903`), (b) 일괄 폴백(`goldSource: ORIGINAL_H_FALLBACK`). 반면 진 계보가 라벨을 비워 둔 건(`conflictKind=UNCLASSIFIED_TO_LABELED`, 진 라벨 `UNDETERMINED`)은 BG-0003의 「적용 예시」가 이미 "A와 충돌하지 않는다"고 답해 두었으므로 이 경계 밖이다. 관찰 가능한 술어는 큐 행의 `supersededLineages[].goldSource` 하나다. | 29건 | BG-0003 (status: OPEN, /Users/mj/musinsa/dev/my-claude-code-os/.claude/os/attributes/bag-category-gender/policy/precedents/BG-0003.md) · GQ-SOURCE-001 (/Users/mj/musinsa/dev/my-claude-code-os/.claude/os/runs/bag-category-gender/reports/policy-questions.json). 이 군집은 새 질문이 아니라 **BG-0003의 미답 잔여분**이다. 아직 닫히지 않은 이유: (1) 판례의 「판정」이 `[미정]`이고 `decision`·`decidedBy`가 비어 있다, (2) 권고 A(최신 사람 검수 원장)와 실제로 돌고 있는 규칙(`resolvedBy: LINEAGE_RANK`)이 이 스냅샷의 행들에서는 같은 답을 내서 결정을 강요하는 반례가 화면에 뜨지 않는다, (3) 권고에 붙은 C(재판정)가 *어느 행에 적용되는지*를 술어로 적어 두지 않아 실행 가능한 상태가 아니다. 위 질문은 그 (3)을 채우는 문장이므로, 새 판례를 열지 말고 BG-0003에 판정으로 기록하는 것이 맞다. |
+| PC-02 | 공백 | 정책 §근거 우선순위의 세 순위가 전부 불성립인 가방이다. 큐 행에서 관찰되는 조건으로: 상품명에 정책 1순위 성별 문구가 없고(`_direct_text_label` 불일치), `detailEvidenceType ∈ {UNDETERMINED, null}`이라 2순위 결합 디자인도 3순위 착용자도 성립하지 않으며(`policyEvidenceSceneIds`가 비었거나, 있어도 `sceneNotes`가 "성별 불명 · 확신 낮음"), 그럼에도 최종 실행 라벨은 정책이 순위를 준 적 없는 자리 — `thumbnailFold`의 단일 성별 또는 상품명의 크기 토큰 "(M)" — 에서 온 `MALE`·`FEMALE`이고, `goldLabel`은 `UNISEX`다. 이 조건 안에 두 하위 형태가 함께 있다: (i) 상세 판독문이 "기능과 구조가 명확한 표준 백팩/더플/파우치라 남녀 공용"이라고 **공용을 관측해 서술했는데** 유형란은 `UNDETERMINED`인 건, (ii) 상세 이미지가 아예 없어(`detailImageCount: 0`, `detailStatus`·`policyPromptVersion` null) **공용을 관측한 적조차 없는** 건. 둘은 같은 결함(순위 없는 근거)에서 나오지만 답이 갈라야 하는 지점이다. | 10건 | 없음 |
+| PC-03 | 오역 | 조건으로 쓸 수 있다. 큐 행의 필드로 그대로 판별된다 — (1) 상품명에 직접 성별 문구 토큰이 없고 `textSignal: null`, (2) `detailStatus: "OK"` · `detailEvidenceType: "HUMAN"`, (3) `detailEvidence`가 "여성/남성 모델만 동일 대상 상품을 실제 착용"처럼 **한 성별만** 지목해 `P3_MIXED_WEARER`(남녀 공동 착용 → UNISEX)에 걸리지 않고, (4) 그 근거가 `policyEvidenceSceneIds` 한 장면에서만 나오며, (5) `goldLabel: "UNISEX"`인데 `observedLabel`은 그 단일 성별인 가방 상품. 요약하면 **"직접 문구도 여성용 결합 디자인도 없고, 대상 가방을 착용·휴대한 사람이 한 성별만, 그것도 한 장면에서만 관측된 상품"**이다. 심판은 이 조건을 `P3_WEARER` · `WEAK` · `blockedBy: ["BG-0001"]`로 찍는다. 표준 카테고리는 토트백·파우치·에코백·지갑으로 흩어져 있어 카테고리는 경계가 아니다. | 10건 | 없음. BG-0001(질문 GQ-GT-001)이 가장 가깝지만 이 군집을 덮지 않는다 — BG-0001은 질문 자체를 "정책의 직접 근거(1순위 문구 또는 성립한 결합 디자인)"로 한정하고, 적용 예시 마지막 줄에서 "남성 모델만 착용한 표준 백팩인데 GT가 UNISEX인 경우 → 이건 A의 대상이 아니다. 3순위 근거는 약하다"로 이 군집을 명시적으로 제외한다. 심판 코드의 주석도 같은 말을 한다("3순위 착용자 근거뿐이다. BG-0001은 이 근거를 약한 것으로 본다"). BG-0002는 저장 시점 변환, BG-0003은 GT 정본 선택이라 축이 다르다. policy-questions.json의 GQ-GT-001·GQ-RUN-001·GQ-SOURCE-001 어느 것도 3순위 착용자 근거의 확정 조건을 묻지 않는다. |
+
+### PC-01 · PRECEDENT:BG-0003
+
+- 귀책: GOAL — 사람이 목표 기준으로 경계를 정한다
+- 결함: 공백 — 이 군집의 심판 행은 전부 `policyAnswer: "UNRESOLVABLE"` / `policyNote: "이 스냅샷의 필드만으로는 정책의 어느 순위도 적용할 수 없다."`로 멈춰 있고(/Users/mj/musinsa/dev/my-claude-code-os/.claude/os/runs/bag-category-gender/review/verdicts.jsonl), 소유 정책 policy.md의 「근거 우선순위」 1~3과 「판정 불가 조건」 어디에도 *어느 GT 계보가 정본인가*를 말하는 문장이 없다. 답이 들어갈 자리인 attributes/bag-category-gender/goal.md의 「목표로만 결정할 수 있는 경계」 표는 `_(아직 없음)_`으로 비어 있다 — 문장이 틀린 것이 아니라 없다(판정표 3, 그리고 ①을 물을 수 없다는 점에서 7).
+- 영향: 29건 (표본 EGOOCM:3412663, EGOOCM:3412762, EGOOCM:3413967, EGOOCM:3415594, EGOOCM:3430473)
+
+**질문 — 두 GT 계보가 같은 상품에 서로 다른 확정 라벨을 적었을 때, 진 계보의 라벨 출처가 명시적 사람 검수(`FINAL_AQ*`)인 건까지 계보 순위(`LINEAGE_RANK`)로 덮을 것인가, 아니면 폴백(`ORIGINAL_H_FALLBACK`)과 미판정(`UNDETERMINED`)만 순위로 덮고 사람 검수끼리 갈린 건은 `corrections` 재판정으로 보낼 것인가?**
+
+- `1. 진 라벨의 출처로 가른다 — 폴백·미판정은 순위로 확정, 사람 검수끼리 갈린 건만 corrections 재판정 대상으로 뺀다 (BG-0003의 A+C를 술어로 확정)` — 바뀌는 것: `supersededLineages[].goldSource`가 폴백·미판정인 건은 지금의 `goldLabel`이 그대로 정본으로 승인되어 군집에서 빠지고, 사람 검수끼리 갈린 부분집합만 남아 corrections 파일(`bags-product-gt-user-corrections-YYYYMMDD.jsonl`)로 간다. gt-layer 계약 3항에 따라 corrections는 순위와 무관하게 이기므로 재판정 결과가 `resolvedBy: CORRECTION`으로 원장에 얹힌다. 큐·심판을 고칠 필요 없이 같은 큐 행의 필드로 자동 분류된다. · 잃는 것: 남은 부분집합의 검수 비용. 재판정이 끝나기 전까지 그 건들의 정답이 미확정으로 남아 정확도의 분모가 흔들린다.
+- `2. 순위가 언제나 이긴다 — 지금 돌고 있는 `LINEAGE_RANK`를 그대로 판례로 승인한다` — 바뀌는 것: GT 라벨은 한 건도 바뀌지 않고 이 군집 전체가 `GOAL` 귀책에서 풀린다. 심판이 인용할 문장이 생겨 `policyAnswer: UNRESOLVABLE`이 사라진다. 가장 싸고 가장 빠르다. · 잃는 것: 시트의 named 리뷰어 결정이 근거 없이 덮인 채 굳는다. 특히 `MUSINSA:4816021`처럼 상품명에 '공용'이 있어 정책 1순위(직접 성별 문구)가 `UNISEX`를 지시하는 건이 GT `FEMALE`로 확정되므로, 이 선택은 곧바로 policy.md의 P1을 고치라는 요구(귀책 POLICY, "정책이 목표를 옮기지 못했다")로 되돌아온다.
+- `3. 두 계보가 일치하는 건만 평가에 쓴다 (BG-0003의 B)` — 바뀌는 것: 군집이 통째로 평가에서 빠지고 표면 정확도가 올라간다. 아무 GT도 건드리지 않는다. · 잃는 것: 가장 어려운 사례가 통째로 빠져 정확도가 부풀려진다. 충돌은 다음 스냅샷에서 그대로 다시 올라오고, BG-0003이 이미 "갱신이 이 문제를 풀지 않는다"고 적어 둔 상태가 반복된다.
+
+- 권고: 선택지 1. 그리고 **새 판례를 열지 말고 BG-0003의 「판정」 칸을 이 술어로 채우는 것**으로 닫는다(파일: /Users/mj/musinsa/dev/my-claude-code-os/.claude/os/attributes/bag-category-gender/policy/precedents/BG-0003.md). 기록은 사람이 한다 — 이 정찰은 초안까지다. — BG-0003은 이미 A+C를 권고하고 "시트의 named 리뷰어 결정을 뒤의 판정이 덮은 건은 A만으로 풀리지 않는다. C가 필요하다"까지 적어 두었다. 비어 있는 것은 방향이 아니라 **어느 행이 C로 가는가**이고, 큐 행의 `supersededLineages[].goldSource`가 그 경계를 이미 관찰 가능한 값으로 들고 있다. 그 술어 한 줄이 들어가면 군집이 기계적으로 둘로 갈리고, 한쪽은 즉시 확정되고 다른 쪽만 사람 앞에 남는다. 선택지 2가 매력적으로 보이는 이유(현행 동작과 같다)가 곧 위험이다 — 이 스냅샷에서는 계보 순위와 "최신 사람 검수"(GQ-SOURCE-001의 권고 문구)가 같은 답을 내서 아무도 결정을 강요받지 않았지만, 두 규칙은 일반적으로 다른 답을 낸다. 그래서 판례가 열린 채로 사이클이 계속 돈다.
+- 반례: `EGOOCM:3412663` (GT FEMALE (scoring / MJ_CHAT_REVIEW_2026-09-04) · 실행 UNISEX) — 진 계보가 `FINAL_AQ_20260903`(명시적 검수 시트)에서 `UNISEX`를 적었다. 선택지 1이면 순위로 덮지 않고 corrections 재판정 대상이 된다(재판정 전까지 정본 미확정). 선택지 2면 `FEMALE`이 그대로 정본이 되고, 시트 라벨과 같은 값을 낸 실행이 오답으로 집계된다.
+- 반례: `EGOOCM:3430473` (GT FEMALE (scoring / MJ_CHAT_REVIEW_2026-09-05) · 실행 UNISEX) — 위 건과 `conflictKind`·현재 GT·진 라벨·실행 라벨이 전부 같은데 진 라벨의 출처만 `ORIGINAL_H_FALLBACK`(일괄 폴백)이다. 선택지 1이면 재판정 없이 `FEMALE`로 확정되어 군집에서 빠진다. 두 건이 오직 `supersededLineages[].goldSource` 하나로만 갈리므로, 이 답이 정확히 그 술어를 정의해야 한다는 것을 보여 준다.
+- 반례: `MUSINSA:4816021` (GT FEMALE (scoring / MJ_CHAT_REVIEW_2026-09-04) · 실행 FEMALE) — 이 군집 안에서 유일하게 정책이 답을 내는 행이다 — `policyRule: P1_DIRECT_TEXT`, `policyNote: "상품명에 직접 성별 문구 '공용'이 있다. 1순위 근거는 이미지보다 우선한다."`, `policyAnswer: UNISEX`(귀책 POLICY). 진 계보(`FINAL_AQ_20260903`)의 `UNISEX`가 정책의 1순위와 일치한다. 선택지 1이면 재판정을 거쳐 GT가 정책과 다시 맞을 길이 열리고, 선택지 2면 P1과 정면으로 충돌하는 GT가 정본으로 굳어 고칠 곳이 GT에서 정책으로 옮겨간다.
+- 못 읽은 것: /Users/mj/musinsa/dev/my-claude-code-os/.claude/os/runs/bag-category-gender/policy/bag-category-gender.md (가져온 읽기 전용 스냅샷). 이 군집의 다툼은 프롬프트 문장이 아니라 GT 계보 서열이라 소유 정책 policy.md로 충분했다
+- 못 읽은 것: /Users/mj/musinsa/dev/my-claude-code-os/.claude/gt/bag-category-gender/gt.jsonl · lineage.json. gt-layer 계약 「읽는 쪽의 의무」가 계보 파일을 다시 비교하지 말라고 정했고, 큐 행이 goldLineage·supersededLineages·resolvedBy를 이미 싣고 있다
+- 못 읽은 것: runs/bag-category-gender의 manifest.json(`integrity.goldLabelConflicts`)과 run-summary.json. 건수를 세는 자리라 열지 않았다 — 영향 건수는 워크리스트가 이미 세었다
+- 못 읽은 것: 이 군집에 속한 나머지 상품의 개별 심판 행. 표본 키 5건과 P1_DIRECT_TEXT 행 1건만 열었다. 군집 소속 판정은 워크리스트의 몫이고, 개별 라벨 판단은 catalog-golden-adjudicator의 몫이다
+- 못 읽은 것: 상품 이미지·장면 타일. 이 질문은 사진으로 갈리지 않는다 — 어느 계보를 정본으로 볼 것인가는 이미지 근거 이전의 결정이다
+
+### PC-02 · GOAL:NO_APPLICABLE_RULE:POLICY_GOLDEN_CONFLICT
+
+- 귀책: GOAL — 사람이 목표 기준으로 경계를 정한다
+- 결함: 공백 — 소유 정책은 §허용값에서 "`UNISEX` — 공용 직접 표기가 있거나, 기능·구조가 명확히 공용이다"라고 `UNISEX` 경로를 열어 두었지만, §근거 우선순위는 세 순위(직접 문구·여성용 결합 디자인·대상 가방 착용자)만 열거하고 §근거 유형은 `TEXT·PRODUCT_ONLY·HUMAN·MIXED·UNDETERMINED` 다섯만 둔다. 그래서 이 근거에는 순위도 이름도 없고, 심판(`arbiter_bag_category_gender.py:140-146`)이 `UNRESOLVABLE / NO_APPLICABLE_RULE`로 떨어진다 — 정책이 이 종류에 답을 낼 문장을 갖고 있지 않다(판정표 3).
+- 영향: 10건 (표본 EGOOCM:3425317, EGOOCM:3447598, EGOOCM:3474392, MUSINSA:3539191, MUSINSA:3588401)
+
+**질문 — 가방 자체의 기능·구조가 공용이라는 관측을 `UNISEX`를 내는 순위 있는 근거로 인정할 것인가, 아니면 인정하지 않고 `UNDETERMINED`로 남길 것인가?**
+
+- `A. 3순위 착용자 **아래**에 4순위로 넣는다 (권고)` — 바뀌는 것: 정책 §근거 우선순위에 4순위 「가방 자체의 기능·구조 공용」을 추가하고 §근거 유형에 `PRODUCT_FUNCTION`을 신설한다. 심판 `policy_answer`에 그 분기를 넣고, `_no_evidence`의 조건을 `decisionSource == "NONE"`에서 「정책 순위에 해당하는 근거가 하나도 없음」으로 넓힌다. 프로덕션 프롬프트의 출력 스키마 `evidenceType` enum에도 값을 추가해야 한다. 결과: 공용을 관측한 건은 `UNISEX`로 가 GT와 맞고, 관측이 없는 건은 `UNDETERMINED`가 되어 BG-0002 자리로 이관된다. · 잃는 것: 「기능·구조가 명확히 공용인 카테고리」 목록을 정책이 들고 관리해야 한다. 상세가 없는 건이 `UNDETERMINED`로 몰려 커버리지가 줄고, BG-0002가 답하기 전에는 그 값이 저장 계층에서 어디로 가는지 정해지지 않는다. 그리고 이 답은 수입 정책 스냅샷의 「표준 백팩·브리프케이스처럼 구조가 공용이라는 이유로는 UNISEX가 되지 않습니다」를 정면으로 뒤집는 결정이다 — 프롬프트 재컴파일이 따라온다.
+- `B. 2순위 여성용 결합 디자인과 같은 층(가방 자체 속성)에 두어 착용자보다 **위**로 올린다` — 바뀌는 것: 「가방 자체 속성이 모델 연출보다 우선한다」는 §2순위 원칙을 공용 쪽에도 대칭으로 적용한다. 이 군집뿐 아니라 단일 성별 모델이 기능형 가방을 멘 건까지 `UNISEX`로 넘어간다. · 잃는 것: 물어보지 않은 자리에서 값이 바뀐다. `P3_WEARER`로 이미 답이 나오던 건(PC-03 군집, BG-0001이 막고 있는 자리)까지 함께 뒤집혀, 이번 답의 파장이 경계 밖으로 나간다. 남성 코너 의도가 실제로 있는 기능형 가방도 `UNISEX`가 되어 GT가 단일 성별인 건과 새 충돌을 만든다.
+- `C. 인정하지 않는다. 세 순위 불성립이면 `UNDETERMINED`로 통일한다` — 바뀌는 것: 소유 정책 §허용값의 「기능·구조가 명확히 공용이다」와 §판정 불가 조건의 「표준 백팩·캐리어·브리프케이스처럼 … `UNISEX`를 고려한다」를 지운다. 수입 스냅샷과 문장이 다시 일치한다. 이 군집 전체가 `UNDETERMINED`가 되고, GT `UNISEX`와의 차이는 GT 쪽 재검수로 넘어간다. · 잃는 것: 표준 백팩·캐리어 같은 큰 카테고리가 통째로 `UNDETERMINED`가 되어 커버리지가 크게 준다. 더 무거운 대가는, 사람 검수가 이미 단일 성별에서 `UNISEX`로 옮겨 놓은 GT(`goldLabelBeforeRefresh: "MALE"` → `goldLabel: "UNISEX"`, `goldSource: "DO_SHEET_91_AQ_FINAL_REVIEW_20260902"`)를 정책이 영영 재현하지 못한다는 것이다 — engine/goal.md §2의 2번(GT는 맞는데 정책이 재현 못 함)이 그대로 굳는다. 또 군집 하나로 닫히지 않고 건 단위 GT 재검수가 뒤따른다.
+
+- 권고: A. 세 가지 이유다. ① **새 판단이 아니라 이미 쓴 문장에 순위와 이름을 주는 것**이라 비용이 가장 작다. 정책은 이미 `UNISEX`를 「기능·구조가 명확히 공용」으로 정의해 놓고 그 근거가 지나갈 순위와 유형만 만들지 않았다. 그 증거가 큐에 그대로 있다 — `EGOOCM:3425317`의 `detailEvidence`는 "기능과 구조가 명확한 표준 백팩 디자인으로 남녀 공용 사용 가능"인데 `detailEvidenceType`은 `UNDETERMINED`다. 실행은 정책이 인정한 것을 관측하고도 산문으로만 적을 수밖에 없었다. ② **C보다 근거가 많다.** 이 군집의 여러 건에서 GT는 사람 검수를 거쳐 단일 성별 → `UNISEX`로 *옮겨온* 값이다. 사람이 한 방향으로 이미 옮긴 것을 되돌리려면 그 검수를 뒤집을 별도 근거가 있어야 하는데, 이 군집에는 없다. ③ **B가 아니라 A인 이유는 파장이다.** 판정표 3의 처방은 정책이 답을 못 내는 자리를 메우는 것이지 이미 답이 나오던 자리를 바꾸는 것이 아니다. A는 `NO_APPLICABLE_RULE`로 떨어지던 자리에서만 새 값을 만들고, `P3_WEARER`로 답이 나오던 건은 건드리지 않는다.
+
+답하는 사람이 알아야 할 것 하나: **이 질문은 소유 정책과 수입 정책이 정면으로 다른 자리다.** 수입 스냅샷(`runs/bag-category-gender/policy/bag-category-gender.md:33`)은 "표준 백팩·브리프케이스처럼 구조가 공용이라는 이유 … 로는 UNISEX가 되지 않습니다"라고 **금지**하는데, 소유 정책(`policy/policy.md:24,80`)은 같은 조건을 **허용**한다. 소유 정책 머리말의 "스냅샷에 없던 판단을 새로 넣지 않았다"는 이 대목에서 사실이 아니다. A를 고르면 프로덕션 문장을 뒤집는 것이고, C를 고르면 소유 정책을 스냅샷에 맞추는 것이다. 어느 쪽이든 이 불일치를 모르고 답하면 안 된다. — 군집의 다섯 표본은 심판이 전부 `NO_APPLICABLE_RULE`로 떨어뜨린 자리다. 어댑터를 따라가면 이유가 하나로 모인다 — `policy_answer`는 `detailEvidenceType`이 `{HUMAN, TEXT, MIXED}`일 때만 3순위까지 쓰고, `PRODUCT_ONLY`면 「이미지로 봐야 한다」로 보류하며, 나머지는 전부 `NO_APPLICABLE_RULE`이다. 이 군집의 행들은 전부 `detailEvidenceType`이 `UNDETERMINED`이거나 null이다. (같은 큐의 `EGOOCM:3413959`·`MUSINSA:4970995`는 `PRODUCT_ONLY`라 `P2_COMBINED_DESIGN`으로 갈라져 워크리스트 `excluded`의 다른 군집으로 갔다 — 군집 경계가 실제로 이 필드에서 갈린다는 확인이다.)
+
+그런데 그 `UNDETERMINED`가 「모른다」가 아니다. 판독문을 읽으면 넷 중 넷이 **공용을 적극적으로 서술한다** — "기능과 구조가 명확한 표준 백팩 디자인으로 남녀 공용 사용 가능"(`EGOOCM:3425317`), "기능적 구조의 더플백으로 성별 구분 없는 디자인임"(`EGOOCM:3447598`), "기능적 구조의 파우치로 성별 구분 없는 디자인임"(`EGOOCM:3474392`), "여행용 파우치 세트로 기능과 구조가 명확한 공용 상품임"(`MUSINSA:3539191`). 소유 정책 §허용값의 `UNISEX` 정의를 거의 그대로 옮긴 문장인데, 담을 유형이 없어 `UNDETERMINED`로 찍혔다. 수입 스냅샷 40행의 출력 스키마 `evidenceType`이 `HUMAN|PRODUCT_ONLY|TEXT|MIXED|UNDETERMINED`뿐인 것과 일관된다 — 스냅샷은 이 경로를 금지했으니 자리를 만들 이유가 없었다. 소유 정책이 경로만 열고 유형표는 스냅샷 것을 그대로 물려받은 것이 공백의 기계적 원인이다.
+
+부수 관찰 하나를 덧붙인다. `EGOOCM:3447598`("Light Duffle Bag (M) White")과 `EGOOCM:3474392`("Blue garden basic pouch(M)")는 `decisionSource: "NAME"`, `mismatchClassificationBasis: "상품명의 명시적 성별 표기와 GT가 충돌함"`으로 `MALE`을 냈는데, 여기서 "(M)"은 사이즈 토큰이다. 소유 정책 1순위가 인정하는 토큰(여성용·우먼즈·남성용·맨즈·남녀공용·유니섹스) 어디에도 없어 심판은 이를 근거로 세지 않는다. 이 조각만 떼면 실행 결함이지만, 떼어내도 두 건은 여전히 이 군집에 남는다 — 정책에 `UNISEX` 경로가 없다는 사실이 바뀌지 않기 때문이다. 그래서 별도 군집으로 쪼개지 않고 여기 적어 둔다. 실행 귀책은 워크리스트가 이미 `handoff`의 `owner: "RUNTIME"`으로 분리해 두었다.
+
+중복은 없다고 본다. `blockedBy`가 비어 있고, 세 판례와 세 질문 어느 것도 이 조건을 덮지 않는다. BG-0001/GQ-GT-001은 "정책의 **직접 근거가 단일 성별을 지지하는데** GT가 `UNISEX`"인 경우로 이 군집의 정확한 반대다(여긴 직접 근거가 없다). BG-0001 적용 예시의 마지막 줄 "남성 모델만 착용한 표준 백팩인데 GT가 `UNISEX`인 경우 → 이건 A의 대상이 아니다"가 이 군집을 명시적으로 밖으로 밀어낸다 — 밀어냈지만 어디로 보낼지는 정해 주지 않았고, 그 빈자리가 PC-02다. BG-0002/GQ-RUN-001은 `UNDETERMINED` → `UNISEX` 저장 변환이라 방향이 반대다(여기 최종값은 `UNISEX`가 아니라 단일 성별이다). 다만 A를 고르면 상세 없는 건이 `UNDETERMINED`로 몰려 BG-0002의 부담이 커지므로, 두 답은 같이 읽혀야 한다 — 인접하지만 중복은 아니다. BG-0003/GQ-SOURCE-001은 소스 충돌(PC-01)이고 이 행들은 단일 소스다.
+- 반례: `EGOOCM:3425317` (GT UNISEX · 실행 MALE) — 「[슈베어] 메쉬 포켓 백팩」, `가방>백팩`. 공용을 **관측한** 쪽이다. `detailStatus: "OK"`이고 `detailEvidence`가 "기능과 구조가 명확한 표준 백팩 디자인으로 남녀 공용 사용 가능"인데 `detailEvidenceType`은 `UNDETERMINED`다. 인용 장면 `D01T01`·`D01T03`의 `sceneNotes`가 각각 "성별 불명 · 휴대 · 확신 낮음", "성별 불명 · 착용 · 확신 낮음"이라 3순위 착용자 근거도 성립하지 않는다. 실행의 `MALE`은 `thumbnailFold: "MALE"` 하나에서 왔다. GT는 `goldLabelBeforeRefresh: "MALE"`에서 사람 검수(`DO_SHEET_91_AQ_FINAL_REVIEW_20260902")로 `UNISEX`로 옮겨온 값이다. A에서는 `UNISEX`가 나와야 한다.
+- 반례: `MUSINSA:3588401` (GT UNISEX · 실행 MALE) — 「크런치 폴디드 나일론 토트백 (블랙)」, `가방>토트백`. 공용을 **관측한 적이 없는** 쪽이다. `detailImageCount: 0`, `detailStatus`·`detailEvidence`·`detailEvidenceType`·`policyPromptVersion`이 전부 null이고 `collectionSources`가 비었다. 즉 상세 판독 자체가 없었고, 실행의 `MALE`은 `thumbnailFold: "MALE"`만으로 나왔다. GT는 여기서도 `goldLabelBeforeRefresh: "MALE"` → `UNISEX`로 옮겨온 값이다. A에서는 `UNISEX`가 아니라 `UNDETERMINED`가 나와야 한다 — 기능·구조 공용을 승격하더라도 그것을 본 적이 없으면 낼 수 없기 때문이다.
+
+**이 쌍이 세 선택지를 가른다.** 지금은 두 건의 GT도 실행값도 똑같아서 큐에서 구분되지 않는다. A만 둘을 `UNISEX`와 `UNDETERMINED`로 가르고, B는 둘 다 `UNISEX`로, C는 둘 다 `UNDETERMINED`로 만들어 「관측했는가」라는 구분을 지운다. 답이 이 쌍을 가르지 못하면 그 답은 이 군집을 닫지 못한 것이다.
+- 못 읽은 것: `runs/bag-category-gender/review/verdicts.jsonl` — 심판 판정 원본. 워크리스트가 이미 요약해 실은 필드(`policyRules`·`arbiterReasons`·`blockedBy`)만 근거로 썼다. 건별 판정은 이 정찰의 단위가 아니라 열지 않았다
+- 못 읽은 것: `runs/bag-category-gender/run-summary.json` — 영향 건수는 워크리스트가 이미 세어 두었으므로 열지 않았다. 세지 않는 것이 이 자리의 규칙이다
+- 못 읽은 것: `queue/policy-golden-conflict.jsonl`의 전수 — `sampleProductKeys` 다섯 건과 군집 경계 확인에 필요한 인접 행까지만 열었다. 나머지 행이 같은 조건을 만족하는지는 확인하지 않았다
+- 못 읽은 것: `EGOOCM:3425317`의 `evidenceImageUrls` 실제 사진 — 원격 이미지를 열지 않았다. 장면 노트(`sceneNotes`)의 문자 기록만 근거로 썼으므로, 「착용자 근거 불성립」은 실행이 스스로 적은 기록에 근거한 것이지 사진을 다시 본 결과가 아니다. 사진 대조가 필요하면 `catalog-evidence-recheck`의 몫이다
+- 못 읽은 것: `../core-catalog-platfom`의 LLD·version-registry(프로필 `references`) — 프로덕션 정본에 기능·구조 공용의 지위가 따로 적혀 있을 수 있으나, 이 저장소 밖이라 열지 않았다. A를 고를 때 프롬프트 재컴파일 범위를 잡으려면 이 문서 확인이 선행되어야 한다
+
+### PC-03 · PRECEDENT:BG-0001
+
+- 귀책: PENDING_PRECEDENT — 미결 판례가 답해야 정해진다
+- 결함: 오역 — 정책은 답을 낸다(`verdicts.jsonl` 41행: `policyAnswer: "FEMALE"`, `policyRule: "P3_WEARER"`). 그런데 그 답을 만든 문장 — policy.md 근거 우선순위 3의 "한 성별만 이 가방을 착용했으면 그 성별을 낸다" — 은 goal.md 귀책 원칙 2 "한 장면의 착용자 성별은 상품의 대상이 아니다. 연출일 수 있다"와 정면으로 어긋난다. 정책이 답을 못 내는 공백(판정표 3)이 아니라, 답을 내는데 목표가 인정하지 않는 답을 내는 오역(판정표 2)이다.
+- 영향: 10건 (표본 EGOOCM:3420094, EGOOCM:3458125, EGOOCM:3460326, EGOOCM:3484743, MUSINSA:4459402)
+
+**질문 — 대상 가방을 착용·휴대한 사람이 유일한 근거이고 한 성별만 관측된 상품에서, 그 성별을 확정 라벨로 낼 최소 조건(서로 독립된 장면 몇 개)은 무엇이며, 그 조건에 못 미치면 UNISEX인가 UNCLASSIFIED인가?**
+
+- `A. 착용자 근거는 서로 독립된 장면 2개 이상에서 같은 성별이 대상 가방을 착용·휴대할 때만 확정 근거로 인정하고, 미달이면 UNCLASSIFIED를 낸다` — 바뀌는 것: 이 군집의 정책·실행 답이 MALE/FEMALE에서 UNCLASSIFIED로 내려간다. GT의 UNISEX도 오답이 되어 UNCLASSIFIED로 정정 대상이 된다. policy.md 근거 우선순위 3에 장면 수 단서가 붙고, 심판의 P3_WEARER 강도가 WEAK를 벗어나 BG-0001 의존이 끊긴다. · 잃는 것: 커버리지가 준다. 라벨이 이미지 수집·컷 선택에 종속된다 — MUSINSA:4459402는 준비 타일 29장 중 12장만 선택되고 omittedImageCount가 17이라, 임계값을 넘고 못 넘고가 촬영이 아니라 수집 품질로 갈릴 수 있다. 저장 라벨 이름(프로필의 UNCLASSIFIED와 정책의 UNDETERMINED)은 BG-0002가 닫혀야 정리된다.
+- `B. 현행 정책 문장을 유지하고(한 성별만 착용 → 그 성별) goal.md 귀책 원칙 2를 "다른 근거가 없을 때 대상 가방 착용자의 성별은 대상 근거로 쓴다"로 고쳐 목표를 정책에 맞춘다` — 바뀌는 것: 정책·실행 답이 그대로 MALE/FEMALE로 남고, GT의 UNISEX가 오류로 확정된다. 이 군집이 정책 군집에서 GT 건 단위 목록으로 통째로 옮겨간다. 소유 정책과 프로덕션 프롬프트(imported 스냅샷 33행 "한 성별만 착용·휴대했으면 그 성별입니다")를 손대지 않아도 된다. · 잃는 것: 목표 문서를 데이터와 기존 프롬프트에 맞춰 후퇴시킨다. 화보 컷 하나가 라벨을 정하게 되고 "연출일 수 있다"는 방어가 사라진다. 최근 검수들이 이미 반대 방향으로 손댄 GT(goldLabelBeforeRefresh가 단일 성별 → 현재 UNISEX)를 다시 뒤집어야 한다.
+- `C. 착용자 근거만 있는 경우 GT의 UNISEX를 정본으로 두고, 정책 3순위에서 "한 성별만 착용했으면 그 성별" 문장을 뺀다` — 바뀌는 것: 실행 답이 UNISEX가 되어 GT와 일치하고 표면 정확도가 올라간다. GT는 손댈 것이 없다. · 잃는 것: 정책이 스스로 가장 중요하다고 적은 규칙("근거 부족을 UNISEX로 대신하지 않는다", policy.md 판정 불가 조건)을 본문에서 깬다. BG-0002가 막으려는 UNDETERMINED→UNISEX 붕괴를 정책 문장으로 승인하는 셈이라 두 판례가 서로 반대 방향으로 닫힌다.
+
+- 권고: A. goal.md 원칙 2(한 장면의 착용자는 대상이 아니다)와 원칙 3(근거가 없으면 UNISEX가 아니라 UNDETERMINED)을 동시에 지키는 유일한 안이고, policy.md 판정 불가 조건과도 충돌하지 않는다. B는 목표를 데이터에 맞춰 후퇴시켜 이후 모든 프롬프트 개선이 "연출 컷"에 맞춰지고, C는 정책이 스스로 금지한 것을 규칙으로 새겨 BG-0002와 정면으로 부딪힌다. 다만 A를 고를 때 장면 수를 숫자로 박기 전에 `policyEvidenceSceneIds`와 `omittedImageCount`를 사람이 한 번 봐야 한다 — 이 군집의 표본은 모두 장면이 하나뿐인데, 그것이 실제로 한 컷뿐이어서인지 수집이 나머지를 버려서인지가 임계값의 의미를 바꾼다. 그리고 이 답은 BG-0001에 붙일 것이 아니라 **새 판례로 세워야 한다.** 심판이 이 군집을 BG-0001로 보내지만(`arbiter_bag_category_gender.py`의 `blockedBy: ["BG-0001"]`), BG-0001은 자기 적용 예시에서 이 종류를 대상에서 뺀다. BG-0001이 A·B·C 중 무엇으로 닫혀도 이 열 건은 그대로 막혀 있다. — 판정표로 읽으면 ②는 "낸다"(policyAnswer FEMALE/MALE), ③은 "다르다"(goldLabel UNISEX)다. 남은 것은 ①인데, goal.md는 이 군집에 대해 침묵하지 않는다 — 원칙 2가 착용자 근거를 대상 근거에서 빼고, 원칙 3이 근거 부족을 UNISEX로 대신하는 것을 막는다. 두 문장을 그대로 적용하면 목표가 옳다고 보는 값은 정책의 MALE/FEMALE도 아니고 GT의 UNISEX도 아니다. 그래서 정책 쪽이 먼저 틀렸다고 보고 MISTRANSLATION으로 찍었다.\n\n소유 정책과 프로덕션 스냅샷은 여기서 갈리지 않는다. imported 스냅샷 33행도 "한 성별 모델만 나오는 화보라는 이유로는 UNISEX가 되지 않습니다. 한 성별만 착용·휴대했으면 그 성별입니다"로 같은 말을 한다. 즉 개선 대상은 둘의 차이가 아니라 둘이 함께 목표에서 벗어난 지점이다.\n\n한편 GT 쪽은 이미 사실상의 경계 판정을 내렸다. 표본 다섯 건의 goldSource가 DO_SHEET_91_AQ_FINAL_REVIEW_20260902 · MJ_EXPLICIT_POUCH_BOUNDARY_REVIEW_2026-09-05 · CODEX_PRODUCT_USE_POLICY_REVIEW_2026-09-05 · GOOGLE_DRIVE_HUMAN_REVIEW_2026-08-31로 서로 다른데, goldLabelBeforeRefresh는 하나같이 단일 성별(FEMALE/MALE)이고 현재 값은 전부 UNISEX다. 여러 검수가 각자 "한 성별 모델만 나온 것으로는 부족하다"고 판단해 UNISEX로 옮긴 셈인데, 그 판단이 정책에도 목표에도 문장으로 적히지 않았다. 이 질문이 닫히면 그 암묵적 결정이 문장이 되거나 뒤집힌다.\n\n성별 대칭도 확인했다. MUSINSA:4459402(MULTI POUCH 003)는 남성 단독 착용(D03T01) · gold UNISEX · run MALE로 같은 형태의 거울상이다. 어느 안을 고르든 여성 쪽과 남성 쪽에 같은 규칙이 적용되어야 한다.
+- 반례: `EGOOCM:3420094` (GT UNISEX · 실행 FEMALE) — TOTE BROCLE [SUEDE MOCHA COMBI]. sceneNotes는 D01T01 "여성 · 착용" 하나뿐이고 반대 성별이 어느 장면에도 없다. 직접 문구도 결합 디자인도 없다(textSignal null, detailEvidenceType HUMAN). 순수하게 장면 수 임계값만으로 갈리는 쪽이다 — A면 UNCLASSIFIED, B면 FEMALE. goldLabelBeforeRefresh는 FEMALE이었고 DO_SHEET_91_AQ_FINAL_REVIEW_20260902이 UNISEX로 옮겼다.
+- 반례: `EGOOCM:3484743` (GT UNISEX · 실행 FEMALE) — 여권 케이스. sceneNotes에 D01T01 "여성 · 착용"과 D06T01 "남성 · 대상 상품 아님"이 함께 있다. 남성이 화면에 있지만 대상 가방을 들지 않았다. 답이 "대상 가방을 착용한 사람만 센다"를 유지하면 이 건은 EGOOCM:3420094와 같은 값이 되고, "남녀가 함께 찍혔으면 UNISEX"로 넓히면 이 건만 UNISEX가 되어 현재 GT와 우연히 같아진다. 두 건이 서로 다른 값을 가져야 하는 지점이 정확히 여기다. 이 행은 mismatchClassification이 MODEL_ERROR로 찍혀 있어, 답이 없으면 정책 경계 문제가 실행 오류로 잘못 분류되어 나간다.
+- 못 읽은 것: `.claude/os/runs/bag-category-gender/queue/golden-policy-violation-candidate.jsonl`·`interaction-policy-recovered.jsonl`의 나머지 행 — sampleProductKeys 다섯 건과 대조용 두 행만 열었다. 영향 건수는 워크리스트가 이미 셌고 이 정찰은 세지 않는다
+- 못 읽은 것: `.claude/gt/bag-category-gender/gt.jsonl`·`lineage.json` — GT 계보 원장은 열지 않았다. 이 군집의 GT 출처는 큐 행의 goldSource·goldLabelBeforeRefresh 필드로만 확인했다. 어느 계보가 UNISEX를 얹었는지 계보 단위로 확정하려면 원장을 봐야 하지만, 그 축은 BG-0003의 몫이다
+- 못 읽은 것: `runs/bag-category-gender/run-summary.json`과 reports의 HTML 네 장 — 건수·정확도 지표는 이 판단에 필요 없고, 숫자를 두 곳에서 만들지 않기 위해 열지 않았다
+- 못 읽은 것: profile.references가 가리키는 `../core-catalog-platfom/docs/gender/*` — 이 저장소 밖이라 열지 않았다. 3순위 근거의 원래 의도가 LLD에 더 적혀 있을 수 있다
+- 못 읽은 것: evidenceImageUrls의 실제 사진 — 착용 장면이 정말 대상 가방인지, 한 장면뿐인 것이 촬영 탓인지 수집 탓인지는 사진을 봐야 갈린다. 건 단위 판단이라 `catalog-golden-adjudicator`·`catalog-evidence-recheck`의 몫이다
+
+## 이 스윕이 다루지 않은 것
+
+- 귀책 `NONE` 211건 — 심판이 충돌 없다고 본 건이다. 개선 포인트가 아니다.
+- 귀책 `RUNTIME` 50건 — 정책이 아니라 실행이 어긴 건이다. 이 프로세스의 몫은 분리해 넘기는 것까지다.
+- --limit-gt 상한에 걸렸다. 상한을 올리면 그대로 이어서 나온다 — 2
+- --limit-clusters 상한에 걸렸다. 상한을 올리면 그대로 이어서 나온다 — 2

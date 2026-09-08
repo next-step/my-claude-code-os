@@ -1,0 +1,115 @@
+{
+  "cases": ".claude/os/review/cases/reading-cases.json",
+  "contrasts": [
+    {
+      "collapsed": 0,
+      "comparedRuns": 3,
+      "pair": [
+        "G1-banner-left",
+        "G2-banner-right"
+      ]
+    }
+  ],
+  "generatedAt": "2026-09-06T16:27:25.364471+00:00",
+  "note": "판독자 반복 호출 채점. 다수결로 합치지 않는다 — 갈린 사실을 그대로 남긴다.",
+  "results": [
+    {
+      "agent": "catalog-single-model-reader",
+      "caseId": "G1-banner-left",
+      "distinctAnswers": 1,
+      "hits": 3,
+      "misses": [],
+      "phase": "final",
+      "runs": 3,
+      "truthBasis": "CONTRAST"
+    },
+    {
+      "agent": "catalog-single-model-reader",
+      "caseId": "G2-banner-right",
+      "distinctAnswers": 1,
+      "hits": 3,
+      "misses": [],
+      "phase": "final",
+      "runs": 3,
+      "truthBasis": "CONTRAST"
+    },
+    {
+      "agent": "catalog-single-model-reader",
+      "caseId": "G3-no-face",
+      "distinctAnswers": 1,
+      "hits": 3,
+      "misses": [],
+      "phase": "final",
+      "runs": 3,
+      "truthBasis": "STRUCTURAL"
+    },
+    {
+      "agent": "catalog-single-model-reader",
+      "caseId": "G4-clear-face",
+      "distinctAnswers": 2,
+      "hits": 2,
+      "misses": [
+        "#2: faceVisibility='PARTIAL' (기대 'VISIBLE')"
+      ],
+      "phase": "final",
+      "runs": 3,
+      "truthBasis": "CORROBORATED"
+    },
+    {
+      "agent": "catalog-carrier-link-reader",
+      "caseId": "L1-banner-no-object",
+      "distinctAnswers": 1,
+      "hits": 3,
+      "misses": [],
+      "phase": "final",
+      "runs": 3,
+      "truthBasis": "STRUCTURAL"
+    },
+    {
+      "agent": "catalog-carrier-link-reader",
+      "caseId": "L2-variant-colorway",
+      "distinctAnswers": 2,
+      "hits": 0,
+      "misses": [
+        "#1: isTarget='UNSURE' (기대 'VARIANT')",
+        "#2: isTarget='MATCH' (기대 'VARIANT')",
+        "#3: isTarget='MATCH' (기대 'VARIANT')"
+      ],
+      "phase": "before",
+      "runs": 3,
+      "truthBasis": "STRUCTURAL"
+    },
+    {
+      "agent": "catalog-carrier-link-reader",
+      "caseId": "L2-variant-colorway",
+      "distinctAnswers": 1,
+      "hits": 3,
+      "misses": [],
+      "phase": "final",
+      "runs": 3,
+      "truthBasis": "STRUCTURAL"
+    },
+    {
+      "agent": "catalog-carrier-link-reader",
+      "caseId": "L3-two-prints-one-tile",
+      "distinctAnswers": 1,
+      "hits": 3,
+      "misses": [],
+      "phase": "final",
+      "runs": 3,
+      "truthBasis": "STRUCTURAL"
+    },
+    {
+      "agent": "catalog-carrier-link-reader",
+      "caseId": "L4-true-carry",
+      "distinctAnswers": 1,
+      "hits": 3,
+      "misses": [],
+      "phase": "final",
+      "runs": 3,
+      "truthBasis": "STRUCTURAL"
+    }
+  ],
+  "schemaVersion": "catalog-reading-trials-v1",
+  "unknownCaseIds": []
+}
