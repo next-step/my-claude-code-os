@@ -176,3 +176,6 @@ Day2 과제 완료 조건 = 필수 3 + 도전 2.
   `check-context-wiring.sh --self-test`: 임시 복사본에 Lazy 끊김·훅 미등록·고아 파일 3종을 일부러
   주입해 검사기가 FAIL 로 잡는지 검증 (실제 파일 불변). + `verify-wiring-on-edit.sh` PostToolUse 훅으로
   `CLAUDE.md`·`.claude/context/`·`settings.json`·에이전트·스킬 편집 시 자동 배선 재검사.
+- 2026-09-08 `knowledge/systems/board.md` 생성 — classifier A/B 가 2회 찾은 갭(시스템 관리주체를
+  추측으로 대체) 을 채움. `.claude/knowledge/` 레이어 신설(README + board.md). 의존 표·classifier
+  Read 목록·배선 검사(19건 PASS)·도식 갱신. A/B 는 재실행 안 함.

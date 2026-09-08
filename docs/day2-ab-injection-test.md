@@ -104,9 +104,11 @@ B3 도 "React가 팀 주력 스택인지 확인되지 않았다 — 아니라면
 - 이번에 새로 추가·배선한 **`sizing.md`** 가 A·A2·A3 세 번 모두 `적용한 기준` 에 인용됨 → 필수 1의 배선이 실제로 소비됨을 입증.
 - `team-capability.md`(@import 항상 로드) 도 세 라운드 전부에서 인용됨. 특히 라운드 3의 판단을
   뒤집은 결정적 근거가 이 파일의 "부분대응 → 안 하는 것" 표였다.
-- **갭 발견**: A2가 "`§0` 는 보안을 사내 IT팀 수행으로 규정하는데, 실제 수행 주체가 개발팀인지 IdP/보안팀인지
-  문서로 확인 불가" 를 지적. `.claude/knowledge/systems/board.md` 부재가 원인 → 다음 컨텍스트 후보
-  (`.claude/knowledge/systems/`)로 메울 거리.
+- **갭 발견 → 채움**: A2·A3 가 "`sandbox/board` 의 관리주체·담당 벤더가 문서로 확인 불가 → 추측으로 대체"
+  를 지적. `.claude/knowledge/systems/board.md` 부재가 원인이었음.
+  → **이후 `board.md` 생성** (내부 관리·벤더 없음·스택·REQ-001 이력). 이제 `classifier` §1② 가
+  추측이 아니라 조회가 되고, `context/README.md` 의존 표 + 배선 검사(`check-context-wiring.sh`)에 포함됨.
+  (A/B 는 재실행하지 않음 — 발견 자체는 유효하고, 채운 뒤 배선만 확인.)
 
 ## 재현 방법 (classifier A/B)
 
