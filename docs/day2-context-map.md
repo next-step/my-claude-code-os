@@ -3,8 +3,11 @@
 > `.claude/context/` 운영 지침이 **어느 파일 → 어떤 트리거 → 어떤 소비자**로 흘러가는지 한 장으로.
 > 그린 게 아니라 **실측** — 이 배선은 `.claude/scripts/check-context-wiring.sh` (17건 PASS) 가 의존 표와 대조하고,
 > 동작은 [`day2-ab-injection-test.md`](./day2-ab-injection-test.md) 의 A/B 로 확인됨.
-> 인터랙티브 스냅샷: <https://claude.ai/code/artifact/baba4bdc-c48d-48fe-b881-ed4576f2ca79>
 > 작성일: 2026-09-07 · 갱신: 2026-09-08 (도전 2 — `@import` 제거, `style.md` 훅 전환)
+
+> 📊 **[인터랙티브 스냅샷 (2026-09-08)](https://claude.ai/code/artifact/baba4bdc-c48d-48fe-b881-ed4576f2ca79)** — 개인 참조용.
+> 아래 Mermaid 가 원본(SSOT). 아티팩트는 소비자 뱃지 + 파이프라인 스윔레인(단계별 스킬·에이전트·컨텍스트)을 추가로 담고,
+> 체계가 바뀌면 수동 갱신한다.
 
 ---
 
