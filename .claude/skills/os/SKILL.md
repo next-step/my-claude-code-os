@@ -1,6 +1,6 @@
 ---
 name: os
-description: OS 자체의 파일(스킬·에이전트·OS.md·CLAUDE.md·metrics.md·settings.json)을 수정할 때 사용한다 (예: "스킬 고치자", "OS 손보자", "/os", "통증 목록 처리하자"). OS 파일 수정의 유일 경로 — 기존 ADR과의 충돌을 확인하고, 변경안을 제시해 승인받은 뒤에만 수정한다.
+description: OS 자체의 파일(스킬·에이전트·OS.md·CLAUDE.md·metrics.md·project.md·settings.json)을 수정할 때 사용한다 (예: "스킬 고치자", "OS 손보자", "/os", "통증 목록 처리하자"). OS 파일 수정의 유일 경로 — 기존 ADR과의 충돌을 확인하고, 변경안을 제시해 승인받은 뒤에만 수정한다.
 ---
 
 # OS — OS 파일 수정의 유일 경로
@@ -8,7 +8,8 @@ description: OS 자체의 파일(스킬·에이전트·OS.md·CLAUDE.md·metrics
 ## Overview
 
 OS를 이루는 파일(`.claude/` 스킬·에이전트·훅·설정, `OS.md`, `CLAUDE.md`,
-`metrics.md`, 가이드 문서)의 수정을 통제한다. **에이전트 없음 — 메인이 직접
+`metrics.md`, `project.md`(대상 프로젝트 컨텍스트 — 공유 추상판·private 실전판),
+가이드 문서)의 수정을 통제한다. **에이전트 없음 — 메인이 직접
 한다.** 사람과의 상호작용(충돌 검토·승인)이 이 스킬의 핵심이기 때문이다.
 
 ## 절차
