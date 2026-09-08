@@ -1,31 +1,10 @@
 # Day2 과제 워크시트 — 내 OS에 컨텍스트 체계 심기
 
 > 이 파일은 `/clear` 로 대화가 날아가도 작업을 이어갈 수 있게 **계획과 측정값을 박제**해 둔 것이다.
-> 수업 자료: `Day2.pdf` (p.23 · p.35 실습 완료, p.47 실습 = 과제 도전 2로 흡수).
 
 ---
 
-## 0. 현재 상태 (2026-09-07 확인)
-
-- **p.23 실습 (컨텍스트 체계 설계)** — 설계·작성 완료. "실제 활용 확인"(A/B)만 미실행.
-- **p.35 실습 (interview 스킬)** — 방법론(`interview-method.md`)·스킬(`skills/interview/`) 제작 완료. 실제 인터뷰 1회 미실행.
-- **p.47 실습 (컨텍스트 최적화)** — 미실행. 과제 도전 2에서 진행.
-
-staged 파일 12개 (아직 커밋 안 됨):
-
-```
-.claude/context/            README.md · team-capability.md · classification-policy.md · interview-method.md
-.claude/skills/interview/    SKILL.md (신규)
-.claude/skills/intake/       SKILL.md (수정 — 필수/선택/가정 처리)
-.claude/agents/              classifier.md · intake-interview.md (판단기준 → context 파일 참조로 전환)
-maintenance/                 capacity.md (신규) · README.md (수정)
-CLAUDE.md                    규칙 4·5 추가 + @team-capability.md 항상 로드
-.claude/README.md            context/ 항목 추가
-```
-
----
-
-## 1. before 지표 측정 (지금 할 것)
+## 1. before 지표 측정
 
 ### 절차
 
@@ -34,7 +13,8 @@ CLAUDE.md                    규칙 4·5 추가 + @team-capability.md 항상 로
 3. `CLAUDE.md` 마지막 줄 `@.claude/context/team-capability.md` 삭제(또는 `#` 주석)
 4. `/clear` → `/context` → **측정 2** 표에 기입
 5. `CLAUDE.md` 그 줄 **복구**
-6. (선택) 측정 3 — 스킬 실행 후 발자국. 지금은 건너뛰고 도전 2에서.
+
+(측정 3 은 도전 2 최적화의 전·후 측정 — 아래 별도 절차)
 
 > `/context` 출력은 항목별 토큰 수로 나온다. 아래 표의 항목명은 버전에 따라 조금 다를 수 있으니 비슷한 줄을 적으면 된다.
 
@@ -107,7 +87,7 @@ Day2 과제 완료 조건 = 필수 3 + 도전 2.
 | 2 | 필수 2 | 주입 O/X **A/B 동작 비교** (`skill-creator` 포함) | 같은 입력에 대해 컨텍스트 있을 때 vs 없을 때 스킬 출력 차이를 기록 | ✅ → [`day2-ab-injection-test.md`](./day2-ab-injection-test.md) |
 | 3 | 필수 3 | 컨텍스트 체계 **도식화** 1P 파일 | `docs/` 에 다이어그램 파일 1개 (파일→트리거→소비자 관계) | ✅ → [`day2-context-map.md`](./day2-context-map.md) |
 | 4 | 도전 1 | 주입 검증 **테스트** 제작 | 컨텍스트가 실제로 주입됐는지 확인하는 자동 검사 | ✅ `check-context-wiring.sh` (검사) + `--self-test` (검사기 검증) + PostToolUse 훅 (자동 실행) |
-| 5 | 도전 2 | 컨텍스트 체계 **최적화 + 정량 비교** (= p.47) | 위 before 표 대비 after 표, 절감 토큰/% 기록 | ✅ (측정 3 절차, `/context` 숫자만 기입 대기) |
+| 5 | 도전 2 | 컨텍스트 체계 **최적화 + 정량 비교** | before 표 대비 after 표, 절감 토큰/% 기록 | ✅ → 위 §1 측정 3 (Memory files 2.6k → 543, −79%) |
 
 ### 필수 1 — 컨텍스트 6개 + 주입 연결 (완료 2026-09-07, 도전 2에서 주입 방식 재배정)
 
