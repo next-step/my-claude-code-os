@@ -23,6 +23,7 @@ OS가 **판단할 때 참조하는, 사람이 정한 지침**을 모아 둔 곳�
 | [`dod-patterns.md`](./dod-patterns.md) | 판단 룰 (작성·검토 기준) | 반기 | `/spec`, `spec-reviewer` | **필요할 때** — 두 소비자가 각자 Read |
 | [`interview-method.md`](./interview-method.md) | 판단 룰 (방법론) | 분기~반기 | `/interview`(전부), `intake-interview`(§1·2·3·8) | **필요할 때** — 두 소비자가 각자 Read |
 | [`../../maintenance/capacity.md`](../../maintenance/capacity.md) | 라이브 데이터 | 매달 | `classifier` | **필요할 때** — `classifier` 가 Read |
+| [`../knowledge/systems/board.md`](../knowledge/systems/board.md) | 사실 (시스템별) | 시스템 변경 시 | `classifier` | **필요할 때** — `classifier` 가 §1② 에서 Read (있으면) |
 
 > Day2 도전 2 최적화: `@import` 항상 로드를 없앴다. `style.md` 는 훅으로, `team-capability.md` 는 Lazy 로 내림.
 > 세션 시작 시 컨텍스트 창을 먹는 운영 지침이 0.

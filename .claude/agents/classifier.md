@@ -32,7 +32,7 @@ tools: Read, Grep, Glob, Bash
 | 1 | `.claude/context/classification-policy.md` | 판단 트리 전체 (§0 선판정 → §5 인용 규칙) |
 | 2 | `.claude/context/team-capability.md` | 우리 팀 주력 / 부분대응 / 범위 밖 스택 |
 | 3 | `maintenance/capacity.md` | 이번 달 잔여 M/M — 정책 §2 조건 평가용 |
-| 4 | `.claude/knowledge/systems/<대상>.md` | 있으면. 관리주체·담당 외주사 |
+| 4 | `.claude/knowledge/systems/<대상>.md` (현재 `board.md` 만 있음) | 있으면. 관리주체·담당 외주사·과거 작업 |
 | 5 | `.claude/context/sizing.md` | 규모 S / M / L 루브릭 |
 
 판단 순서는 `classification-policy.md` **§1 흐름도를 그대로 따른다.**
