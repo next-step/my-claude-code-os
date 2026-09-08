@@ -11,11 +11,18 @@
 #
 # 하나라도 깨지면 FAIL 을 세고 exit 1. 죽은 지침(인용 0회)은 WARN.
 #
-# 사용: bash .claude/scripts/check-context-wiring.sh
+# 사용:
+#   bash .claude/scripts/check-context-wiring.sh              # 저장소 배선 검사
+#   bash .claude/scripts/check-context-wiring.sh --self-test  # 검사기 자체를 검증
+#                                                             # (일부러 배선을 깨서 FAIL 이 나는지 확인)
 
 set -u
 
-ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+# WIRING_ROOT 로 검사 대상 루트를 바꿀 수 있다 (--self-test 가 깨진 임시 복사본을 가리킬 때 사용).
+ROOT="${WIRING_ROOT:-}"
+[ -n "$ROOT" ] || ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+SELF="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/$(basename "${BASH_SOURCE[0]}")"
+
 CTX_DIR="$ROOT/.claude/context"
 README="$CTX_DIR/README.md"
 CLAUDEMD="$ROOT/CLAUDE.md"
@@ -46,9 +53,83 @@ consumer_file() {
   esac
 }
 
+# ─────────────────────────────────────────────────────────────
+# 자가 테스트: 검사기가 "진짜로" 배선 고장을 잡는지 확인한다.
+# 화재경보기 테스트 버튼 — 일부러 신호를 주고 울리는지 본다.
+# 실제 파일은 절대 안 건드린다. 임시 복사본을 만들어 거기서 부수고 검사한 뒤 버린다.
+# ─────────────────────────────────────────────────────────────
+run_self_test() {
+  echo "═══ 자가 테스트 — 검사기가 배선 고장을 실제로 탐지하는가 ═══"
+  echo
+  local real_root st_fail=0
+  real_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+
+  # 0) 기준선: 진짜 저장소는 통과해야 한다.
+  if bash "$SELF" >/dev/null 2>&1; then
+    echo "  [기준] 실제 저장소 검사: PASS"
+  else
+    echo "  [기준] 실제 저장소가 이미 FAIL — 자가 테스트 전에 배선부터 고쳐야 한다."
+    return 1
+  fi
+
+  _scenario() {
+    local desc="$1" breakcmd="$2"
+    local tmp; tmp="$(mktemp -d)"
+    mkdir -p "$tmp/.claude" "$tmp/maintenance"
+    cp "$real_root/CLAUDE.md" "$tmp/" 2>/dev/null || true
+    cp "$real_root/.claude/settings.json" "$tmp/.claude/" 2>/dev/null || true
+    cp -R "$real_root/.claude/context" "$tmp/.claude/"
+    cp -R "$real_root/.claude/agents"  "$tmp/.claude/"
+    cp -R "$real_root/.claude/skills"  "$tmp/.claude/"
+    cp -R "$real_root/.claude/hooks"   "$tmp/.claude/"
+    cp -R "$real_root/maintenance/requests" "$tmp/maintenance/" 2>/dev/null || true
+
+    ( cd "$tmp" && eval "$breakcmd" )   # 임시 복사본에 고장 주입
+
+    local out rc
+    out="$(WIRING_ROOT="$tmp" bash "$SELF" 2>&1)"; rc=$?
+    if [ "$rc" -ne 0 ] && printf '%s' "$out" | grep -q 'FAIL'; then
+      echo "  [OK ] $desc"
+      echo "         └ 검사기가 FAIL 로 탐지함"
+    else
+      echo "  [!! ] $desc"
+      echo "         └ 검사기가 못 잡음 — 검사기 결함"
+      st_fail=$((st_fail+1))
+    fi
+    rm -rf "$tmp"
+  }
+
+  _scenario "Lazy 배선 끊김: classifier 가 sizing.md 를 더 이상 참조하지 않음" \
+    "sed -i.bak '/sizing\\.md/d' .claude/agents/classifier.md && rm -f .claude/agents/classifier.md.bak"
+
+  _scenario "훅 미등록: settings.json 에서 스타일 주입 훅 항목이 사라짐" \
+    "grep -v 'inject-style-context' .claude/settings.json > .claude/settings.json.new && mv .claude/settings.json.new .claude/settings.json"
+
+  _scenario "고아 컨텍스트: 의존 표에 없는 .md 가 context/ 에 생김" \
+    "printf '# orphan\\n' > .claude/context/__orphan_selftest.md"
+
+  echo
+  if [ "$st_fail" -eq 0 ]; then
+    echo "자가 테스트 통과: 검사기가 3종 배선 고장을 모두 FAIL 로 잡았다."
+    return 0
+  else
+    echo "자가 테스트 실패: 검사기가 못 잡는 고장 ${st_fail}종. 검사기를 고쳐야 한다."
+    return 1
+  fi
+}
+
+if [ "${1:-}" = "--self-test" ]; then
+  run_self_test
+  exit $?
+fi
+
+# ─────────────────────────────────────────────────────────────
+# 본 검사
+# ─────────────────────────────────────────────────────────────
 [ -f "$README" ] || { echo "의존 표를 찾을 수 없음: $README"; exit 2; }
 
 echo "컨텍스트 배선 검증 — SSOT: .claude/context/README.md 의존 표"
+[ -n "${WIRING_ROOT:-}" ] && echo "(대상: $ROOT)"
 echo
 
 seen_files=""

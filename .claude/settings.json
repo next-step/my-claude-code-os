@@ -39,6 +39,19 @@
           }
         ]
       }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/verify-wiring-on-edit.sh\"",
+            "timeout": 15,
+            "statusMessage": "컨텍스트 배선 확인 중..."
+          }
+        ]
+      }
     ]
   }
 }

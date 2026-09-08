@@ -60,6 +60,8 @@ Claude Code에서 컨텍스트가 들어오는 통로는 성질이 다르다.
 "필요할 때" 방식은 소비자가 안 읽으면 무시되므로,
 `agents/classifier.md` · `agents/intake-interview.md` 에 **"판단 전에 반드시 읽어라"** 를 절차로 못박아 두었다.
 이 배선이 실제로 유지되는지는 `.claude/scripts/check-context-wiring.sh` 가 검사한다 (Day2 도전 1).
+`--self-test` 로 검사기 자체를 검증하고, `verify-wiring-on-edit.sh` PostToolUse 훅이 이 표·소비자 파일
+편집 시마다 자동으로 재검사한다.
 
 ## 활용 검증 — 죽은 지침 잡기
 
