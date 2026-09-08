@@ -67,13 +67,28 @@ CLAUDE.md                    규칙 4·5 추가 + @team-capability.md 항상 로
 > 이 파일을 자주 안 읽는 스킬까지 전부 부담하므로, Day2 도전 2(최적화)에서 "항상 로드" 대신
 > Lazy Read 로 내릴지 판단할 후보 1순위.
 
-### 측정 3 — 스킬 실행 발자국 (도전 2에서)
+### 측정 3 — 도전 2 최적화 전·후 (`@import` 제거)
 
-| 시점 | 합계 토큰 |
-| --- | --- |
-| `/clear` 직후 | |
-| `/intake` 또는 `classifier` 경로 실행 후 | |
-| **발자국 (차이)** | |
+**최적화 내용**: `CLAUDE.md` 의 `@import` 2줄 제거.
+- `style.md` → PreToolUse 훅(`Write`/`Edit`, 세션당 1회) 주입
+- `team-capability.md` → Lazy Read (소비자 classifier·intake-interview 가 직접 Read)
+
+**측정 절차** (실제 숫자는 `/context` 로 채울 것):
+1. 최적화 전 커밋(`4ae2cfd` 또는 그 이전)으로 `git switch --detach 4ae2cfd` → `/clear` → `/context` → "Memory files" 기록 = **before**
+2. `git switch step2` (최적화 후) → `/clear` → `/context` → "Memory files" 기록 = **after**
+3. 절감 = before − after
+
+| 시점 | Memory files 토큰 | 합계 토큰 |
+| --- | --- | --- |
+| before (`@team-capability` + `@style` 항상 로드) | (기입) | (기입) |
+| after (`@import` 0개) | (기입) | (기입) |
+| **절감** | (기입) | (기입) |
+
+**예상** (측정 1·2 기준 추정): `@team-capability` ≈ 940 토큰 + `@style`(원문이 team-capability 의 약 1.2배) ≈ 1,100 토큰
+→ 세션 시작 baseline 에서 **약 2,000 토큰(≈ Memory files 의 88%) 감소** 예상. `CLAUDE.md` 본문이 설명 추가로 ~150 토큰 늘어 순감은 ~1,850.
+
+**트레이드오프**: `style.md` 는 파일을 쓰는 세션에서 첫 `Write`/`Edit` 때 ~1,100 토큰이 한 번 들어옴(그 뒤 재주입 없음).
+파일을 안 쓰는 세션(질문·조사·계획)은 0. `team-capability.md` 는 `classifier`/`intake-interview` 가 돌 때만 Read.
 
 ---
 
@@ -87,29 +102,29 @@ Day2 과제 완료 조건 = 필수 3 + 도전 2.
 | 1 | 필수 1 | 컨텍스트 md **5개 이상** + 스킬·서브에이전트 자동 주입 연결 | `.claude/context/` 실질 컨텍스트 5개, 각각 소비자에 연결(=@import / Read 지침 / 훅 트리거) | ✅ (6개, A/B 실증은 필수 2에서) |
 | 2 | 필수 2 | 주입 O/X **A/B 동작 비교** (`skill-creator` 포함) | 같은 입력에 대해 컨텍스트 있을 때 vs 없을 때 스킬 출력 차이를 기록 | ✅ → [`day2-ab-injection-test.md`](./day2-ab-injection-test.md) |
 | 3 | 필수 3 | 컨텍스트 체계 **도식화** 1P 파일 | `docs/` 에 다이어그램 파일 1개 (파일→트리거→소비자 관계) | ✅ → [`day2-context-map.md`](./day2-context-map.md) |
-| 4 | 도전 1 | 주입 검증 **테스트** 제작 | 컨텍스트가 실제로 주입됐는지 확인하는 자동 검사 | ⬜ |
-| 5 | 도전 2 | 컨텍스트 체계 **최적화 + 정량 비교** (= p.47) | 위 before 표 대비 after 표, 절감 토큰/% 기록 | ⬜ |
+| 4 | 도전 1 | 주입 검증 **테스트** 제작 | 컨텍스트가 실제로 주입됐는지 확인하는 자동 검사 | ✅ → `.claude/scripts/check-context-wiring.sh` |
+| 5 | 도전 2 | 컨텍스트 체계 **최적화 + 정량 비교** (= p.47) | 위 before 표 대비 after 표, 절감 토큰/% 기록 | ✅ (측정 3 절차, `/context` 숫자만 기입 대기) |
 
-### 필수 1 — 컨텍스트 6개 + 주입 연결 (완료 2026-09-07)
+### 필수 1 — 컨텍스트 6개 + 주입 연결 (완료 2026-09-07, 도전 2에서 주입 방식 재배정)
 
-| 파일 | 소비자 | 주입 방식 |
+| 파일 | 소비자 | 주입 방식 (도전 2 이후) |
 | --- | --- | --- |
-| `team-capability.md` | `classifier`, `intake-interview` | `@import` 항상 로드 |
-| `style.md` (신규) | 텍스트·코드 내는 모든 스킬 | `@import` 항상 로드 |
+| `style.md` (신규) | 파일 쓰는 모든 스킬·에이전트 | **훅** — `Write`/`Edit` PreToolUse, 세션당 1회 |
+| `team-capability.md` | `classifier`, `intake-interview` | **Lazy Read** (도전 2 전엔 `@import`) |
 | `classification-policy.md` | `classifier`, `intake` | Lazy Read |
 | `sizing.md` (신규) | `classifier`, `/spec` | Lazy Read — `classifier.md` "판단 전 Read 목록 5" |
 | `dod-patterns.md` (신규) | `/spec`, `spec-reviewer` | Lazy Read — 두 소비자 공유 |
 | `interview-method.md` | `/interview`, `intake-interview` | Lazy Read |
 
-남은 후보(안 만듦): `priority.md`, `escalation.md`(훅 주입 후보), `operator.md`.
+남은 후보(안 만듦): `priority.md`, `escalation.md`, `operator.md`.
 
-### 자동 주입 방식 3가지 (필수 1)
+### 자동 주입 방식 3가지 — 최종 (도전 2)
 
 | 방식 | 트리거 | 현재 적용 |
 | --- | --- | --- |
-| `CLAUDE.md` `@import` | 세션 시작 무조건 | `team-capability.md`, `style.md` |
-| 소비자가 `Read` (Lazy) | 그 스킬·에이전트가 돌 때 | `classification-policy.md`, `sizing.md`, `dod-patterns.md`, `interview-method.md` |
-| **훅 (PreToolUse additionalContext)** | 스킬 이름 suffix / 파일 경로 패턴 | **아직 없음 — `escalation.md` 도입 시 정석** |
+| `CLAUDE.md` `@import` | 세션 시작 무조건 | **없음** (도전 2에서 제거 — baseline 토큰 절감) |
+| 소비자가 `Read` (Lazy) | 그 스킬·에이전트가 돌 때 | `team-capability`, `classification-policy`, `sizing`, `dod-patterns`, `interview-method`, `capacity` |
+| **훅 (PreToolUse additionalContext)** | `Write`/`Edit` 툴 실행 직전 (세션당 1회) | `style.md` (`.claude/hooks/inject-style-context.sh`) |
 
 ---
 
@@ -146,3 +161,8 @@ Day2 과제 완료 조건 = 필수 3 + 도전 2.
   비용 실행당 토큰 +4.3k. `day2-ab-injection-test.md` 에 "스킬 레벨 정량 비교" 절 추가.
 - 2026-09-07 도전 1 완료. `.claude/scripts/check-context-wiring.sh` — 의존 표 SSOT 기준
   파일 존재/@import/Lazy 참조/훅/고아 파일/죽은 지침 검사. 16건 PASS, WARN 1(§N 인용 0회).
+- 2026-09-08 도전 2 완료. `CLAUDE.md` `@import` 2줄 제거 → `style.md` 는 PreToolUse(`Write`/`Edit`) 훅
+  주입(`inject-style-context.sh`, 세션당 1회), `team-capability.md` 는 Lazy Read 로 전환.
+  세션 시작 baseline 에서 운영 지침 @import 0. 예상 절감 ≈ 1,850 토큰/세션 (실측은 `/context` 로 기입).
+  배선 검증 17건 PASS. 이제 자동 주입 3가지(항상로드 제외 → Lazy + 훅) 실증 완료.
+  `day2-context-map.md` 도식·표 갱신.
