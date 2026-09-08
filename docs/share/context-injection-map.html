@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>컨텍스트 체계 — 파일과 자동 주입 경로</title>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+  body { font-family: -apple-system, "Apple SD Gothic Neo", sans-serif; max-width: 980px;
+         margin: 0 auto; padding: 24px; color: #1f2937; line-height: 1.6; }
+  h1 { font-size: 1.5em; border-bottom: 2px solid #e5e7eb; padding-bottom: 8px; }
+  h2 { font-size: 1.15em; margin-top: 32px; }
+  .note { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px;
+          padding: 10px 14px; font-size: 0.9em; }
+  .badge { background: #ecfdf5; border: 1px solid #10b981; border-radius: 8px;
+           padding: 10px 14px; font-size: 0.9em; margin-top: 8px; }
+  table { border-collapse: collapse; width: 100%; font-size: 0.88em; }
+  th, td { border: 1px solid #e5e7eb; padding: 6px 10px; text-align: left; }
+  th { background: #f9fafb; }
+  .diagram { background: #fff; border: 1px solid #e5e7eb; border-radius: 8px;
+             padding: 12px; overflow-x: auto; }
+</style>
+</head>
+<body>
+<h1>컨텍스트 체계 — 파일과 자동 주입 경로</h1>
+<div class="note">
+  이 HTML은 시각화 전용 산출물입니다. 내용 원본은 <a href="../../OS.md">OS.md</a>(컨텍스트
+  갱신 루프)와 <a href="../evals/suggest-context-injection-eval.md">주입 효과 검증 리포트</a>에
+  있습니다. 기준: 2026-09-08, 컨텍스트 파일 6종 9개.
+</div>
+
+<h2>1. 주입의 2층 구조 — 파일이 세션에 도달하는 길</h2>
+<p>사람이 파일을 찾아 먹여주지 않는다. <b>하네스 층</b>은 세션이 열리면 무조건 주입되고,
+<b>스킬 절차 층</b>은 스킬이 실행될 때 절차서가 로드를 강제한다.</p>
+<div class="diagram">
+<pre class="mermaid">
+flowchart TB
+    subgraph L1["① 하네스 층 — 세션 시작 시 무조건"]
+        direction LR
+        SS(["세션 시작"]) --> CM["CLAUDE.md<br/>(Claude Code 자동 로드)"]
+        CM -- "규칙 3: 작업 전 읽기 강제" --> OSMD["OS.md<br/>(워크플로우·구축 현황)"]
+        SS -.-> HK["SessionStart 훅<br/>(미커밋 리마인더 · adr 캡처 규칙)"]
+    end
+    subgraph L2["② 스킬 절차 층 — 스킬 실행 시"]
+        direction LR
+        SK["스킬 SKILL.md<br/>(절차서가 로드 지시)"] --> MAIN["메인 세션<br/>(오케스트레이터)"]
+        MAIN -- "스폰 입력으로 전달" --> AG["서브에이전트<br/>(독립 컨텍스트)"]
+    end
+    L1 --> L2
+</pre>
+</div>
+
+<h2>2. SSOT 파일과 읽기·쓰기 루프</h2>
+<p>모든 컨텍스트 파일에 <b>쓰는 스킬과 읽는 스킬이 둘 다</b> 있다 — 실행할수록 문서가
+두꺼워지고, 문서가 두꺼워질수록 다음 실행이 좋아지는 닫힌 순환.</p>
+<div class="diagram">
+<pre class="mermaid">
+flowchart LR
+    subgraph SK["스킬 (행동)"]
+        direction TB
+        R["/research"]
+        S["/suggest"]
+        E["/experiment"]
+        C["/compare"]
+        RT["/retrospect"]
+        SV["/serve"]
+        OS["/os"]
+    end
+    subgraph DOC["컨텍스트 파일 (지식 · 상태)"]
+        direction TB
+        K["knowledge/<br/>도메인 지식 (1)"]
+        X["experiments/<br/>실험 기록 (4)"]
+        MT["metrics.md<br/>측정 기준 · 판정 SSOT"]
+        PJ["project.md<br/>대상 프로젝트"]
+    end
+    R == "축적" ==> K
+    E == "기록" ==> X
+    RT == "반영" ==> MT
+    OS == "관리" ==> PJ
+    K -. "주입" .-> S & E & RT
+    X -. "주입" .-> S & C & E
+    MT -. "주입" .-> E & S & C & RT & OS
+    PJ -. "주입" .-> E & SV
+</pre>
+</div>
+
+<h2>3. 파일별 주입 경로 요약</h2>
+<table>
+  <tr><th>컨텍스트</th><th>주입 방식</th><th>읽는 곳</th><th>쓰는 곳</th></tr>
+  <tr><td><code>CLAUDE.md</code></td><td>하네스 자동 로드 (무조건)</td><td>모든 세션</td><td>/os 경로로만 수정</td></tr>
+  <tr><td><code>OS.md</code></td><td>CLAUDE.md 규칙 3이 읽기 강제</td><td>모든 작업 시작 시</td><td>/os</td></tr>
+  <tr><td><code>metrics.md</code></td><td>스킬 절차 로드 + 에이전트 스폰 입력</td><td>/experiment /suggest /compare /retrospect /os</td><td>/retrospect (승인 후)</td></tr>
+  <tr><td><code>project.md</code></td><td>스킬 절차 로드 (private판 우선)</td><td>/experiment /serve</td><td>/os</td></tr>
+  <tr><td><code>experiments/</code></td><td>에이전트 스폰 입력 (독립 컨텍스트에서 읽음)</td><td>/suggest /compare /experiment(이력)</td><td>/experiment</td></tr>
+  <tr><td><code>knowledge/</code></td><td>에이전트 스폰 입력</td><td>/suggest /experiment(리서치) /retrospect</td><td>/research (curator)</td></tr>
+</table>
+
+<h2>4. 주입 효과의 실증</h2>
+<div class="badge">
+  ✅ <b>skill-creator 평가 (2026-09-08)</b>: 같은 /suggest 스킬을 컨텍스트
+  <b>주입/미주입</b> 환경에서 각 2회 실행 — 채점 통과율 <b>주입 100% vs 미주입 60%
+  (Δ +0.40)</b>. 미주입 시 후보 창작 없이 "제안 불가 + 선행 조건"으로 우아하게
+  실패했고, 주입 시 모든 후보가 실존 기록을 인용했다 (창작 0건).
+  상세: <a href="../evals/suggest-context-injection-eval.md">평가 리포트</a>
+</div>
+
+<script>mermaid.initialize({ startOnLoad: true, theme: 'neutral' });</script>
+</body>
+</html>

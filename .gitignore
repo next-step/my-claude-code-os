@@ -11,3 +11,6 @@ __pycache__/
 
 # Claude Code 로컬 설정 (개인 권한 설정이라 공유하지 않는다)
 .claude/settings.local.json
+
+# 유출 점검 훅의 금지어 목록 (사내 고유명이라 공유하지 않는다)
+.claude/hooks/leak-patterns.local.txt

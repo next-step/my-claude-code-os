@@ -1,5 +1,50 @@
 {
+  "permissions": {
+    "allow": [
+      "mcp__confluence__confluence_get_page",
+      "mcp__confluence__confluence_get_page_children",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git checkout *)",
+      "Bash(git cherry-pick *)",
+      "Bash(.venv/bin/python eval/run.py *)",
+      "Bash(.venv/bin/python eval/score.py *)"
+    ]
+  },
   "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/check_shared_leak.py\"",
+            "if": "Bash(git commit *)",
+            "statusMessage": "공유 파일 유출 점검 중..."
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/remind_uncommitted.py\""
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/remind_uncommitted.py\""
+          }
+        ]
+      }
+    ],
     "PostToolUse": [
       {
         "matcher": "Skill",
