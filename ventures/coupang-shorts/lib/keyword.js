@@ -22,6 +22,7 @@ const 불용어 = new Set([
   "최고", "최악", "진짜", "완전", "정말", "너무", "그냥", "이번", "오늘", "지금",
   "여러분", "우리", "저는", "제가", "이거", "그거", "저거", "이것", "그것",
   "가이드", "총정리", "모음", "편집", "브이로그", "일상",
+  "끝장비교", "완벽비교", "최종비교", "구매가이드", "솔직후기", "찐후기", "리얼후기",
   "vs", "top", "best", "review", "unboxing", "shorts",
 ]);
 
@@ -35,6 +36,12 @@ const 서술어어미 = [
   "하는", "했던", "하고", "해서", "지만", "는데", "세요", "네요", "어요", "아요",
   "겠죠", "나요", "까요", "려고", "면서", "라면", "거든", "잖아",
 ];
+
+/**
+ * 수량·차수 표현. 상품명이 아니다.
+ * "25년차 주부" 의 "25년차" 가 검색어로 뽑히는 것을 실제로 보고 넣었다.
+ */
+const 수량표현 = /^\d+(년차|년|개월|주년|위|등|배|번째|인용|인분|만원|원|리터|L|kg|g|ml|년ver|ver)$/i;
 
 /** 잘라 낼 조사와 어미. 긴 것부터 확인해야 "으로"가 "로"보다 먼저 걸린다. */
 const 조사 = [
@@ -88,7 +95,7 @@ function extractKeywords(p = {}, options = {}) {
 
   const 후보 = new Map();
   for (const word of 제목말) {
-    if (!쓸만한가(word, o, 채널말)) continue;
+    if (!쓸만한가(word, o, 채널말, boost)) continue;
 
     const 기존 = 후보.get(word);
     if (기존) {
@@ -117,11 +124,29 @@ function extractKeywords(p = {}, options = {}) {
     후보.set(word, { word, score, reasons });
   }
 
+  // 나란히 붙은 두 말을 이어 붙여 우대 목록과 맞춰 본다.
+  // "커피 머신" 이 두 토큰으로 쪼개져 "커피머신" 을 놓치고 브랜드명에 밀리는 것을
+  // 실제로 보고 넣었다. 형태소 분석기가 없어 복합명사를 못 끊는 한계를 좁히는 방편이다.
+  for (const 말들 of [제목말, 자막말]) {
+    for (let i = 0; i + 1 < 말들.length; i += 1) {
+      const 붙인말 = 말들[i] + 말들[i + 1];
+      if (!boost.has(붙인말.toLowerCase())) continue;
+      if (후보.has(붙인말)) continue;
+      if (!쓸만한가(붙인말, o, 채널말, boost)) continue;
+      const 자막에 = 자막빈도.get(말들[i]) || 0;
+      후보.set(붙인말, {
+        word: 붙인말,
+        score: 2.5 + Math.min(1, 자막에 / 10),
+        reasons: ["붙여 보니 우대 목록에 있음", "제목·자막에 나옴"],
+      });
+    }
+  }
+
   // 제목에 없더라도 자막에서 아주 자주 나오고 우대 목록에 있으면 넣는다.
   for (const [word, hits] of 자막빈도) {
     if (후보.has(word)) continue;
     if (!boost.has(word.toLowerCase())) continue;
-    if (!쓸만한가(word, o, 채널말)) continue;
+    if (!쓸만한가(word, o, 채널말, boost)) continue;
     후보.set(word, { word, score: 0.8 + Math.min(1, hits / 10), reasons: [`자막에 ${hits}번`, "우대 목록에 있음"] });
   }
 
@@ -142,12 +167,17 @@ function extractKeywords(p = {}, options = {}) {
   };
 }
 
-function 쓸만한가(word, o, 채널말) {
+function 쓸만한가(word, o, 채널말, boost) {
   if (word.length < o.minLength) return false;
   if (불용어.has(word.toLowerCase())) return false;
-  if (채널말.has(word)) return false;
+  // 채널명에 든 말은 상품이 아니라 채널 정체성이라 뺀다. **단 우대 목록에 있으면 남긴다.**
+  // "앳키친 | 에어프라이어 요리" 채널에서 "에어프라이어" 가 통째로 지워지는 것을
+  // 실제로 보고 넣은 예외다. 채널이 상품군 이름을 달고 있는 경우가 드물지 않다.
+  if (채널말.has(word) && !(boost && boost.has(word.toLowerCase()))) return false;
   // 숫자만 있는 말(연도, 개수)은 상품명이 아니다.
   if (/^[0-9]+$/.test(word)) return false;
+  // 수량·차수 표현도 마찬가지다.
+  if (수량표현.test(word)) return false;
   // 서술어로 끝나면 상품명이 아니다.
   if (서술어어미.some((e) => word.length > e.length && word.endsWith(e))) return false;
   return true;

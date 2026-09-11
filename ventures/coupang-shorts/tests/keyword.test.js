@@ -83,3 +83,38 @@ test("AC-15g: 제목이 비어도 예외를 던지지 않는다", () => {
     assert.ok(Array.isArray(r.keywords));
   }
 });
+
+test("AC-15h: 수량·차수 표현은 상품명으로 보지 않는다", () => {
+  // "25년차 주부" 의 "25년차" 가 검색어로 뽑혀 쇼츠 제목에 들어가는 것을 보고 넣은 규칙이다.
+  const { scored } = extractKeywords(
+    { title: "25년차 주부가 고른 에어프라이어 3위 12만원 5L" },
+    { requireEvidence: false }
+  );
+  const 나온말 = scored.map((x) => x.word);
+  for (const 수량 of ["25년차", "3위", "12만원", "5L"]) {
+    assert.ok(!나온말.includes(수량), `수량 표현 "${수량}" 이 남아 있다`);
+  }
+  assert.ok(나온말.includes("에어프라이어"));
+});
+
+test("AC-15i: 나란히 붙은 두 말을 이어 붙여 우대 목록과 맞춰 본다", () => {
+  // "커피 머신" 이 두 토큰으로 쪼개져 "커피머신" 을 놓치고 브랜드명에 밀렸다.
+  const { keywords } = extractKeywords(
+    { title: "캡슐은 비싸요, 커피 머신 추천 | 필립스 1200 전자동 리뷰", subtitleText: "커피 머신 원두" },
+    { boostWords: ["커피머신", "필립스"], limit: 3 }
+  );
+  assert.equal(keywords[0], "커피머신", "복합명사가 브랜드명보다 앞에 와야 한다");
+});
+
+test("AC-15j: 버전 꼬리표와 검색 노출용 관용구를 검색어로 쓰지 않는다", () => {
+  // 이 값들은 해시태그로도 나가기 때문에 남으면 눈에 띈다.
+  const { scored } = extractKeywords(
+    { title: "무선청소기 끝장비교(26년ver.) 완벽비교 구매가이드" },
+    { requireEvidence: false }
+  );
+  const 나온말 = scored.map((x) => x.word);
+  for (const 잡음 of ["끝장비교", "26년ver", "완벽비교", "구매가이드"]) {
+    assert.ok(!나온말.includes(잡음), `잡음 "${잡음}" 이 남아 있다`);
+  }
+  assert.ok(나온말.includes("무선청소기"));
+});
