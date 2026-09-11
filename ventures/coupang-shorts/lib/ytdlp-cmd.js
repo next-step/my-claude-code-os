@@ -40,6 +40,21 @@ function buildSearchArgs(keyword, limit = 10) {
   ];
 }
 
+/**
+ * 영상 하나의 메타데이터를 뽑는 인자. 검색 결과와 **같은 템플릿**을 쓴다.
+ * 그래야 `discover.js` 의 파서를 그대로 재사용할 수 있다.
+ */
+function buildMetadataArgs(videoId) {
+  검사(videoId);
+  return [
+    "--skip-download",
+    "--no-warnings",
+    "--no-progress",
+    "--print", printTemplate(),
+    `https://www.youtube.com/watch?v=${videoId}`,
+  ];
+}
+
 /** 영상 하나의 히트맵만 뽑는 인자. */
 function buildHeatmapArgs(videoId) {
   검사(videoId);
@@ -112,6 +127,7 @@ function round3(n) {
 
 module.exports = {
   buildSearchArgs,
+  buildMetadataArgs,
   buildHeatmapArgs,
   buildSubtitleArgs,
   buildSectionDownloadArgs,

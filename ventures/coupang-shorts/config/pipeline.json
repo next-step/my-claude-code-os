@@ -1,0 +1,61 @@
+{
+  "_설명": "파이프라인 설정. 값을 바꿔 가며 돌려 보고 조정하는 자리다. 코드를 고치지 않는다.",
+
+  "discover": {
+    "_설명": "소재 발굴. 유튜브가 2025-07-21 에 인기 급상승 페이지를 폐지해 키워드 검색으로 찾는다.",
+    "perKeyword": 10,
+    "minDurationSec": 180,
+    "maxDurationSec": 3600,
+    "minViewCount": 50000,
+    "maxAgeDays": 365
+  },
+
+  "segment": {
+    "_설명": "구간 선정. targetSec 은 창을 훑는 길이이고 실제 길이는 minSec~maxSec 안에서 정해진다.",
+    "targetSec": 45,
+    "minSec": 15,
+    "maxSec": 60,
+    "topN": 3,
+    "minGapSec": 30,
+    "decayRatio": 0.6,
+    "excludeHeadSec": 30,
+    "excludeTailSec": 20,
+    "_제외구간이유": "인트로와 아웃트로가 히트맵 상위에 잡히는 왜곡이 흔하다. 실제 영상에서 확인했다."
+  },
+
+  "subtitle": {
+    "lang": "ko",
+    "snapToleranceSec": 3,
+    "_스냅이유": "구간 경계를 자막 경계로 옮겨 말이 중간에서 잘리지 않게 한다."
+  },
+
+  "render": {
+    "mode": "blur",
+    "subtitles": true,
+    "_자막이유": "원본에 이미 자막이 박힌 영상은 우리 자막이 겹친다. 그런 소재를 다룰 때는 false 로 끈다.",
+    "_mode설명": "blur 는 흐린 배경 위에 원본을 얹고, crop 은 가운데를 잘라낸다. crop 은 자막과 인물이 잘려 기본값이 아니다.",
+    "maxHeight": 1080,
+    "width": 1080,
+    "height": 1920,
+    "fps": 30,
+    "crf": 20,
+    "preset": "medium",
+    "fontFile": "/System/Library/Fonts/AppleSDGothicNeo.ttc",
+    "_폰트이유": "지정하지 않으면 한글이 두부 글자로 깨진다. 종료 코드는 0이라 렌더 결과를 봐야 드러난다.",
+    "ffmpegPath": "ventures/coupang-shorts/tools/ffmpeg",
+    "_ffmpeg이유": "Homebrew 의 ffmpeg 9.0.1 에는 drawtext·subtitles 필터가 없다. 정적 빌드를 따로 둔다."
+  },
+
+  "coupang": {
+    "limitPerHour": 10,
+    "searchLimit": 5,
+    "cacheTtlHours": 24,
+    "maxProductsInDescription": 2,
+    "_한도이유": "쿠팡 파트너스 검색 API 는 시간당 10회, 회당 10개로 제한된다. 이 파이프라인의 가장 좁은 길목이다."
+  },
+
+  "output": {
+    "dailyTarget": 5,
+    "_목표이유": "하루 5편이면 쿠팡 호출 한도 안에 여유 있게 들어가고 사람이 품질을 확인할 수 있다."
+  }
+}
