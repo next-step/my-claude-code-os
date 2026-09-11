@@ -23,10 +23,13 @@ const DEFAULTS = Object.freeze({
   /** "blur" 는 흐린 배경 위에 원본을 얹는다. "crop" 은 가운데를 잘라낸다. */
   mode: "blur",
   blurSigma: 25,
-  /** 자막을 화면 아래에서 얼마나 띄울지. 쇼츠 UI가 하단을 가리므로 넉넉히 올린다. */
-  subtitleMarginV: 260,
+  /**
+   * 자막 크기와 위치를 **화면 픽셀로** 적는다. 실제 ASS 값으로는 아래에서 환산한다.
+   * 쇼츠 UI가 하단 200픽셀쯤을 가리므로 자막을 그보다 위에 둔다.
+   */
+  subtitleFontSizePx: 46,
+  subtitleMarginBottomPx: 300,
   subtitleFont: "Apple SD Gothic Neo",
-  subtitleFontSize: 18,
   attributionFontSize: 34,
   /** 출처 문구를 화면 아래에서 얼마나 띄울지. */
   attributionMarginBottom: 120,
@@ -38,6 +41,22 @@ const DEFAULTS = Object.freeze({
    */
   fontFile: "/System/Library/Fonts/AppleSDGothicNeo.ttc",
 });
+
+/**
+ * libass 가 쓰는 기본 좌표계의 높이.
+ *
+ * 자막 파일에 PlayResY 가 없으면 libass 는 이 값을 기준으로 좌표를 잡고, 실제 영상
+ * 높이에 맞춰 통째로 확대한다. 1920 세로 영상이면 배율이 5배다. 이것을 모르고
+ * FontSize=18, MarginV=260 을 주었더니 글자가 90픽셀로 커지고 자막이 화면 맨 위에
+ * 붙었다 — 렌더 결과를 눈으로 보고서야 드러났다. 그래서 픽셀로 적고 여기서 환산한다.
+ */
+const ASS_기준높이 = 384;
+
+/** 화면 픽셀 값을 libass 좌표계 값으로 환산한다. */
+function ass값(px, videoHeight) {
+  const 배율 = videoHeight / ASS_기준높이;
+  return Math.max(1, Math.round(px / 배율));
+}
 
 /**
  * ffmpeg 필터 그래프의 **작은따옴표 안에 들어갈 값**을 이스케이프한다.
@@ -94,9 +113,11 @@ function buildRenderPlan(p = {}) {
   let label = "base";
 
   if (o.subtitlePath) {
+    // 픽셀로 적은 값을 libass 좌표계로 환산한다. Alignment=2 는 하단 가운데다.
     const style =
-      `FontName=${o.subtitleFont},FontSize=${o.subtitleFontSize},` +
-      `Outline=2,Shadow=0,MarginV=${o.subtitleMarginV},Alignment=2`;
+      `FontName=${o.subtitleFont},FontSize=${ass값(o.subtitleFontSizePx, height)},` +
+      `Outline=${ass값(6, height)},Shadow=0,` +
+      `MarginV=${ass값(o.subtitleMarginBottomPx, height)},Alignment=2`;
     chain.push(
       `[${label}]subtitles=filename='${escapeFilterValue(o.subtitlePath)}':` +
         `force_style='${escapeFilterValue(style)}'[sub]`
@@ -163,4 +184,4 @@ function round3(n) {
   return Math.round(n * 1000) / 1000;
 }
 
-module.exports = { buildRenderPlan, escapeFilterValue, DEFAULTS };
+module.exports = { buildRenderPlan, escapeFilterValue, ass값, ASS_기준높이, DEFAULTS };

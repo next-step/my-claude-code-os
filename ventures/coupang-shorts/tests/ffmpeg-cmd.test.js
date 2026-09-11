@@ -65,8 +65,10 @@ test("AC-24b: 자막 스타일의 쉼표에 백슬래시를 덧붙이지 않는�
   const { filterGraph } = buildRenderPlan({ ...기본입력, subtitlePath: "/tmp/seg.srt" });
   const style = filterGraph.match(/force_style='([^']*)'/)[1];
   assert.doesNotMatch(style, /\\,/, "쉼표를 이스케이프하면 안 된다");
-  assert.match(style, /FontSize=18/);
-  assert.match(style, /MarginV=260/);
+  // 값 자체는 AC-24d 가 본다. 여기서는 속성이 살아남았는지만 확인한다.
+  assert.match(style, /FontSize=\d+/);
+  assert.match(style, /MarginV=\d+/);
+  assert.match(style, /FontName=Apple SD Gothic Neo/);
 });
 
 test("AC-25: 인자를 배열로 돌려주어 셸 해석을 거치지 않는다", () => {
@@ -105,4 +107,32 @@ test("AC-24c: 출처 표기에 한글 폰트 파일을 반드시 지정한다 �
   });
   assert.match(filterGraph, /fontfile='[^']+'/, "폰트 파일이 지정되어야 한다");
   assert.match(filterGraph, /AppleSDGothicNeo/, "기본값으로 한글 폰트가 들어가야 한다");
+});
+
+test("AC-24d: 자막 크기와 위치를 libass 좌표계로 환산한다 — 안 하면 글자가 5배로 커지고 화면 위에 붙는다", () => {
+  // 실제 렌더 결과를 보고서야 드러난 문제다. libass 는 자막 파일에 PlayResY 가 없으면
+  // 높이 384 기준으로 좌표를 잡고 영상 높이에 맞춰 통째로 확대한다.
+  const { filterGraph } = buildRenderPlan({ ...기본입력, subtitlePath: "/tmp/seg.srt" });
+  const style = filterGraph.match(/force_style='([^']*)'/)[1];
+
+  const fontSize = Number(style.match(/FontSize=(\d+)/)[1]);
+  const marginV = Number(style.match(/MarginV=(\d+)/)[1]);
+
+  // 1920 세로에서 배율이 5배이므로, 46픽셀 글자는 ASS 값으로 9 안팎이어야 한다.
+  assert.ok(fontSize < 20, `환산하지 않으면 글자가 5배로 커진다 (FontSize=${fontSize})`);
+  assert.ok(marginV < 100, `환산하지 않으면 자막이 화면 위로 올라간다 (MarginV=${marginV})`);
+  assert.match(style, /Alignment=2/, "하단 가운데 정렬이어야 한다");
+});
+
+test("AC-24e: 화면 높이가 달라지면 환산 값도 따라 달라진다", () => {
+  const 세로 = buildRenderPlan({ ...기본입력, subtitlePath: "/tmp/s.srt" });
+  const 작은화면 = buildRenderPlan({ ...기본입력, subtitlePath: "/tmp/s.srt", width: 540, height: 960 });
+
+  const 크기 = (g) => Number(g.match(/FontSize=(\d+)/)[1]);
+  assert.ok(크기(작은화면.filterGraph) > 크기(세로.filterGraph), "작은 화면일수록 ASS 값이 커야 실제 픽셀이 같다");
+});
+
+test("AC-24f: 자막을 끄면 subtitles 필터를 넣지 않는다 — 원본에 이미 자막이 박힌 영상이 있다", () => {
+  const { filterGraph } = buildRenderPlan({ ...기본입력, subtitlePath: undefined });
+  assert.doesNotMatch(filterGraph, /subtitles=/);
 });
