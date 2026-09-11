@@ -14,6 +14,8 @@
  */
 "use strict";
 
+const { buildShortsTitle } = require("./shorts-title.js");
+
 /** 공정위 심사지침이 요구하는 경제적 이해관계 표시. 문구를 임의로 줄이지 않는다. */
 const DISCLOSURE =
   "이 게시물은 쿠팡 파트너스 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받습니다.";
@@ -50,7 +52,12 @@ function buildPublishMeta(p = {}) {
   const attribution = `원본 영상: ${channelTitle}\nhttps://youtu.be/${videoId}`;
   const hashtags = 해시태그(keywords);
 
-  const title = 제목(videoTitle, LIMITS.titleChars);
+  // 원본 제목을 그대로 자르지 않는다. 유튜브 긴 영상용 제목은 검색 노출을 노린 키워드
+  // 나열이라 쇼츠에서는 잘리고 훅도 죽는다. shorts-title.js 가 훅만 뽑아 낸다.
+  const { title, hook, source: titleSource } = buildShortsTitle(
+    { videoTitle, keywords },
+    { maxChars: LIMITS.titleChars }
+  );
 
   // 설명은 우선순위가 낮은 것부터 버릴 수 있도록 블록으로 나눠 조립한다.
   const 상품블록 = products.length
@@ -75,15 +82,7 @@ function buildPublishMeta(p = {}) {
     }
   }
 
-  return { title, description, hashtags, attribution, disclosure: DISCLOSURE, truncated };
-}
-
-/** 원본 제목을 상한 안으로 줄이고 쇼츠 표시를 붙인다. */
-function 제목(videoTitle, limit) {
-  const 꼬리 = " #shorts";
-  const 본문상한 = limit - 꼬리.length;
-  const base = videoTitle.length > 본문상한 ? `${videoTitle.slice(0, 본문상한 - 1)}…` : videoTitle;
-  return `${base}${꼬리}`;
+  return { title, titleHook: hook, titleSource, description, hashtags, attribution, disclosure: DISCLOSURE, truncated };
 }
 
 /** 검색어를 해시태그로 바꾼다. 공백과 특수문자를 빼야 유튜브가 태그로 인식한다. */
