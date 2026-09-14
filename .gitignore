@@ -62,3 +62,7 @@ ventures/coupang-shorts/.credentials.json
 # 입힐 수 없었다. evermeet.cx 의 정적 빌드로 대체했고, 바이너리는 커밋하지 않는다
 # — 내려받는 방법은 SETUP.md 에 적는다.
 ventures/coupang-shorts/tools/
+
+# 격리 작업 공간(git worktree). 에이전트가 브랜치별 작업 사본을 여기에 만든다.
+# 사본 전체가 커밋되지 않도록 제외한다.
+.claude/worktrees/
