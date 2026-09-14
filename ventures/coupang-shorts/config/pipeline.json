@@ -34,6 +34,12 @@
   "render": {
     "mode": "blur",
     "subtitles": true,
+    "title": true,
+    "titleDurationSec": 3,
+    "titleFontSizePx": 78,
+    "titleTopPx": 220,
+    "titleCharsPerLine": 11,
+    "_타이틀이유": "쇼츠는 첫 몇 초에 훅이 보여야 한다. 원본이 16:9 라 위아래에 656픽셀씩 빈 폭이 생기는데, 거기에 두면 영상을 하나도 가리지 않는다. 화면에 박는 문구는 제목 전체가 아니라 훅 부분만 쓴다 — 뒤에 붙는 키워드와 #shorts 는 검색용이라 화면에 있으면 지저분하다.",
     "_자막이유": "원본에 이미 자막이 박힌 영상은 우리 자막이 겹친다. 그런 소재를 다룰 때는 false 로 끈다.",
     "_mode설명": "blur 는 흐린 배경 위에 원본을 얹고, crop 은 가운데를 잘라낸다. crop 은 자막과 인물이 잘려 기본값이 아니다.",
     "maxHeight": 1080,

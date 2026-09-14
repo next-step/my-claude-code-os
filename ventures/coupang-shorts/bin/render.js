@@ -20,7 +20,7 @@ const { buildSectionDownloadArgs } = require("../lib/ytdlp-cmd.js");
 const { buildRenderPlan } = require("../lib/ffmpeg-cmd.js");
 
 /** 구간 하나를 렌더한다. */
-function renderSegment({ plan, seg, config, ffmpeg, dir }) {
+function renderSegment({ plan, seg, config, ffmpeg, dir, titleHook }) {
   const 원본틀 = path.join(dir, `src${seg.rank}.%(ext)s`);
   const 원본 = path.join(dir, `src${seg.rank}.mp4`);
 
@@ -54,6 +54,12 @@ function renderSegment({ plan, seg, config, ffmpeg, dir }) {
     subtitlePath: config.render.subtitles === false ? undefined : seg.subtitlePath || undefined,
     attributionText: 출처,
     attributionTextPath: path.join(dir, `attr${seg.rank}.txt`),
+    titleText: config.render.title === false ? undefined : titleHook || undefined,
+    titleTextPath: path.join(dir, `title${seg.rank}.txt`),
+    titleDurationSec: config.render.titleDurationSec,
+    titleFontSizePx: config.render.titleFontSizePx,
+    titleTopPx: config.render.titleTopPx,
+    titleCharsPerLine: config.render.titleCharsPerLine,
     mode: config.render.mode,
     width: config.render.width,
     height: config.render.height,
@@ -88,7 +94,12 @@ function main() {
   const dir = runDir(args.video);
   const plan = readJson(path.join(dir, "plan.json"));
 
-  step(3, `렌더 — ${args.video}`);
+  // 화면에 박을 문구는 monetize 가 만들어 둔 훅을 쓴다. 그래서 run.js 는 렌더보다
+  // 수익화를 먼저 돌린다. 없으면 타이틀 없이 렌더한다 — 렌더만 따로 돌릴 때가 있다.
+  const meta = readJson(path.join(dir, "meta.json"));
+  const titleHook = meta && meta.titleHook ? meta.titleHook : "";
+
+  step(3, `렌더 — ${args.video}${titleHook ? ` (타이틀: ${titleHook})` : " (타이틀 없음)"}`);
 
   if (!plan || !plan.segments || plan.segments.length === 0) {
     log("  분석 결과가 없다. 먼저 analyze.js 를 돌린다");
@@ -105,7 +116,7 @@ function main() {
   }
 
   for (const seg of plan.segments) {
-    const r = renderSegment({ plan, seg, config, ffmpeg, dir });
+    const r = renderSegment({ plan, seg, config, ffmpeg, dir, titleHook });
     if (!r.ok) {
       log(`  ✗ ${seg.rank}위 실패 — ${r.reason}`);
       continue;

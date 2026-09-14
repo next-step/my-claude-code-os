@@ -70,8 +70,10 @@ function main() {
     }
     if (args.dryRun) { 성공.push(videoId); continue; }
 
-    if (!단계실행("render.js", 영상인자)) { 실패.push([videoId, "렌더"]); continue; }
+    // 수익화를 렌더보다 먼저 돌린다. 화면에 박을 타이틀 문구를 수익화 단계가 만들기
+    // 때문이다. 수익화는 렌더 결과에 기대는 것이 없어 순서를 바꿔도 안전하다.
     if (!단계실행("monetize.js", 영상인자)) { 실패.push([videoId, "수익화"]); continue; }
+    if (!단계실행("render.js", 영상인자)) { 실패.push([videoId, "렌더"]); continue; }
 
     성공.push(videoId);
   }

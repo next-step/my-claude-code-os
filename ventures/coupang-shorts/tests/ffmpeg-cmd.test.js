@@ -3,7 +3,7 @@
 
 const test = require("node:test");
 const assert = require("node:assert/strict");
-const { buildRenderPlan, escapeFilterValue } = require("../lib/ffmpeg-cmd.js");
+const { buildRenderPlan, escapeFilterValue, wrapTitle } = require("../lib/ffmpeg-cmd.js");
 
 const 기본입력 = {
   inputPath: "/tmp/source.mp4",
@@ -135,4 +135,66 @@ test("AC-24e: 화면 높이가 달라지면 환산 값도 따라 달라진다", 
 test("AC-24f: 자막을 끄면 subtitles 필터를 넣지 않는다 — 원본에 이미 자막이 박힌 영상이 있다", () => {
   const { filterGraph } = buildRenderPlan({ ...기본입력, subtitlePath: undefined });
   assert.doesNotMatch(filterGraph, /subtitles=/);
+});
+
+test("AC-40: 화면 타이틀을 상단에 박고 문구는 파일로 넘긴다", () => {
+  const { filterGraph, sidecarFiles } = buildRenderPlan({
+    ...기본입력,
+    titleText: "락앤락 꿀템 14개",
+    titleTextPath: "/tmp/title1.txt",
+  });
+
+  assert.match(filterGraph, /textfile='\/tmp\/title1\.txt'/);
+  assert.match(filterGraph, /text_align=C/, "여러 줄일 때 가운데 정렬이어야 한다");
+  assert.match(filterGraph, /fontfile='[^']*AppleSDGothicNeo[^']*'/, "한글 폰트를 지정해야 한다");
+
+  // 출처 표기와 같은 이유로 문구를 필터에 직접 박지 않는다.
+  assert.doesNotMatch(filterGraph, /락앤락/, "문구가 필터 그래프에 직접 들어가면 안 된다");
+  assert.ok(sidecarFiles.some((f) => f.path === "/tmp/title1.txt" && f.content.includes("락앤락")));
+});
+
+test("AC-40b: 지정한 초 동안만 보이게 한다", () => {
+  const { filterGraph } = buildRenderPlan({
+    ...기본입력, titleText: "훅 문구", titleTextPath: "/tmp/t.txt", titleDurationSec: 3,
+  });
+  assert.match(filterGraph, /enable='lt\(t\\,3\)'/, "첫 3초만 띄워야 한다");
+
+  // 0 이하면 조건 없이 끝까지 보인다.
+  const 내내 = buildRenderPlan({
+    ...기본입력, titleText: "훅 문구", titleTextPath: "/tmp/t.txt", titleDurationSec: 0,
+  });
+  assert.doesNotMatch(내내.filterGraph, /enable=/);
+});
+
+test("AC-40c: 긴 문구를 낱말 경계에서 줄바꿈한다 — drawtext 는 자동 줄바꿈을 안 한다", () => {
+  assert.equal(wrapTitle("락앤락 꿀템 14개", 11), "락앤락 꿀템 14개");
+  assert.equal(wrapTitle("에어프라이어 유료 광고에 지친 당신을 위해", 11), "에어프라이어 유료\n광고에 지친 당신을\n위해");
+
+  // 낱말 하나가 한 줄보다 길면 그것만 강제로 자른다.
+  assert.equal(wrapTitle("가".repeat(25), 10), `${"가".repeat(10)}\n${"가".repeat(10)}\n${"가".repeat(5)}`);
+
+  for (const 줄 of wrapTitle("아주 긴 훅 문구를 여러 낱말로 늘어놓은 경우입니다", 11).split("\n")) {
+    assert.ok(줄.length <= 11, `${줄.length}자로 한 줄을 넘겼다: ${줄}`);
+  }
+});
+
+test("AC-40d: 타이틀을 끄면 필터를 넣지 않는다", () => {
+  const { filterGraph, sidecarFiles } = buildRenderPlan({ ...기본입력, titleText: undefined });
+  assert.equal(sidecarFiles.length, 0);
+  // 출처 표기도 없으면 drawtext 자체가 없어야 한다.
+  assert.doesNotMatch(filterGraph, /drawtext/);
+});
+
+test("AC-40e: 문구만 주고 파일 경로를 빠뜨리면 막는다", () => {
+  assert.throws(() => buildRenderPlan({ ...기본입력, titleText: "훅" }), /titleTextPath/);
+});
+
+test("AC-40f: 타이틀과 출처 표기를 함께 쓰면 파일 두 개를 알려 준다", () => {
+  const { sidecarFiles, filterGraph } = buildRenderPlan({
+    ...기본입력,
+    attributionText: "원본: 어떤채널", attributionTextPath: "/tmp/attr.txt",
+    titleText: "훅 문구", titleTextPath: "/tmp/title.txt",
+  });
+  assert.deepEqual(sidecarFiles.map((f) => f.path), ["/tmp/attr.txt", "/tmp/title.txt"]);
+  assert.equal((filterGraph.match(/drawtext/g) || []).length, 2);
 });

@@ -40,6 +40,14 @@ const DEFAULTS = Object.freeze({
    * 발견한 문제라 기본값으로 못박아 둔다 (macOS 기본 탑재 폰트).
    */
   fontFile: "/System/Library/Fonts/AppleSDGothicNeo.ttc",
+  /** 화면 상단에 박는 타이틀. 픽셀로 적고 아래에서 쓰인다. */
+  titleFontSizePx: 64,
+  /** 화면 위에서 얼마나 내려온 곳에 둘지. 16:9 원본이면 위 여백이 656픽셀쯤 된다. */
+  titleTopPx: 220,
+  /** 몇 초 동안 보여 줄지. 쓸지 말지는 처음 몇 초 안에 결정된다. */
+  titleDurationSec: 3,
+  /** 한 줄에 몇 글자까지 둘지. drawtext 는 자동 줄바꿈을 하지 않는다. */
+  titleCharsPerLine: 13,
 });
 
 /**
@@ -51,6 +59,31 @@ const DEFAULTS = Object.freeze({
  * 붙었다 — 렌더 결과를 눈으로 보고서야 드러났다. 그래서 픽셀로 적고 여기서 환산한다.
  */
 const ASS_기준높이 = 384;
+
+/**
+ * 타이틀 문구를 줄바꿈한다.
+ *
+ * drawtext 는 자동 줄바꿈을 하지 않는다. 긴 훅을 그대로 넘기면 한 줄로 뻗어 나가
+ * 화면 밖으로 잘린다. 낱말 경계에서 끊고, 낱말 하나가 한 줄보다 길면 그것만 강제로 자른다.
+ */
+function wrapTitle(text, charsPerLine) {
+  const 한줄 = Math.max(4, Math.floor(charsPerLine));
+  const 줄들 = [];
+  let 현재 = "";
+
+  for (const 말 of String(text).split(/\s+/).filter(Boolean)) {
+    if (말.length > 한줄) {
+      if (현재) { 줄들.push(현재); 현재 = ""; }
+      for (let i = 0; i < 말.length; i += 한줄) 줄들.push(말.slice(i, i + 한줄));
+      continue;
+    }
+    const 붙이면 = 현재 ? `${현재} ${말}` : 말;
+    if (붙이면.length > 한줄) { 줄들.push(현재); 현재 = 말; }
+    else { 현재 = 붙이면; }
+  }
+  if (현재) 줄들.push(현재);
+  return 줄들.join("\n");
+}
 
 /** 화면 픽셀 값을 libass 좌표계 값으로 환산한다. */
 function ass값(px, videoHeight) {
@@ -142,6 +175,29 @@ function buildRenderPlan(p = {}) {
     label = "out";
   }
 
+  if (o.titleText) {
+    if (!o.titleTextPath) {
+      throw new Error("titleText 를 주면 titleTextPath 도 함께 주어야 한다");
+    }
+    const 줄바꾼문구 = wrapTitle(o.titleText, o.titleCharsPerLine);
+    sidecarFiles.push({ path: o.titleTextPath, content: 줄바꾼문구 });
+
+    const 폰트 = o.fontFile ? `fontfile='${escapeFilterValue(o.fontFile)}':` : "";
+    // enable 로 첫 몇 초만 띄운다. 그 뒤에는 화면을 비워 영상에 집중하게 한다.
+    const 조건 = Number.isFinite(o.titleDurationSec) && o.titleDurationSec > 0
+      ? `:enable='lt(t\\,${round3(o.titleDurationSec)})'`
+      : "";
+
+    chain.push(
+      `[${label}]drawtext=${폰트}textfile='${escapeFilterValue(o.titleTextPath)}':` +
+        `x=(w-text_w)/2:y=${Math.round(o.titleTopPx)}:` +
+        `fontsize=${Math.round(o.titleFontSizePx)}:fontcolor=white:` +
+        `borderw=6:bordercolor=black@0.85:line_spacing=14:text_align=C` +
+        `${조건}[title]`
+    );
+    label = "title";
+  }
+
   const filterGraph = chain.join(";");
 
   const args = [
@@ -184,4 +240,4 @@ function round3(n) {
   return Math.round(n * 1000) / 1000;
 }
 
-module.exports = { buildRenderPlan, escapeFilterValue, ass값, ASS_기준높이, DEFAULTS };
+module.exports = { buildRenderPlan, escapeFilterValue, wrapTitle, ass값, ASS_기준높이, DEFAULTS };
