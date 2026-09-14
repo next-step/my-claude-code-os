@@ -15,12 +15,12 @@ flowchart LR
     end
 
     subgraph Rest["■ 나머지 비용"]
-        OnD["온디맨드 · 81,385자<br/>호출될 때만 · 상시의 4.0배<br/>스킬 본문 70,384 + 에이전트 11,001"]:::skill
+        OnD["온디맨드 · 82,388자<br/>호출될 때만 · 상시의 4.0배<br/>스킬 본문 71,387 + 에이전트 11,001"]:::skill
         Zero["훅 8개 · 컨텍스트 비용 0<br/>이벤트에 스크립트만 실행"]:::hook
         Mcp["MCP 2개 · 크기 미측정<br/>notion 기성 · 툴 42개<br/>notion-min 자작 · 툴 2개<br/>붙어서 tools/list 해야 안다"]:::data
     end
 
-    Verify["검증되는 것 — 테스트 17파일 · 270개<br/>context-inject AC-1~17<br/>등록 정합성 · 선언 일관성<br/>freshness AC-1~9<br/>문서에 박힌 수치가 낡았는가<br/> <br/>검증 안 되는 것 — 지침을 지켰는가<br/>마크다운은 테스트할 수 없다"]:::skill
+    Verify["검증되는 것 — 테스트 18파일 · 281개<br/>context-inject AC-1~17<br/>등록 정합성 · 선언 일관성<br/>freshness AC-1~9<br/>문서에 박힌 수치가 낡았는가<br/> <br/>검증 안 되는 것 — 지침을 지켰는가<br/>마크다운은 테스트할 수 없다"]:::skill
 
     Human --> Chain
     Chain --> Guides

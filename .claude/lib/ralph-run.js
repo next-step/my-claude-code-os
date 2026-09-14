@@ -38,6 +38,7 @@ const {
   editMirrorPath,
   rewritePatchPaths,
 } = require("./ralph-loop.js");
+const { scoreRubric } = require("./loop-rubric.js");
 
 /**
  * 작업 세션에만 붙이는 인자.
@@ -202,6 +203,40 @@ function runCommandMetrics({ workDir, metrics, execImpl = nodeExecSync }) {
   return { values, details };
 }
 
+/**
+ * 회차마다 `editable` 파일의 **전문 사본**과 루브릭을 남긴다.
+ *
+ * diff만 남기면 특정 회차의 전체 모습을 보려고 앞 회차들을 되짚어 재구성해야 한다.
+ * 회차 수가 늘수록 그 비용이 커지고, 재구성이 틀려도 아무도 모른다. 그래서 전문을 남긴다.
+ * 용량은 지침 몇 KB 수준이고 `experiments/ralph/runs/`는 커밋되지 않는다.
+ *
+ * 루브릭은 **기준 상태 대비**로 잰다. 앞 회차 대비로 재면 조금씩 깎아 내는 것이 매 회차
+ * 좋아 보이는데, 실제로 알고 싶은 것은 "처음과 비교해 무엇이 남았나"이기 때문이다.
+ */
+function writeSnapshot({ iterDir, workDir, mirror, baselineDocs, fsImpl = nodeFs }) {
+  const current = {};
+  for (const [mirrorRel, rel] of Object.entries(mirror || {})) {
+    const from = nodePath.join(workDir, mirrorRel);
+    if (!fsImpl.existsSync(from)) continue;
+    const body = fsImpl.readFileSync(from, "utf8");
+    current[rel] = body;
+    writeFile(nodePath.join(iterDir, "snapshot", mirrorRel.split("/").pop()), body, fsImpl);
+  }
+  const rubric = scoreRubric({ before: baselineDocs, after: current });
+  writeFile(nodePath.join(iterDir, "rubric.json"), `${JSON.stringify(rubric, null, 2)}\n`, fsImpl);
+  return { snapshot: current, rubric };
+}
+
+/** 사본을 만든 직후의 `editable` 내용. 루브릭의 기준이 된다. */
+function readBaselineDocs({ workDir, mirror, fsImpl = nodeFs }) {
+  const docs = {};
+  for (const [mirrorRel, rel] of Object.entries(mirror || {})) {
+    const from = nodePath.join(workDir, mirrorRel);
+    if (fsImpl.existsSync(from)) docs[rel] = fsImpl.readFileSync(from, "utf8");
+  }
+  return docs;
+}
+
 /** 실행 계획. dry-run이 이 숫자를 보여준다. */
 function planSessions(spec) {
   const perProbeSet = spec.probes.length * spec.repeats;
@@ -299,6 +334,7 @@ function runLoop({
     probeDir, probes: spec.probes, repeats: spec.repeats, model: useModel,
     outDir: nodePath.join(root, "baseline", "probes"), spawnImpl, fsImpl,
   });
+  const baselineDocs = readBaselineDocs({ workDir, mirror, fsImpl });
   const baselineAgg = aggregateProbes(baselineRuns);
   const noiseBand = computeNoiseBand(baselineRuns);
   // guard 명령도 고치기 전에 한 번 잰다. 작업 사본은 훅을 뺀 상태라 목표와 무관하게
@@ -325,7 +361,9 @@ function runLoop({
     log(`중단: ${reason}`);
     const summary = summarizeRun({ spec, history: [], baseline, noiseBand, decision: { action: "aborted", reason } });
     writeFile(nodePath.join(root, "summary.json"), `${JSON.stringify(summary, null, 2)}\n`, fsImpl);
-    return summary;
+    // 반환 모양은 정상 경로와 같아야 한다. 다르면 호출부가 경로마다 분기하게 되고,
+    // 그 분기를 빼먹은 쪽이 조용히 undefined를 읽는다.
+    return { dryRun: false, sessions, estimate, history: [], summary };
   }
   log(`베이스라인 중앙값 ${baselineAgg.median_chars}자, 최대 ${baselineAgg.max_chars}자, 노이즈 폭 ${noiseBand}자`);
   for (const d of baselineGuards.details) {
@@ -357,6 +395,7 @@ function runLoop({
     // 베이스라인과 같은 값이 계속 나온다 — context-slim-30 3회차 실주행이 여기 걸려
     // `import_chars`가 두 회차 내내 10,896에서 미동이 없었다.
     // 그래서 먼저 옮겨 심고, 측정 사본에서 잰다. 명령 지표와 측정 세션이 같은 상태를 본다.
+    const snap = writeSnapshot({ iterDir, workDir, mirror, baselineDocs, fsImpl });
     syncEditable({ workDir, probeDir, editable: spec.editable, mirror, fsImpl });
     const guardRun = runCommandMetrics({ workDir: probeDir, metrics: [...spec.targets, ...spec.guards], execImpl });
 
@@ -371,13 +410,14 @@ function runLoop({
       values: { response: agg, command: guardRun.values }, baseline,
     });
     const primary = agg[baselinePrimaryKey] ?? null;
-    writeFile(nodePath.join(iterDir, "metrics.json"), `${JSON.stringify({ aggregate: agg, guards: guardRun.details, evaluation }, null, 2)}\n`, fsImpl);
+    writeFile(nodePath.join(iterDir, "metrics.json"), `${JSON.stringify({ aggregate: agg, guards: guardRun.details, evaluation, rubric: snap.rubric }, null, 2)}\n`, fsImpl);
     writeFile(nodePath.join(iterDir, "timing.json"), `${JSON.stringify({ work: toTimingRecord(work.parsed), wall_ms: Date.now() - started, exit_code: work.exitCode }, null, 2)}\n`, fsImpl);
 
-    history.push({ iteration, evaluation, primary, baselinePrimary });
+    history.push({ iteration, evaluation, primary, baselinePrimary, rubric: snap.rubric });
     for (const r of evaluation.targets) {
       log(`  target ${r.id}: ${r.value ?? "측정 실패"} (목표 ${r.op} ${r.threshold ?? "?"}) → ${r.pass ? "통과" : "미달"}`);
     }
+    log(`  루브릭(관측): ${snap.rubric.dimensions.filter((d) => d.value !== null).map((d) => `${d.label} ${d.value}`).join(" · ")}`);
     for (const r of evaluation.guards) {
       log(`  guard  ${r.id}: ${r.value ?? "측정 실패"} (기준 ${r.op} ${r.threshold ?? "?"}) → ${r.pass ? "통과" : "깨짐"}`);
     }
@@ -452,6 +492,6 @@ if (require.main === module) {
 
 module.exports = {
   NOTES_FILE, WORK_ARM, PROBE_ARM,
-  loadGoal, materializeCopies, syncEditable, runProbes, runCommandMetrics,
+  loadGoal, materializeCopies, syncEditable, runProbes, runCommandMetrics, writeSnapshot, readBaselineDocs,
   planSessions, collectPatch, runLoop, parseArgv, main, PATCH_IGNORE,
 };

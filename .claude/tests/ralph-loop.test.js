@@ -602,7 +602,7 @@ test("AC-31: 베이스라인을 못 재면 회차를 하나도 시작하지 않�
     mkdirSync: () => {}, rmSync: () => {}, readdirSync: () => [], cpSync: () => {},
   };
   const spec = parseGoalSpec(goal({ max_iterations: 4 }));
-  const summary = runLoop({
+  const { summary } = runLoop({
     sourceDir: "/src", spec, root: "/out", workDir: "/w", probeDir: "/p",
     dryRun: false, fsImpl: fs, spawnImpl: fakeSpawn, execImpl: exec, log: () => {},
   });
@@ -653,4 +653,65 @@ test("AC-32: 명령 지표는 작업본을 옮겨 심은 뒤 측정 사본에서
   const lastSync = order.map((o) => o.step).lastIndexOf("sync");
   const lastMeasure = order.map((o) => o.step).lastIndexOf("measure");
   assert.ok(lastSync < lastMeasure, `옮겨 심은 뒤에 재야 합니다: ${JSON.stringify(order.map((o) => o.step))}`);
+});
+
+test("AC-33: 회차마다 산출물 전문 사본과 루브릭을 남긴다", () => {
+  // diff만 남기면 특정 회차의 전체 모습을 보려고 앞 회차를 되짚어 재구성해야 한다.
+  const exec = (cmd) => ({ stdout: cmd.startsWith("git rev-parse") ? "basesha\n" : "ℹ fail 0\n", stderr: "", exitCode: 0 });
+  const fakeSpawn = () => ({
+    status: 0,
+    stdout: JSON.stringify({ is_error: false, num_turns: 1, duration_ms: 1, total_cost_usd: 0, result: "짧다 `a.md:1`", usage: {} }),
+  });
+  // 사본 만들기는 cpSync가 하는데 가짜 fs는 아무것도 안 한다. 사본에 파일이 있는 상태를 직접 만든다.
+  const body = "# 가\n- 근거: `a.js:1`\n- 한계를 말한다.\n";
+  const files = { "/src/.claude/context/response-brevity.md": body, "/w/.claude/context/response-brevity.md": body };
+  const fs = {
+    existsSync: (p) => p in files,
+    readFileSync: (p) => files[p] ?? "",
+    writeFileSync: (p, v) => { files[p] = v; },
+    mkdirSync: () => {}, rmSync: () => {}, readdirSync: () => [], cpSync: () => {},
+  };
+  const spec = parseGoalSpec(goal({ max_iterations: 1 }));
+  runLoop({
+    sourceDir: "/src", spec, root: "/out", workDir: "/w", probeDir: "/p",
+    dryRun: false, fsImpl: fs, spawnImpl: fakeSpawn, execImpl: exec, log: () => {},
+  });
+
+  const rubricPath = Object.keys(files).find((p) => p.endsWith("iteration-1/rubric.json"));
+  assert.ok(rubricPath, `루브릭을 남겨야 합니다: ${JSON.stringify(Object.keys(files))}`);
+  const rubric = JSON.parse(files[rubricPath]);
+  assert.equal(rubric.dimensions.length, 6, "여섯 차원을 남겨야 합니다");
+  assert.ok(rubric.caveat.includes("종료 판정에 쓰이지 않는다"));
+  assert.ok(Object.keys(files).some((p) => p.includes("iteration-1/snapshot/")), "전문 사본을 남겨야 합니다");
+
+  const metrics = JSON.parse(files["/out/iteration-1/metrics.json"]);
+  assert.ok(metrics.rubric, "metrics.json에도 루브릭이 실려야 합니다");
+});
+
+test("AC-34: 루브릭은 종료 판정에 쓰이지 않는다", () => {
+  // 점수를 판정에 물리면 루프가 점수를 최적화한다. 이 저장소가 세 실험 연속으로
+  // "채점 기준이 대상보다 부정확했다"를 겪은 뒤 일부러 뺀 결정이다.
+  const exec = (cmd) => ({ stdout: cmd.startsWith("git rev-parse") ? "basesha\n" : "ℹ fail 0\n", stderr: "", exitCode: 0 });
+  const fakeSpawn = () => ({
+    status: 0,
+    stdout: JSON.stringify({ is_error: false, num_turns: 1, duration_ms: 1, total_cost_usd: 0, result: "짧다 `a.md:1`", usage: {} }),
+  });
+  const body2 = "# 가\n- 근거: `a.js:1`\n";
+  const files = { "/src/.claude/context/response-brevity.md": body2, "/w/.claude/context/response-brevity.md": body2 };
+  const fs = {
+    existsSync: (p) => p in files, readFileSync: (p) => files[p] ?? "", writeFileSync: (p, v) => { files[p] = v; },
+    mkdirSync: () => {}, rmSync: () => {}, readdirSync: () => [], cpSync: () => {},
+  };
+  // target은 절대 통과할 수 없게 두고, 루브릭은 전부 1.0이 되게 둔다.
+  const spec = parseGoalSpec(goal({
+    max_iterations: 1,
+    targets: [{ id: "chars", kind: "response", extract: "median_chars", op: "<=", absolute: 1 }],
+    guards: [],
+  }));
+  const { summary } = runLoop({
+    sourceDir: "/src", spec, root: "/out", workDir: "/w", probeDir: "/p",
+    dryRun: false, fsImpl: fs, spawnImpl: fakeSpawn, execImpl: exec, log: () => {},
+  });
+  assert.notEqual(summary.outcome, "done", "루브릭이 좋아도 target을 못 채우면 done이 아니다");
+  assert.ok(summary.trend[0].rubric, "그래도 추이에는 루브릭이 실린다");
 });

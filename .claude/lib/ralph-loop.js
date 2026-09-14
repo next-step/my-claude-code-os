@@ -467,6 +467,9 @@ function summarizeRun({ spec, history = [], baseline = null, noiseBand = 0, deci
     primary: h.primary,
     targetsMet: h.evaluation ? h.evaluation.targetsMet : null,
     guardBreaches: h.evaluation ? h.evaluation.guardBreaches : [],
+    // 루브릭은 관측 기록이라 판정에 쓰이지 않는다. 그래도 추이에 싣는 이유는,
+    // 회차별 파일을 하나씩 열지 않고도 "무엇이 깎여 나갔나"를 한눈에 보기 위해서다.
+    rubric: h.rubric ? Object.fromEntries(h.rubric.dimensions.map((d) => [d.id, d.value])) : null,
   }));
   const caveats = [
     "목표 달성은 '지표가 목표값에 닿았다'는 뜻이지 '결과가 좋아졌다'는 뜻이 아닙니다. 응답이 짧아지면서 쓸모가 줄었는지는 사람이 최종 패치를 읽고 판단해야 합니다.",
