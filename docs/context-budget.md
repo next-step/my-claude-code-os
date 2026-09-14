@@ -145,3 +145,34 @@ Claude Code 2.1.263은 MCP 툴을 **이름만 싣고 스키마는 지연 로딩*
 - `context-ab`의 SKILL.md 본문(6,937바이트)은 온디맨드라 상시 비용에 안 잡히지만, 스킬이 **호출되면** 그때 다 낸다.
 - 이 하네스가 실제로 값을 하는지는 아직 모른다. **한 번도 전체 실행을 돌리지 않았다.**
   dry-run과 1회 실측만 확인했다(아래 `docs/context-ab-test.md`의 실험 1~3은 이 하네스가 아니라 손으로 돌린 것이다).
+
+---
+
+## 2026-09-14 — 외부 도구 3종을 전역에 설치했고, 계기판에 잡히지 않았다
+
+### 무엇을 설치했나
+
+사용자의 선택에 따라 세 도구를 모두 **사용자 전역 범위**(`~/.claude`)에 설치했습니다. 그래서 이 저장소의 `summarizeBudget()`에는 설치 전후 수치가 똑같이 나옵니다(상시 로드 19,097자). 이 함수는 프로젝트 안의 `.claude/skills`만 집계하기 때문입니다. 2026-09-07 ②에서 MCP가 빠져 있던 것과 같은 유형의 사각지대입니다.
+
+### 잰 값 (Claude Code 2.1.270)
+
+| 도구 | 매 세션 실리는 것 | 값 | 어떻게 쟀나 |
+|---|---|---|---|
+| superpowers 6.3.0 | 스킬 14개의 설명 | 약 688토큰 | `claude plugin details` |
+| | SessionStart 훅이 주입하는 `using-superpowers/SKILL.md` 전문 | 3,108바이트 | `hooks/session-start`를 읽고 `wc -c`로 측정 |
+| ouroboros 0.54.4 | 스킬 22개의 설명 | 약 726토큰 | `claude plugin details` |
+| | UserPromptSubmit 훅이 조건부로 주입하는 스킬 제안 | 짧은 블록 1개 | `scripts/keyword-detector.py` 참고. 첫 사용이거나 `ooo` 키워드가 있을 때만 주입한다 |
+| | MCP 서버 1개(`ouroboros`) | 미측정 | `ooo setup`을 실행해야 등록된다 |
+| gstack | 스킬 56개의 설명 | 4,076자 | `~/.claude/skills/*/SKILL.md`의 frontmatter를 합산 |
+
+→ 단위가 토큰과 자·바이트로 섞여 있어서 하나의 합계로 만들지 않았습니다. 추정치를 실측값과 한 숫자로 합치지 않는다는 2026-09-07 ②의 원칙을 따른 것입니다.
+
+### 발견한 것
+
+- **"훅은 컨텍스트 비용이 0"이라는 이 문서의 분류표가 틀릴 수 있습니다.** superpowers의 SessionStart 훅은 `additionalContext`로 스킬 문서 전문을 매 세션 주입합니다. `claude plugin details`도 이 훅을 "harness-only — no model context cost"로 표시하므로, 도구가 보고하는 수치를 그대로 믿으면 안 됩니다.
+- **역할이 겹칩니다.** superpowers의 `brainstorming`과 `test-driven-development`, ouroboros의 `interview`와 `ralph`, gstack의 `spec`은 이 저장소의 요청 게이트, `requirement-interview`, ATDD 파이프라인, `ralph-loop`와 같은 일을 합니다. 어느 쪽이 먼저 호출되는지는 아직 관찰하지 않았습니다.
+
+### 한계
+
+- 전역 플러그인과 전역 스킬을 집계하도록 `context-map.js`를 확장하지는 않았습니다. 이번 작업은 설치가 범위였기 때문입니다.
+- gstack의 스킬 설명은 하네스가 첫 문장만 잘라 싣는 경우가 있어서, 4,076자는 상한에 가까운 값일 수 있습니다. 실제로 실리는 양은 확인하지 못했습니다.
