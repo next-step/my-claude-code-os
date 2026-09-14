@@ -612,3 +612,45 @@ test("AC-31: 베이스라인을 못 재면 회차를 하나도 시작하지 않�
   assert.strictEqual(sessions, spec.probes.length * spec.repeats, `베이스라인 세션만 띄워야 합니다: ${sessions}개`);
   assert.ok(files["/out/summary.json"], "summary.json은 남겨야 합니다");
 });
+
+test("AC-32: 명령 지표는 작업본을 옮겨 심은 뒤 측정 사본에서 잰다", () => {
+  // 회귀. 옮겨 심기 전에 재면 작업 세션이 고친 내용을 못 보고 베이스라인과 같은 값이
+  // 계속 나온다 — context-slim-30 3회차 실주행에서 import_chars가 두 회차 내내
+  // 10,896에서 미동이 없었다. 순서와 대상 사본을 둘 다 잠근다.
+  const order = [];
+  const exec = (cmd, opts) => {
+    if (cmd.startsWith("git rev-parse")) return { stdout: "basesha\n", stderr: "", exitCode: 0 };
+    if (cmd.includes("budget-report")) order.push({ step: "measure", cwd: opts && opts.cwd });
+    return { stdout: "# import_chars 100\nℹ fail 0\n", stderr: "", exitCode: 0 };
+  };
+  const fakeSpawn = () => ({
+    status: 0,
+    stdout: JSON.stringify({ is_error: false, num_turns: 1, duration_ms: 1, total_cost_usd: 0, result: "짧다 `a.md:1`", usage: {} }),
+  });
+  const files = { "/w/ralph-edit/claude__context__response-brevity.md": "줄인 내용" };
+  const fs = {
+    existsSync: (p) => p in files,
+    readFileSync: (p) => files[p] ?? "",
+    writeFileSync: (p, v) => { files[p] = v; if (p.startsWith("/p/")) order.push({ step: "sync", path: p }); },
+    mkdirSync: () => {}, rmSync: () => {}, readdirSync: () => [], cpSync: () => {},
+  };
+  const spec = parseGoalSpec(goal({
+    max_iterations: 1,
+    targets: [{ id: "import_chars", kind: "command", cmd: "node budget-report.js", extract: "import_chars", op: "<=", absolute: 7600 }],
+    guards: [],
+  }));
+  runLoop({
+    sourceDir: "/src", spec, root: "/out", workDir: "/w", probeDir: "/p",
+    dryRun: false, fsImpl: fs, spawnImpl: fakeSpawn, execImpl: exec, log: () => {},
+  });
+
+  const measures = order.filter((o) => o.step === "measure");
+  assert.ok(measures.length >= 2, `베이스라인과 이터레이션에서 각각 재야 합니다: ${measures.length}회`);
+  for (const m of measures) {
+    assert.strictEqual(m.cwd, "/p", `측정 사본에서 재야 합니다: ${m.cwd}`);
+  }
+  // 이터레이션의 측정은 옮겨 심기 뒤에 와야 한다.
+  const lastSync = order.map((o) => o.step).lastIndexOf("sync");
+  const lastMeasure = order.map((o) => o.step).lastIndexOf("measure");
+  assert.ok(lastSync < lastMeasure, `옮겨 심은 뒤에 재야 합니다: ${JSON.stringify(order.map((o) => o.step))}`);
+});

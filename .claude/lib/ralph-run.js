@@ -303,7 +303,9 @@ function runLoop({
   const noiseBand = computeNoiseBand(baselineRuns);
   // guard 명령도 고치기 전에 한 번 잰다. 작업 사본은 훅을 뺀 상태라 목표와 무관하게
   // 이미 깨져 있는 테스트가 있고, 그 상태를 모르면 가드가 처음부터 빨간불이 된다.
-  const baselineGuards = runCommandMetrics({ workDir, metrics: [...spec.targets, ...spec.guards], execImpl });
+  // 베이스라인도 이터레이션과 **같은 사본에서** 잰다. 다른 곳에서 재면 사본 구성 차이가
+  // 그대로 차이로 잡혀 relative_to_baseline이 엉뚱한 값을 기준으로 삼는다.
+  const baselineGuards = runCommandMetrics({ workDir: probeDir, metrics: [...spec.targets, ...spec.guards], execImpl });
   const baseline = { response: baselineAgg, command: baselineGuards.values };
   writeFile(
     nodePath.join(root, "baseline", "metrics.json"),
@@ -350,8 +352,13 @@ function runLoop({
     if (work.stderr) writeFile(nodePath.join(iterDir, "work-stderr.txt"), maskSecrets(work.stderr), fsImpl);
     execImpl(`git add -A && git commit -q -m "ralph ${spec.id} iteration ${iteration}" --allow-empty`, { cwd: workDir });
 
-    const guardRun = runCommandMetrics({ workDir, metrics: [...spec.targets, ...spec.guards], execImpl });
+    // **순서가 중요하다.** 작업 세션은 `ralph-edit/` 작업본만 고치므로, 옮겨 심기 전의
+    // 사본에는 원본이 그대로 있다. 그 상태에서 명령 지표를 돌리면 고친 내용을 못 보고
+    // 베이스라인과 같은 값이 계속 나온다 — context-slim-30 3회차 실주행이 여기 걸려
+    // `import_chars`가 두 회차 내내 10,896에서 미동이 없었다.
+    // 그래서 먼저 옮겨 심고, 측정 사본에서 잰다. 명령 지표와 측정 세션이 같은 상태를 본다.
     syncEditable({ workDir, probeDir, editable: spec.editable, mirror, fsImpl });
+    const guardRun = runCommandMetrics({ workDir: probeDir, metrics: [...spec.targets, ...spec.guards], execImpl });
 
     log(`[이터레이션 ${iteration}] 측정 세션 ${sessions.probes * sessions.repeats}개를 띄웁니다.`);
     const runs = runProbes({
