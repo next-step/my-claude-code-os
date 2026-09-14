@@ -212,7 +212,12 @@ Claude Code 위에서 도는 개인용 "운영체제". 반복 작업을 세 가�
   - [ ] 실제 요청 1~2건을 OS로 처리하고 목업 대비 차이(권한·빌드·테스트 부재 등) 정리
   - [ ] 그 경험으로 `/verify`·`context-loader`·`priority` 기준 보정
 
-- [ ] **Step 3** — *(미정)*
+- [ ] **Step 3** — OS 자가 개선 루프 (Day 3 과제)
+  - 방향은 인터뷰로 확정 — [`maintenance/interviews/2026-09-14-os-health-loop.md`](../maintenance/interviews/2026-09-14-os-health-loop.md)
+  - [ ] `SessionEnd` 훅 — 세션 종료 시 `maintenance/requests/*.md` 를 스캔해 §4 성공 기준 지표
+    (내부 처리 비율 · 평균 처리 시간 · `blocked` 율)를 계산, 이력 파일에 스냅샷 한 줄 append
+  - [ ] `SessionStart` 훅(`session-open-requests.sh`) 확장 — 직전 스냅샷 대비 추이 표시
+  - [ ] 1페이지 문서화 (PR 본문 첨부)
 ---
 
 ## 7. 열린 질문 / 결정 대기
@@ -235,7 +240,7 @@ Claude Code 위에서 도는 개인용 "운영체제". 반복 작업을 세 가�
 
 ### 보류한 아이디어 (필요해지면 착수)
 
-- **`/digest` — 성과 리포트 스킬.** `maintenance/requests/` 전체를 훑어 §4 성공 기준
-  (내부 처리 비율, 평균 사이클타임, `blocked` 율)을 집계. 요청 데이터가 쌓인 뒤 Step 2에서 판단.
+- ~~**`/digest` — 성과 리포트 스킬.**~~ → **Step 3 로 승격.** 인터뷰([`2026-09-14-os-health-loop.md`](../maintenance/interviews/2026-09-14-os-health-loop.md))로
+  방향 확정: 수동 조회 스킬 대신 `SessionEnd` 훅이 §4 지표를 자동으로 스냅샷 누적.
 - **`/reopen` — 재개 스킬.** `done` / `handed_off` / `outsourced` 요청이 재발했을 때
   이전 케이스와 링크해 다시 여는 경로. 실제 재발 케이스가 생기면 착수.
