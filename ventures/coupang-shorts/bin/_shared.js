@@ -52,10 +52,27 @@ function hasCoupangCredentials(creds) {
   return Boolean(creds.coupangAccessKey && creds.coupangSecretKey);
 }
 
-/** 오늘 날짜의 실행 디렉터리. `runs/` 는 gitignore 된다. */
+/**
+ * 이 영상의 실행 디렉터리. `runs/` 는 gitignore 된다.
+ *
+ * 이미 만들어 둔 디렉터리가 있으면 날짜가 달라도 그것을 쓴다. 오늘 날짜로만 계산하면
+ * 어제 분석한 영상을 오늘 다시 렌더하거나 문구만 다시 뽑는 일이 안 된다 — 실제로
+ * 제목 규칙을 고치고 지난 영상들의 문구를 다시 만들려다 "분석 결과가 없다" 로 막혔다.
+ */
 function runDir(videoId, now = new Date()) {
-  const 날짜 = now.toISOString().slice(0, 10);
-  const d = path.join(ROOT, "runs", 날짜, videoId || "_");
+  const 이름 = videoId || "_";
+  const 뿌리 = path.join(ROOT, "runs");
+
+  if (fs.existsSync(뿌리)) {
+    // 최근 날짜부터 본다. 같은 영상을 여러 날 다뤘다면 마지막 것이 맞다.
+    const 날짜들 = fs.readdirSync(뿌리).filter((n) => /^\d{4}-\d{2}-\d{2}$/.test(n)).sort().reverse();
+    for (const 날짜 of 날짜들) {
+      const 후보 = path.join(뿌리, 날짜, 이름);
+      if (fs.existsSync(후보)) return 후보;
+    }
+  }
+
+  const d = path.join(뿌리, now.toISOString().slice(0, 10), 이름);
   fs.mkdirSync(d, { recursive: true });
   return d;
 }
