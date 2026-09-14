@@ -457,3 +457,79 @@ test("AC-24: 작업 세션에만 편집 승인 인자가 붙고, 측정 세션�
   assert.strictEqual(withMode.length, 1, `작업 세션 1개에만 붙어야 합니다: ${withMode.length}개`);
   assert.strictEqual(withMode[0][withMode[0].indexOf("--permission-mode") + 1], "acceptEdits");
 });
+
+test("AC-25: kind가 command인 target도 실제로 실행돼 값이 잡힌다", () => {
+  // 회귀. 처음에는 명령을 돌리는 함수에 guards만 넘겨서, 명령 target을 쓴 목표 정의가
+  // 스키마는 통과하면서 값이 영원히 null로 남았다. null은 통과로 치지 않으므로
+  // 루프가 무엇을 해도 상한까지 돌다 exhausted로 끝났다 — context-slim-30 첫 실주행이
+  // 14세션을 쓰고서야 이걸 드러냈다.
+  const cmds = [];
+  const exec = (cmd) => {
+    cmds.push(cmd);
+    if (cmd.startsWith("git rev-parse")) return { stdout: "basesha\n", stderr: "", exitCode: 0 };
+    if (cmd.includes("budget-report")) return { stdout: "# import_chars 7000\n", stderr: "", exitCode: 0 };
+    return { stdout: "ℹ fail 0\n", stderr: "", exitCode: 0 };
+  };
+  const fakeSpawn = () => ({
+    status: 0,
+    stdout: JSON.stringify({ is_error: false, num_turns: 1, duration_ms: 1, total_cost_usd: 0, result: "짧다 `a.md:1`", usage: {} }),
+  });
+  const files = {};
+  const fs = {
+    existsSync: (p) => p in files, readFileSync: (p) => files[p] ?? "", writeFileSync: (p, v) => { files[p] = v; },
+    mkdirSync: () => {}, rmSync: () => {}, readdirSync: () => [], cpSync: () => {},
+  };
+  const spec = parseGoalSpec(goal({
+    max_iterations: 1,
+    targets: [{ id: "import_chars", kind: "command", cmd: "node budget-report.js", extract: "import_chars", op: "<=", absolute: 7600 }],
+    guards: [],
+  }));
+  runLoop({
+    sourceDir: "/src", spec, root: "/out", workDir: "/w", probeDir: "/p",
+    dryRun: false, fsImpl: fs, spawnImpl: fakeSpawn, execImpl: exec, log: () => {},
+  });
+
+  assert.ok(cmds.some((c) => c.includes("budget-report")), `target 명령이 실행돼야 합니다: ${JSON.stringify(cmds)}`);
+  const written = JSON.parse(files["/out/iteration-1/metrics.json"]);
+  const t = written.evaluation.targets.find((x) => x.id === "import_chars");
+  assert.strictEqual(t.value, 7000, "target 값이 잡혀야 합니다");
+  assert.strictEqual(t.pass, true, "7000 <= 7600 이므로 통과해야 합니다");
+});
+
+test("AC-26: 명령 target도 베이스라인에서 재므로 relative_to_baseline을 쓸 수 있다", () => {
+  // 베이스라인에서 안 재면 기준값이 서지 않아 배수 목표가 통째로 무력해진다 — AC-20의 target 판이다.
+  let call = 0;
+  const exec = (cmd) => {
+    if (cmd.startsWith("git rev-parse")) return { stdout: "basesha\n", stderr: "", exitCode: 0 };
+    if (cmd.includes("budget-report")) {
+      call += 1;
+      // 베이스라인 10000 → 회차 1에서 6000 (60%, 목표 70% 이하를 만족)
+      return { stdout: `# import_chars ${call === 1 ? 10000 : 6000}\n`, stderr: "", exitCode: 0 };
+    }
+    return { stdout: "ℹ fail 0\n", stderr: "", exitCode: 0 };
+  };
+  const fakeSpawn = () => ({
+    status: 0,
+    stdout: JSON.stringify({ is_error: false, num_turns: 1, duration_ms: 1, total_cost_usd: 0, result: "짧다 `a.md:1`", usage: {} }),
+  });
+  const files = {};
+  const fs = {
+    existsSync: (p) => p in files, readFileSync: (p) => files[p] ?? "", writeFileSync: (p, v) => { files[p] = v; },
+    mkdirSync: () => {}, rmSync: () => {}, readdirSync: () => [], cpSync: () => {},
+  };
+  const spec = parseGoalSpec(goal({
+    max_iterations: 1,
+    targets: [{ id: "import_chars", kind: "command", cmd: "node budget-report.js", extract: "import_chars", op: "<=", relative_to_baseline: 0.7 }],
+    guards: [],
+  }));
+  runLoop({
+    sourceDir: "/src", spec, root: "/out", workDir: "/w", probeDir: "/p",
+    dryRun: false, fsImpl: fs, spawnImpl: fakeSpawn, execImpl: exec, log: () => {},
+  });
+
+  const baseline = JSON.parse(files["/out/baseline/metrics.json"]);
+  assert.ok(baseline.guards.some((g) => g.id === "import_chars" && g.value === 10000), "베이스라인에서 target 명령을 재야 합니다");
+  const t = JSON.parse(files["/out/iteration-1/metrics.json"]).evaluation.targets[0];
+  assert.strictEqual(t.threshold, 7000, "기준값은 베이스라인 × 0.7 이어야 합니다");
+  assert.strictEqual(t.pass, true);
+});

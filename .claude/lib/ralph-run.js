@@ -180,15 +180,24 @@ function runProbes({ probeDir, probes, repeats, model, outDir = null, spawnImpl 
   return runs;
 }
 
-/** guard 중 셸 명령인 것들을 작업 사본 안에서 돌린다. */
-function runGuardCommands({ workDir, guards, execImpl = nodeExecSync }) {
+/**
+ * `kind: "command"`인 지표를 작업 사본 안에서 돌린다.
+ *
+ * **targets와 guards를 함께 받아야 한다.** 처음에는 guard만 받았는데, `parseMetricSpec`은
+ * target에도 `kind: "command"`를 허용한다. 그래서 명령 target을 쓴 목표 정의는 스키마는
+ * 통과하면서 값이 영원히 `null`로 남았고, `null`은 통과로 치지 않으므로(`ralph-loop.js`의
+ * evaluateMetrics) 루프가 무엇을 해도 상한까지 돌다 `exhausted`로 끝났다. 실제로
+ * context-slim-30 첫 실주행이 여기 걸려 14세션을 쓰고서야 드러났다.
+ * 지표를 못 재는 것보다 나쁜 것은, 못 쟀다는 사실이 미달과 구분되지 않는 것이다.
+ */
+function runCommandMetrics({ workDir, metrics, execImpl = nodeExecSync }) {
   const values = {};
   const details = [];
-  for (const g of guards.filter((x) => x.kind === "command")) {
-    const out = execImpl(g.cmd, { cwd: workDir });
-    const value = extractFromCommand(out, g);
-    values[g.id] = value;
-    details.push({ id: g.id, cmd: g.cmd, exitCode: out.exitCode, value });
+  for (const m of metrics.filter((x) => x.kind === "command")) {
+    const out = execImpl(m.cmd, { cwd: workDir });
+    const value = extractFromCommand(out, m);
+    values[m.id] = value;
+    details.push({ id: m.id, cmd: m.cmd, exitCode: out.exitCode, value });
   }
   return { values, details };
 }
@@ -294,7 +303,7 @@ function runLoop({
   const noiseBand = computeNoiseBand(baselineRuns);
   // guard 명령도 고치기 전에 한 번 잰다. 작업 사본은 훅을 뺀 상태라 목표와 무관하게
   // 이미 깨져 있는 테스트가 있고, 그 상태를 모르면 가드가 처음부터 빨간불이 된다.
-  const baselineGuards = runGuardCommands({ workDir, guards: spec.guards, execImpl });
+  const baselineGuards = runCommandMetrics({ workDir, metrics: [...spec.targets, ...spec.guards], execImpl });
   const baseline = { response: baselineAgg, command: baselineGuards.values };
   writeFile(
     nodePath.join(root, "baseline", "metrics.json"),
@@ -326,7 +335,7 @@ function runLoop({
     if (work.stderr) writeFile(nodePath.join(iterDir, "work-stderr.txt"), maskSecrets(work.stderr), fsImpl);
     execImpl(`git add -A && git commit -q -m "ralph ${spec.id} iteration ${iteration}" --allow-empty`, { cwd: workDir });
 
-    const guardRun = runGuardCommands({ workDir, guards: spec.guards, execImpl });
+    const guardRun = runCommandMetrics({ workDir, metrics: [...spec.targets, ...spec.guards], execImpl });
     syncEditable({ workDir, probeDir, editable: spec.editable, mirror, fsImpl });
 
     log(`[이터레이션 ${iteration}] 측정 세션 ${sessions.probes * sessions.repeats}개를 띄웁니다.`);
@@ -421,6 +430,6 @@ if (require.main === module) {
 
 module.exports = {
   NOTES_FILE, WORK_ARM, PROBE_ARM,
-  loadGoal, materializeCopies, syncEditable, runProbes, runGuardCommands,
+  loadGoal, materializeCopies, syncEditable, runProbes, runCommandMetrics,
   planSessions, collectPatch, runLoop, parseArgv, main, PATCH_IGNORE,
 };
