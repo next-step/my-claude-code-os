@@ -42,6 +42,16 @@ def create_app():
             return jsonify({"error": "not found"}), 404
         return jsonify(_serialize(pid))
 
+    @app.delete("/posts/<int:pid>")
+    def delete_post(pid):
+        # 없는 id 는 GET 과 같은 형식으로 거부한다. 삭제(부작용)는 가드 통과 후.
+        if pid not in posts:
+            return jsonify({"error": "not found"}), 404
+
+        del posts[pid]
+        # next_id 는 건드리지 않는다 — 삭제한 id 를 재사용하면 안 된다.
+        return "", 204
+
     return app
 
 
