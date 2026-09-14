@@ -118,3 +118,65 @@ test("AC-15j: 버전 꼬리표와 검색 노출용 관용구를 검색어로 쓰
   }
   assert.ok(나온말.includes("무선청소기"));
 });
+
+test("AC-15k: 제품 모델명 조각은 거르되 USB·SSD 같은 상품군은 남긴다", () => {
+  // "A9", "X1" 이 검색어로 올라왔다. 쿠팡에 그대로 검색하면 엉뚱한 결과가 나온다.
+  const { scored } = extractKeywords(
+    { title: "ATK A9 X1 T50air 마우스 추천", subtitleText: "A9 A9 X1 X1 마우스 마우스" },
+    { requireEvidence: false }
+  );
+  const 나온말 = scored.map((x) => x.word);
+  for (const 조각 of ["A9", "X1", "T50air"]) {
+    assert.ok(!나온말.includes(조각), `모델명 조각 "${조각}" 이 남아 있다`);
+  }
+  assert.ok(나온말.includes("마우스"));
+
+  // 숫자 없는 세 글자 이상 영문은 그 자체로 상품군일 수 있어 남긴다.
+  const 상품군 = extractKeywords(
+    { title: "USB 허브와 SSD 추천", subtitleText: "USB USB SSD SSD" },
+    { requireEvidence: false }
+  ).scored.map((x) => x.word);
+  assert.ok(상품군.includes("USB"));
+  assert.ok(상품군.includes("SSD"));
+});
+
+test("AC-15l: 수량 표현에 꼬리가 붙어도 거른다", () => {
+  // "20만원대" 가 검색어로 올라왔다. 숫자+단위까지는 걸렀지만 뒤에 "대" 가 붙으면 통과했다.
+  const { scored } = extractKeywords(
+    { title: "10만원대 20만원대 3개짜리 무선청소기 비교" },
+    { requireEvidence: false }
+  );
+  const 나온말 = scored.map((x) => x.word);
+  for (const 수량 of ["10만원대", "20만원대", "3개짜리"]) {
+    assert.ok(!나온말.includes(수량), `수량 표현 "${수량}" 이 남아 있다`);
+  }
+  assert.ok(나온말.includes("무선청소기"));
+});
+
+test("AC-15m: 길이가 길다는 것만으로는 근거가 되지 않는다", () => {
+  // "돈 아껴드리는" 의 "아껴드리" 가 검색어로 올라왔다. 조사를 떼다 만 서술어 조각인데
+  // 네 글자라는 이유로 통과했다. 길이는 점수에만 반영하고 근거로는 세지 않는다.
+  const { keywords, scored } = extractKeywords(
+    { title: "최고의 가습기는 이것! 돈 아껴드리는 가열식 가습기", subtitleText: "가습기 가습기 가열식 가열식" },
+    { boostWords: ["가습기"], limit: 3 }
+  );
+  assert.ok(!keywords.includes("아껴드리"), `서술어 조각이 검색어에 남았다: ${keywords}`);
+  assert.ok(keywords.includes("가습기"));
+
+  // 길이 보너스는 점수에 반영되므로 표시는 남기되, 근거 개수를 늘리지 않는다.
+  const 표시된것 = scored.find((x) => x.reasons.some((r) => r.includes("근거 아님")));
+  if (표시된것) {
+    assert.ok(표시된것.reasons.filter((r) => !r.includes("근거 아님")).length >= 2, "표시를 빼도 근거가 2개 이상이어야 한다");
+  }
+});
+
+test("AC-15n: 설명용 꼬리표가 판정을 바꾸지 않는다", () => {
+  // 실제로 겪은 결함이다. "구체적인 말(근거 아님)" 꼬리표를 reasons 에 먼저 붙였더니
+  // 근거 개수가 다시 2가 되어 거르기가 통째로 무력해졌다.
+  const 입력 = { title: "돈 아껴드리는 가열식 가습기", subtitleText: "가습기 가습기 가습기" };
+  const 첫번째 = extractKeywords(입력, { boostWords: ["가습기"], limit: 5 });
+  const 두번째 = extractKeywords(입력, { boostWords: ["가습기"], limit: 5 });
+
+  assert.deepEqual(첫번째.keywords, 두번째.keywords, "같은 입력에 같은 결과여야 한다");
+  assert.ok(!첫번째.keywords.includes("아껴드리"));
+});

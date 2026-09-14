@@ -41,7 +41,8 @@ const 서술어어미 = [
  * 수량·차수 표현. 상품명이 아니다.
  * "25년차 주부" 의 "25년차" 가 검색어로 뽑히는 것을 실제로 보고 넣었다.
  */
-const 수량표현 = /^\d+(년차|년|개월|주년|위|등|배|번째|인용|인분|만원|원|리터|L|kg|g|ml|년ver|ver)$/i;
+const 수량표현 =
+  /^\d+(년차|개월|주년|년|번째|인용|인분|만원|원|리터|세트|셋트|년ver|ver|위|등|배|개|명|권|층|칸|L|kg|g|ml)(대|짜리|권|개|명|층|칸|세트|셋트)?$/i;
 
 /** 잘라 낼 조사와 어미. 긴 것부터 확인해야 "으로"가 "로"보다 먼저 걸린다. */
 const 조사 = [
@@ -105,6 +106,7 @@ function extractKeywords(p = {}, options = {}) {
 
     const reasons = ["제목에 나옴"];
     let score = 1;
+    let 길이보너스 = false;
 
     const hits = 자막빈도.get(word) || 0;
     if (hits >= o.minSubtitleHits) {
@@ -116,12 +118,14 @@ function extractKeywords(p = {}, options = {}) {
       reasons.push("우대 목록에 있음");
     }
     // 긴 말일수록 구체적이다. "에어프라이어"가 "가전"보다 낫다.
+    // 다만 이것은 **근거로 세지 않는다.** 길이만 보고 통과시키면 "아껴드리" 처럼
+    // 조사를 떼다 만 서술어 조각이 검색어로 올라온다 — 실제로 그렇게 나왔다.
     if (word.length >= 4) {
       score += 0.3;
-      reasons.push("구체적인 말");
+      길이보너스 = true;
     }
 
-    후보.set(word, { word, score, reasons });
+    후보.set(word, { word, score, reasons, 길이보너스 });
   }
 
   // 나란히 붙은 두 말을 이어 붙여 우대 목록과 맞춰 본다.
@@ -151,18 +155,32 @@ function extractKeywords(p = {}, options = {}) {
   }
 
   const 정렬 = (arr) =>
-    arr.sort((a, b) => b.score - a.score || b.word.length - a.word.length || a.word.localeCompare(b.word));
+    [...arr].sort((a, b) => b.score - a.score || b.word.length - a.word.length || a.word.localeCompare(b.word));
 
   const 전체 = 정렬([...후보.values()]);
 
   // 근거가 있는 말만 남긴다. 전부 걸러지면 근거 요구를 포기하고 전체를 쓴다
   // — 자막이 없는 영상에서 빈손으로 돌아가지 않기 위해서다.
+  //
+  // 근거는 "제목에 나옴" 말고 하나 더 있어야 한다. 자막에 여러 번 나오거나 우대 목록에
+  // 있어야 하고, 길이가 길다는 것만으로는 통과시키지 않는다. 길이만으로 통과시켰더니
+  // "아껴드리" 처럼 조사를 떼다 만 서술어 조각이 검색어로 올라왔다.
+  //
+  // **거르기를 먼저 하고 표시를 나중에 한다.** 처음에는 "구체적인 말(근거 아님)" 이라는
+  // 꼬리표를 reasons 에 먼저 붙였는데, 그 바람에 근거 개수가 다시 2가 되어 거르기가
+  // 통째로 무력해졌다. 설명하려고 붙인 꼬리표가 판정을 바꿔 버린 것이다.
   const 근거있음 = 전체.filter((x) => x.reasons.length >= 2);
   const 최종 = o.requireEvidence && 근거있음.length > 0 ? 근거있음 : 전체;
 
+  /** 점수에만 반영된 길이 보너스를 사람이 읽을 수 있게 표시한다. 반드시 판정 뒤에 부른다. */
+  const 표시 = (arr) =>
+    arr.map(({ 길이보너스, ...나머지 }) =>
+      길이보너스 ? { ...나머지, reasons: [...나머지.reasons, "구체적인 말(근거 아님)"] } : 나머지
+    );
+
   return {
     keywords: 최종.slice(0, o.limit).map((x) => x.word),
-    scored: 최종,
+    scored: 표시(최종),
     evidenceRelaxed: o.requireEvidence && 근거있음.length === 0,
   };
 }
@@ -180,7 +198,20 @@ function 쓸만한가(word, o, 채널말, boost) {
   if (수량표현.test(word)) return false;
   // 서술어로 끝나면 상품명이 아니다.
   if (서술어어미.some((e) => word.length > e.length && word.endsWith(e))) return false;
+  // 제품 모델명 조각은 상품군이 아니다. "A9", "X1", "T50air" 같은 것들이다.
+  // 쿠팡에 그대로 검색하면 엉뚱한 결과가 나온다. 다만 "USB", "SSD" 처럼 한글이 없어도
+  // 그 자체로 상품군인 말이 있어서, 우대 목록에 있거나 숫자 없는 세 글자 이상이면 남긴다.
+  if (모델명조각(word) && !(boost && boost.has(word.toLowerCase()))) return false;
   return true;
+}
+
+/**
+ * 한글이 하나도 없는 짧은 말이나 숫자가 섞인 말은 제품 모델명 조각으로 본다.
+ * "USB"·"SSD" 처럼 숫자 없는 세 글자 이상은 그 자체로 상품군일 수 있어 남긴다.
+ */
+function 모델명조각(word) {
+  if (/[가-힣]/.test(word)) return false;
+  return word.length < 3 || /\d/.test(word);
 }
 
 /** 한글·영숫자 덩어리만 남기고 쪼갠다. */
