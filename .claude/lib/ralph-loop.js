@@ -205,7 +205,15 @@ function measureResponse(text) {
  * @param {Array<{probeId:string, chars:number, lines:number, citationCount:number}>} runs
  */
 function aggregateProbes(runs) {
-  const list = Array.isArray(runs) ? runs : [];
+  const attempted = Array.isArray(runs) ? runs : [];
+  // `ok === false`는 세션이 실패했다는 뜻이다(API 오류, 타임아웃). 그 응답 본문은
+  // 오류 문자열이라 "아주 짧은 응답"으로 집계된다. **분량을 줄이는 목표에서는 그것이
+  // 개선처럼 보인다** — 네트워크가 끊긴 것을 목표 달성으로 보고하게 된다.
+  // 실제로 context-slim-30 두 번째 실주행이 여기 걸렸다: 6회 중 4회가 78자짜리
+  // `API Error: ENOTFOUND`였는데 분량 가드가 초록불을 냈다.
+  // `ok`가 아예 없는 측정은 옛 형식이므로 유효로 본다 — 없는 것과 거짓은 다르다.
+  const list = attempted.filter((r) => r && r.ok !== false);
+  const failedRuns = attempted.length - list.length;
   const chars = list.map((r) => r.chars);
   const lines = list.map((r) => r.lines);
   const cites = list.map((r) => r.citationCount);
@@ -214,16 +222,31 @@ function aggregateProbes(runs) {
     const key = r.probeId || "(unknown)";
     (byProbe[key] = byProbe[key] || []).push(r.chars);
   }
+  // 한 과제의 측정이 과반 실패하면 그 과제는 사실상 못 잰 것이다. 남은 한두 개의
+  // 중앙값을 대표값이라 부를 수 없으므로, 지표를 통째로 null로 낸다. null은 통과로
+  // 치지 않으므로(evaluateMetrics) 못 잰 회차가 조용히 성공으로 넘어가지 않는다.
+  const attemptedByProbe = {};
+  for (const r of attempted) {
+    const key = (r && r.probeId) || "(unknown)";
+    attemptedByProbe[key] = (attemptedByProbe[key] || 0) + 1;
+  }
+  const usable = list.length > 0
+    && Object.entries(attemptedByProbe).every(([k, n]) => ((byProbe[k] || []).length * 2) >= n);
+  const num = (v) => (usable ? v : null);
+
   return {
     runs: list.length,
-    median_chars: median(chars),
-    max_chars: chars.length ? Math.max(...chars) : null,
-    min_chars: chars.length ? Math.min(...chars) : null,
-    spread_chars: chars.length ? Math.max(...chars) - Math.min(...chars) : null,
-    median_lines: median(lines),
-    max_lines: lines.length ? Math.max(...lines) : null,
-    min_citation_count: cites.length ? Math.min(...cites) : null,
-    median_citation_count: median(cites),
+    attemptedRuns: attempted.length,
+    failedRuns,
+    usable,
+    median_chars: num(median(chars)),
+    max_chars: num(chars.length ? Math.max(...chars) : null),
+    min_chars: num(chars.length ? Math.min(...chars) : null),
+    spread_chars: num(chars.length ? Math.max(...chars) - Math.min(...chars) : null),
+    median_lines: num(median(lines)),
+    max_lines: num(lines.length ? Math.max(...lines) : null),
+    min_citation_count: num(cites.length ? Math.min(...cites) : null),
+    median_citation_count: num(median(cites)),
     byProbe: Object.fromEntries(Object.entries(byProbe).map(([k, v]) => [k, { runs: v.length, median: median(v), spread: Math.max(...v) - Math.min(...v) }])),
   };
 }
@@ -454,6 +477,10 @@ function summarizeRun({ spec, history = [], baseline = null, noiseBand = 0, deci
   }
   if (noiseBand === 0) {
     caveats.push("노이즈 폭이 0으로 나왔습니다. 모든 변화가 개선으로 세어지므로 정체 판정이 사실상 꺼져 있습니다.");
+  }
+  const failed = baseline && baseline.response ? baseline.response.failedRuns || 0 : 0;
+  if (failed > 0) {
+    caveats.push(`베이스라인 측정 ${baseline.response.attemptedRuns}회 중 ${failed}회가 세션 오류로 실패해 집계에서 제외했습니다. 남은 표본이 적을수록 기준값이 흔들립니다.`);
   }
   return {
     goalId: spec.id,

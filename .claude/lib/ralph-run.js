@@ -310,6 +310,21 @@ function runLoop({
     `${JSON.stringify({ ...baselineAgg, noiseBand, guards: baselineGuards.details }, null, 2)}\n`,
     fsImpl,
   );
+  if (baselineAgg.failedRuns > 0) {
+    log(`베이스라인 측정 ${baselineAgg.attemptedRuns}회 중 ${baselineAgg.failedRuns}회가 실패했습니다(세션 오류).`);
+  }
+  // 베이스라인을 못 재면 그 뒤가 전부 무의미하다. 배수 목표는 기준값이 없어 서지 않고,
+  // 노이즈 폭도 못 구해 정체 판정이 꺼진다. 그런데도 루프는 상한까지 돌면서 회차마다
+  // 실비를 쓴다 — 2회차 실주행이 정확히 그렇게 28세션을 태웠다. 여기서 끊는다.
+  if (!baselineAgg.usable) {
+    const reason = `베이스라인 측정이 과반 실패했습니다(${baselineAgg.attemptedRuns}회 중 ${baselineAgg.failedRuns}회 실패). `
+      + "기준값이 서지 않아 이 뒤의 회차는 전부 무의미하므로 시작하지 않습니다. "
+      + "세션 오류 원문은 baseline/probes/*.txt 에 있습니다.";
+    log(`중단: ${reason}`);
+    const summary = summarizeRun({ spec, history: [], baseline, noiseBand, decision: { action: "aborted", reason } });
+    writeFile(nodePath.join(root, "summary.json"), `${JSON.stringify(summary, null, 2)}\n`, fsImpl);
+    return summary;
+  }
   log(`베이스라인 중앙값 ${baselineAgg.median_chars}자, 최대 ${baselineAgg.max_chars}자, 노이즈 폭 ${noiseBand}자`);
   for (const d of baselineGuards.details) {
     log(`베이스라인 guard ${d.id}: ${d.value ?? "측정 실패"}${d.value ? " — 고치기 전부터 이 값입니다" : ""}`);

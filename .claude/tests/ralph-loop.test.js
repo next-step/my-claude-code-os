@@ -533,3 +533,82 @@ test("AC-26: 명령 target도 베이스라인에서 재므로 relative_to_baseli
   assert.strictEqual(t.threshold, 7000, "기준값은 베이스라인 × 0.7 이어야 합니다");
   assert.strictEqual(t.pass, true);
 });
+
+test("AC-27: 세션이 실패한 측정은 집계에서 뺀다 — 오류 문자열이 '짧은 응답'으로 세어지면 안 된다", () => {
+  // 분량을 줄이는 목표에서는 세션 실패가 개선처럼 보인다. 78자짜리 API 오류 문자열은
+  // 완벽한 성적이 된다. context-slim-30 2회차 실주행이 실제로 여기 걸렸다.
+  const agg = aggregateProbes([
+    { probeId: "p1", chars: 5000, lines: 100, citationCount: 2, ok: true },
+    { probeId: "p1", chars: 5200, lines: 104, citationCount: 2, ok: true },
+    { probeId: "p1", chars: 78, lines: 1, citationCount: 0, ok: false },
+  ]);
+  assert.strictEqual(agg.runs, 2, "유효한 측정만 세어야 합니다");
+  assert.strictEqual(agg.failedRuns, 1);
+  assert.strictEqual(agg.attemptedRuns, 3);
+  assert.strictEqual(agg.usable, true, "3회 중 2회 성공이면 과반이라 쓸 수 있습니다");
+  assert.strictEqual(agg.median_chars, 5100, "78자가 섞이면 중앙값이 5000이 된다");
+  assert.strictEqual(agg.min_citation_count, 2, "실패 측정의 인용 0이 섞이면 안 됩니다");
+});
+
+test("AC-28: ok 필드가 없는 측정은 유효로 본다 — 없는 것과 거짓은 다르다", () => {
+  const agg = aggregateProbes([
+    { probeId: "p1", chars: 100, lines: 2, citationCount: 1 },
+    { probeId: "p1", chars: 300, lines: 6, citationCount: 1 },
+  ]);
+  assert.strictEqual(agg.runs, 2);
+  assert.strictEqual(agg.failedRuns, 0);
+  assert.strictEqual(agg.median_chars, 200);
+});
+
+test("AC-29: 한 과제의 측정이 과반 실패하면 지표를 통째로 null로 낸다", () => {
+  // 남은 한 개의 중앙값을 대표값이라 부를 수 없다. null은 통과로 치지 않으므로
+  // 못 잰 회차가 조용히 성공으로 넘어가지 않는다.
+  const agg = aggregateProbes([
+    { probeId: "p1", chars: 5000, lines: 100, citationCount: 2, ok: true },
+    { probeId: "p1", chars: 78, lines: 1, citationCount: 0, ok: false },
+    { probeId: "p1", chars: 78, lines: 1, citationCount: 0, ok: false },
+  ]);
+  assert.strictEqual(agg.usable, false);
+  assert.strictEqual(agg.median_chars, null);
+  assert.strictEqual(agg.median_citation_count, null);
+  assert.strictEqual(agg.failedRuns, 2, "몇 개가 실패했는지는 그대로 남겨야 합니다");
+});
+
+test("AC-30: 과제 하나만 통째로 실패해도 전체를 못 쓴다고 본다", () => {
+  // 과제가 빠지면 남은 과제의 값이 대표값이 되어 버린다. 과제마다 응답 길이가 원래
+  // 다르므로(computeNoiseBand가 과제 안에서 재는 이유와 같다) 그 대표값은 의미가 없다.
+  const agg = aggregateProbes([
+    { probeId: "p1", chars: 5000, lines: 100, citationCount: 2, ok: true },
+    { probeId: "p1", chars: 5200, lines: 104, citationCount: 2, ok: true },
+    { probeId: "p2", chars: 78, lines: 1, citationCount: 0, ok: false },
+    { probeId: "p2", chars: 78, lines: 1, citationCount: 0, ok: false },
+  ]);
+  assert.strictEqual(agg.usable, false);
+  assert.strictEqual(agg.median_chars, null);
+});
+
+test("AC-31: 베이스라인을 못 재면 회차를 하나도 시작하지 않고 멈춘다", () => {
+  // 배수 목표는 기준값이 없어 서지 않고 노이즈 폭도 못 구한다. 그런데도 상한까지
+  // 돌면 회차마다 실비만 나간다 — 2회차 실주행이 그렇게 28세션을 태웠다.
+  let sessions = 0;
+  const fakeSpawn = () => {
+    sessions += 1;
+    return { status: 1, stdout: JSON.stringify({ is_error: true, num_turns: 1, duration_ms: 1, total_cost_usd: 0, result: "API Error: ENOTFOUND", usage: {} }) };
+  };
+  const exec = (cmd) => ({ stdout: cmd.startsWith("git rev-parse") ? "basesha\n" : "ℹ fail 0\n", stderr: "", exitCode: 0 });
+  const files = {};
+  const fs = {
+    existsSync: (p) => p in files, readFileSync: (p) => files[p] ?? "", writeFileSync: (p, v) => { files[p] = v; },
+    mkdirSync: () => {}, rmSync: () => {}, readdirSync: () => [], cpSync: () => {},
+  };
+  const spec = parseGoalSpec(goal({ max_iterations: 4 }));
+  const summary = runLoop({
+    sourceDir: "/src", spec, root: "/out", workDir: "/w", probeDir: "/p",
+    dryRun: false, fsImpl: fs, spawnImpl: fakeSpawn, execImpl: exec, log: () => {},
+  });
+
+  assert.strictEqual(summary.outcome, "aborted", `베이스라인이 못 쓸 상태면 중단해야 합니다: ${summary.outcome}`);
+  assert.strictEqual(summary.iterations, 0, "회차를 시작하면 안 됩니다");
+  assert.strictEqual(sessions, spec.probes.length * spec.repeats, `베이스라인 세션만 띄워야 합니다: ${sessions}개`);
+  assert.ok(files["/out/summary.json"], "summary.json은 남겨야 합니다");
+});
