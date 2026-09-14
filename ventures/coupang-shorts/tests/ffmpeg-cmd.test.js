@@ -10,6 +10,8 @@ const 기본입력 = {
   outputPath: "/tmp/short.mp4",
   startSec: 184.5,
   endSec: 232.5,
+  // 유료광고 배지는 생략할 수 없으므로 기본입력에 둔다 (AC-41).
+  adBadgeTextPath: "/tmp/adbadge.txt",
 };
 
 /** 인자 배열에서 플래그 바로 뒤 값을 꺼낸다. */
@@ -56,9 +58,9 @@ test("AC-24: 자막 파일과 출처 문구가 필터에 포함된다", () => {
 
   // 출처 문구는 필터에 직접 박지 않고 파일로 넘긴다 — 이스케이프 사고를 피하기 위해서다.
   assert.doesNotMatch(filterGraph, /어떤채널/, "문구가 필터 그래프에 직접 들어가면 안 된다");
-  assert.deepEqual(sidecarFiles, [
-    { path: "/tmp/attr.txt", content: "원본: 어떤채널 https://youtu.be/abc" },
-  ]);
+  assert.ok(sidecarFiles.some((f) => f.path === "/tmp/attr.txt" && f.content === "원본: 어떤채널 https://youtu.be/abc"));
+  // 유료광고 배지는 늘 함께 나온다 (AC-41).
+  assert.ok(sidecarFiles.some((f) => f.path === "/tmp/adbadge.txt"));
 });
 
 test("AC-24b: 자막 스타일의 쉼표에 백슬래시를 덧붙이지 않는다 — 덧붙이면 뒤 속성이 무시된다", () => {
@@ -178,23 +180,71 @@ test("AC-40c: 긴 문구를 낱말 경계에서 줄바꿈한다 — drawtext 는
   }
 });
 
-test("AC-40d: 타이틀을 끄면 필터를 넣지 않는다", () => {
+test("AC-40d: 타이틀을 끄면 타이틀 필터만 빠진다 — 배지는 남는다", () => {
   const { filterGraph, sidecarFiles } = buildRenderPlan({ ...기본입력, titleText: undefined });
-  assert.equal(sidecarFiles.length, 0);
-  // 출처 표기도 없으면 drawtext 자체가 없어야 한다.
-  assert.doesNotMatch(filterGraph, /drawtext/);
+
+  assert.doesNotMatch(filterGraph, /title\d*\.txt/, "타이틀 문구 파일이 없어야 한다");
+  // 배지는 규정상 생략할 수 없으므로 drawtext 가 하나 남는다 (AC-41).
+  assert.equal((filterGraph.match(/drawtext/g) || []).length, 1);
+  assert.deepEqual(sidecarFiles.map((f) => f.path), ["/tmp/adbadge.txt"]);
 });
 
 test("AC-40e: 문구만 주고 파일 경로를 빠뜨리면 막는다", () => {
   assert.throws(() => buildRenderPlan({ ...기본입력, titleText: "훅" }), /titleTextPath/);
 });
 
-test("AC-40f: 타이틀과 출처 표기를 함께 쓰면 파일 두 개를 알려 준다", () => {
+test("AC-40f: 출처·타이틀·배지를 함께 쓰면 파일 세 개를 알려 준다", () => {
   const { sidecarFiles, filterGraph } = buildRenderPlan({
     ...기본입력,
     attributionText: "원본: 어떤채널", attributionTextPath: "/tmp/attr.txt",
     titleText: "훅 문구", titleTextPath: "/tmp/title.txt",
   });
-  assert.deepEqual(sidecarFiles.map((f) => f.path), ["/tmp/attr.txt", "/tmp/title.txt"]);
-  assert.equal((filterGraph.match(/drawtext/g) || []).length, 2);
+  assert.deepEqual(sidecarFiles.map((f) => f.path), ["/tmp/attr.txt", "/tmp/title.txt", "/tmp/adbadge.txt"]);
+  assert.equal((filterGraph.match(/drawtext/g) || []).length, 3);
+});
+
+test("AC-41: 유료광고 배지를 영상 내내 띄운다 — 쿠팡 가이드가 요구하는 표기다", () => {
+  // 가이드: "설명란 또는 댓글에서 대가성 문구와 링크를 적절히 기재했지만
+  // 영상 제목 또는 영상 내에 광고 표시를 하지 않은 경우" 는 반려 사례다.
+  const { filterGraph, sidecarFiles } = buildRenderPlan({
+    ...기본입력, adBadgeTextPath: "/tmp/adbadge.txt",
+  });
+
+  const 배지 = sidecarFiles.find((f) => f.path === "/tmp/adbadge.txt");
+  assert.ok(배지, "배지 문구 파일을 알려 줘야 한다");
+  assert.equal(배지.content, "유료광고 포함");
+  assert.match(filterGraph, /textfile='\/tmp\/adbadge\.txt'/);
+
+  // 타이틀과 달리 enable 조건이 없어야 한다. 첫 몇 초만 보이면 표기로 부족하다.
+  const 배지필터 = filterGraph.split(";").find((f) => f.includes("adbadge.txt"));
+  assert.doesNotMatch(배지필터, /enable=/, "배지는 영상 내내 보여야 한다");
+});
+
+test("AC-41b: 배지가 맨 마지막에 얹혀 무엇에도 가리지 않는다", () => {
+  const { filterGraph } = buildRenderPlan({
+    ...기본입력,
+    subtitlePath: "/tmp/seg.srt",
+    attributionText: "원본: 어떤채널", attributionTextPath: "/tmp/attr.txt",
+    titleText: "훅 문구", titleTextPath: "/tmp/title.txt",
+    adBadgeTextPath: "/tmp/adbadge.txt",
+  });
+
+  const 단계들 = filterGraph.split(";");
+  assert.ok(단계들[단계들.length - 1].includes("adbadge.txt"), "배지가 마지막 단계여야 한다");
+  assert.match(filterGraph, /\[ad\]$/, "마지막 출력 꼬리표가 배지여야 한다");
+});
+
+test("AC-41c: 배지 경로를 빠뜨리면 렌더 계획 자체를 만들지 않는다 — 생략할 수 없는 표기다", () => {
+  assert.throws(() => buildRenderPlan({ ...기본입력, adBadgeTextPath: undefined }), /adBadgeTextPath/);
+});
+
+test("AC-41d: 배지 문구는 설정으로 바꿀 수 있되 비울 수는 없다", () => {
+  const { sidecarFiles } = buildRenderPlan({
+    ...기본입력, adBadgeTextPath: "/tmp/ad.txt", adBadgeText: "광고 포함",
+  });
+  assert.equal(sidecarFiles.find((f) => f.path === "/tmp/ad.txt").content, "광고 포함");
+
+  // 빈 문자열을 주면 기본 문구로 되돌아간다.
+  const 빈값 = buildRenderPlan({ ...기본입력, adBadgeTextPath: "/tmp/ad.txt", adBadgeText: "" });
+  assert.equal(빈값.sidecarFiles.find((f) => f.path === "/tmp/ad.txt").content, "유료광고 포함");
 });

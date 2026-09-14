@@ -60,6 +60,10 @@ function renderSegment({ plan, seg, config, ffmpeg, dir, titleHook }) {
     titleFontSizePx: config.render.titleFontSizePx,
     titleTopPx: config.render.titleTopPx,
     titleCharsPerLine: config.render.titleCharsPerLine,
+    // 유료광고 배지는 설정으로도 끄지 않는다. 쿠팡 가이드가 요구하는 표기다.
+    adBadgeTextPath: path.join(dir, `adbadge${seg.rank}.txt`),
+    adBadgeFontSizePx: config.render.adBadgeFontSizePx,
+    adBadgeMarginPx: config.render.adBadgeMarginPx,
     mode: config.render.mode,
     width: config.render.width,
     height: config.render.height,

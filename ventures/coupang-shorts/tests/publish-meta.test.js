@@ -27,6 +27,21 @@ test("AC-26: 제휴 고지 문구가 항상 설명에 들어간다", () => {
   }
 });
 
+test("AC-26c: 고지 문구가 설명 맨 앞에 온다 — '더보기' 뒤로 밀리면 부적절한 표기다", () => {
+  // 쿠팡 가이드: "'자세히 보기' 와 같이 추가적으로 클릭이 필요한 경우는 적절한
+  // 표기 방식이 아닙니다." 유튜브는 설명 첫 몇 줄만 보여 주므로 순서가 규정 준수를 가른다.
+  const meta = buildPublishMeta(기본);
+  assert.ok(meta.description.startsWith(DISCLOSURE), `고지가 맨 앞이 아니다:\n${meta.description.slice(0, 80)}`);
+
+  // 잘린 경우에도 맨 앞이어야 한다.
+  const 상품많음 = Array.from({ length: 400 }, (_, i) => ({
+    productName: `상품${i} `.repeat(10), deeplink: `https://link.coupang.com/a/${i}`,
+  }));
+  const 잘린것 = buildPublishMeta({ ...기본, products: 상품많음 });
+  assert.equal(잘린것.truncated, true);
+  assert.ok(잘린것.description.startsWith(DISCLOSURE));
+});
+
 test("AC-26b: 설명이 상한을 넘겨 잘려도 고지 문구와 출처는 남는다", () => {
   // 상품을 아주 많이 넣어 상한을 넘긴다.
   const 상품많음 = Array.from({ length: 400 }, (_, i) => ({

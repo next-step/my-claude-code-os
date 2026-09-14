@@ -48,7 +48,21 @@ const DEFAULTS = Object.freeze({
   titleDurationSec: 3,
   /** 한 줄에 몇 글자까지 둘지. drawtext 는 자동 줄바꿈을 하지 않는다. */
   titleCharsPerLine: 13,
+
+  /**
+   * 유료광고 배지. **빼면 안 된다.**
+   *
+   * 쿠팡 파트너스 가이드는 설명란 고지만으로 부족하다고 못박는다. "설명란 또는 댓글에서
+   * 대가성 문구와 링크를 적절히 기재했지만 영상 제목 또는 영상 내에 광고 표시를 하지
+   * 않은 경우" 를 반려 사례로 든다. 제시한 세 방법 중 배지를 골랐다 — 영상 내내 보여
+   * 가장 안전하고, 작아서 화면을 거의 가리지 않으며, 제목의 훅을 건드리지 않는다.
+   */
+  adBadgeFontSizePx: 34,
+  adBadgeMarginPx: 40,
 });
+
+/** 배지 문구. 쿠팡 가이드의 예시 표기를 그대로 쓴다. */
+const AD_BADGE_TEXT = "유료광고 포함";
 
 /**
  * libass 가 쓰는 기본 좌표계의 높이.
@@ -198,6 +212,24 @@ function buildRenderPlan(p = {}) {
     label = "title";
   }
 
+  // 배지는 마지막에 얹는다. 무엇에도 가리지 않아야 한다.
+  if (o.adBadgeText !== null) {
+    if (!o.adBadgeTextPath) {
+      throw new Error("adBadgeTextPath 가 필요하다 — 유료광고 배지는 생략할 수 없다");
+    }
+    const 문구 = o.adBadgeText || AD_BADGE_TEXT;
+    sidecarFiles.push({ path: o.adBadgeTextPath, content: 문구 });
+
+    const 폰트 = o.fontFile ? `fontfile='${escapeFilterValue(o.fontFile)}':` : "";
+    chain.push(
+      `[${label}]drawtext=${폰트}textfile='${escapeFilterValue(o.adBadgeTextPath)}':` +
+        `x=${Math.round(o.adBadgeMarginPx)}:y=${Math.round(o.adBadgeMarginPx)}:` +
+        `fontsize=${Math.round(o.adBadgeFontSizePx)}:fontcolor=white:` +
+        `box=1:boxcolor=black@0.6:boxborderw=14[ad]`
+    );
+    label = "ad";
+  }
+
   const filterGraph = chain.join(";");
 
   const args = [
@@ -240,4 +272,4 @@ function round3(n) {
   return Math.round(n * 1000) / 1000;
 }
 
-module.exports = { buildRenderPlan, escapeFilterValue, wrapTitle, ass값, ASS_기준높이, DEFAULTS };
+module.exports = { buildRenderPlan, escapeFilterValue, wrapTitle, ass값, ASS_기준높이, AD_BADGE_TEXT, DEFAULTS };

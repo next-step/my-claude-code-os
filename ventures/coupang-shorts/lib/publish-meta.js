@@ -64,7 +64,10 @@ function buildPublishMeta(p = {}) {
     ? ["🛒 영상 속 상품", ...products.map((x) => `· ${x.productName}\n  ${x.deeplink}`)].join("\n")
     : "🛒 영상 속 상품\n· (링크를 여기에 넣어 주세요)";
 
-  const 필수 = [상품블록, DISCLOSURE, attribution];
+  // **고지가 맨 앞이다.** 유튜브는 설명 첫 몇 줄만 보여 주고 나머지를 "더보기" 뒤로
+  // 숨긴다. 쿠팡 가이드는 "'자세히 보기' 와 같이 추가적으로 클릭이 필요한 경우는
+  // 적절한 표기 방식이 아닙니다" 라고 못박는다. 상품 링크를 먼저 두면 고지가 가려진다.
+  const 필수 = [DISCLOSURE, 상품블록, attribution];
   const 선택 = [hashtags.join(" ")].filter((s) => s.length > 0);
 
   let description = [...필수, ...선택].join("\n\n");
@@ -78,7 +81,7 @@ function buildPublishMeta(p = {}) {
     if (description.length > LIMITS.descriptionChars) {
       const 남는길이 =
         LIMITS.descriptionChars - (DISCLOSURE.length + attribution.length + "\n\n\n\n".length);
-      description = [상품블록.slice(0, Math.max(0, 남는길이)), DISCLOSURE, attribution].join("\n\n");
+      description = [DISCLOSURE, 상품블록.slice(0, Math.max(0, 남는길이)), attribution].join("\n\n");
     }
   }
 
