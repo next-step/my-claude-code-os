@@ -34,8 +34,8 @@ node ventures/coupang-shorts/bin/run.js --go --video 5GTAp_RMEHc
 # 단계별로
 node ventures/coupang-shorts/bin/collect.js  --go --keyword "무선청소기 추천"
 node ventures/coupang-shorts/bin/analyze.js  --go --video <영상ID>
-node ventures/coupang-shorts/bin/render.js   --go --video <영상ID>
 node ventures/coupang-shorts/bin/monetize.js --go --video <영상ID>
+node ventures/coupang-shorts/bin/render.js   --go --video <영상ID>
 ```
 
 결과는 `runs/<날짜>/<영상ID>/`에 쌓입니다. `short1.mp4`부터 `short3.mp4`까지가 업로드할 영상이고, `meta.json`에 제목과 설명이 들어 있습니다. 이 디렉터리는 커밋되지 않습니다.
@@ -46,8 +46,10 @@ node ventures/coupang-shorts/bin/monetize.js --go --video <영상ID>
 |---|---|---|---|
 | 1 | `collect.js` | 키워드로 검색해 후보를 거르고 점수를 매깁니다 | `candidates.json` |
 | 2 | `analyze.js` | 히트맵과 자막을 받아 구간을 고릅니다 | `plan.json`, `seg*.srt` |
-| 3 | `render.js` | 구간만 내려받아 세로형으로 렌더합니다 | `short*.mp4` |
-| 4 | `monetize.js` | 검색어를 뽑아 상품을 찾고 문구를 만듭니다 | `meta.json` |
+| 3 | `monetize.js` | 검색어를 뽑아 상품을 찾고 제목·설명을 만듭니다 | `meta.json` |
+| 4 | `render.js` | 구간만 내려받아 세로형으로 렌더합니다 | `short*.mp4` |
+
+수익화가 렌더보다 먼저입니다. 화면에 박을 타이틀 문구를 수익화 단계가 만들기 때문입니다.
 
 ## 구조
 
@@ -64,7 +66,8 @@ lib/         순수 함수 — 부작용 없음, 시간과 네트워크를 주�
   budget.js        시간당 호출 한도와 캐시 판정
   ytdlp-cmd.js     yt-dlp 인자 생성
   ffmpeg-cmd.js    ffmpeg 실행 계획 생성
-  publish-meta.js  제목·설명·고지·출처 생성
+  publish-meta.js  설명·고지·출처 생성
+  shorts-title.js  원본 제목에서 훅을 뽑아 쇼츠 제목 생성
 bin/         실행 계층 — 여기서만 부작용을 냄
 config/      설정 (커밋됨)
 tests/       모듈 하나당 테스트 하나
@@ -95,8 +98,22 @@ for f in ventures/coupang-shorts/tests/*.test.js; do node --test "$f"; done
 - **libass는 화면 픽셀이 아니라 자체 좌표계를 씁니다.** 자막 파일에 `PlayResY`가 없으면 높이 384를 기준으로 잡고 영상 높이에 맞춰 통째로 확대합니다. 1920 화면이면 5배입니다. 이것을 모르고 값을 주면 글자가 5배로 커지고 자막이 화면 맨 위에 붙습니다.
 - **쿠팡 API 키는 가입만으로 받을 수 없습니다.** 누적 판매 15만 원을 넘겨 최종 승인을 받아야 발급 버튼이 열립니다. 그전까지는 링크를 손으로 만들어야 합니다.
 
+## 쿠팡 파트너스 표기 규정
+
+공식 안내 「[초보자 활동 가이드] 유튜브 활동 시 유의사항」이 요구하는 세 가지입니다. 지키지 않으면 최종 승인에서 반려됩니다. 자세한 내용은 [SETUP.md](SETUP.md)에 있습니다.
+
+| 규정 | 파이프라인이 하는 일 |
+|---|---|
+| 설명란에 대가성 문구 | `publish-meta.js`가 자동으로 넣습니다 |
+| 문구가 '더보기'에 가려지지 않게 | 고지를 설명 **맨 앞**에 둡니다 |
+| 영상 제목이나 영상 안에도 광고 표시 | 화면 좌측 상단에 '유료광고 포함' 배지를 영상 내내 띄웁니다 |
+
+세 번째가 가장 놓치기 쉽습니다. 가이드가 반려 사례로 드는 것이 정확히 "설명란에는 적었지만 영상에는 표시하지 않은 경우"입니다. 배지는 설정으로 끌 수 없게 만들어 두었고, 경로를 빠뜨리면 렌더 계획 자체가 만들어지지 않습니다.
+
+**업로드할 때 유튜브의 '유료 프로모션 포함' 체크박스는 직접 켜 주셔야 합니다.** 파이프라인이 대신 할 수 없습니다.
+
 ## 위험
 
 이 파이프라인은 **다른 사람의 영상을 잘라 재업로드합니다.** 사용자가 위험을 인지하고 선택한 방식입니다.
 
-유튜브의 재사용 콘텐츠 정책은 2025년 7월부터 강화되어 단순 편집물의 수익 창출을 거부하며, 저작권 경고가 3회 누적되면 채널이 삭제됩니다. 파이프라인에 넣은 완화 장치는 출처 표기 번인과 자막 추가뿐이고, 이것들이 위험을 없애지는 못합니다.
+유튜브의 재사용 콘텐츠 정책은 2025년 7월부터 강화되어 단순 편집물의 수익 창출을 거부하며, 저작권 경고가 3회 누적되면 채널이 삭제됩니다. 파이프라인에 넣은 완화 장치는 출처 표기 번인, 자막 추가, 타이틀 번인뿐이고, 이것들이 위험을 없애지는 못합니다.
