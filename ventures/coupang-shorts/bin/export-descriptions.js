@@ -17,6 +17,17 @@ const fs = require("node:fs");
 const path = require("node:path");
 const { ROOT, readJson, parseArgs, log } = require("./_shared.js");
 
+/** 쿠팡 검색 결과로 바로 가는 주소. 클릭 한 번을 줄이려고 미리 만들어 둔다. */
+const COUPANG_SEARCH = "https://www.coupang.com/np/search?q=";
+
+/** 파트너스 링크 생성 화면. 상품 주소를 여기에 붙여 넣으면 제휴 링크가 나온다. */
+const PARTNERS_LINK_TOOL = "https://partners.coupang.com/#affiliate/ws/link";
+
+/** 검색어를 쿠팡 검색 링크로 바꾼다. */
+function 검색링크(keyword) {
+  return `${COUPANG_SEARCH}${encodeURIComponent(String(keyword).trim())}`;
+}
+
 /** runs/ 아래의 모든 영상을 모은다. 같은 영상이 여러 날에 있으면 최근 것을 쓴다. */
 function 영상모으기() {
   const 뿌리 = path.join(ROOT, "runs");
@@ -56,8 +67,11 @@ function 문서만들기(영상들, channel) {
   줄.push("");
   줄.push("1순위 구간을 시청자가 얼마나 되돌려 봤는지(평균값) 순으로 줄 세웠다. 위에서부터 올리면 된다.");
   줄.push("");
-  줄.push("**설명란의 상품 링크는 비어 있다.** 쿠팡 파트너스에 로그인해 아래 검색어로 상품을 찾고,");
-  줄.push("링크를 만들어 그 자리에 붙여 넣는다. API 키는 누적 판매 15만 원을 넘겨야 발급된다(SETUP.md).");
+  줄.push("**설명란의 상품 링크는 비어 있다.** 아래 각 영상의 검색어를 누르면 쿠팡 검색 결과로 바로 간다.");
+  줄.push(`상품을 고른 뒤 그 주소를 [파트너스 링크 생성기](${PARTNERS_LINK_TOOL})에 붙여 넣으면 제휴 링크가 나온다.`);
+  줄.push("그 링크로 설명란의 `(링크를 여기에 넣어 주세요)` 자리를 바꾼다.");
+  줄.push("");
+  줄.push("API 키가 생기면 이 과정이 자동화된다. 키는 누적 판매 15만 원을 넘겨야 발급된다(SETUP.md).");
   줄.push("");
   줄.push("## 올릴 때마다 확인할 것");
   줄.push("");
@@ -88,7 +102,12 @@ function 문서만들기(영상들, channel) {
     줄.push(`- 원본: ${plan.channelTitle} — https://youtu.be/${plan.videoId}`);
     줄.push(`- 구간 품질: 평균 ${(top.meanValue || 0).toFixed(2)} / 최고 ${(top.peakValue || 0).toFixed(2)}`);
     줄.push(`- 자막: ${plan.cueCount || 0}줄${(plan.cueCount || 0) === 0 ? "  ⚠️ 없음" : ""}`);
-    줄.push(`- 쿠팡 검색어: ${(meta.keywords || []).join(", ") || "(없음)"}`);
+    const 검색어들 = (meta.keywords || []).filter(Boolean);
+    줄.push(
+      검색어들.length > 0
+        ? `- 쿠팡 검색: ${검색어들.map((k) => `[${k}](${검색링크(k)})`).join(" · ")}`
+        : "- 쿠팡 검색: (검색어 없음)"
+    );
     줄.push("");
     줄.push("올릴 파일:");
     for (const s of v.영상들) {
@@ -139,4 +158,4 @@ function 채널인자(argv) {
 }
 
 if (require.main === module) main();
-module.exports = { main, 문서만들기 };
+module.exports = { main, 문서만들기, 검색링크, COUPANG_SEARCH, PARTNERS_LINK_TOOL };
