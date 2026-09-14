@@ -166,4 +166,55 @@ function 숫자(v) {
   return Number.isFinite(n) ? n : null;
 }
 
-module.exports = { parseSearchOutput, DEFAULTS };
+/**
+ * 그날 쓸 검색어를 고른다.
+ *
+ * 목록은 크게 두되 한 번에 전부 돌리지 않는다. 검색어 하나가 yt-dlp 호출 하나이고
+ * 30초에서 1분이 걸려서, 30개를 매번 돌리면 수집에만 20분이 든다. 하루 5편을 만드는
+ * 데 그만한 탐색은 필요 없다.
+ *
+ * 날짜를 기준으로 창을 밀어 가며 고른다. 같은 날에는 몇 번을 돌려도 같은 것이 나오고,
+ * 날이 바뀌면 다음 묶음이 온다. 난수를 쓰지 않는 이유는 두 가지다. 같은 날 두 번
+ * 돌렸을 때 결과가 달라지면 원인을 좇기 어렵고, 무엇보다 난수는 테스트할 수 없다.
+ *
+ * @param {string[]} queries 전체 검색어 목록
+ * @param {object} [options] `{ perDay, date }`
+ * @returns {{queries: string[], dayIndex: number, cycleDays: number}}
+ */
+function selectDailyQueries(queries, options = {}) {
+  const 전체 = (Array.isArray(queries) ? queries : []).map((q) => String(q || "").trim()).filter(Boolean);
+  const perDay = Math.max(1, Math.floor(options.perDay || 8));
+
+  if (전체.length === 0) return { queries: [], dayIndex: 0, cycleDays: 0 };
+  if (전체.length <= perDay) {
+    return { queries: 전체, dayIndex: 0, cycleDays: 1 };
+  }
+
+  const dayIndex = 날짜번호(options.date);
+  const 시작 = (dayIndex * perDay) % 전체.length;
+
+  // 목록 끝을 넘어가면 앞으로 돌아온다. 같은 검색어를 두 번 넣지 않는다.
+  const 고른것 = [];
+  const 본것 = new Set();
+  for (let i = 0; i < 전체.length && 고른것.length < perDay; i += 1) {
+    const q = 전체[(시작 + i) % 전체.length];
+    if (본것.has(q)) continue;
+    본것.add(q);
+    고른것.push(q);
+  }
+
+  return {
+    queries: 고른것,
+    dayIndex,
+    cycleDays: Math.ceil(전체.length / perDay),
+  };
+}
+
+/** 기준일로부터 지난 날 수. 시각은 보지 않는다 — 같은 날이면 같은 번호여야 한다. */
+function 날짜번호(date) {
+  const d = date ? new Date(date) : new Date();
+  if (Number.isNaN(d.getTime())) return 0;
+  return Math.floor(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()) / 86400000);
+}
+
+module.exports = { parseSearchOutput, selectDailyQueries, DEFAULTS };

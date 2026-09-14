@@ -3,7 +3,7 @@
 
 const test = require("node:test");
 const assert = require("node:assert/strict");
-const { parseSearchOutput } = require("../lib/discover.js");
+const { parseSearchOutput, selectDailyQueries } = require("../lib/discover.js");
 const { FIELD_SEP } = require("../lib/ytdlp-cmd.js");
 
 /** yt-dlp --print 출력 한 줄을 만든다. */
@@ -105,4 +105,57 @@ test("AC-3e: 같은 입력에 항상 같은 순서를 낸다", () => {
   const 두번째 = parseSearchOutput(stdout, { today: 오늘 });
   assert.deepEqual(첫번째, 두번째);
   assert.deepEqual(첫번째.candidates.map((c) => c.videoId), ["aaaaaaaaaaa", "bbbbbbbbbbb"]);
+});
+
+test("AC-38: 그날 쓸 검색어를 날짜 기준으로 고른다 — 같은 날에는 몇 번을 돌려도 같다", () => {
+  const 전체 = Array.from({ length: 36 }, (_, i) => `검색어${i + 1}`);
+
+  const 오전 = selectDailyQueries(전체, { perDay: 8, date: "2026-09-14T01:00:00Z" });
+  const 오후 = selectDailyQueries(전체, { perDay: 8, date: "2026-09-14T23:00:00Z" });
+  assert.deepEqual(오전.queries, 오후.queries, "같은 날이면 시각이 달라도 같아야 한다");
+  assert.equal(오전.queries.length, 8);
+});
+
+test("AC-38b: 날이 바뀌면 다른 묶음이 온다", () => {
+  const 전체 = Array.from({ length: 36 }, (_, i) => `검색어${i + 1}`);
+  const 첫날 = selectDailyQueries(전체, { perDay: 8, date: "2026-09-14" }).queries;
+  const 다음날 = selectDailyQueries(전체, { perDay: 8, date: "2026-09-15" }).queries;
+
+  assert.notDeepEqual(첫날, 다음날);
+  assert.equal(첫날.filter((q) => 다음날.includes(q)).length, 0, "이틀 연속 같은 검색어가 나오면 안 된다");
+});
+
+test("AC-38c: 며칠 돌리면 전체 검색어를 다 훑는다", () => {
+  const 전체 = Array.from({ length: 36 }, (_, i) => `검색어${i + 1}`);
+  const 본것 = new Set();
+
+  // 한 바퀴 도는 데 걸린다고 알려 준 날수의 두 배를 돌려 본다.
+  const cycleDays = selectDailyQueries(전체, { perDay: 8, date: "2026-09-14" }).cycleDays;
+  for (let i = 0; i < cycleDays * 2; i += 1) {
+    const 날 = new Date(Date.UTC(2026, 8, 14 + i)).toISOString();
+    for (const q of selectDailyQueries(전체, { perDay: 8, date: 날 }).queries) 본것.add(q);
+  }
+
+  assert.equal(본것.size, 전체.length, `${본것.size}개만 훑었다 — 영영 안 뽑히는 검색어가 있으면 안 된다`);
+});
+
+test("AC-38d: 목록이 하루치보다 짧으면 전부 쓴다", () => {
+  const r = selectDailyQueries(["가", "나", "다"], { perDay: 8, date: "2026-09-14" });
+  assert.deepEqual(r.queries, ["가", "나", "다"]);
+  assert.equal(r.cycleDays, 1);
+});
+
+test("AC-38e: 목록이 비었거나 망가져도 예외를 던지지 않는다", () => {
+  for (const 입력 of [[], null, undefined, ["", "  ", null]]) {
+    const r = selectDailyQueries(입력, { perDay: 8 });
+    assert.deepEqual(r.queries, []);
+  }
+  // 날짜가 이상해도 멈추지 않는다.
+  assert.equal(selectDailyQueries(["가", "나"], { perDay: 1, date: "말도 안 되는 날짜" }).queries.length, 1);
+});
+
+test("AC-38f: 같은 검색어를 한 묶음에 두 번 넣지 않는다", () => {
+  const 전체 = ["가", "나", "다", "라", "마"];
+  const r = selectDailyQueries(전체, { perDay: 4, date: "2026-09-14" });
+  assert.equal(new Set(r.queries).size, r.queries.length);
 });

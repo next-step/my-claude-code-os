@@ -15,17 +15,26 @@
 const path = require("node:path");
 const { loadConfig, runDir, writeJson, run, parseArgs, log, step } = require("./_shared.js");
 const { buildSearchArgs } = require("../lib/ytdlp-cmd.js");
-const { parseSearchOutput } = require("../lib/discover.js");
+const { parseSearchOutput, selectDailyQueries } = require("../lib/discover.js");
 
 function main() {
   const args = parseArgs();
   const config = loadConfig("pipeline");
   const keywords = loadConfig("keywords");
 
-  const 검색어들 = args.keyword ? [args.keyword] : keywords.searchQueries;
   const perKeyword = args.limit || config.discover.perKeyword;
 
-  step(1, `소재 수집 — 검색어 ${검색어들.length}개, 검색어당 ${perKeyword}편`);
+  // 전체를 매번 돌리지 않고 날짜 기준으로 그날 몫만 고른다.
+  const 회전 = selectDailyQueries(keywords.searchQueries, {
+    perDay: config.discover.queriesPerDay,
+    date: new Date(),
+  });
+  const 검색어들 = args.keyword ? [args.keyword] : 회전.queries;
+
+  const 회전설명 = args.keyword
+    ? ""
+    : ` (전체 ${keywords.searchQueries.length}개 중 오늘 몫, 한 바퀴 ${회전.cycleDays}일)`;
+  step(1, `소재 수집 — 검색어 ${검색어들.length}개${회전설명}, 검색어당 ${perKeyword}편`);
 
   if (args.dryRun) {
     log("  (dry-run) 실제로 검색하려면 --go 를 붙인다");
