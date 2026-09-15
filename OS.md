@@ -116,7 +116,8 @@ Claude Code 위에서 도는 개인용 "운영체제". 반복 작업을 세 가�
 | 서브에이전트 | `intake-interview` | 요청 원문에서 빠진 정보를 파악해 담당자 면담 질문 목록 생성 | `.claude/agents/intake-interview.md` | X |
 | 서브에이전트 | `spec-reviewer` | 스펙 초안을 구현 착수 전에 검토 (완료 기준·범위·롤백 누락 점검) | `.claude/agents/spec-reviewer.md` | X |
 | 훅 (PreToolUse) | 스킬 사용량 기록 | `Skill` 호출마다 횟수·시각을 로컬 파일에 적재 | `.claude/hooks/skill-usage-stats.sh` | O (로컬) |
-| 훅 (SessionStart) | 요청 현황 브리핑 | 세션 시작 시 진행 중인 요청을 요약해 컨텍스트에 주입 | `.claude/hooks/session-open-requests.sh` | X |
+| 훅 (SessionStart) | 요청 현황 브리핑 + OS 건강도 추이 | 세션 시작 시 진행 중인 요청 요약 + 직전 스냅샷 대비 §4 지표 추이를 컨텍스트에 주입 | `.claude/hooks/session-open-requests.sh` | X |
+| 훅 (SessionEnd) | OS 건강도 스냅샷 | 세션 종료 시 §4 지표를 계산해 `history.tsv` 에 한 줄 append (실행할수록 개선되는 시스템 루프, Step 3) | `.claude/hooks/os-health-snapshot.sh` | O (로컬) |
 | 템플릿 | `_TEMPLATE.md` | 케이스 파일 원본. `/intake` 가 복사 | `maintenance/requests/_TEMPLATE.md` | — |
 
 > **`context-loader` 공유** — `/spec` · `/implement` · `/verify` 세 스킬이 같은 정의를 재사용한다.
@@ -212,12 +213,13 @@ Claude Code 위에서 도는 개인용 "운영체제". 반복 작업을 세 가�
   - [ ] 실제 요청 1~2건을 OS로 처리하고 목업 대비 차이(권한·빌드·테스트 부재 등) 정리
   - [ ] 그 경험으로 `/verify`·`context-loader`·`priority` 기준 보정
 
-- [ ] **Step 3** — OS 자가 개선 루프 (Day 3 과제)
-  - 방향은 인터뷰로 확정 — [`maintenance/interviews/2026-09-14-os-health-loop.md`](../maintenance/interviews/2026-09-14-os-health-loop.md)
-  - [ ] `SessionEnd` 훅 — 세션 종료 시 `maintenance/requests/*.md` 를 스캔해 §4 성공 기준 지표
+- [x] **Step 3** — OS 자가 개선 루프 (Day 3 과제)
+  - 방향은 인터뷰로 확정 — [`maintenance/interviews/2026-09-14-os-health-loop.md`](maintenance/interviews/2026-09-14-os-health-loop.md)
+  - [x] `SessionEnd` 훅 — 세션 종료 시 `maintenance/requests/*.md` 를 스캔해 §4 성공 기준 지표
     (내부 처리 비율 · 평균 처리 시간 · `blocked` 율)를 계산, 이력 파일에 스냅샷 한 줄 append
-  - [ ] `SessionStart` 훅(`session-open-requests.sh`) 확장 — 직전 스냅샷 대비 추이 표시
-  - [ ] 1페이지 문서화 (PR 본문 첨부)
+    (`.claude/hooks/os-health-snapshot.sh`)
+  - [x] `SessionStart` 훅(`session-open-requests.sh`) 확장 — 직전 스냅샷 대비 추이 표시
+  - [x] 1페이지 문서화 — [`maintenance/os-health/LOOP.md`](maintenance/os-health/LOOP.md)
 ---
 
 ## 7. 열린 질문 / 결정 대기
@@ -240,7 +242,7 @@ Claude Code 위에서 도는 개인용 "운영체제". 반복 작업을 세 가�
 
 ### 보류한 아이디어 (필요해지면 착수)
 
-- ~~**`/digest` — 성과 리포트 스킬.**~~ → **Step 3 로 승격.** 인터뷰([`2026-09-14-os-health-loop.md`](../maintenance/interviews/2026-09-14-os-health-loop.md))로
-  방향 확정: 수동 조회 스킬 대신 `SessionEnd` 훅이 §4 지표를 자동으로 스냅샷 누적.
+- ~~**`/digest` — 성과 리포트 스킬.**~~ → **Step 3 로 승격·구현 완료.** 인터뷰([`2026-09-14-os-health-loop.md`](maintenance/interviews/2026-09-14-os-health-loop.md))로
+  방향 확정: 수동 조회 스킬 대신 `SessionEnd` 훅이 §4 지표를 자동으로 스냅샷 누적 ([`os-health/LOOP.md`](maintenance/os-health/LOOP.md)).
 - **`/reopen` — 재개 스킬.** `done` / `handed_off` / `outsourced` 요청이 재발했을 때
   이전 케이스와 링크해 다시 여는 경로. 실제 재발 케이스가 생기면 착수.
