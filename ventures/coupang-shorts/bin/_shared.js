@@ -129,7 +129,7 @@ function resolveFfmpeg(config) {
 
 /** 명령줄 인자를 읽는다. `--go` 가 없으면 dryRun 이다. */
 function parseArgs(argv = process.argv.slice(2)) {
-  const out = { go: false, fake: false, video: null, keyword: null, limit: null, _: [] };
+  const out = { go: false, fake: false, video: null, keyword: null, limit: null, link: null, name: null, from: null, _: [] };
   for (let i = 0; i < argv.length; i += 1) {
     const a = argv[i];
     if (a === "--go") out.go = true;
@@ -137,6 +137,9 @@ function parseArgs(argv = process.argv.slice(2)) {
     else if (a === "--video") out.video = argv[++i];
     else if (a === "--keyword") out.keyword = argv[++i];
     else if (a === "--limit") out.limit = Number(argv[++i]);
+    else if (a === "--link") out.link = argv[++i];
+    else if (a === "--name") out.name = argv[++i];
+    else if (a === "--from") out.from = argv[++i];
     else out._.push(a);
   }
   out.dryRun = !out.go;
