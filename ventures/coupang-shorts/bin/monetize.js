@@ -21,6 +21,7 @@ const { extractKeywords } = require("../lib/keyword.js");
 const { searchProducts } = require("../lib/coupang.js");
 const { emptyState, checkBudget, recordCall, cacheLookup, cacheStore } = require("../lib/budget.js");
 const { buildPublishMeta } = require("../lib/publish-meta.js");
+const { pickProducts } = require("../lib/product-pick.js");
 
 /** 키가 없을 때 쓰는 가짜 응답. 상품 자리를 비워 두어 사람이 채우게 한다. */
 function 가짜검색(keyword) {
@@ -106,24 +107,42 @@ async function main() {
 
   // 쿠팡 호출 예산은 저장소 전체에서 하나다.
   let state = readJson(budgetStatePath(), emptyState());
-  const products = [];
+  const 후보 = [];
 
-  for (const keyword of keywords) {
-    const r = await 상품찾기({ keyword, state, creds, config, 가짜인가 });
+  // 검색어를 몇 개까지 돌릴지는 설정이 정한다. 예전에는 상품이 몇 개 모이면 루프를
+  // 끊었는데, 그러면 첫 검색어 하나로 끝나 2·3등 검색어가 한 번도 쓰이지 않았다.
+  // 이제는 후보를 모아 놓고 product-pick 이 고른다.
+  const 검색할것 = scored.slice(0, config.coupang.keywordsToSearch || 2);
+
+  for (const k of 검색할것) {
+    const r = await 상품찾기({ keyword: k.word, state, creds, config, 가짜인가 });
     state = r.state;
-    log(`  "${keyword}" → ${r.source}`);
-    products.push(...r.products);
-    if (products.length >= config.coupang.maxProductsInDescription) break;
+    log(`  "${k.word}" → ${r.source}`);
+    // 어느 검색어에서 나왔고 그 검색어가 몇 점짜리인지 달아 둔다. 고를 때 쓴다.
+    후보.push(...r.products.map((x) => ({ ...x, sourceKeyword: k.word, keywordScore: k.score })));
   }
 
   if (!가짜인가) writeJson(budgetStatePath(), state);
+
+  const 자막글2 = plan.segments.map((s) => s.subtitleText || "").join(" ");
+  const { picked, ranked } = pickProducts(
+    { candidates: 후보, videoTitle: plan.title, subtitleText: 자막글2, keywords: scored },
+    { max: config.coupang.maxProductsInDescription }
+  );
+
+  if (ranked.length > 0) {
+    log(`  후보 ${ranked.length}건 중 ${picked.length}건을 골랐다`);
+    for (const r of ranked.slice(0, 5)) {
+      log(`    ${String(r.matchScore).padStart(6)} ${r.productName.slice(0, 36)}  ← ${r.matchReasons.join(", ")}`);
+    }
+  }
 
   const meta = buildPublishMeta({
     videoTitle: plan.title,
     channelTitle: plan.channelTitle,
     videoId: plan.videoId,
     keywords,
-    products: products.slice(0, config.coupang.maxProductsInDescription),
+    products: picked,
   });
 
   const 결과 = {
@@ -131,7 +150,16 @@ async function main() {
     generatedAt: new Date().toISOString(),
     fakeMode: 가짜인가,
     keywords,
-    productCount: products.length,
+    productCount: picked.length,
+    products: picked,
+    productRanking: ranked.map((r) => ({
+      productName: r.productName,
+      matchScore: r.matchScore,
+      matchReasons: r.matchReasons,
+      source: r.source || "api",
+    })),
+    // 고른 결과를 사람이 한 번 보게 할지. 설정으로 끄면 그냥 넘어간다.
+    needsReview: Boolean(config.coupang.confirmPick) && picked.length > 0,
     ...meta,
     segments: plan.segments.map((s) => ({
       rank: s.rank, startSec: s.startSec, endSec: s.endSec, durationSec: s.durationSec,

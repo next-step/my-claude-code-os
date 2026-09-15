@@ -67,11 +67,29 @@ function 문서만들기(영상들, channel) {
   줄.push("");
   줄.push("1순위 구간을 시청자가 얼마나 되돌려 봤는지(평균값) 순으로 줄 세웠다. 위에서부터 올리면 된다.");
   줄.push("");
-  줄.push("**설명란의 상품 링크는 비어 있다.** 아래 각 영상의 검색어를 누르면 쿠팡 검색 결과로 바로 간다.");
-  줄.push(`상품을 고른 뒤 그 주소를 [파트너스 링크 생성기](${PARTNERS_LINK_TOOL})에 붙여 넣으면 제휴 링크가 나온다.`);
-  줄.push("그 링크로 설명란의 `(링크를 여기에 넣어 주세요)` 자리를 바꾼다.");
+  const 링크없음 = 영상들.filter((v) => !(v.meta.products || []).length);
+  줄.push(`상품 링크가 붙은 영상 ${영상들.length - 링크없음.length}건, 아직 빈 영상 ${링크없음.length}건.`);
   줄.push("");
-  줄.push("API 키가 생기면 이 과정이 자동화된다. 키는 누적 판매 15만 원을 넘겨야 발급된다(SETUP.md).");
+  줄.push("## 링크 붙이는 법");
+  줄.push("");
+  줄.push("각 영상의 검색어를 누르면 쿠팡 검색 결과로 바로 간다. 상품을 고른 뒤 그 주소를");
+  줄.push(`[파트너스 링크 생성기](${PARTNERS_LINK_TOOL})에 붙여 넣으면 제휴 링크가 나온다.`);
+  줄.push("");
+  줄.push("**설명란을 손으로 고치지 않는다.** 아래처럼 넘기면 고지 문구 위치와 출처 표기를 맞춰서 다시 만들어 준다.");
+  줄.push("");
+  줄.push("```bash");
+  줄.push('node ventures/coupang-shorts/bin/attach-link.js --go \\');
+  줄.push('  --video <영상ID> --link "https://link.coupang.com/a/XXXX" --name "상품명"');
+  줄.push("```");
+  줄.push("");
+  줄.push("여러 건을 한 번에 넣으려면 `runs/links.tsv` 를 채우고 아래를 돌린다. 영상 ID 는 미리 적어 두었다.");
+  줄.push("");
+  줄.push("```bash");
+  줄.push("node ventures/coupang-shorts/bin/attach-link.js --go --from ventures/coupang-shorts/runs/links.tsv");
+  줄.push("```");
+  줄.push("");
+  줄.push("> 단축 URL 은 넣지 않는다. 쿠팡이 공개한 계정 정지 사유 중 하나다. 파트너스가 준 주소를 그대로 쓴다.");
+  줄.push("> API 키가 생기면 이 과정 전체가 자동화된다. 키는 누적 판매 15만 원을 넘겨야 발급된다(SETUP.md).");
   줄.push("");
   줄.push("## 올릴 때마다 확인할 것");
   줄.push("");
@@ -108,6 +126,16 @@ function 문서만들기(영상들, channel) {
         ? `- 쿠팡 검색: ${검색어들.map((k) => `[${k}](${검색링크(k)})`).join(" · ")}`
         : "- 쿠팡 검색: (검색어 없음)"
     );
+    const 상품들 = meta.products || [];
+    if (상품들.length > 0) {
+      줄.push(`- 상품: ${상품들.map((x) => x.productName).join(", ")}${meta.needsReview ? "  ⚠️ 확인 필요" : ""}`);
+      const 순위 = (meta.productRanking || []).slice(0, 3);
+      if (순위.length > 1) {
+        줄.push(`- 고른 근거: ${순위.map((r) => `${r.productName.slice(0, 18)}(${r.matchScore})`).join(" > ")}`);
+      }
+    } else {
+      줄.push("- 상품: **아직 없음.** 위의 검색어를 눌러 링크를 만들고 attach-link.js 로 넣는다");
+    }
     줄.push("");
     줄.push("올릴 파일:");
     for (const s of v.영상들) {
@@ -146,6 +174,25 @@ function main() {
   const 문서 = 문서만들기(영상들, channel);
   const 경로 = path.join(ROOT, "runs", "upload-guide.md");
   fs.writeFileSync(경로, `${문서}\n`, "utf-8");
+
+  // 링크를 채워 넣을 틀을 만든다. **이미 있으면 덮지 않는다** — 사람이 적어 둔 것을 지우면 안 된다.
+  const 틀경로 = path.join(ROOT, "runs", "links.tsv");
+  if (!fs.existsSync(틀경로)) {
+    const 틀 = [
+      "# 쿠팡 링크를 채우고 아래를 돌린다:",
+      "#   node ventures/coupang-shorts/bin/attach-link.js --go --from ventures/coupang-shorts/runs/links.tsv",
+      "#",
+      "# 형식: 영상ID <탭> 링크 <탭> 상품명(생략 가능)",
+      "# 단축 URL 은 넣지 않는다 — 쿠팡 계정 정지 사유다.",
+      "",
+      ...영상들
+        .filter((v) => !(v.meta.products || []).length)
+        .map((v) => `${v.plan.videoId}\t\t# ${v.meta.title.replace(" #shorts", "")}`),
+      "",
+    ].join("\n");
+    fs.writeFileSync(틀경로, 틀, "utf-8");
+    log(`→ ${path.relative(process.cwd(), 틀경로)} (링크를 채워 넣을 틀)`);
+  }
 
   log(`영상 ${영상들.length}건, 쇼츠 ${영상들.reduce((n, v) => n + v.영상들.length, 0)}편`);
   log(`→ ${path.relative(process.cwd(), 경로)}`);
