@@ -715,3 +715,62 @@ test("AC-34: 루브릭은 종료 판정에 쓰이지 않는다", () => {
   assert.notEqual(summary.outcome, "done", "루브릭이 좋아도 target을 못 채우면 done이 아니다");
   assert.ok(summary.trend[0].rubric, "그래도 추이에는 루브릭이 실린다");
 });
+
+test("AC-35: 도달할 수 없는 목표는 베이스라인 단계에서 경고한다", () => {
+  // context-slim-30에서 체인 자수 목표가 editable이 아닌 CLAUDE.md 2,926자를 포함하고 있었다.
+  // "0.35면 되겠지"가 실은 지침 10개를 888자에 넣으라는 뜻이었는데 실행 전에 아무도 몰랐다.
+  const logs = [];
+  let blanked = false;
+  const exec = (cmd) => {
+    if (cmd.startsWith("git rev-parse")) return { stdout: "basesha\n", stderr: "", exitCode: 0 };
+    if (cmd.includes("budget-report")) {
+      // 파일이 비워진 상태에서는 바닥값 3000, 평소에는 10000.
+      return { stdout: `# import_chars ${blanked ? 3000 : 10000}\n`, stderr: "", exitCode: 0 };
+    }
+    return { stdout: "ℹ fail 0\n", stderr: "", exitCode: 0 };
+  };
+  const fakeSpawn = () => ({
+    status: 0,
+    stdout: JSON.stringify({ is_error: false, num_turns: 1, duration_ms: 1, total_cost_usd: 0, result: "짧다 `a.md:1`", usage: {} }),
+  });
+  const body = "# 가\n- 근거: `a.js:1`\n";
+  const files = { "/src/.claude/context/response-brevity.md": body, "/w/.claude/context/response-brevity.md": body, "/p/.claude/context/response-brevity.md": body };
+  const fs = {
+    existsSync: (p) => p in files,
+    readFileSync: (p) => files[p] ?? "",
+    writeFileSync: (p, v) => { files[p] = v; if (p === "/p/.claude/context/response-brevity.md") blanked = v === ""; },
+    mkdirSync: () => {}, rmSync: () => {}, readdirSync: () => [], cpSync: () => {},
+  };
+  const spec = parseGoalSpec(goal({
+    max_iterations: 1,
+    // 바닥 3000보다 낮은 2000을 목표로 건다.
+    targets: [{ id: "import_chars", kind: "command", cmd: "node budget-report.js", extract: "import_chars", op: "<=", absolute: 2000 }],
+    guards: [],
+  }));
+  runLoop({
+    sourceDir: "/src", spec, root: "/out", workDir: "/w", probeDir: "/p",
+    dryRun: false, fsImpl: fs, spawnImpl: fakeSpawn, execImpl: exec, log: (m) => logs.push(m),
+  });
+
+  const warn = logs.find((l) => l.includes("경고") && l.includes("import_chars"));
+  assert.ok(warn, `도달 불가 경고가 있어야 합니다: ${JSON.stringify(logs)}`);
+  assert.ok(warn.includes("3000"), "바닥값을 말해야 합니다");
+  // 경고만 하고 막지는 않는다 — 닿지 못할 목표로 회차를 끝까지 돌리는 것도 정당한 설계다.
+  assert.ok(logs.some((l) => l.includes("이터레이션 1")), "경고가 실행을 막으면 안 됩니다");
+});
+
+test("AC-36: 바닥을 재려고 비운 파일은 반드시 원래대로 되돌린다", () => {
+  // 되돌리지 못하면 이후 측정이 전부 빈 파일을 본다.
+  const { measureFloor } = require("../lib/ralph-run.js");
+  const files = { "/p/.claude/context/a.md": "원래 내용" };
+  const fs = {
+    existsSync: (p) => p in files, readFileSync: (p) => files[p] ?? "",
+    writeFileSync: (p, v) => { files[p] = v; }, mkdirSync: () => {},
+  };
+  const exec = () => { throw new Error("명령이 터졌다"); };
+  measureFloor({
+    probeDir: "/p", editable: [".claude/context/a.md"], execImpl: exec, fsImpl: fs,
+    targets: [{ id: "x", kind: "command", cmd: "node x.js", extract: "x" }],
+  });
+  assert.equal(files["/p/.claude/context/a.md"], "원래 내용", "명령이 터져도 되돌려야 합니다");
+});

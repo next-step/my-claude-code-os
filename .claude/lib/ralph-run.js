@@ -29,6 +29,7 @@ const {
   parseGoalSpec,
   measureResponse,
   aggregateProbes,
+  thresholdOf,
   computeNoiseBand,
   extractFromCommand,
   evaluateMetrics,
@@ -237,6 +238,40 @@ function readBaselineDocs({ workDir, mirror, fsImpl = nodeFs }) {
   return docs;
 }
 
+/**
+ * 목표가 산수상 닿을 수 있는 값인지 본다.
+ *
+ * `editable` 파일을 **전부 비운 상태**에서 명령 target을 한 번 재면, 그 값이 이 목표가
+ * 내려갈 수 있는 바닥이다. 바닥보다 낮은 목표는 루프가 무엇을 해도 못 닿는다.
+ *
+ * 왜 필요한가: `context-slim-30`의 체인 자수 목표는 `CLAUDE.md` 2,926자를 포함하는데
+ * 그 파일은 `editable`이 아니다. 사람이 "0.35면 되겠지" 하고 잡은 값이 실은 지침 10개를
+ * 888자 안에 넣으라는 뜻이었고, 그 사실을 아무도 실행 전에 몰랐다.
+ *
+ * 세션을 띄우지 않고 셸 명령만 돌리므로 실비가 들지 않는다. 그래서 경고만 하고 막지 않는다 —
+ * 닿지 못할 목표를 일부러 걸어 회차를 끝까지 돌리는 것도 정당한 실험 설계다.
+ */
+function measureFloor({ probeDir, targets, editable, execImpl = nodeExecSync, fsImpl = nodeFs }) {
+  const commandTargets = (targets || []).filter((t) => t.kind === "command");
+  if (commandTargets.length === 0) return {};
+  const saved = new Map();
+  try {
+    for (const rel of editable) {
+      const abs = nodePath.join(probeDir, rel);
+      if (!fsImpl.existsSync(abs)) continue;
+      saved.set(abs, fsImpl.readFileSync(abs, "utf8"));
+      writeFile(abs, "", fsImpl);
+    }
+    const { values } = runCommandMetrics({ workDir: probeDir, metrics: commandTargets, execImpl });
+    return values;
+  } catch (err) {
+    return {};
+  } finally {
+    // 되돌리지 못하면 이후 측정이 전부 빈 파일을 본다. 실패해도 여기는 반드시 돈다.
+    for (const [abs, body] of saved) writeFile(abs, body, fsImpl);
+  }
+}
+
 /** 실행 계획. dry-run이 이 숫자를 보여준다. */
 function planSessions(spec) {
   const perProbeSet = spec.probes.length * spec.repeats;
@@ -365,6 +400,20 @@ function runLoop({
     // 그 분기를 빼먹은 쪽이 조용히 undefined를 읽는다.
     return { dryRun: false, sessions, estimate, history: [], summary };
   }
+  const floor = measureFloor({ probeDir, targets: spec.targets, editable: spec.editable, execImpl, fsImpl });
+  for (const t of spec.targets) {
+    const f = floor[t.id];
+    if (typeof f !== "number") continue;
+    const threshold = thresholdOf(t, baseline);
+    if (typeof threshold !== "number") continue;
+    if ((t.op === "<=" || t.op === "<") && threshold < f) {
+      log(`경고: target ${t.id}의 목표 ${threshold}은 바닥 ${f}보다 낮습니다. `
+        + `${spec.editable.length}개 파일을 전부 비워도 ${f} 아래로는 내려가지 않으므로 이 목표는 달성될 수 없습니다.`);
+    } else if ((t.op === "<=" || t.op === "<") && threshold < f * 1.2) {
+      log(`참고: target ${t.id}의 목표 ${threshold}이 바닥 ${f}에 가깝습니다(여유 ${Math.round((threshold / f - 1) * 100)}%). `
+        + "달성하려면 대상 파일이 거의 비워집니다.");
+    }
+  }
   log(`베이스라인 중앙값 ${baselineAgg.median_chars}자, 최대 ${baselineAgg.max_chars}자, 노이즈 폭 ${noiseBand}자`);
   for (const d of baselineGuards.details) {
     log(`베이스라인 guard ${d.id}: ${d.value ?? "측정 실패"}${d.value ? " — 고치기 전부터 이 값입니다" : ""}`);
@@ -492,6 +541,6 @@ if (require.main === module) {
 
 module.exports = {
   NOTES_FILE, WORK_ARM, PROBE_ARM,
-  loadGoal, materializeCopies, syncEditable, runProbes, runCommandMetrics, writeSnapshot, readBaselineDocs,
+  loadGoal, materializeCopies, syncEditable, runProbes, runCommandMetrics, writeSnapshot, readBaselineDocs, measureFloor,
   planSessions, collectPatch, runLoop, parseArgv, main, PATCH_IGNORE,
 };
