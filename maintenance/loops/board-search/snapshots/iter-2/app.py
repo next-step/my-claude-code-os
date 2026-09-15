@@ -12,17 +12,9 @@ def create_app():
     posts = {}
     next_id = {"value": 1}
 
-    # cid -> comment(dict). post id 와 마찬가지로 전역 카운터, 삭제해도 재사용 안 함.
-    comments = {}
-    next_comment_id = {"value": 1}
-
     def _serialize(pid):
         p = posts[pid]
         return {"id": pid, "title": p["title"], "body": p["body"]}
-
-    def _serialize_comment(cid):
-        c = comments[cid]
-        return {"id": cid, "post_id": c["post_id"], "author": c["author"], "text": c["text"]}
 
     @app.get("/posts")
     def list_posts():
@@ -87,29 +79,16 @@ def create_app():
         if not isinstance(title, str) or not title.strip():
             return jsonify({"error": "title is required"}), 400
 
-        # body 는 title 과 달리 빈 값·생략은 허용한다 — 타입만 본다. None(생략·명시적 null
-        # 둘 다 .get 기본값 "" 이거나 None으로 들어옴)은 빈 문자열로 취급하고, 문자열이 아닌
-        # 값(숫자·객체·배열·불린)만 거부한다.
-        if body is None:
-            body = ""
-        elif not isinstance(body, str):
-            return jsonify({"error": "body must be a string"}), 400
-
         pid = next_id["value"]
         next_id["value"] += 1
-        # version 은 _serialize 응답 몸통에는 포함하지 않는다 — 헤더로만 노출(계약 B).
-        posts[pid] = {"title": title, "body": body, "version": 1}
-        resp = jsonify(_serialize(pid))
-        resp.headers["X-Version"] = str(posts[pid]["version"])
-        return resp, 201
+        posts[pid] = {"title": title, "body": body}
+        return jsonify(_serialize(pid)), 201
 
     @app.get("/posts/<int:pid>")
     def get_post(pid):
         if pid not in posts:
             return jsonify({"error": "not found"}), 404
-        resp = jsonify(_serialize(pid))
-        resp.headers["X-Version"] = str(posts[pid]["version"])
-        return resp
+        return jsonify(_serialize(pid))
 
     @app.delete("/posts/<int:pid>")
     def delete_post(pid):
@@ -118,22 +97,15 @@ def create_app():
             return jsonify({"error": "not found"}), 404
 
         del posts[pid]
-        # 이 post 에 딸린 댓글도 함께 지운다(cascade). next_id/next_comment_id 는
-        # 건드리지 않는다 — 삭제한 id 를 재사용하면 안 된다.
-        for cid in [cid for cid, c in comments.items() if c["post_id"] == pid]:
-            del comments[cid]
+        # next_id 는 건드리지 않는다 — 삭제한 id 를 재사용하면 안 된다.
         return "", 204
 
     @app.patch("/posts/<int:pid>")
     def update_post(pid):
-        # 검사 순서 고정: 404(존재) → If-Match(버전, 헤더가 있을 때만) → title(타입→값).
-        # 없는 id 는 GET/DELETE 와 같은 형식으로 거부한다.
+        # 없는 id 는 GET/DELETE 와 같은 형식으로 거부한다. 그 다음 title 을 POST 와
+        # 동일 순서(타입 → 값)로 검사해 부작용(갱신)은 모든 가드 통과 후에만 낸다.
         if pid not in posts:
             return jsonify({"error": "not found"}), 404
-
-        if_match = request.headers.get("If-Match")
-        if if_match is not None and if_match != str(posts[pid]["version"]):
-            return jsonify({"error": "version mismatch"}), 409
 
         data = request.get_json(silent=True) or {}
         title = data.get("title")
@@ -141,52 +113,7 @@ def create_app():
             return jsonify({"error": "title is required"}), 400
 
         posts[pid]["title"] = title
-        posts[pid]["version"] += 1
-        resp = jsonify(_serialize(pid))
-        resp.headers["X-Version"] = str(posts[pid]["version"])
-        return resp
-
-    @app.post("/posts/<int:pid>/comments")
-    def create_comment(pid):
-        if pid not in posts:
-            return jsonify({"error": "not found"}), 404
-
-        data = request.get_json(silent=True) or {}
-
-        # author 먼저(타입 → 값), 그다음 text. 부작용(id 발번·저장)은 두 가드를 모두
-        # 통과한 뒤에만 실행한다.
-        author = data.get("author")
-        if not isinstance(author, str) or not author.strip():
-            return jsonify({"error": "author is required"}), 400
-
-        text = data.get("text")
-        if not isinstance(text, str) or not text.strip():
-            return jsonify({"error": "text is required"}), 400
-
-        cid = next_comment_id["value"]
-        next_comment_id["value"] += 1
-        comments[cid] = {"post_id": pid, "author": author, "text": text}
-        return jsonify(_serialize_comment(cid)), 201
-
-    @app.get("/posts/<int:pid>/comments")
-    def list_comments(pid):
-        if pid not in posts:
-            return jsonify({"error": "not found"}), 404
-
-        cids = sorted(cid for cid, c in comments.items() if c["post_id"] == pid)
-        return jsonify([_serialize_comment(cid) for cid in cids])
-
-    @app.delete("/posts/<int:pid>/comments/<int:cid>")
-    def delete_comment(pid, cid):
-        # pid 가 없거나 cid 가 그 post 소속이 아니면(다른 post 소속이든 아예 없든)
-        # 동일하게 404 — 존재 여부를 흘리지 않는다.
-        if pid not in posts:
-            return jsonify({"error": "not found"}), 404
-        if cid not in comments or comments[cid]["post_id"] != pid:
-            return jsonify({"error": "not found"}), 404
-
-        del comments[cid]
-        return "", 204
+        return jsonify(_serialize(pid))
 
     return app
 

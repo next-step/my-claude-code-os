@@ -220,6 +220,11 @@ Claude Code 위에서 도는 개인용 "운영체제". 반복 작업을 세 가�
     (`.claude/hooks/os-health-snapshot.sh`)
   - [x] `SessionStart` 훅(`session-open-requests.sh`) 확장 — 직전 스냅샷 대비 추이 표시
   - [x] 1페이지 문서화 — [`maintenance/os-health/LOOP.md`](maintenance/os-health/LOOP.md)
+  - [x] 도전과제2 — 5차원 게이트형 루브릭 + 랄프 루프 실행, 이터레이션별 스냅샷
+    (부분 완료 — `board-search` 성공 종료, `board-comments` 는 usage 한도로 중단됨.
+    설계 근거 [`interviews/2026-09-15-ralph-rubric-loop.md`](maintenance/interviews/2026-09-15-ralph-rubric-loop.md),
+    결과·회고 [`day3-challenge2-handoff.md`](maintenance/day3-challenge2-handoff.md) ·
+    [`loops/RETRO-sandbox-difficulty.md`](maintenance/loops/RETRO-sandbox-difficulty.md))
 ---
 
 ## 7. 열린 질문 / 결정 대기
@@ -244,6 +249,13 @@ Claude Code 위에서 도는 개인용 "운영체제". 반복 작업을 세 가�
 - **spec → implement 문구 표류** — 스펙 "항목 제거" 가 구현에서 "절 전체 삭제" 로 바뀌었다.
   구현 로그에 남아 추적은 됐고 완료 기준을 `grep` 로 못박아 판정엔 영향 없었으나,
   구현 단계의 스펙 이탈을 무엇이 잡을지(사후 리뷰? `/verify` 확장?).
+- **랄프 루프 실습이 sandbox 코드로 편향될 수밖에 없는 구조적 제약** — Day3
+  도전과제2(5차원 루브릭 + 2시간+ 루프)에서 `board-search` 1회차가 8분·3이터 만에
+  조기 수렴했다. 지표가 셸 exit code 로만 판정돼야 하니(`ralph/SKILL.md` "하지 말 것
+  1") 대상이 pytest 로 검증 가능한 결정론적 계약을 가져야 하고, 이 저장소에서 그런
+  대상은 사실상 `sandbox/board` 뿐이라 "결국 성공할 수 있는, 계약이 깔끔한 작업"
+  위주로 대상을 고를 수밖에 없다 — 실 사내 코드(Step 2 미착수)의 모호함·레거시
+  제약이 빠진 채 시작하기 때문. 상세: [`maintenance/loops/RETRO-sandbox-difficulty.md`](maintenance/loops/RETRO-sandbox-difficulty.md).
 
 ### 보류한 아이디어 (필요해지면 착수)
 
