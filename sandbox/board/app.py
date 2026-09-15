@@ -31,6 +31,14 @@ def create_app():
         if not isinstance(title, str) or not title.strip():
             return jsonify({"error": "title is required"}), 400
 
+        # body 는 title 과 달리 빈 값·생략은 허용한다 — 타입만 본다. None(생략·명시적 null
+        # 둘 다 .get 기본값 "" 이거나 None으로 들어옴)은 빈 문자열로 취급하고, 문자열이 아닌
+        # 값(숫자·객체·배열·불린)만 거부한다.
+        if body is None:
+            body = ""
+        elif not isinstance(body, str):
+            return jsonify({"error": "body must be a string"}), 400
+
         pid = next_id["value"]
         next_id["value"] += 1
         posts[pid] = {"title": title, "body": body}
