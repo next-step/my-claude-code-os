@@ -1,0 +1,136 @@
+{
+  "_note": "시스템 루프의 각 단계를 누가 맡고 있는지 적는 루브릭. 자동으로 채워지지 않는다 — 루프 단계 목록이 코드 어디에도 없기 때문이다. 사람이 손으로 고치고, loop-health 스킬이 읽어서 자동 지표와 나란히 보여준다. 2026-09-15: 문서를 쓰며 실제 세션과 대조해 humanRemains 네 칸을 고쳤다 — '없음'이라고 적힌 칸이 실제로는 사람이 판단하고 있었다.",
+  "_owner_values": "human = 매번 사람이 한다 · mixed = AI가 하고 사람이 결정한다 · ai = AI가 한다 · system = 훅·테스트가 한다",
+  "_how_to_update": "단계를 위임했으면 owner를 올리고 delegatedTo에 스킬·에이전트·훅 이름을 적는다. humanRemains에는 위임 후에도 사람에게 남는 일을 적는다. 비워 두지 않는다 — '아무것도 안 남았다'는 주장은 대개 틀렸다.",
+  "updatedAt": "2026-09-15",
+  "stages": [
+    {
+      "id": "plan",
+      "name": "기획 — 무엇을 만들지 정한다",
+      "owner": "mixed",
+      "delegatedTo": [
+        "requirement-gate",
+        "requirement-interview"
+      ],
+      "humanRemains": "무엇을 만들지 최종 결정, 질문에 답하기",
+      "evidence": ".claude/context/requirement-gate.md"
+    },
+    {
+      "id": "spec",
+      "name": "명세 — 인수기준으로 분해한다",
+      "owner": "ai",
+      "delegatedTo": [
+        "spec-decompose",
+        "ui-spec-from-image"
+      ],
+      "humanRemains": "없음 — 다만 04단계 승인에서 되돌릴 수 있다",
+      "evidence": ".claude/skills/spec-decompose/SKILL.md"
+    },
+    {
+      "id": "spec-review",
+      "name": "명세 검증 — 인수기준이 요구사항을 덮는지 본다",
+      "owner": "ai",
+      "delegatedTo": [
+        "policy-reviewer"
+      ],
+      "humanRemains": "리뷰어의 PASS/FAIL을 받아들일지는 사람이 정한다. 2026-08-28 스도쿠 실주행에서 policy-reviewer가 낸 FAIL을 사람이 '스코프 밖'으로 판단해 넘긴 사례가 있다.",
+      "evidence": ".claude/agents/policy-reviewer.md"
+    },
+    {
+      "id": "approve",
+      "name": "승인 — 이대로 만들지 결정한다",
+      "owner": "human",
+      "delegatedTo": [],
+      "humanRemains": "전부. 일부러 위임하지 않는 단계다",
+      "evidence": "OS.md 10.3 승인 게이트"
+    },
+    {
+      "id": "test",
+      "name": "테스트 작성 — 실패하는 인수 테스트를 먼저 만든다",
+      "owner": "ai",
+      "delegatedTo": [
+        "acceptance-test-write",
+        "test-reviewer"
+      ],
+      "humanRemains": "인수기준을 확정하는 것은 04단계의 사람 승인이다. 그리고 ATDD 파이프라인 밖에서 테스트를 쓸 때는 test-reviewer가 호출되지 않아, 테스트가 인수기준을 제대로 덮는지 아무도 독립적으로 보지 않는다.",
+      "evidence": ".claude/skills/acceptance-test-write/SKILL.md"
+    },
+    {
+      "id": "build",
+      "name": "구현 — 테스트를 통과시킨다",
+      "owner": "ai",
+      "delegatedTo": [
+        "tdd-implement",
+        "ui-visual-reviewer"
+      ],
+      "humanRemains": "3회 상한을 넘기면 인계받는다",
+      "evidence": ".claude/skills/tdd-implement/SKILL.md"
+    },
+    {
+      "id": "verify",
+      "name": "검증 — 초록불인지, 문서가 낡지 않았는지 본다",
+      "owner": "system",
+      "delegatedTo": [
+        "freshness.test.js",
+        "guideline-audit",
+        "context-inject.test.js"
+      ],
+      "humanRemains": "검사기가 못 보는 것을 읽고 판단",
+      "evidence": ".claude/lib/freshness.js"
+    },
+    {
+      "id": "record",
+      "name": "기록 — 실패와 회고를 남긴다",
+      "owner": "system",
+      "delegatedTo": [
+        "atdd-failure-log.js",
+        "os-retro-check.js",
+        "session-heartbeat.js"
+      ],
+      "humanRemains": "회고 문안을 승인",
+      "evidence": ".claude/hooks/atdd-failure-log.js"
+    },
+    {
+      "id": "ship",
+      "name": "반영 — 커밋하고 남긴다",
+      "owner": "mixed",
+      "delegatedTo": [
+        "git-commit-message",
+        "big-change-commit-check.js"
+      ],
+      "humanRemains": "커밋 여부와 단위 결정",
+      "evidence": ".claude/context/commit-habits.md"
+    },
+    {
+      "id": "measure",
+      "name": "측정 — 무엇이 얼마나 드는지 잰다",
+      "owner": "ai",
+      "delegatedTo": [
+        "context-map",
+        "context-ab",
+        "skill-stat",
+        "loop-health"
+      ],
+      "humanRemains": "A/B 루브릭 채점은 사람이 한다. loop-rubric의 readability 차원도 대리 지표가 없어 사람이 채운다.",
+      "evidence": ".claude/context/context-experiment.md"
+    },
+    {
+      "id": "optimize",
+      "name": "국소 최적화 — 정해진 목표까지 반복해 끌어올린다",
+      "owner": "ai",
+      "delegatedTo": [
+        "ralph-loop"
+      ],
+      "humanRemains": "목표 정의 작성, **목표값 조정**, 실행 승인, 결과 패치 적용. 2026-09-15 실주행에서 목표값을 0.70→0.35→0.45로 세 번 사람이 다시 정했고, 그 판단이 결과를 가장 크게 갈랐다.",
+      "evidence": ".claude/skills/ralph-loop/SKILL.md"
+    },
+    {
+      "id": "redesign",
+      "name": "재설계 — 루프 자체를 다시 짠다",
+      "owner": "human",
+      "delegatedTo": [],
+      "humanRemains": "전부. 아직 위임된 적이 없다",
+      "evidence": "OS.md 8장 설계 노트"
+    }
+  ]
+}

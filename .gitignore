@@ -39,3 +39,30 @@
 # 재현을 가능하게 하는 것은 결과가 아니라 팔 정의(arms.json·evals.json)이고 그쪽은 커밋된다.
 # 남길 가치가 있는 결과는 사람이 docs/ 로 승격한다.
 experiments/context-ab/runs/
+
+# 랄프 루프(ralph-loop)의 실행 결과. 회차마다 내용이 달라져
+# big-change-commit-check.js·os-retro-check.js를 계속 재발동시킨다 — context-ab/runs와 같은 이유다.
+# 재현을 가능하게 하는 것은 결과가 아니라 목표 정의(goals/*.json)이고 그쪽은 커밋된다.
+experiments/ralph/runs/
+
+# 쇼츠 파이프라인(ventures/coupang-shorts)의 실행 산출물.
+# 내려받은 원본 영상·렌더한 mp4·쿠팡 호출 예산과 캐시가 쌓이는 곳이고,
+# 매 실행마다 내용이 달라져 big-change-commit-check.js를 계속 재발동시킨다
+# — experiments/*/runs 와 정확히 같은 이유다.
+# 재현을 가능하게 하는 것은 산출물이 아니라 config/*.json 과 fixtures/ 이고 그쪽은 커밋된다.
+ventures/coupang-shorts/runs/
+
+# 쇼츠 파이프라인의 외부 API 자격(YouTube 키, 쿠팡 액세스·시크릿 키).
+# 저장소가 공개 커밋되므로 키는 환경변수나 여기 gitignore된 파일로만 받는다
+# — .claude/.notion-token 과 같은 이유다.
+ventures/coupang-shorts/.credentials.json
+
+# 쇼츠 파이프라인이 쓰는 정적 ffmpeg 바이너리(약 80MB).
+# Homebrew 의 ffmpeg 9.0.1 에는 drawtext·subtitles 필터가 없어 자막과 출처 표기를
+# 입힐 수 없었다. evermeet.cx 의 정적 빌드로 대체했고, 바이너리는 커밋하지 않는다
+# — 내려받는 방법은 SETUP.md 에 적는다.
+ventures/coupang-shorts/tools/
+
+# 격리 작업 공간(git worktree). 에이전트가 브랜치별 작업 사본을 여기에 만든다.
+# 사본 전체가 커밋되지 않도록 제외한다.
+.claude/worktrees/

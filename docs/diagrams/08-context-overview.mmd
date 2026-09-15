@@ -1,26 +1,26 @@
 flowchart LR
     Human(["사람이 정하는 것<br/>지침 추가·수정<br/>무엇을 반영할지"]):::human
 
-    subgraph Always["■ 항상 로드 · 15,970자 — 세션마다 무조건 낸다"]
-        Chain["@import 체인 · 8,232자<br/>CLAUDE.md → index.md<br/>→ 지침 9개"]:::data
+    subgraph Always["■ 항상 로드 · 19,588자 — 세션마다 무조건 낸다"]
+        Chain["@import 체인 · 10,896자<br/>CLAUDE.md → index.md<br/>→ 지침 9개"]:::data
         Guides["지침 9개 · 자수 = 상시 비용<br/> <br/>requirement-gate 1,821<br/>바꾸기 전에 먼저 묻는다<br/>response-brevity 1,309<br/>결론 먼저 · 분량 상한<br/>docs-diagrams 961<br/>.mmd가 원본 · 옵션 3종<br/>explanation-style 670<br/>근거와 한계를 남긴다<br/>code-vs-instruction 634<br/>검증은 코드 · 표시는 지시문<br/>hook-discipline 612<br/>규율은 훅 · 결정은 사람<br/>commit-habits 493<br/>커밋 단위와 메시지<br/>sensitive-info 409<br/>공개 커밋 전제<br/>context-experiment 622<br/>재고 팔로 가른다"]:::data
-        SkillD["스킬 description · 6,073자<br/>15개 · 스킬 선택의 유일한 근거<br/>가장 크지만 손대면 안 되는 항목"]:::skill
+        SkillD["스킬 description · 7,027자<br/>17개 · 스킬 선택의 유일한 근거<br/>가장 크지만 손대면 안 되는 항목"]:::skill
         AgentD["에이전트 description · 1,665자<br/>5개 · 판정만 하고 고치지 않는다"]:::agent
     end
 
     subgraph Reach["■ 도달 범위 — 예외 없이 전부 상속 (실측)"]
         Main["메인 대화<br/>+ gitStatus · 최근 커밋 5개"]:::data
-        Sk["스킬 15개<br/>같은 대화"]:::skill
+        Sk["스킬 17개<br/>같은 대화"]:::skill
         Ag["서브에이전트 5개<br/>선별 차단은 불가능"]:::agent
     end
 
     subgraph Rest["■ 나머지 비용"]
-        OnD["온디맨드 · 71,004자<br/>호출될 때만 · 상시의 4.3배<br/>스킬 본문 60,003 + 에이전트 11,001"]:::skill
+        OnD["온디맨드 · 83,432자<br/>호출될 때만 · 상시의 4.0배<br/>스킬 본문 72,431 + 에이전트 11,001"]:::skill
         Zero["훅 8개 · 컨텍스트 비용 0<br/>이벤트에 스크립트만 실행"]:::hook
         Mcp["MCP 2개 · 크기 미측정<br/>notion 기성 · 툴 42개<br/>notion-min 자작 · 툴 2개<br/>붙어서 tools/list 해야 안다"]:::data
     end
 
-    Verify["검증되는 것 — 테스트 14파일 · 219개<br/>context-inject AC-1~17<br/>등록 정합성 · 선언 일관성<br/>freshness AC-1~9<br/>문서에 박힌 수치가 낡았는가<br/> <br/>검증 안 되는 것 — 지침을 지켰는가<br/>마크다운은 테스트할 수 없다"]:::skill
+    Verify["검증되는 것 — 테스트 19파일 · 289개<br/>context-inject AC-1~17<br/>등록 정합성 · 선언 일관성<br/>freshness AC-1~9<br/>문서에 박힌 수치가 낡았는가<br/> <br/>검증 안 되는 것 — 지침을 지켰는가<br/>마크다운은 테스트할 수 없다"]:::skill
 
     Human --> Chain
     Chain --> Guides

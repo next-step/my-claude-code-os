@@ -21,8 +21,10 @@ const ARM_FIELDS = new Set(["name", "label", "guidelines", "registered", "hooks"
  * - node_modules: 크고 실험과 무관하다.
  * - .claude/sessions: 세션 훅의 런타임 상태. 사본에 들어가면 남의 세션 기록을 물고 시작한다.
  * - experiments/context-ab/runs: 실행 결과. 사본이 자기 결과를 다시 품는 재귀를 막는다.
+ * - experiments/ralph/runs: 같은 이유. 랄프 루프(ralph-run.js)가 이 목록을 재사용한다 —
+ *   루프는 사본을 만든 뒤 그 안에서 또 세션을 띄우므로, 빼지 않으면 회차마다 결과가 겹겹이 쌓인다.
  */
-const ALWAYS_EXCLUDE = ["node_modules", ".claude/sessions", "experiments/context-ab/runs"];
+const ALWAYS_EXCLUDE = ["node_modules", ".claude/sessions", "experiments/context-ab/runs", "experiments/ralph/runs"];
 
 /**
  * 팔 정의를 검증해 정규화한다.

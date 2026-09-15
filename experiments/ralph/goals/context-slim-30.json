@@ -1,0 +1,96 @@
+{
+  "id": "context-slim-30",
+  "note": "랄프 루프의 두 번째 과제. 목표 지표를 상시 로드 합계(always_loaded_chars)가 아니라 import 체인(import_chars)으로 잡은 이유는, 상시 로드 19,097자 중 8,201자가 스킬·에이전트 description이라 지침을 아무리 줄여도 움직이지 않기 때문이다. 통제할 수 없는 값을 목표로 걸면 루프가 무엇을 해도 못 닿는다. 측정 과제 두 개는 brevity-50과 같은 것을 쓴다 — 기준선이 알려져 있고, 두 실험의 결과를 나란히 놓고 볼 수 있다. 2026-09-11 갱신: brevity-50 첫 실주행에서 드러난 두 가지를 반영했다 — 셸 가드를 절대값에서 배수로 바꾸고, 목표값도 같은 이유로 배수로 통일했다. 2026-09-14 2차 갱신: 상한을 4에서 5로 올려 2시간 이상 돌리고, 정체 판정을 2에서 3으로 늦췄다 — 회차별 스냅샷으로 변화를 보려면 표본이 더 필요하다. 2026-09-15 3차 갱신: 목표를 0.35로 조이고 stall_after를 5로 올려 상한까지 돌게 했다 — 추이가 목적이라 중간에 끊으면 표본이 줄어든다. 2026-09-15 4차 갱신: 지침 자체를 보는 guard 3종(clause_count·guideline_files·caveat_lines)을 추가했다. 기존 가드는 전부 응답만 봐서 지침 붕괴를 하나도 잡지 못했다. 2026-09-15 5차 갱신: 상한과 정체 판정을 7로 올렸다. 회차별 추이가 이번 실행의 산출물이라 중간에 끊으면 표본이 준다.",
+  "goal": "이 저장소의 개인 업무 지침을 고쳐서 @import 체인 전체 자수를 베이스라인 대비 45퍼센트 이하로 줄인다. 지침을 합치거나 지워도 되지만, 근거(`파일:줄` 인용)를 남기는 성질과 지침 등록의 정합성은 유지해야 한다. 조항 수와 한계 서술을 기준의 절반 아래로 떨어뜨리면 가드가 깨진다 — 산문을 줄이되 규칙 자체를 지우지 않는다.",
+  "editable": [
+    ".claude/context/index.md",
+    ".claude/context/requirement-gate.md",
+    ".claude/context/response-brevity.md",
+    ".claude/context/code-vs-instruction.md",
+    ".claude/context/hook-discipline.md",
+    ".claude/context/commit-habits.md",
+    ".claude/context/docs-diagrams.md",
+    ".claude/context/explanation-style.md",
+    ".claude/context/sensitive-info.md",
+    ".claude/context/context-experiment.md"
+  ],
+  "probes": [
+    {
+      "id": "skill-draft",
+      "prompt": "이 저장소에 `ledger-recent` 스킬 초안을 잡아줘. 실패 원장(.claude/atdd-failure-ledger.json)에서 최근 7일치만 골라 보여주는 스킬이야. 파일은 쓰지 말고, 어떤 파일을 어떤 내용으로 만들지와 테스트를 어떻게 돌리는지를 응답으로만 알려줘."
+    },
+    {
+      "id": "hook-design",
+      "prompt": "커밋 직전에 인수 테스트가 초록불인지 확인하고, 빨간불이면 사람에게 되묻는 장치를 이 저장소에 붙이고 싶어. 파일은 쓰지 말고 설계만 응답으로 알려줘."
+    }
+  ],
+  "targets": [
+    {
+      "id": "import_chars",
+      "kind": "command",
+      "cmd": "node .claude/lib/context-budget-report.js",
+      "extract": "import_chars",
+      "op": "<=",
+      "note": "2026-09-15 4차 조정: 0.45. 0.55는 회차 1에 달성돼(실측 0.549) 추이 표본이 1개로 끝났고, 0.35는 바닥(CLAUDE.md 2,926자 = 0.269)에 너무 가까워 지침이 거의 비워진 채 done이 났다. 0.45는 그 사이다 — 한두 회차로는 닿지 않지만 지침을 비우지 않고도 도달할 여지가 있다. 바닥 대비 여유는 러너가 베이스라인에서 계산해 경고한다.",
+      "relative_to_baseline": 0.45
+    }
+  ],
+  "guards": [
+    {
+      "id": "clause_count",
+      "kind": "command",
+      "cmd": "node .claude/lib/loop-rubric-report.js",
+      "extract": "clause_count",
+      "op": ">=",
+      "relative_to_baseline": 0.6,
+      "note": "지침의 불릿·헤딩 수가 기준의 60퍼센트 아래로 떨어지지 않게 한다. 실주행에서 조항이 80개에서 0개가 됐는데 응답 기반 가드 셋이 전부 통과했다 — 가드는 응답을 보는데 무너진 것은 지침이었다. 이 가드만이 그 붕괴를 직접 본다."
+    },
+    {
+      "id": "guideline_files",
+      "kind": "command",
+      "cmd": "node .claude/lib/loop-rubric-report.js",
+      "extract": "guideline_files",
+      "op": ">=",
+      "relative_to_baseline": 1,
+      "note": "파일을 지워서 다른 수치를 0으로 만드는 우회를 막는다. 지침을 합치는 것은 등록부(index.md) 수정이 따르므로 context-inject.test.js가 따로 잡는다."
+    },
+    {
+      "id": "caveat_lines",
+      "kind": "command",
+      "cmd": "node .claude/lib/loop-rubric-report.js",
+      "extract": "caveat_lines",
+      "op": ">=",
+      "relative_to_baseline": 0.5,
+      "note": "한계·실패를 말하는 줄이 절반 아래로 떨어지지 않게 한다. 대리 지표라 뜻은 보지 못하고 그런 낱말이 든 줄을 셀 뿐이다 — 통과했다고 한계 서술이 살아 있다는 뜻은 아니다."
+    },
+    {
+      "id": "citation",
+      "kind": "response",
+      "extract": "median_citation_count",
+      "op": ">=",
+      "absolute": 1,
+      "note": "지침을 줄이면서 '근거를 남겨라'는 요구까지 같이 지우는 것이 가장 쉬운 지름길이다. 응답에 `파일:줄` 인용이 계속 나오는지로 그 지름길을 막는다."
+    },
+    {
+      "id": "no_ballooning",
+      "kind": "response",
+      "extract": "median_chars",
+      "op": "<=",
+      "relative_to_baseline": 1.2,
+      "note": "분량 상한을 정한 지침(response-brevity.md)이 통째로 사라지면 자수는 줄지만 응답은 길어진다. 절대값 대신 베이스라인 대비로 쓴 이유는, 절대값을 잘못 잡으면 첫 회차부터 guard가 깨져 루프가 영원히 성공하지 못하기 때문이다."
+    },
+    {
+      "id": "tests",
+      "kind": "command",
+      "cmd": "node --test .claude/tests/*.test.js",
+      "extract": "fail",
+      "op": "<=",
+      "note": "절대값 0이 아니라 배수 1로 건 이유는, 작업 사본이 훅을 뺀 상태라 목표와 무관하게 이미 깨져 있는 테스트가 있기 때문이다. 0을 요구하면 가드가 처음부터 만족될 수 없어 '망가뜨리지 마라'가 아니라 '시작부터 실패'가 된다(SKILL.md의 셸 가드 항목). 지침 파일을 지우고 index.md 등록을 안 고치면 context-inject.test.js가, 끊어진 인용을 만들면 guideline-audit.test.js가 잡는다.",
+      "relative_to_baseline": 1
+    }
+  ],
+  "repeats": 3,
+  "max_iterations": 7,
+  "stall_after": 7,
+  "per_run_usd_estimate": 0.6
+}

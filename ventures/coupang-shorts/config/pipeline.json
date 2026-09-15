@@ -1,0 +1,76 @@
+{
+  "_설명": "파이프라인 설정. 값을 바꿔 가며 돌려 보고 조정하는 자리다. 코드를 고치지 않는다.",
+
+  "discover": {
+    "_설명": "소재 발굴. 유튜브가 2025-07-21 에 인기 급상승 페이지를 폐지해 키워드 검색으로 찾는다.",
+    "queriesPerDay": 8,
+    "_회전이유": "keywords.json 의 검색어를 매번 전부 돌리지 않고 날짜 기준으로 이만큼만 골라 쓴다. 검색어 하나가 yt-dlp 호출 하나라 36개를 매번 돌리면 수집에만 20분이 든다. 같은 날에는 몇 번을 돌려도 같은 것이 나온다.",
+    "perKeyword": 10,
+    "minDurationSec": 180,
+    "maxDurationSec": 3600,
+    "minViewCount": 50000,
+    "maxAgeDays": 365
+  },
+
+  "segment": {
+    "_설명": "구간 선정. targetSec 은 창을 훑는 길이이고 실제 길이는 minSec~maxSec 안에서 정해진다.",
+    "targetSec": 45,
+    "minSec": 15,
+    "maxSec": 60,
+    "topN": 3,
+    "minGapSec": 30,
+    "decayRatio": 0.6,
+    "excludeHeadSec": 30,
+    "excludeTailSec": 20,
+    "_제외구간이유": "인트로와 아웃트로가 히트맵 상위에 잡히는 왜곡이 흔하다. 실제 영상에서 확인했다."
+  },
+
+  "subtitle": {
+    "lang": "ko",
+    "snapToleranceSec": 3,
+    "_스냅이유": "구간 경계를 자막 경계로 옮겨 말이 중간에서 잘리지 않게 한다."
+  },
+
+  "render": {
+    "mode": "blur",
+    "subtitles": true,
+    "title": true,
+    "titleDurationSec": 3,
+    "titleFontSizePx": 78,
+    "titleTopPx": 220,
+    "titleCharsPerLine": 11,
+    "adBadgeFontSizePx": 34,
+    "adBadgeMarginPx": 40,
+    "_배지이유": "쿠팡 파트너스 가이드는 설명란 고지만으로 부족하다고 못박는다. 영상 제목이나 영상 내에 광고 표시가 없으면 반려 사례다. 가이드가 제시한 세 방법(영상 내 문구·배지·제목 [광고]) 중 배지를 골랐다. 이 표기는 설정으로 끌 수 없게 두었다.",
+    "_타이틀이유": "쇼츠는 첫 몇 초에 훅이 보여야 한다. 원본이 16:9 라 위아래에 656픽셀씩 빈 폭이 생기는데, 거기에 두면 영상을 하나도 가리지 않는다. 화면에 박는 문구는 제목 전체가 아니라 훅 부분만 쓴다 — 뒤에 붙는 키워드와 #shorts 는 검색용이라 화면에 있으면 지저분하다.",
+    "_자막이유": "원본에 이미 자막이 박힌 영상은 우리 자막이 겹친다. 그런 소재를 다룰 때는 false 로 끈다.",
+    "_mode설명": "blur 는 흐린 배경 위에 원본을 얹고, crop 은 가운데를 잘라낸다. crop 은 자막과 인물이 잘려 기본값이 아니다.",
+    "maxHeight": 1080,
+    "width": 1080,
+    "height": 1920,
+    "fps": 30,
+    "crf": 20,
+    "preset": "medium",
+    "fontFile": "/System/Library/Fonts/AppleSDGothicNeo.ttc",
+    "_폰트이유": "지정하지 않으면 한글이 두부 글자로 깨진다. 종료 코드는 0이라 렌더 결과를 봐야 드러난다.",
+    "ffmpegPath": "ventures/coupang-shorts/tools/ffmpeg",
+    "_ffmpeg이유": "Homebrew 의 ffmpeg 9.0.1 에는 drawtext·subtitles 필터가 없다. 정적 빌드를 따로 둔다."
+  },
+
+  "coupang": {
+    "limitPerHour": 10,
+    "searchLimit": 5,
+    "cacheTtlHours": 24,
+    "maxProductsInDescription": 2,
+    "keywordsToSearch": 2,
+    "_검색어개수이유": "검색어 상위 몇 개까지 쿠팡에 물어볼지. 예전에는 상품이 모이면 루프를 끊어 첫 검색어 하나로 끝났고, 2·3등 검색어가 한 번도 쓰이지 않았다. 이제 후보를 모아 product-pick 이 고른다. 다만 검색어 하나가 호출 하나라 시간당 10회 한도와 직결된다 — 하루 5편이면 10회다. 같은 검색어는 캐시에 걸려 실제로는 덜 쓴다.",
+    "confirmPick": true,
+    "_확인이유": "고른 상품을 사람이 한 번 보게 한다. meta.json 에 needsReview 로 표시되고 업로드 문구에 드러난다. 선택 품질을 몇 편 보고 믿을 만하다 싶으면 false 로 끈다.",
+    "_한도이유": "쿠팡 파트너스 검색 API 는 시간당 10회, 회당 10개로 제한된다. 이 파이프라인의 가장 좁은 길목이다."
+  },
+
+  "output": {
+    "dailyTarget": 5,
+    "_목표이유": "하루 5편이면 쿠팡 호출 한도 안에 여유 있게 들어가고 사람이 품질을 확인할 수 있다."
+  }
+}
