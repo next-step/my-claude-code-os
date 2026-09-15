@@ -40,6 +40,18 @@
         ]
       }
     ],
+    "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/os-health-snapshot.sh\"",
+            "timeout": 10,
+            "statusMessage": "OS 건강도 스냅샷 기록 중..."
+          }
+        ]
+      }
+    ],
     "PostToolUse": [
       {
         "matcher": "Write|Edit",

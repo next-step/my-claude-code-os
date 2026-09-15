@@ -116,7 +116,8 @@ Claude Code 위에서 도는 개인용 "운영체제". 반복 작업을 세 가�
 | 서브에이전트 | `intake-interview` | 요청 원문에서 빠진 정보를 파악해 담당자 면담 질문 목록 생성 | `.claude/agents/intake-interview.md` | X |
 | 서브에이전트 | `spec-reviewer` | 스펙 초안을 구현 착수 전에 검토 (완료 기준·범위·롤백 누락 점검) | `.claude/agents/spec-reviewer.md` | X |
 | 훅 (PreToolUse) | 스킬 사용량 기록 | `Skill` 호출마다 횟수·시각을 로컬 파일에 적재 | `.claude/hooks/skill-usage-stats.sh` | O (로컬) |
-| 훅 (SessionStart) | 요청 현황 브리핑 | 세션 시작 시 진행 중인 요청을 요약해 컨텍스트에 주입 | `.claude/hooks/session-open-requests.sh` | X |
+| 훅 (SessionStart) | 요청 현황 브리핑 + OS 건강도 추이 | 세션 시작 시 진행 중인 요청 요약 + 직전 스냅샷 대비 §4 지표 추이를 컨텍스트에 주입 | `.claude/hooks/session-open-requests.sh` | X |
+| 훅 (SessionEnd) | OS 건강도 스냅샷 | 세션 종료 시 §4 지표를 계산해 `history.tsv` 에 한 줄 append (실행할수록 개선되는 시스템 루프, Step 3) | `.claude/hooks/os-health-snapshot.sh` | O (로컬) |
 | 템플릿 | `_TEMPLATE.md` | 케이스 파일 원본. `/intake` 가 복사 | `maintenance/requests/_TEMPLATE.md` | — |
 
 > **`context-loader` 공유** — `/spec` · `/implement` · `/verify` 세 스킬이 같은 정의를 재사용한다.
@@ -212,11 +213,27 @@ Claude Code 위에서 도는 개인용 "운영체제". 반복 작업을 세 가�
   - [ ] 실제 요청 1~2건을 OS로 처리하고 목업 대비 차이(권한·빌드·테스트 부재 등) 정리
   - [ ] 그 경험으로 `/verify`·`context-loader`·`priority` 기준 보정
 
-- [ ] **Step 3** — *(미정)*
+- [x] **Step 3** — OS 자가 개선 루프 (Day 3 과제)
+  - 방향은 인터뷰로 확정 — [`maintenance/interviews/2026-09-14-os-health-loop.md`](maintenance/interviews/2026-09-14-os-health-loop.md)
+  - [x] `SessionEnd` 훅 — 세션 종료 시 `maintenance/requests/*.md` 를 스캔해 §4 성공 기준 지표
+    (내부 처리 비율 · 평균 처리 시간 · `blocked` 율)를 계산, 이력 파일에 스냅샷 한 줄 append
+    (`.claude/hooks/os-health-snapshot.sh`)
+  - [x] `SessionStart` 훅(`session-open-requests.sh`) 확장 — 직전 스냅샷 대비 추이 표시
+  - [x] 1페이지 문서화 — [`maintenance/os-health/LOOP.md`](maintenance/os-health/LOOP.md)
+  - [x] 도전과제2 — 5차원 게이트형 루브릭 + 랄프 루프 실행, 이터레이션별 스냅샷
+    (부분 완료 — `board-search` 성공 종료, `board-comments` 는 usage 한도로 중단됨.
+    설계 근거 [`interviews/2026-09-15-ralph-rubric-loop.md`](maintenance/interviews/2026-09-15-ralph-rubric-loop.md),
+    결과·회고 [`day3-challenge2-handoff.md`](maintenance/day3-challenge2-handoff.md) ·
+    [`loops/RETRO-sandbox-difficulty.md`](maintenance/loops/RETRO-sandbox-difficulty.md))
 ---
 
 ## 7. 열린 질문 / 결정 대기
 
+- **§1의 목표("내부 처리 비율을 높이고, 외주 의뢰 건수를 줄인다")가 정말 맞는 목표인가?**
+  OS 건강도 루프(Step 3)를 실사용해보다가 나온 의문 — 정당한 외주(역량 밖이라 올바르게 라우팅한
+  것)까지 "줄여야 할 것"으로 잡으면 방향이 왜곡될 수 있다. "Claude로 소수 팀 레버리지를
+  극대화한다"가 더 근본적인 가치이고, 내부/외주 비율은 그 결과일 뿐 직접 추구할 목표가 아닐
+  수 있다. 논의 기록: [`maintenance/interviews/2026-09-14-os-health-loop.md`](maintenance/interviews/2026-09-14-os-health-loop.md) §7.
 - **`classifier` 에 "사람 판단 필요(human gate)" 3번째 결과를 둘까?**
   현재 구현은 `internal` / `outsource` 2분류. 애매한 건은 사람에게 에스컬레이션하는 경로가 없다.
 - `context-loader` 결과를 케이스 파일(또는 사이드카 파일)에 **캐시**할까? 매 호출 재조사 비용 대비.
@@ -232,10 +249,17 @@ Claude Code 위에서 도는 개인용 "운영체제". 반복 작업을 세 가�
 - **spec → implement 문구 표류** — 스펙 "항목 제거" 가 구현에서 "절 전체 삭제" 로 바뀌었다.
   구현 로그에 남아 추적은 됐고 완료 기준을 `grep` 로 못박아 판정엔 영향 없었으나,
   구현 단계의 스펙 이탈을 무엇이 잡을지(사후 리뷰? `/verify` 확장?).
+- **랄프 루프 실습이 sandbox 코드로 편향될 수밖에 없는 구조적 제약** — Day3
+  도전과제2(5차원 루브릭 + 2시간+ 루프)에서 `board-search` 1회차가 8분·3이터 만에
+  조기 수렴했다. 지표가 셸 exit code 로만 판정돼야 하니(`ralph/SKILL.md` "하지 말 것
+  1") 대상이 pytest 로 검증 가능한 결정론적 계약을 가져야 하고, 이 저장소에서 그런
+  대상은 사실상 `sandbox/board` 뿐이라 "결국 성공할 수 있는, 계약이 깔끔한 작업"
+  위주로 대상을 고를 수밖에 없다 — 실 사내 코드(Step 2 미착수)의 모호함·레거시
+  제약이 빠진 채 시작하기 때문. 상세: [`maintenance/loops/RETRO-sandbox-difficulty.md`](maintenance/loops/RETRO-sandbox-difficulty.md).
 
 ### 보류한 아이디어 (필요해지면 착수)
 
-- **`/digest` — 성과 리포트 스킬.** `maintenance/requests/` 전체를 훑어 §4 성공 기준
-  (내부 처리 비율, 평균 사이클타임, `blocked` 율)을 집계. 요청 데이터가 쌓인 뒤 Step 2에서 판단.
+- ~~**`/digest` — 성과 리포트 스킬.**~~ → **Step 3 로 승격·구현 완료.** 인터뷰([`2026-09-14-os-health-loop.md`](maintenance/interviews/2026-09-14-os-health-loop.md))로
+  방향 확정: 수동 조회 스킬 대신 `SessionEnd` 훅이 §4 지표를 자동으로 스냅샷 누적 ([`os-health/LOOP.md`](maintenance/os-health/LOOP.md)).
 - **`/reopen` — 재개 스킬.** `done` / `handed_off` / `outsourced` 요청이 재발했을 때
   이전 케이스와 링크해 다시 여는 경로. 실제 재발 케이스가 생기면 착수.
