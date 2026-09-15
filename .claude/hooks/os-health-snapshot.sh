@@ -4,6 +4,13 @@
 #     · 내부 처리 비율(%) = internal / (internal + outsource)  (classification:undecided 는 제외)
 #     · 평균 처리 일수    = 종결 상태(done/handed_off/outsourced) 요청의 (updated - created) 평균
 #     · blocked 비율(%)  = status:blocked 요청 수 / 전체 요청 수
+#   - "OS 건강도"(0~100) 도 같이 남긴다 — 루프가 나아지는지 보는 합산 지표.
+#     health_score = 100 - blocked 비율. internal_rate 는 뺐다 — 정당한 외주(역량 밖이라
+#     올바르게 outsource 로 분류한 것)와 blocked(내부에서 붙잡고 있다가 막혀 시간 낭비한 것)는
+#     서로 다른 신호인데 예전 수식(내부처리비율 포함)은 둘을 같은 방향(둘 다 감점)으로 섞었다.
+#     "외주 자체를 감점"하지 않고 "실행이 막힌 것만" 감점하도록 좁혔다.
+#     내부처리비율·평균처리일수는 그대로 기록해 추이는 보되, 건강도 점수엔 안 넣는다.
+#     (판단 근거: maintenance/interviews/2026-09-14-os-health-loop.md §7)
 #   - 한 줄을 maintenance/os-health/history.tsv 에 append 만 한다 (덮어쓰지 않음 — 이력이 자산이다).
 #   - 실패해도 세션 종료를 막지 않는다 (요청 폴더가 없으면 조용히 종료).
 set -euo pipefail
@@ -15,7 +22,7 @@ out="$out_dir/history.tsv"
 
 [ -d "$dir" ] || exit 0
 mkdir -p "$out_dir"
-[ -f "$out" ] || printf '# date\ttotal\tclassified\tinternal_rate_pct\tavg_days\tblocked_rate_pct\n' > "$out"
+[ -f "$out" ] || printf '# date\ttotal\tclassified\tinternal_rate_pct\tavg_days\tblocked_rate_pct\thealth_score\n' > "$out"
 
 fm=""
 # frontmatter 값 한 줄을 뽑는다 (session-open-requests.sh 와 동일한 방식).
@@ -76,6 +83,11 @@ if [ "$day_n" -gt 0 ]; then
   avg_days=$(awk -v s="$day_sum" -v n="$day_n" 'BEGIN{printf "%.1f", s/n}')
 fi
 
+health_score="-"
+if [ "$blocked_rate" != "-" ]; then
+  health_score=$(awk -v br="$blocked_rate" 'BEGIN{printf "%.0f", 100 - br}')
+fi
+
 stamp=$(date +"%Y-%m-%dT%H:%M")
-printf '%s\t%d\t%d\t%s\t%s\t%s\n' "$stamp" "$total" "$classified" "$internal_rate" "$avg_days" "$blocked_rate" >> "$out"
+printf '%s\t%d\t%d\t%s\t%s\t%s\t%s\n' "$stamp" "$total" "$classified" "$internal_rate" "$avg_days" "$blocked_rate" "$health_score" >> "$out"
 exit 0

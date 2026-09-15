@@ -3,7 +3,7 @@
 #   - maintenance/requests/REQ-*.md 의 frontmatter를 읽어
 #     status 가 done / outsourced / handed_off 가 아닌 것만 요약해 출력한다.
 #   - SessionEnd 훅(os-health-snapshot.sh)이 쌓은 OS 건강도 이력이 있으면
-#     최근 스냅샷과 직전 스냅샷을 비교한 추이도 한 줄 덧붙인다.
+#     최근 스냅샷과 직전 스냅샷을 비교한 추이(합산 건강도 점수 포함)도 한 줄 덧붙인다.
 #   - 이 스크립트의 stdout 은 Claude 세션 컨텍스트 맨 앞에 주입되므로 짧게 유지한다.
 #   - 실패해도 세션을 막지 않는다 (요청 폴더가 없으면 조용히 종료).
 set -eo pipefail
@@ -66,15 +66,16 @@ if [ -f "$health" ]; then
   hn=$(printf '%s\n' "$hrows" | grep -c . || true)
   if [ "$hn" -ge 1 ]; then
     last=$(printf '%s\n' "$hrows" | tail -1)
-    IFS=$'\t' read -r _ l_total _ l_internal l_avgdays l_blocked <<< "$last"
+    IFS=$'\t' read -r _ l_total _ l_internal l_avgdays l_blocked l_health <<< "$last"
     if [ "$hn" -ge 2 ]; then
       prev=$(printf '%s\n' "$hrows" | tail -2 | head -1)
-      IFS=$'\t' read -r _ _ _ p_internal _ p_blocked <<< "$prev"
+      IFS=$'\t' read -r _ _ _ p_internal _ p_blocked p_health <<< "$prev"
       d_internal=$(delta "$l_internal" "$p_internal")
       d_blocked=$(delta "$l_blocked" "$p_blocked")
-      echo "[OS 건강도] 요청 ${l_total}건 · 내부처리 ${l_internal}%(전 세션 대비 ${d_internal}%p) · 평균처리 ${l_avgdays}일 · blocked ${l_blocked}%(${d_blocked}%p)"
+      d_health=$(delta "$l_health" "$p_health")
+      echo "[OS 건강도] ${l_health}/100(전 세션 대비 ${d_health}) · 요청 ${l_total}건 · 내부처리 ${l_internal}%(${d_internal}%p) · 평균처리 ${l_avgdays}일 · blocked ${l_blocked}%(${d_blocked}%p)"
     else
-      echo "[OS 건강도] 요청 ${l_total}건 · 내부처리 ${l_internal}% · 평균처리 ${l_avgdays}일 · blocked ${l_blocked}% (첫 스냅샷 — 추이는 다음 세션부터 보임)"
+      echo "[OS 건강도] ${l_health}/100 · 요청 ${l_total}건 · 내부처리 ${l_internal}% · 평균처리 ${l_avgdays}일 · blocked ${l_blocked}% (첫 스냅샷 — 추이는 다음 세션부터 보임)"
     fi
   fi
 fi

@@ -39,14 +39,35 @@ history.tsv 에 스냅샷 한 줄 append   "[OS 건강도] ... (전 세션 대�
 
 새 DB 없이 기존 케이스 파일 frontmatter만 읽는다 (`OS.md` §5 원칙 3).
 
+## 루프가 나아지는지 재는 지표 — OS 건강도 수식
+
+위 세 지표 각각의 추이만 봐도 되지만, "루프가 전반적으로 나아지고 있는지"를 한눈에 보려고
+정량 지표 하나(0~100)로 합쳤다.
+
+```
+OS 건강도 = 100 - blocked 비율
+```
+
+- **내부 처리 비율은 합산에서 뺐다.** 처음엔 `(내부처리비율 + (100 - blocked비율)) / 2` 로
+  설계했는데, 이러면 "역량 밖이라 정당하게 외주로 보낸 것"과 "내부에서 붙잡고 있다가 막혀
+  시간을 낭비한 것"이 같은 방향(둘 다 감점)으로 섞인다. 실사용 중 실제로 정당한 outsource
+  요청 1건 때문에 점수가 100→84로 떨어지는 걸 보고 이 결함을 발견해 수정했다 — 판단 과정은
+  [`2026-09-14-os-health-loop.md`](../interviews/2026-09-14-os-health-loop.md) §7 참고.
+- 그래서 지금은 **"실행이 막혔는가"만** 감점 대상이다. outsource 로 보낸 것 자체는 감점하지 않는다.
+- 평균 처리 일수도 합산에 안 넣는다 — "며칠이 좋은 건지" 자연스러운 상한이 없어서, 임의의
+  기준(예: "3일 이내면 만점")을 지어내는 대신 별도 추이로만 본다
+  (`.claude/context/dod-patterns.md` 안티패턴 "임의 기준 도입" 회피와 같은 원칙).
+- 내부 처리 비율·평균 처리 일수는 `history.tsv`·`SessionStart` 브리핑에 여전히 표시된다 —
+  건강도 점수에서만 빠졌을 뿐, 추이 관찰 대상에서 빠진 건 아니다.
+
 ## 저장 형식
 
 `maintenance/os-health/history.tsv` — 탭 구분, append 전용.
 
 ```
-# date	total	classified	internal_rate_pct	avg_days	blocked_rate_pct
-2026-09-14T23:10	1	1	100	0.0	0
-2026-09-14T23:11	1	1	100	0	0
+# date	total	classified	internal_rate_pct	avg_days	blocked_rate_pct	health_score
+2026-09-14T23:10	1	1	100	0.0	0	100
+2026-09-15T20:26	3	3	67	0.0	0	100
 ```
 
 ## 실행 확인 (수동 재현, 실제 훅과 동일 로직)
@@ -55,8 +76,11 @@ history.tsv 에 스냅샷 한 줄 append   "[OS 건강도] ... (전 세션 대�
 $ CLAUDE_PROJECT_DIR="$PWD" bash .claude/hooks/os-health-snapshot.sh
 $ CLAUDE_PROJECT_DIR="$PWD" bash .claude/hooks/session-open-requests.sh
 [유지보수 OS] 진행 중인 요청 없음. 새 요청은 /intake 로 접수하세요.
-[OS 건강도] 요청 1건 · 내부처리 100%(전 세션 대비 0%p) · 평균처리 0.0일 · blocked 0%(0%p)
+[OS 건강도] 100/100(전 세션 대비 0) · 요청 3건 · 내부처리 67%(0%p) · 평균처리 0.0일 · blocked 0%(0%p)
 ```
+
+요청이 1건 → 3건(internal 2·outsource 1)으로 늘어도 아무것도 blocked 되지 않았으니 건강도는
+100 그대로다 — outsource 자체는 더 이상 감점 요인이 아님을 보여주는 실행 결과.
 
 ## 한계 / 남은 가정
 
