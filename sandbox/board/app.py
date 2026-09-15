@@ -52,6 +52,21 @@ def create_app():
         # next_id 는 건드리지 않는다 — 삭제한 id 를 재사용하면 안 된다.
         return "", 204
 
+    @app.patch("/posts/<int:pid>")
+    def update_post(pid):
+        # 없는 id 는 GET/DELETE 와 같은 형식으로 거부한다. 그 다음 title 을 POST 와
+        # 동일 순서(타입 → 값)로 검사해 부작용(갱신)은 모든 가드 통과 후에만 낸다.
+        if pid not in posts:
+            return jsonify({"error": "not found"}), 404
+
+        data = request.get_json(silent=True) or {}
+        title = data.get("title")
+        if not isinstance(title, str) or not title.strip():
+            return jsonify({"error": "title is required"}), 400
+
+        posts[pid]["title"] = title
+        return jsonify(_serialize(pid))
+
     return app
 
 
