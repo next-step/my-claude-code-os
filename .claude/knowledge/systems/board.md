@@ -28,3 +28,5 @@
 | REQ | 내용 | 결과 |
 | --- | --- | --- |
 | REQ-001 | `POST /posts` 빈 제목 검증 추가 | 2026-09-01 · internal / S · done → handed_off |
+| REQ-002 | `PATCH /posts/<id>` 글 제목 수정 기능 추가 | 2026-09-15 · internal / M · done → handed_off |
+| REQ-003 | React SPA 관리자 대시보드 신규 구축 | 2026-09-15 · outsource / L · classified → outsourced (벤더 미확정) |
