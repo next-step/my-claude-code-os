@@ -1,26 +1,26 @@
 #!/usr/bin/env python3
-"""ctxstats - 컨텍스트가 실제로 주입됐는지, 얼마나 주입됐는지 본다.
+"""ctxstats - see whether context was actually injected, and how much.
 
-    ctxstats                 최근 30일
+    ctxstats                 the last 30 days
     ctxstats --days 7
     ctxstats --all
-    ctxstats --probe         프로브 점검표(무엇을 물어야 하는가)와 그 결과
-    ctxstats --config <path> 다른 workspace.json 을 가진 프로젝트를 대상으로
-    ctxstats --session <id>  한 세션만
+    ctxstats --probe         the probe checklist (what to ask) and its results
+    ctxstats --config <path> target a project with a different workspace.json
+    ctxstats --session <id>  one session only
 
-기록은 `.claude/hooks/context-inject.py` 가 주입할 때마다 남긴다
-(`.claude/.state/context-injections.jsonl`). 이 도구가 재는 세 축이 Day2 의 정량 비교
-축이다.
+The record is written by `.claude/hooks/context-inject.py` on every injection
+(`.claude/.state/context-injections.jsonl`). The three axes this tool measures are the quantitative
+comparison axes of Day 2.
 
-  주입 건수·바이트   무엇이 얼마나 들어갔는가. 컨텍스트는 유한 자원이므로 이 값은
-                     "많을수록 좋다"가 아니라 **의도한 만큼인가**로 읽는다
-  트리거별 분포      이름으로 걸렸는가, 경로로 걸렸는가, 스킬로 걸렸는가.
-                     한 축이 0 이면 그 축의 배선이 끊긴 것이다
-  중복 억제율        트리거가 맞은 횟수 대비 실제로 주입한 비율. 억제가 없으면 같은
-                     문단이 세션 내내 반복 주입되고 있다는 뜻이다
+  injections and bytes   what went in and how much. Context is a finite resource, so this value
+                         is not read as "more is better" but as **is it as much as intended**
+  trigger distribution   caught by name, by path, or by skill.
+                         An axis at 0 means that axis's wiring is cut
+  suppression rate       injections actually made against trigger matches. No suppression means
+                         the same paragraph is being injected over and over within a session
 
-**주입 0 과 배선 없음을 같은 숫자로 내지 않는다.** 기록이 없으면 라우팅 표를 대신
-찍어서, "주입이 안 됐다"인지 "애초에 대상이 없다"인지를 가른다.
+**Zero injections and no wiring are never the same number.** With no records it prints the routing
+table instead, separating "nothing was injected" from "there was no target to begin with".
 """
 import json
 import os
@@ -38,11 +38,11 @@ def usage(code=0):
 
 
 def find_project(config_opt):
-    """대상 프로젝트. `--config` 가 있으면 그 설정을 가진 체크아웃으로 못박는다."""
+    """The target project. With `--config`, pinned to the checkout holding that config."""
     if config_opt:
         p = os.path.abspath(os.path.expanduser(config_opt))
         if not os.path.isfile(p):
-            sys.exit(f"ctxstats: {p} 가 없다")
+            sys.exit(f"ctxstats: {p} does not exist")
         # <project>/.claude/config/workspace.json
         return os.path.dirname(os.path.dirname(os.path.dirname(p)))
     env = os.environ.get("CLAUDE_PROJECT_DIR")
@@ -56,7 +56,7 @@ def find_project(config_opt):
             return d
         parent = os.path.dirname(d)
         if parent == d:
-            sys.exit("ctxstats: .claude/context/ 를 가진 프로젝트를 찾지 못했다")
+            sys.exit("ctxstats: could not find a project with .claude/context/")
         d = parent
 
 
@@ -68,7 +68,7 @@ def bar(n, total, width=22):
 
 
 def front(path):
-    """컨텍스트 파일의 name·kind·token·주입 대상. 파서는 훅과 같은 최소 형식."""
+    """A context file's name, kind, token and injection targets. The parser is the hook's minimal form."""
     try:
         with open(path, encoding="utf-8") as fh:
             text = fh.read()
@@ -137,35 +137,35 @@ def counts(project):
 
 def who_of(r):
     return (r.get("agent_type") or r.get("agent_id")
-            or ("(메인 세션)" if not r.get("agent_id") else r["agent_id"]))
+            or ("(main session)" if not r.get("agent_id") else r["agent_id"]))
 
 
 def print_routing(rows):
-    print("\n라우팅 표 (.claude/context/)")
+    print("\nrouting table (.claude/context/)")
     for m in rows:
         tgt = []
         if m["agents"]:
-            tgt.append(f"에이전트 {len(m['agents'])}")
+            tgt.append(f"{len(m['agents'])} agents")
         if m["skills"]:
-            tgt.append(f"스킬 {len(m['skills'])}")
+            tgt.append(f"{len(m['skills'])} skills")
         if m["paths"]:
-            tgt.append(f"경로 {len(m['paths'])}")
-        print(f"  {m['file']:<30} {m.get('kind',''):<4} {m['lines']:>3}줄 "
-              f"{m['bytes']:>6}B  {' · '.join(tgt) or '주입 대상 없음'}")
+            tgt.append(f"{len(m['paths'])} paths")
+        print(f"  {m['file']:<30} {m.get('kind',''):<10} {m['lines']:>3} lines "
+              f"{m['bytes']:>6}B  {' · '.join(tgt) or 'no injection target'}")
 
 
 def probe(project, rows, route, session):
-    """프로브: 서브에이전트가 실제로 토큰을 봤는지.
+    """The probe: did a subagent actually see the token?
 
-    훅이 "주입했다"고 기록한 것과 서브에이전트가 "봤다"고 보고한 것은 다른 사실이다.
-    전자는 이 프로세스가 stdout 에 무엇을 썼는지이고, 후자는 그것이 모델의 컨텍스트에
-    닿았는지다. `SubagentStart` 의 출력 형식이 문서에 없으므로 이 둘을 반드시 갈라서
-    본다 — 주입 로그만 보고 "된다"고 말하면 그것이 이 저장소가 반복해서 기록한 그
-    실패 모양이다.
+    What the hook recorded as "injected" and what a subagent reports as "seen" are different facts.
+    The former is what this process wrote to stdout; the latter is whether that reached the model's
+    context. The output form of `SubagentStart` is undocumented, so the two are always read apart -
+    saying "it works" from the injection log alone is the very failure shape this repository has
+    recorded again and again.
     """
     want = {m["token"]: m["file"] for m in route}
     if not rows:
-        print("주입 기록이 없다 — 프로브는 새 세션에서 훅이 등록된 뒤에 돈다.")
+        print("no injection records - the probe runs in a new session after the hook is registered.")
         print_routing(route)
         return 0
     if session:
@@ -174,12 +174,12 @@ def probe(project, rows, route, session):
         last = max(rows, key=lambda r: r.get("ts", 0)).get("session_id")
         rows = [r for r in rows if r.get("session_id") == last]
         session = last
-    print(f"# 프로브 대상 세션 {str(session)[:12]} · 주입 {len(rows)}건")
+    print(f"# probe session {str(session)[:12]} · {len(rows)} injections")
 
     asked = defaultdict(set)
     for r in rows:
         asked[(who_of(r), r.get("trigger"))].add(r.get("token"))
-    print("\n무엇을 물어야 하는가 (이 토큰을 그대로 보고하게 한다)")
+    print("\nwhat to ask (have it report these tokens verbatim)")
     for (who, trig), toks in sorted(asked.items()):
         print(f"  {str(who):<28} {str(trig):<6} " +
               " ".join(sorted(t for t in toks if t)))
@@ -196,24 +196,24 @@ def probe(project, rows, route, session):
                 if session and rec.get("session") not in (None, session):
                     continue
                 for t in rec.get("reported") or []:
-                    seen[rec.get("agent_type") or "(메인 세션)"].add(t)
+                    seen[rec.get("agent_type") or "(main session)"].add(t)
     if not seen:
-        print(f"\n보고된 토큰 없음 — {p} 가 비어 있다.")
-        print("  이것은 '주입이 안 됐다'가 아니라 '아직 확인하지 않았다'이다.")
-        print("  절차는 docs/context-system.md 의 프로브 절.")
+        print(f"\nno token reported - {p} is empty.")
+        print("  This is not 'nothing was injected' but 'not verified yet'.")
+        print("  The procedure is the probe section of docs/context-system.md.")
         return 0
 
-    print("\n대조 결과")
+    print("\ncomparison")
     bad = 0
     for (who, _trig), toks in sorted(asked.items()):
         got = seen.get(who, set())
         for t in sorted(x for x in toks if x):
-            mark = "확인" if t in got else "미확인"
+            mark = "confirmed" if t in got else "unconfirmed"
             bad += t not in got
             print(f"  {str(who):<28} {want.get(t, t):<30} {mark}")
     stray = {t for s in seen.values() for t in s} - set(want)
     for t in sorted(stray):
-        print(f"  {'(어디서 왔는지 모름)':<28} {t:<30} 불일치")
+        print(f"  {'(source unknown)':<28} {t:<30} mismatch")
         bad += 1
     return 1 if bad else 0
 
@@ -233,13 +233,13 @@ def main():
     for a in argv:
         if a.startswith("-") and a not in ("--all", "--days", "--probe",
                                            "--config", "--session"):
-            sys.exit(f"ctxstats: 모르는 옵션 {a}")
+            sys.exit(f"ctxstats: unknown option {a}")
 
     project = find_project(cfg)
     log = os.path.join(project, ".claude", ".state", "context-injections.jsonl")
     route = routing(project)
     if not route:
-        sys.exit("ctxstats: .claude/context/ 에 컨텍스트 파일이 없다")
+        sys.exit("ctxstats: no context file in .claude/context/")
     rows = load(log, days)
 
     if "--probe" in argv:
@@ -247,44 +247,44 @@ def main():
 
     if session:
         rows = [r for r in rows if r.get("session_id") == session]
-    span = "전체" if days is None else f"최근 {days}일"
+    span = "all time" if days is None else f"last {days} days"
     if not rows:
-        print(f"# {span} · 주입 기록 없음")
-        print("  훅이 등록돼 있는지 확인하라 (.claude/settings.json → SubagentStart, "
+        print(f"# {span} · no injection records")
+        print("  Check the hook is registered (.claude/settings.json → SubagentStart, "
               "PreToolUse matcher Skill, PreToolUse matcher Read|Edit|Write|Bash).")
-        print("  훅은 세션 시작 시점에 스냅샷되므로, 방금 등록했다면 새 세션에서 잰다.")
+        print("  Hooks are snapshotted at session start, so if you just registered it, measure in a new session.")
         print_routing(route)
         return 0
 
     total_bytes = sum(r.get("bytes", 0) for r in rows)
     sess = {r.get("session_id") for r in rows if r.get("session_id")}
     first = min(r.get("ts", 0) for r in rows)
-    print(f"# {span} · 주입 {len(rows):,}건 · {total_bytes:,}B · 세션 {len(sess)}개 · "
-          f"첫 기록 {time.strftime('%Y-%m-%d', time.localtime(first))}")
+    print(f"# {span} · {len(rows):,} injections · {total_bytes:,}B · {len(sess)} sessions · "
+          f"first record {time.strftime('%Y-%m-%d', time.localtime(first))}")
 
     by_trigger = Counter(r.get("trigger") for r in rows)
-    print("\n트리거별")
+    print("\nby trigger")
     for t in TRIGGERS:
         c = by_trigger.get(t, 0)
-        tail = "  ← 이 축의 배선이 끊겼다" if not c else ""
+        tail = "  ← this axis's wiring is cut" if not c else ""
         print(f"  {t:<8} {c:>5}  {bar(c, len(rows))}{tail}")
     other = sum(c for t, c in by_trigger.items() if t not in TRIGGERS)
     if other:
-        print(f"  {'(기타)':<8} {other:>5}")
+        print(f"  {'(other)':<8} {other:>5}")
 
-    print("\n파일별 (건수 · 바이트)")
+    print("\nby file (count · bytes)")
     per = defaultdict(lambda: [0, 0])
     for r in rows:
-        e = per[r.get("file") or "(이름 없음)"]
+        e = per[r.get("file") or "(unnamed)"]
         e[0] += 1
         e[1] += r.get("bytes", 0)
     for f, (c, b) in sorted(per.items(), key=lambda kv: -kv[1][0]):
         print(f"  {f:<30} {c:>5}  {b:>8,}B  {bar(c, len(rows), 16)}")
     silent = [m["file"] for m in route if m["file"] not in per]
     if silent:
-        print("  한 번도 주입되지 않은 파일: " + " · ".join(silent))
+        print("  never injected: " + " · ".join(silent))
 
-    print("\n누가 받았는가")
+    print("\nwho received it")
     for who, c in Counter(who_of(r) for r in rows).most_common():
         print(f"  {str(who):<30} {c:>5}  {bar(c, len(rows), 16)}")
 
@@ -293,15 +293,15 @@ def main():
         cnt = {k: v for k, v in cnt.items() if k == session}
     matched = sum(v.get("matched", 0) for v in cnt.values())
     injected = sum(v.get("injected", 0) for v in cnt.values())
-    print("\n중복 억제 (최근 하루 창)")
+    print("\nduplicate suppression (last one-day window)")
     if matched:
         sup = matched - injected
-        print(f"  트리거 매치 {matched:>5} · 주입 {injected:>5} · 억제 {sup:>5}"
-              f"   억제율 {sup / matched * 100:>5.1f}%")
+        print(f"  trigger matches {matched:>5} · injected {injected:>5} · suppressed {sup:>5}"
+              f"   suppression {sup / matched * 100:>5.1f}%")
         if not sup:
-            print("  억제가 0 이다 — 같은 문단이 반복 주입되고 있는지 확인하라.")
+            print("  suppression is 0 - check whether the same paragraph is being re-injected.")
     else:
-        print("  집계 창(하루) 안의 기록이 없다. 억제율은 '0%'가 아니라 '모름'이다.")
+        print("  no record inside the aggregation window (one day). The rate is 'unknown', not '0%'.")
 
     byday = defaultdict(int)
     for r in rows:
@@ -309,7 +309,7 @@ def main():
     if len(byday) > 1:
         recent = sorted(byday.items())[-10:]
         peak = max(c for _, c in recent)
-        print("\n일자별")
+        print("\nby day")
         for d, c in recent:
             print(f"  {d}  {c:>4}  {bar(c, peak, 18)}")
     return 0

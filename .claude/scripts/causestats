@@ -1,0 +1,320 @@
+#!/usr/bin/env python3
+"""causestats - what the extra rounds were spent on, read back from the pages' `state.json`.
+
+    causestats                 every page under docs.root/docs.pagesDir
+    causestats --json          machine-readable - the next step's agent reads this
+    causestats --config <path> a project whose workspace.json lives elsewhere
+    causestats --pages <dir>   that directory instead of the configured one
+
+Five loops turn per page, and from the second round on each round carries one cause word from a
+closed vocabulary (`pagecheck --note`). This file counts those words across every page and says
+three things: how they are distributed, which of them reached **three**, and the three metrics.
+
+**It fixes nothing.** Same shape as `ctxevolve`: reaching three is the signal to write a change
+set - a cap value, an instruction, or a new check - and writing it is the next agent's job while
+approving it is a person's `git diff`. A tool that both measured and repaired would be marking
+its own work.
+
+**Its input is `state.json`, which is what separates it from `ctxevolve`.** The role records
+belong to the roles and the orchestrator does not read them; `state.json` is written by the
+orchestrator and `pagecheck` alone, so reading it here breaks no one-way flow.
+
+The metrics:
+
+  migration-unrelated rounds   (환경 + OS결함 + 확인만) / extra rounds **that have an upper layer**
+                               lower is better. `기타` has no upper layer and is not in that
+                               denominator, so writing every retry as `기타` does not improve
+                               this number - it makes it uncomputable, and that is printed as
+                               uncomputable rather than as 0% or 100%
+  repeated causes              how many causes reached three. 0 is the goal
+  기타 share                   `기타` / all extra rounds. How much of reality the vocabulary covers
+
+**A cap change is reported apart from the rounds.** Raising a cap is one legitimate output of
+reading these numbers and at the same time the cheapest way to make "went over its cap" stop
+happening without fixing anything, so it is never folded into a round count.
+
+Exit codes: 0 report printed · 2 wrong usage · 3 could not answer (a missing config key, a
+missing directory). **Reaching three is not a failure** - it is the finding this tool exists for.
+"""
+import importlib.machinery
+import importlib.util
+import json
+import os
+import sys
+import unicodedata
+from collections import Counter, defaultdict
+
+sys.dont_write_bytecode = True
+HERE = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, HERE)
+from _phpenc import dotted, is_placeholder, workspace  # noqa: E402
+
+TOOL = "causestats"
+# Three of the same cause is the threshold the design fixes, and it is not an option here. Any
+# metric's cheapest improvement is to weaken the measurement, and a threshold flag is that door.
+REPEAT_AT = 3
+
+
+def die(msg, code=3):
+    sys.stderr.write(f"{TOOL}: {msg}\n")
+    sys.exit(code)
+
+
+def vocabulary():
+    """The cause vocabulary, imported from `pagecheck` - the file that writes it.
+
+    A copy here would be a second canonical copy, and a drifted copy of a **closed** vocabulary
+    is worse than a drifted list of names: a cause this file did not know would fall out of every
+    metric without anything saying so. So it is imported, and failing to import stops rather than
+    falls back to a guess.
+    """
+    path = os.path.join(HERE, "pagecheck")
+    try:
+        loader = importlib.machinery.SourceFileLoader("_pagecheck_vocab", path)
+        spec = importlib.util.spec_from_loader(loader.name, loader)
+        mod = importlib.util.module_from_spec(spec)
+        loader.exec_module(mod)
+        return dict(mod.CAUSE), mod.OTHER, mod.NO_UPPER
+    except Exception as exc:                                     # noqa: BLE001
+        die(f"the cause vocabulary could not be read from {path}: {exc}. It is the canonical "
+            "copy and this tool keeps no second one, so there is nothing to fall back to.")
+
+
+def pages_dir(cfg, cfg_path, override):
+    if override:
+        d = os.path.abspath(os.path.expanduser(override))
+        if not os.path.isdir(d):
+            die(f"{d} is not a directory")
+        return d
+    root = dotted(cfg, "docs.root")
+    sub = dotted(cfg, "docs.pagesDir")
+    if not root or is_placeholder(root):
+        die(f"{cfg_path} has no docs.root. Without it there is no way to know where the pages "
+            "live, and guessing would report 'no rounds' for a tree that is full of them.")
+    if not sub or is_placeholder(sub):
+        die(f"{cfg_path} has no docs.pagesDir. That key names the directory holding one "
+            "directory per page; it is the only thing that says where to look.")
+    d = os.path.join(os.path.abspath(os.path.expanduser(root)), sub)
+    if not os.path.isdir(d):
+        die(f"the configured page directory does not exist: {d}")
+    return d
+
+
+def load_pages(root):
+    """(name, path, document) per `state.json` found below `root`. A broken one is named, not skipped silently."""
+    out, broken = [], []
+    for dirpath, dirnames, files in os.walk(root):
+        dirnames[:] = [d for d in sorted(dirnames) if not d.startswith(".")]
+        if "state.json" not in files:
+            continue
+        p = os.path.join(dirpath, "state.json")
+        try:
+            with open(p, encoding="utf-8") as fh:
+                doc = json.load(fh)
+        except (OSError, ValueError) as exc:
+            broken.append((os.path.relpath(dirpath, root), str(exc)))
+            continue
+        if isinstance(doc, dict):
+            out.append((os.path.relpath(dirpath, root), p, doc))
+        else:
+            broken.append((os.path.relpath(dirpath, root), "the top level is not an object"))
+    return out, broken
+
+
+def extra_rounds(doc):
+    """The rounds that carry a cause, plus the first-round notes that are **not** extra rounds.
+
+    An extra round is one a loop turned beyond its first, so three things have to hold: the line
+    belongs to a loop (stages 1, 2 and 7 spend none), its round number is 2 or more, and it
+    carries a cause. `pagecheck` writes the cause once per loop per call, so one round is one
+    line here even when several stages ran inside it.
+    """
+    rounds, first = [], 0
+    for r in doc.get("rounds") or []:
+        if not isinstance(r, dict) or not r.get("note"):
+            continue
+        if not r.get("loop"):
+            continue
+        n = r.get("n")
+        if not isinstance(n, int):
+            continue
+        if n < 2:
+            first += 1                    # voluntary, and not an extra round. Counted apart.
+            continue
+        rounds.append(r)
+    return rounds, first
+
+
+def pad(text, width):
+    """Left-align to `width` **display columns**, not characters.
+
+    The vocabulary is Korean and every one of its words is double-width, so `:<10` lines the
+    columns up on a count nobody sees and leaves the output ragged on every screen.
+    """
+    text = str(text)
+    used = sum(2 if unicodedata.east_asian_width(c) in "WF" else 1 for c in text)
+    return text + " " * max(0, width - used)
+
+
+def bar(n, total, width=20):
+    if not total:
+        return ""
+    return "█" * int(round(n / total * width)) + "·" * (
+        width - int(round(n / total * width)))
+
+
+def report(pages, broken, root, cause, other, no_upper, as_json):
+    per_page, by_cause, by_loop = {}, Counter(), defaultdict(Counter)
+    cause_pages = defaultdict(Counter)
+    caps, unknown, first_notes, total = [], Counter(), 0, 0
+    for name, path, doc in pages:
+        rounds, first = extra_rounds(doc)
+        first_notes += first
+        counts = Counter(r["note"] for r in rounds)
+        for r in rounds:
+            by_cause[r["note"]] += 1
+            by_loop[r["note"]][r.get("loop") or "-"] += 1
+            cause_pages[r["note"]][name] += 1
+            if r["note"] not in cause:
+                unknown[r["note"]] += 1
+        total += len(rounds)
+        for c in doc.get("cap_changes") or []:
+            caps.append({"page": name, **{k: c.get(k) for k in
+                                          ("at", "loop", "from", "to", "why", "at_init")}})
+        per_page[name] = {"page": doc.get("page") or name, "dir": os.path.dirname(path),
+                          "extra_rounds": len(rounds), "first_round_notes": first,
+                          "by_cause": dict(counts),
+                          "loops": {k: v for k, v in (doc.get("loops") or {}).items()}}
+
+    upper = Counter()
+    for c, n in by_cause.items():
+        upper[cause.get(c, no_upper)] += n
+    denom = sum(n for u, n in upper.items() if u != no_upper)
+    unrelated_word = [c for c, u in cause.items() if u == "이관아님"]
+    numer = sum(by_cause[c] for c in unrelated_word)
+    repeated = sorted(((c, n) for c, n in by_cause.items() if n >= REPEAT_AT),
+                      key=lambda kv: (-kv[1], kv[0]))
+
+    metrics = {
+        "migration_unrelated": {
+            "numerator": numer, "denominator": denom,
+            "ratio": (numer / denom) if denom else None,
+            # Not 0 and not 100. A denominator of zero with a non-zero numerator of `기타` is
+            # exactly the state the vocabulary's escape hatch would produce if it paid off, and
+            # reporting it as a number would be reporting the reward.
+            "why": None if denom else
+            (f"0 of {total} extra rounds has an upper layer" if total
+             else "no extra round has been recorded yet")},
+        "repeated_causes": len(repeated),
+        "other_share": {"numerator": by_cause.get(other, 0), "denominator": total,
+                        "ratio": (by_cause.get(other, 0) / total) if total else None},
+    }
+    doc_out = {"pages_dir": root, "pages": per_page, "extra_rounds": total,
+               "metrics": metrics, "first_round_notes": first_notes,
+               "by_cause": dict(by_cause), "by_upper": dict(upper),
+               "repeated": [{"cause": c, "count": n, "loops": dict(by_loop[c]),
+                             "pages": dict(cause_pages[c])} for c, n in repeated],
+               "cap_changes": caps, "threshold": REPEAT_AT,
+               "unknown_causes": dict(unknown),
+               "broken": [{"page": n, "why": w} for n, w in broken]}
+    if as_json:
+        print(json.dumps(doc_out, ensure_ascii=False, indent=2, sort_keys=True))
+        return 0
+
+    print(f"# {TOOL} · {len(pages)} pages · {total} extra rounds · {root}")
+    for n, why in broken:
+        print(f"  unreadable state.json: {n} ({why}) - not counted, and not passed over quietly")
+    if not pages:
+        print("  no state.json below that directory. That is 'no page has been started', not "
+              "'no round was retried'.")
+        return 0
+    if not total:
+        print("  no round carries a cause yet. Either no loop has turned twice, or the rounds "
+              "were recorded before `--note` became mandatory.")
+
+    if total:
+        print("\nby cause")
+        for c in list(cause) + [c for c in by_cause if c not in cause]:
+            n = by_cause.get(c, 0)
+            if not n and c in cause:
+                continue
+            tag = cause.get(c, "**outside the vocabulary**")
+            print(f"  {pad(c, 10)} {n:>4}  {pad(tag, 12)} {bar(n, total)}")
+    if unknown:
+        print("  a cause outside the vocabulary is in the record - it was written by hand, "
+              "not by `pagecheck`, and it is left in the count so it cannot hide.")
+
+    print(f"\nrepeated causes ({REPEAT_AT} or more) - each one is a change set: a cap value, an "
+          "instruction, or a new check")
+    if not repeated:
+        print(f"  none reached {REPEAT_AT}")
+    for c, n in repeated:
+        print(f"  {pad(c, 10)} {n:>4}  loops " + " ".join(f"{k}×{v}" for k, v in
+                                                     sorted(by_loop[c].items()))
+              + "  pages " + " ".join(f"{k}×{v}" for k, v in
+                                      sorted(cause_pages[c].items())))
+        if c == other:
+            print(f"       ↑ {REPEAT_AT} of `{other}` is the vocabulary asking for a new "
+                  "word, not a defect to fix")
+
+    print("\nmetrics")
+    mu = metrics["migration_unrelated"]
+    if mu["ratio"] is None:
+        print(f"  migration-unrelated rounds   not computable - {mu['why']}")
+    else:
+        print(f"  migration-unrelated rounds   {mu['numerator']}/{mu['denominator']}  "
+              f"{mu['ratio'] * 100:5.1f}%   lower is better")
+    print(f"  repeated causes              {metrics['repeated_causes']:<14}"
+          f"    {REPEAT_AT} or more, 0 is the goal")
+    os_ = metrics["other_share"]
+    if os_["ratio"] is None:
+        print(f"  `{other}` share{pad('', 17)}not computable - no extra round yet")
+    else:
+        print(f"  `{other}` share{pad('', 17)}{os_['numerator']}/{os_['denominator']}  "
+              f"{os_['ratio'] * 100:5.1f}%   how much of reality the vocabulary covers")
+    if first_notes:
+        print(f"  ({first_notes} first-round notes are not extra rounds and are not counted)")
+
+    print("\ncap changes")
+    if not caps:
+        print("  none")
+    for c in caps:
+        print(f"  {c['at']}  {c['page']}  {c['loop']} {c['from']} → {c['to']}"
+              + ("  (at --init)" if c.get("at_init") else "")
+              + f"  {c.get('why') or '(no reason given)'}")
+    if caps:
+        print("  a cap that moved is reported here and nowhere else: the numbers above mean "
+              "something different on either side of it.")
+    return 0
+
+
+def main():
+    argv = sys.argv[1:]
+    if "-h" in argv or "--help" in argv or "help" in argv:
+        print(__doc__.strip())
+        return 0
+    opts = {}
+    i = 0
+    while i < len(argv):
+        a = argv[i]
+        if a == "--json":
+            opts[a] = True
+            i += 1
+        elif a in ("--config", "--pages"):
+            if i + 1 >= len(argv):
+                die(f"{a} has no value", 2)
+            opts[a] = argv[i + 1]
+            i += 2
+        else:
+            die(f"unknown option {a!r}. Use --help to see the available options.", 2)
+    cause, other, no_upper = vocabulary()
+    cfg, cfg_path, problem = workspace(opts.get("--config"))
+    if problem and not opts.get("--pages"):
+        die(problem)
+    root = pages_dir(cfg, cfg_path, opts.get("--pages"))
+    pages, broken = load_pages(root)
+    return report(pages, broken, root, cause, other, no_upper, bool(opts.get("--json")))
+
+
+if __name__ == "__main__":
+    sys.exit(main())

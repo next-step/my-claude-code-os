@@ -1,6 +1,6 @@
 {
   "_comment": [
-    "Environment binding for the legacy-slice OS. Copy to workspace.json and fill in real values.",
+    "Environment binding for the legacy-migrate OS. Copy to workspace.json and fill in real values.",
     "workspace.json is gitignored: it holds absolute paths and internal hostnames, which must",
     "never enter a tracked file of this public repository.",
     "Skills read this file; they contain no environment constants of their own."
@@ -79,13 +79,13 @@
       "checkout that has not filled these in. Each new tool requires its own keys instead,",
       "and stops with the key name when one is missing.",
       "",
-      "  tooling.phpBinary  - php used for tokenising. `phpseam` runs it with",
+      "  tooling.phpBinary  - php used for tokenising. `phpmove` runs it with",
       "                       short_open_tag=1 and refuses to answer if that did not take:",
       "                       a tree where 496 files open with `<?` is read as plain HTML",
       "                       otherwise, and comes back with zero violations.",
-      "  seam.*             - what the allowed page shape is, expressed as patterns rather",
+      "  swap.*             - what the allowed page shape is, expressed as patterns rather",
       "                       than as names, so this file stays free of company identifiers.",
-      "  snapshot.*         - how a captured page is normalised before comparison, and what",
+      "  snapshot.*         - how a captured page is normalized before comparison, and what",
       "                       an error page looks like.",
       "  dualRun.*          - where the PHP experiment helper appends its JSONL, what env",
       "                       var carries that path into the container, and which page can",
@@ -94,20 +94,45 @@
       "                       VALUE_DUAL, and `migrated` its VALUE_MIGRATED; selftest.py",
       "                       compares the two files."
     ],
+    "_pagecheck": [
+      "The three keys below have exactly one consumer each: `pagecheck`. They are the",
+      "two instrumentation variables and the coverage artifact, and each of them exists",
+      "because the stage that needs it must be able to FAIL rather than be skipped.",
+      "",
+      "  dualRun.noiseEnvVar   - stage 2. Set non-empty, the helper runs the legacy body",
+      "                          against itself and logs the diff keys that move between",
+      "                          two runs of the same code. That is the run-to-run difference,",
+      "                          and without it an equivalence loop cannot tell its own jitter",
+      "                          from a missing rule. Must equal the helper's NOISE_ENV.",
+      "  dualRun.fakeValueEnvVar  - stage 5. Set non-empty in `migrated`, the helper runs the",
+      "                          legacy body but throws its return value away. The capture",
+      "                          taken then must be byte-identical to the migrated",
+      "                          baseline; anything that moves is a screen value that still",
+      "                          comes from PHP. Must equal the helper's FAKEVALUE_ENV.",
+      "  dualRun.coveragePath  - stage 6. Host path of the JSON that Xdebug coverage is",
+      "                          collected into, shaped like xdebug_get_code_coverage():",
+      "                          {\"<abs file>\": {\"<line>\": <hits>}}. When Xdebug is absent",
+      "                          the stage is SKIPPED and says so in state.json; when Xdebug",
+      "                          is present but this file never appears, the stage exits 3.",
+      "                          Neither of those is a pass.",
+      "",
+      "Leave all three empty in a checkout that has not wired them: the stage that needs",
+      "one stops with the key name rather than reporting a narrow answer."
+    ],
     "tooling": { "phpBinary": "php" },
-    "seam": {
-      "servicesDir": "<relative dir under a surface docroot where seam service files live>",
-      "serviceCallPattern": "<regex matching the seam service call, e.g. a class::method form>",
+    "swap": {
+      "functionsDir": "<relative dir under a surface docroot where swap service files live>",
+      "callPattern": "<regex matching the swap service call, e.g. a class::method form>",
       "templateIncludePattern": "<regex matching template include paths>",
       "templateRenderPattern": "<optional regex: template *object* calls (construct/set/fetch). Omit only if this tree renders templates by include alone - without it those statements are reported as violations>",
-      "viewVarPattern": "<optional regex matching the names of view-wiring variables an included header or template reads. Those assignments carry no rule for the seam to take, so extraction never removes them; without this key \"zero violations\" is unreachable on a tree that has them. Match by NAME, never by statement shape - a literal assignment to a view variable and one to a domain parameter are the same tokens>",
+      "viewVarPattern": "<optional regex matching the names of view-wiring variables an included header or template reads. Those assignments carry no rule for the swap to take, so extraction never removes them; without this key \"zero violations\" is unreachable on a tree that has them. Match by NAME, never by statement shape - a literal assignment to a view variable and one to a domain parameter are the same tokens>",
       "guardIdioms": [
         "<regex: auth check idiom>",
         "<regex: redirect-header idiom>",
         "<regex: redirect-script idiom that ends in an early exit>"
       ],
       "allowedCalls": ["isset", "trim", "intval", "extract", "<input helper methods>"],
-      "pinsFile": "pins.json"
+      "hashesFile": "body-hashes.json"
     },
     "snapshot": {
       "normalize": [ {"pattern": "<bytes regex, e.g. a per-request token>", "replace": "<TOKEN>"} ],
@@ -118,9 +143,13 @@
       "logPath": "<abs path of the JSONL the PHP helper appends to (must be mounted into the container)>",
       "logEnvVar": "MIGRATION_EXPERIMENT_LOG",
       "readbackPath": "/<relative path of a page that prints the current toggle mode - one token, nothing else>",
-      "ignoreFile": "ignore.json"
+      "ignoreFile": "ignore.json",
+      "noiseEnvVar": "MIGRATION_EXPERIMENT_NOISE",
+      "fakeValueEnvVar": "MIGRATION_EXPERIMENT_FAKEVALUE",
+      "coveragePath": "<abs path of the JSON Xdebug coverage is collected into, or \"\" if not wired>"
     },
 
+    "_surfaces": "one entry per SURFACE: one legacy site, with its own docroot, host, charset, session and logged-out marker. `--surface` names one of these keys, and `scope: surface` in a round record means an entry true only on this one.",
     "surfaces": {
       "<surface-a>": {
         "docroot": "<abs path>",
@@ -144,7 +173,7 @@
       "envFile": "<abs path to the compose .env file that carries migration toggles>"
     },
     "switch": {
-      "envVarPattern": "<PREFIX>_BACKEND_{SLICE}",
+      "envVarPattern": "<PREFIX>_BACKEND_{PAGE}",
       "values": { "legacy": "php", "dual": "dual", "migrated": "spring" },
       "helperPath": "<path where the MigrationSwitch helper lives>"
     }
@@ -223,9 +252,14 @@
   },
 
   "docs": {
-    "root": "<abs path where slice artifacts and domain docs are written>",
-    "slicesDir": "slices",
-    "domainDir": "domain"
+    "root": "<abs path where page artifacts and domain docs are written>",
+    "_pagesDir": "directory under docs.root holding one directory per page. The VALUE names a directory in your repository, not a word this OS chose - do not rewrite it to match the key",
+    "pagesDir": "slices",
+    "domainDir": "domain",
+    "_designDir": "where the area-level design lives. Consumer: legacy-migrate Phase 3 (D-25)",
+    "designDir": "design",
+    "_recordDir": "where the per-role round records live. Consumers: ctxevolve, each agent (D-28)",
+    "recordDir": "record"
   },
 
   "upstreamOs": {
@@ -235,8 +269,8 @@
       "Each key has exactly one consumer, so an unread key is a bug, not a spare:",
       "  skillsDir    - the directory the three below are resolved in",
       "  startBackend - local-stack, for bringing the backend up",
-      "  runE2e       - legacy-slice, for the Phase 2 baseline and the Phase 6 loop",
-      "  writeE2e     - equivalence-corpus-author, for authoring the spec"
+      "  runE2e       - legacy-migrate, for the Phase 2 baseline and the Phase 6 loop",
+      "  writeE2e     - observation-author, for authoring the spec"
     ],
     "skillsDir": "",
     "startBackend": "",

@@ -1,27 +1,27 @@
 #!/usr/bin/env python3
-"""phpstats - 레거시 작업 도구가 실제로 얼마나, 제대로 쓰였는지 본다.
+"""phpstats - see how much the legacy tools were actually used, and used properly.
 
-    phpstats              최근 30일
+    phpstats              the last 30 days
     phpstats --days 7
     phpstats --all
-    phpstats --names      자주 조회한 이름만
+    phpstats --names      only the names looked up often
 
-기록은 `.claude/hooks/php-tooling-hook.py` 가 Bash·Read 호출마다 남긴다
-(`.claude/.state/tooling.jsonl`). 호출 횟수 자체보다 **전용 도구로 갔는가, 범용
-도구로 우회했는가**가 알고 싶은 값이라 그 짝을 나란히 보여준다.
+The record is written by `.claude/hooks/php-tooling-hook.py` on every Bash and Read call
+(`.claude/.state/tooling.jsonl`). What matters is not the call count but **whether the dedicated
+tool was used or a general one routed around it**, so the pair is shown side by side.
 
-  읽기      phpv    vs  Read 툴 / cat·head·sed
-  검색      phpgrep vs  rg·grep
-  정의 조회  phpwhere vs 정의형 phpgrep (0건이 나오고 '없다'로 오독되는 그 검색)
+  read        phpv     vs  the Read tool / cat, head, sed
+  search      phpgrep  vs  rg, grep
+  definition  phpwhere vs  a definition-shaped phpgrep (the search that returns zero and is misread as 'there is none')
 
-넛지 발동 수는 잘못된 경로로 갈 뻔한 횟수다. 이 값이 0으로 수렴하면 규칙이
-몸에 붙은 것이고, 줄지 않으면 CLAUDE.md 문구나 도구 쪽을 고쳐야 한다.
+The steer count is how many times a call was about to take the wrong path. Converging to 0 means
+the rule has stuck; if it does not fall, the CLAUDE.md wording or the tool needs fixing.
 
-**역할별 귀속.** 각 호출이 어느 서브에이전트에서 나왔는지 함께 보여준다. 이것이
-`docs/php-legacy-tooling.md` §5 의 단계별 도구 배정을 실제로 검증하는 유일한 길이다 —
-모든 단계가 서브에이전트이고, `session_id` 는 부모와 서브에이전트가 같은 값을 받는다.
-귀속이 안 된 행에는 이유가 붙는다: 부모 세션에서 직접 부른 것인지, 여러 에이전트가
-동시에 열려 있어 가릴 수 없는 것인지를 나눈다. **모호한 것을 하나로 골라 적지 않는다.**
+**Attribution by role.** It also shows which subagent each call came from. This is the only way
+to actually verify the per-phase tool assignment in `docs/php-legacy-tooling.md` §5 - every phase
+is a subagent, and `session_id` is the same value for the parent and the subagent.
+An unattributed row carries its reason: whether it was called directly in the parent session, or
+whether several agents were open at once so it cannot be told apart. **An ambiguity is never resolved by picking one.**
 """
 import json
 import os
@@ -33,14 +33,17 @@ sys.dont_write_bytecode = True
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from _phpenc import state_dir  # noqa: E402
 
-# v2 의 도구 넷을 포함한다. 훅의 `OUR_TOOLS` 와 같은 목록이어야 한다 — 한쪽에만
-# 있는 이름은 기록되지만 전용 호출로 세어지지 않아 비율을 낮은 쪽으로 기울인다.
+# Includes the four v2 tools. It has to be the same list as the hook's `OUR_TOOLS` - a name
+# present on one side only is recorded but not counted as a dedicated call, tipping the ratio
+# downward. That "has to be the same" is actually compared across three lists by `selftest.py`.
+# While it was only written down and never checked, `phpstats` was missing from this list.
 OURS = ["phpv", "phpgrep", "phpwhere", "phped", "phplint", "phpindex",
-        "phpseam", "htmlsnap", "dualrun-report", "ctxstats"]
-BYPASS = {"Read": "Read 툴", "raw-read": "cat·head·sed", "raw-grep": "rg·grep",
-          "read-index": "인덱스 직접 읽기"}
-PAIRS = [("읽기", ["phpv"], ["Read", "raw-read"]),
-         ("검색", ["phpgrep"], ["raw-grep"])]
+        "phpstats", "phpmove", "htmlsnap", "dualrun-report", "ctxstats",
+        "ctxevolve", "pagecheck", "causestats"]
+BYPASS = {"Read": "the Read tool", "raw-read": "cat, head, sed", "raw-grep": "rg, grep",
+          "read-index": "reading the index directly"}
+PAIRS = [("read", ["phpv"], ["Read", "raw-read"]),
+         ("search", ["phpgrep"], ["raw-grep"])]
 
 
 def bar(n, total, width=22):
@@ -51,14 +54,14 @@ def bar(n, total, width=22):
 
 
 def log_path():
-    """계측 로그. 레거시 체크아웃이 아니라 프로젝트의 상태 디렉터리에 산다.
+    """The instrumentation log. It lives in the project's state directory, not the legacy checkout.
 
-    체크아웃 안에 두면 체크아웃이 다시 만들어질 때 함께 사라진다. 계측은 오래 두고
-    값을 재야 의미가 있으므로, 살아남는 쪽에 있어야 한다.
+    Put inside the checkout it would vanish when the checkout is rebuilt. Instrumentation only
+    means something measured over time, so it has to be on the side that survives.
     """
     d = state_dir()
     if not d:
-        sys.exit("phpstats: 프로젝트의 .claude/.state/ 를 찾지 못했다")
+        sys.exit("phpstats: could not find the project's .claude/.state/")
     return os.path.join(d, "tooling.jsonl")
 
 
@@ -87,55 +90,55 @@ def main():
         days = int(args[args.index("--days") + 1])
     rows = load(log_path(), days)
     if not rows:
-        print("기록 없음. 훅이 등록돼 있는지 확인하라 "
-              "(OS 루트의 .claude/settings.json → hooks.PreToolUse, matcher Bash|Read).")
+        print("no records. Check the hook is registered "
+              "(.claude/settings.json at the OS root → hooks.PreToolUse, matcher Bash|Read).")
         return 0
 
-    span = "전체" if days is None else f"최근 {days}일"
+    span = "all time" if days is None else f"last {days} days"
     first = min(r.get("ts", 0) for r in rows)
     sess = len({r.get("sess") for r in rows if r.get("sess")})
-    print(f"# {span} · 호출 {len(rows):,}건 · 세션 {sess}개 · "
-          f"첫 기록 {time.strftime('%Y-%m-%d', time.localtime(first))}")
+    print(f"# {span} · {len(rows):,} calls · {sess} sessions · "
+          f"first record {time.strftime('%Y-%m-%d', time.localtime(first))}")
 
     if "--names" in args:
         names = Counter(r["arg"].strip("'\"") for r in rows
                         if r.get("tool") == "phpwhere" and r.get("arg")
                         and not r["arg"].startswith("--"))
-        print(f"\n자주 조회한 이름 (phpwhere {sum(names.values())}건)")
+        print(f"\nnames looked up often (phpwhere {sum(names.values())} calls)")
         for n, c in names.most_common(15):
             print(f"  {c:>4}  {n[:60]}")
         return 0
 
     tools = Counter(r.get("tool") for r in rows)
     total = sum(tools.values())
-    print("\n도구별")
+    print("\nby tool")
     for t, c in tools.most_common():
-        tag = "  ← 우회" if t in BYPASS else ""
+        tag = "  ← routed around" if t in BYPASS else ""
         label = BYPASS.get(t, t)
         print(f"  {label:<18} {c:>5}  {bar(c, total)}{tag}")
 
-    print("\n전용 도구 vs 우회")
+    print("\ndedicated tool vs routed around")
     for label, good, bad in PAIRS:
         g = sum(tools[t] for t in good)
         b = sum(tools[t] for t in bad)
         if not (g + b):
             continue
         pct = g / (g + b) * 100
-        print(f"  {label:<6} 전용 {g:>4} / 우회 {b:>4}   전용 비율 {pct:>5.1f}%")
+        print(f"  {label:<11} dedicated {g:>4} / around {b:>4}   dedicated {pct:>5.1f}%")
     defshaped = sum(1 for r in rows if r.get("mode") == "def-shaped")
     pw = tools.get("phpwhere", 0)
     if pw + defshaped:
-        print(f"  {'정의조회':<6} 전용 {pw:>4} / 우회 {defshaped:>4}   "
-              f"전용 비율 {pw/(pw+defshaped)*100:>5.1f}%")
+        print(f"  {'definition':<11} dedicated {pw:>4} / around {defshaped:>4}   "
+              f"dedicated {pw/(pw+defshaped)*100:>5.1f}%")
 
     nudged = sum(1 for r in rows if r.get("nudge"))
     dedicated = sum(tools.get(t, 0) for t in OURS)
-    print(f"\n넛지 발동 {nudged}건" + ("  (잘못된 경로로 갈 뻔한 횟수)"
-                                     if nudged else "  — 없음"))
+    print(f"\nsteered {nudged} times" + ("  (calls about to take the wrong path)"
+                                     if nudged else "  - none"))
     if not dedicated:
-        # 넛지 0 은 "규칙이 붙었다"로도 "도구가 한 번도 안 쓰였다"로도 읽힌다.
-        # 후자면 그렇다고 말한다. 지표가 두 상태를 같은 숫자로 내놓으면 안 된다.
-        print("  전용 도구 호출이 한 건도 없다 — 이 기간의 기록은 전부 우회다.")
+        # A steer count of 0 reads both as "the rule has stuck" and as "the tool was never used".
+        # If it is the latter, say so. A metric must not emit two states as the same number.
+        print("  not one dedicated tool call - every record in this period routed around them.")
     if nudged:
         why = Counter(r.get("tool") for r in rows if r.get("nudge"))
         for t, c in why.most_common(4):
@@ -145,52 +148,52 @@ def main():
                     if r.get("tool") == "phpwhere" and r.get("mode", "").startswith("--"))
     if modes:
         plain = pw - sum(modes.values())
-        print("\nphpwhere 모드별")
+        print("\nphpwhere by mode")
         if plain:
-            print(f"  {'이름 조회':<12} {plain:>4}")
+            print(f"  {'name lookup':<16} {plain:>4}")
         for m, c in modes.most_common():
             print(f"  {m:<12} {c:>4}")
 
-    # ---- 역할별 귀속 ---------------------------------------------------
-    # 세 상태를 갈라서 센다. 하나로 뭉치면 "귀속 안 됨"이 두 가지 다른 사실을
-    # 같은 숫자로 덮는다 — 부모가 직접 부른 것과, 병렬이라 가릴 수 없는 것.
+    # ---- attribution by role ---------------------------------------------
+    # Count three states separately. Merging them makes "unattributed" cover two different facts
+    # with one number - called directly by the parent, and indistinguishable because of parallelism.
     by_agent = Counter(r["agent"] for r in rows if r.get("agent"))
     parent = sum(1 for r in rows if not r.get("agent") and r.get("agents") == 0)
     ambiguous = sum(1 for r in rows
                     if not r.get("agent") and (r.get("agents") or 0) > 1)
     unknown = len(rows) - sum(by_agent.values()) - parent - ambiguous
     if by_agent or parent or ambiguous:
-        print("\n역할별 (어느 서브에이전트가 불렀는가)")
+        print("\nby role (which subagent called it)")
         for a, c in by_agent.most_common():
             print(f"  {a:<26} {c:>5}  {bar(c, len(rows))}")
         if parent:
-            print(f"  {'(부모 세션에서 직접)':<26} {parent:>5}")
+            print(f"  {'(directly in the parent session)':<34} {parent:>5}")
         if ambiguous:
-            print(f"  {'(병렬 실행 중 — 가릴 수 없음)':<26} {ambiguous:>5}")
+            print(f"  {'(parallel run - cannot be told apart)':<34} {ambiguous:>5}")
         if unknown:
-            print(f"  {'(귀속 기록 이전의 행)':<26} {unknown:>5}")
-        # transcript 축이 실제로 갈리는지도 함께 본다. 두 신호를 같이 기록한
-        # 이유가 이것이다 — 어느 쪽이 작동하는지는 모아 본 로그가 답한다.
+            print(f"  {'(rows from before attribution)':<34} {unknown:>5}")
+        # It also watches whether the transcript axis actually separates them. That is why both
+        # signals are recorded - which one works is answered by the collected log.
         tps = {r.get("tp") for r in rows if r.get("tp")}
         if len(tps) > 1:
-            print(f"  transcript 지문 {len(tps)}종 — 이 축으로도 갈린다")
+            print(f"  {len(tps)} transcript fingerprints - this axis separates them too")
         elif tps:
-            print("  transcript 지문 1종 — 이 축으로는 갈리지 않는다 "
-                  "(서브에이전트가 부모와 같은 transcript 를 쓴다)")
+            print("  1 transcript fingerprint - this axis does not separate them "
+                  "(a subagent uses the same transcript as its parent)")
     elif rows:
-        print("\n역할별 귀속 기록이 없다 — 훅의 Task 등록을 확인하라 "
-              "(.claude/settings.json → PreToolUse matcher 에 Task, "
-              "PostToolUse 에 matcher Task).")
+        print("\nno attribution records - check the hook's Task registration "
+              "(.claude/settings.json → Task in the PreToolUse matcher, "
+              "matcher Task in PostToolUse).")
 
     svcs = Counter(r.get("svc") for r in rows if r.get("svc"))
     unattributed = sum(1 for r in rows if not r.get("svc"))
     if svcs or unattributed:
-        print("\n서비스별")
-        # 귀속되지 않은 건수를 버리지 않는다. 버리면 남은 몇 건이 전체 분포로
-        # 읽히고, 이 표가 조용히 좁혀졌다는 사실 자체가 사라진다.
+        print("\nby service")
+        # Unattributed counts are not discarded. Discarding them makes the few that remain read
+        # as the whole distribution, and the fact that this table quietly narrowed disappears.
         line = " · ".join(f"{s} {c}" for s, c in svcs.most_common())
         if unattributed:
-            line = (line + " · " if line else "") + f"귀속 안 됨 {unattributed}"
+            line = (line + " · " if line else "") + f"unattributed {unattributed}"
         print("  " + line)
 
     byday = defaultdict(int)
@@ -199,7 +202,7 @@ def main():
     if len(byday) > 1:
         recent = sorted(byday.items())[-10:]
         peak = max(c for _, c in recent)
-        print("\n일자별")
+        print("\nby day")
         for d, c in recent:
             print(f"  {d}  {c:>4}  {bar(c, peak, 18)}")
     return 0

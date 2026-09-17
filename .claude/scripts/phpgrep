@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """phpgrep - search a legacy tree in both encodings, scoped to what you actually use.
 
-    phpgrep <낱말>                  current service + shared library
+    phpgrep <word>                  current service + shared library
     phpgrep <Identifier>            ASCII identifiers too
     phpgrep --all X                 whole tree, counts per directory
-    phpgrep --scope <서비스경로> X    one named directory
+    phpgrep --scope <service path> X    one named directory
     phpgrep -l X                    files only
     phpgrep -i X                    case-insensitive
 
@@ -68,7 +68,7 @@ def group_of(rel):
     for prefix, name in SERVICES:
         if rel == prefix or rel.startswith(prefix + "/"):
             return name
-    return "(기타)"
+    return "(other)"
 
 
 def main(argv):
@@ -94,11 +94,11 @@ def main(argv):
             rest.extend(argv)
             del argv[:]
         elif a.startswith("-") and a != "-":
-            # 모르는 옵션을 검색어로 삼지 않는다. 그렇게 하면 뒤따르는 진짜 패턴이
-            # 조용히 버려지고, 옵션 이름 자체를 찾은 결과가 그럴듯한 건수로
-            # 돌아온다. 0건은 의심이라도 사지만 이쪽은 숫자로 도착한다.
-            print(f"phpgrep: 모르는 옵션 {a}", file=sys.stderr)
-            print("검색어가 - 로 시작한다면 -- 뒤에 두라.  예:  phpgrep -- -->",
+            # Do not treat an unknown option as the search term. Doing so silently
+            # drops the real pattern that follows, and a search for the option name
+            # itself comes back as a plausible count. Zero at least invites suspicion.
+            print(f"phpgrep: unknown option {a}", file=sys.stderr)
+            print("If the search term starts with -, put it after --.  e.g.  phpgrep -- -->",
                   file=sys.stderr)
             print(__doc__.strip(), file=sys.stderr)
             return 2
@@ -108,11 +108,11 @@ def main(argv):
         print(__doc__.strip(), file=sys.stderr)
         return 2
     if len(rest) > 1:
-        # 남은 인자를 조용히 버리면 검색하지 않은 것을 검색한 것으로 읽게 된다.
-        print("phpgrep: 검색어는 하나여야 한다. "
-              + f"{len(rest)}개를 받았다 — " + " ".join(repr(r) for r in rest),
+        # Silently dropping the remaining arguments makes an unsearched thing read as searched.
+        print("phpgrep: the search term must be exactly one. "
+              + f"got {len(rest)} — " + " ".join(repr(r) for r in rest),
               file=sys.stderr)
-        print("여러 낱말을 한 구문으로 찾으려면 따옴표로 묶어라.", file=sys.stderr)
+        print("To find several words as one phrase, quote them.", file=sys.stderr)
         return 2
 
     term = rest[0]
@@ -126,10 +126,10 @@ def main(argv):
         paths, desc = [os.path.join(root, scope)], scope
         counts_only = False
     elif want_all or not here:
-        paths, desc = [root], "전체 트리"
+        paths, desc = [root], "whole tree"
         counts_only = True
         if not here and not want_all:
-            desc += " (서비스 밖이라 좁힐 수 없음)"
+            desc += " (outside a service, cannot narrow)"
     else:
         prefix, name = here
         dirs = [prefix] if prefix == PHPLIB else [prefix, PHPLIB]
@@ -152,13 +152,13 @@ def main(argv):
               "cp949", root, extra)
         hits += [h for h in extra if (h[0], h[1]) not in seen]
 
-    print(f"# 범위: {desc}{'' if side else ' · 벤더·테스트 제외(--tests)'}",
+    print(f"# scope: {desc}{'' if side else ' · vendor and tests excluded (--tests)'}",
           file=sys.stderr)
     if here and here[0] == PHPLIB and not (scope or want_all):
-        print(f"# 공용 라이브러리는 서비스 {len(SERVICES)}개가 함께 쓴다. "
-              "시그니처를 바꾼다면 --all 로 영향 확인.", file=sys.stderr)
+        print(f"# the shared library is used by {len(SERVICES)} services. "
+              "If you change a signature, check the impact with --all.", file=sys.stderr)
     if not hits:
-        print(f"# {term!r} 없음 — 이 범위에만 없는 것일 수 있다. --all 로 재확인.",
+        print(f"# no hits for {term!r} — it may be absent only from this scope. Re-check with --all.",
               file=sys.stderr)
         return 1
 
@@ -166,7 +166,7 @@ def main(argv):
     for rel, num, text in hits:
         groups.setdefault(group_of(rel), []).append((rel, num, text))
 
-    order = [n for _, n in SERVICES] + ["(기타)"]
+    order = [n for _, n in SERVICES] + ["(other)"]
     if here:
         order.remove(here[1])
         order.insert(0, here[1])
@@ -175,11 +175,11 @@ def main(argv):
         for name in order:
             rows = groups.get(name)
             if rows:
-                print(f"{name:20} {len(rows):>5}건 {len({r[0] for r in rows}):>5}파일"
+                print(f"{name:20} {len(rows):>5} hits {len({r[0] for r in rows}):>5} files"
                       f"   [--scope {dict((n, p) for p, n in SERVICES)[name]}]"
-                      if name != "(기타)" else f"{name:20} {len(rows):>5}건")
-        print(f"\n# 총 {len(hits)}건 / {len({h[0] for h in hits})}파일. "
-              f"--scope 로 하나만 펼친다.", file=sys.stderr)
+                      if name != "(other)" else f"{name:20} {len(rows):>5} hits")
+        print(f"\n# {len(hits)} hits total / {len({h[0] for h in hits})} files. "
+              f"Expand one with --scope.", file=sys.stderr)
         return 0
 
     for name in order:
@@ -187,7 +187,7 @@ def main(argv):
         if not rows:
             continue
         rows.sort()
-        print(f"## {name}: {len(rows)}건 / {len({r[0] for r in rows})}파일")
+        print(f"## {name}: {len(rows)} hits / {len({r[0] for r in rows})} files")
         if files_only:
             for f in sorted({r[0] for r in rows}):
                 print(f"   {f}")
@@ -195,7 +195,7 @@ def main(argv):
             for rel, num, text in rows:
                 print(f"   {rel}:{num}: {text}")
         print()
-    print(f"# 총 {len(hits)}건 / {len({h[0] for h in hits})}파일", file=sys.stderr)
+    print(f"# {len(hits)} hits total / {len({h[0] for h in hits})} files", file=sys.stderr)
     return 0
 
 

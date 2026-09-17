@@ -1,24 +1,24 @@
 #!/usr/bin/env python3
-"""phpwhere - 이름이 어디서 정의되는지 인덱스에서 즉시 답한다.
+"""phpwhere - answer instantly from the index where a name is defined.
 
-    phpwhere <이름>                             클래스·함수·상수·전역변수
-    phpwhere '$<전역변수>'
-    phpwhere --tpl <파일.tpl.php>               템플릿 변수와 그걸 넣는 쪽
-    phpwhere --entry <파일.php>                 이 페이지가 끌어오는 것 요약
-    phpwhere --entry <파일.php> --full          include 트리 전체
+    phpwhere <name>                             class, function, constant, global
+    phpwhere '$<globalVar>'
+    phpwhere --tpl <file.tpl.php>               template variables and who supplies them
+    phpwhere --entry <file.php>                 a summary of what this page pulls in
+    phpwhere --entry <file.php> --full          the whole include tree
     phpwhere --conflicts [classes|functions|constants|globals]
 
-grep 과 다른 점. grep 은 '못 찾았다'와 '없다'를 구분하지 못한다. `$X =` 로 찾으면
-0건인데 실제 정의는 `$X[상수] = 값` 인 경우가 그렇다. 여기서는 정의 형태를 만들 때
-정규화해 두었으므로 0건이면 정말 없는 것이고, 여러 곳에 있으면 그 사실을 말한다.
+How this differs from grep. grep cannot tell 'could not find' from 'there is none'. Searching
+`$X =` returns zero while the real definition is `$X[CONST] = value`. Here the definition shapes
+were normalized when the index was built, so zero really means none, and several means it says so.
 
-공유와 지역을 가른다. 실측하면 컬럼 0 대입의 대부분이 엔트리포인트의 페이지 지역
-변수다. 그걸 공유 전역 정의와 같이 늘어놓으면 답이 잡음에 묻힌다. 그래서 남에게
-include 되는 파일에서 정의된 것만 먼저 보이고, 나머지는 줄 수로만 접는다.
+It separates shared from local. Measured, most column-0 assignments are page-local variables in
+entry points. Listing those next to shared global definitions buries the answer in noise. So only
+definitions in files that others include are shown first, and the rest are folded into a count.
 
-출력을 짧게 유지하는 것이 이 도구의 목적이다. 답 하나가 파일 몇 개를 읽는 것보다
-비싸면 쓸 이유가 없다. 실측으로 정의 조회는 10~100배 싸고, include 전개도는 트리를
-다 펼치면 오히려 3배 비싸서 기본을 요약으로 두었다.
+Keeping the output short is the purpose of this tool. If one answer costs more than reading a few
+files there is no reason to use it. Measured, a definition lookup is 10-100x cheaper, and the
+include tree fully expanded is 3x more expensive, so the default is the summary.
 """
 import json
 import os
@@ -31,17 +31,17 @@ from _phpenc import (PHPLIB, config, current_service,  # noqa: E402
                      require_config, state_dir, tree_root)
 
 RE_LIT = re.compile(r"""['"]([^'"]*)['"]""")
-KINDS = [("classes", "클래스"), ("functions", "함수"),
-         ("constants", "상수"), ("globals", "전역변수")]
-MAX_FILES = 10          # 한 이름당 보여줄 파일 수 상한
-MAX_ROWS = 5            # 한 파일당 보여줄 줄 수 상한
+KINDS = [("classes", "class"), ("functions", "function"),
+         ("constants", "constant"), ("globals", "global")]
+MAX_FILES = 10          # cap on files shown per name
+MAX_ROWS = 5            # cap on lines shown per file
 
 
 def index_dir(root=None):
-    """프로젝트의 gitignore 된 상태 디렉터리. phpindex 가 쓰는 곳과 같다."""
+    """The project's gitignored state directory. The same place phpindex writes."""
     d = state_dir("index")
     if not d:
-        sys.exit("phpwhere: 프로젝트의 .claude/.state/ 를 찾지 못했다")
+        sys.exit("phpwhere: could not find the project's .claude/.state/")
     return d
 
 
@@ -63,7 +63,7 @@ def load(root):
     for n in names:
         p = os.path.join(d, n + ".json")
         if not os.path.isfile(p):
-            sys.exit(f"phpwhere: {n}.json 없음. 먼저 →  phpindex --all")
+            sys.exit(f"phpwhere: no {n}.json. First run →  phpindex --all")
         part = json.load(open(p, encoding="utf-8"))
         metas.append(part["meta"])
         for k, _ in KINDS:
@@ -85,7 +85,7 @@ def load(root):
 
 
 def rows_of(hits):
-    """[path] 또는 [path, line, text] 를 (path, line, text) 로 통일."""
+    """Normalize [path] or [path, line, text] into (path, line, text)."""
     return [(h, None, None) if isinstance(h, str) else tuple(h) for h in hits]
 
 
@@ -105,7 +105,7 @@ def resolve(idx, expr, frm):
     return None
 
 
-# ----------------------------------------------------------------- 이름 조회
+# ----------------------------------------------------------------- name lookup
 def tpl_hint(idx, bare):
     free = sorted(n for n, e in idx["templates"].items()
                   if bare in e.get("free_vars", []))
@@ -113,13 +113,13 @@ def tpl_hint(idx, bare):
                   if bare in e.get("keys", []))
     if not (free or keys):
         return False
-    print("  → 템플릿 변수이기도 하다 (extract() 로 주입되어 정의문이 없다)")
+    print("  → it is also a template variable (injected by extract(), so it has no definition statement)")
     if free:
-        print(f"     쓰는 템플릿 {len(free)}개: " + ", ".join(free[:4]))
+        print(f"     used by {len(free)} templates: " + ", ".join(free[:4]))
     if keys:
-        print(f"     set() 하는 쪽 있는 템플릿 {len(keys)}개: "
+        print(f"     {len(keys)} templates have a set() side: "
               + ", ".join(keys[:4]))
-    print(f"     자세히 →  phpwhere --tpl {(free or keys)[0]}")
+    print(f"     detail →  phpwhere --tpl {(free or keys)[0]}")
     return True
 
 
@@ -128,10 +128,10 @@ def print_hits(idx, name, kor, hits):
     files = sorted({r[0] for r in rows})
     shared = [f for f in files if f in idx["included"]]
     local = [f for f in files if f not in idx["included"]]
-    print(f"\n{name}  [{kor}]  정의 {len(rows)}곳 / 파일 {len(files)}개")
+    print(f"\n{name}  [{kor}]  {len(rows)} definitions / {len(files)} files")
     if len(shared) > 1:
-        print("  ⚠ 공유 파일 여러 곳에 정의됨 — 어느 것이 로드되는지는 "
-              "그 페이지의 include 순서에 달림")
+        print("  ⚠ defined in several shared files - which one loads depends on "
+              "that page's include order")
     for path in shared[:MAX_FILES]:
         sub = [r for r in rows if r[0] == path]
         print(f"  {path}")
@@ -139,16 +139,16 @@ def print_hits(idx, name, kor, hits):
             if r[1] is not None:
                 print(f"      {r[1]:>5}: {r[2]}")
         if len(sub) > MAX_ROWS:
-            print(f"      {'':>5}  … 같은 파일에 {len(sub)-MAX_ROWS}줄 더")
+            print(f"      {'':>5}  … {len(sub)-MAX_ROWS} more lines in the same file")
     if len(shared) > MAX_FILES:
-        print(f"  … 공유 파일 {len(shared)-MAX_FILES}개 더")
+        print(f"  … {len(shared)-MAX_FILES} more shared files")
     if local:
-        # 엔트리포인트의 컬럼0 대입은 그 페이지 안에서만 사는 변수다.
-        print(f"  (그 밖에 페이지 지역 대입 {len(local)}개 파일 — "
-              "각 페이지의 자기 변수라 출처가 아니다)")
+        # A column-0 assignment in an entry point is a variable living only inside that page.
+        print(f"  (plus page-local assignments in {len(local)} files - "
+              "each page's own variable, so not a source)")
         if not shared:
             print("      " + ", ".join(local[:4])
-                  + (f" 외 {len(local)-4}개" if len(local) > 4 else ""))
+                  + (f" and {len(local)-4} more" if len(local) > 4 else ""))
 
 
 def show_name(idx, query):
@@ -166,55 +166,55 @@ def show_name(idx, query):
     if hit:
         tpl_hint(idx, bare)
         return 0
-    print(f"\n'{q}' 정의 없음.")
+    print(f"\n'{q}' has no definition.")
     if tpl_hint(idx, bare):
         return 0
     near = sorted({n for k, _ in KINDS for n in idx[k]
                    if bare.lower() in n.lstrip("$").lower()})[:8]
-    print("  비슷한 이름: " + ", ".join(near) if near
-          else "  이 범위에 없다는 뜻이다. phpgrep --all 로 넓혀 확인하라.")
+    print("  similar names: " + ", ".join(near) if near
+          else "  which means it is not in this scope. Widen with phpgrep --all.")
     return 1
 
 
-# ----------------------------------------------------------------- 템플릿
+# ----------------------------------------------------------------- templates
 def show_tpl(idx, name):
     base = os.path.basename(name)
     e = idx["templates"].get(base)
     if not e:
         near = [n for n in idx["templates"] if base.lower() in n.lower()][:6]
-        print(f"\n'{base}' 템플릿 없음."
-              + ("  비슷한 이름: " + ", ".join(near) if near else ""))
+        print(f"\nno template '{base}'."
+              + ("  similar names: " + ", ".join(near) if near else ""))
         return 1
     print(f"\n{base}")
     if e.get("path"):
-        print(f"  경로        {e['path']}")
+        print(f"  path        {e['path']}")
     rb = sorted(set(e.get("rendered_by", [])))
-    print(f"  렌더하는 곳  {len(rb)}개" + ("" if rb else "  ⚠ 못 찾음"))
+    print(f"  rendered by  {len(rb)}" + ("" if rb else "  ⚠ not found"))
     for p in rb[:6]:
         print(f"      {p}")
     if len(rb) > 6:
-        print(f"      … {len(rb)-6}개 더")
+        print(f"      … {len(rb)-6} more")
     free, keys = e.get("free_vars", []), e.get("keys", [])
     if free:
-        print(f"  정의 없이 쓰는 변수 {len(free)}개")
+        print(f"  {len(free)} variables used with no definition")
         print("      " + ", ".join("$" + v for v in free[:20])
-              + (f" 외 {len(free)-20}개" if len(free) > 20 else ""))
+              + (f" and {len(free)-20} more" if len(free) > 20 else ""))
     if keys:
         matched = sorted(set(free) & set(keys))
         missing = sorted(set(free) - set(keys))
-        print(f"  렌더 측 set 키 {len(keys)}개 · 그중 이 템플릿이 쓰는 것 "
-              f"{len(matched)}개")
+        print(f"  {len(keys)} set keys on the render side · {len(matched)} of them "
+              f"used by this template")
         if missing:
-            print(f"  ⚠ set 에서 못 찾은 변수 {len(missing)}개 — 상위 스코프나 "
-                  "다른 경로에서 온다")
+            print(f"  ⚠ {len(missing)} variables not found in set - they come from an enclosing "
+                  "scope or another path")
             print("      " + ", ".join("$" + v for v in missing[:12])
-                  + (f" 외 {len(missing)-12}개" if len(missing) > 12 else ""))
+                  + (f" and {len(missing)-12} more" if len(missing) > 12 else ""))
     return 0
 
 
-# ----------------------------------------------------------------- 진입점
+# ----------------------------------------------------------------- entry points
 def chain(idx, root):
-    """도달 가능한 파일과 미해결 표현식. (경유 경로도 함께)"""
+    """Reachable files and unresolved expressions. (with the path taken)"""
     seen = {root: []}
     order = [root]
     unresolved = []
@@ -237,7 +237,7 @@ def show_entry(idx, start, full=False):
     if not cands:
         cands = [f for f in idx["files"] if f.endswith(start.lstrip("/"))]
     if not cands:
-        print(f"\n'{start}' 파일을 인덱스에서 못 찾음")
+        print(f"\n'{start}' was not found in the index")
         return 1
     root = sorted(cands, key=len)[0]
     order, seen, unresolved = chain(idx, root)
@@ -253,8 +253,8 @@ def show_entry(idx, start, full=False):
                     pass
                 if tgt:
                     fl = idx["flags"].get(tgt, {})
-                    mark = (" [출력]" if fl.get("out") else "") + \
-                           (" [요청중단]" if fl.get("halt") else "")
+                    mark = (" [emits]" if fl.get("out") else "") + \
+                           (" [can end the request]" if fl.get("halt") else "")
                     print(f"{pad}├─ {tgt}{mark}")
                     if seen.get(tgt) is not None and tgt not in rec.done:
                         rec.done.add(tgt)
@@ -266,43 +266,43 @@ def show_entry(idx, start, full=False):
         return 0
 
     direct = idx["includes"].get(root, [])
-    print(f"  직접 include {len(direct)}개")
+    print(f"  {len(direct)} direct includes")
     for _kw, expr in direct[:8]:
         tgt = resolve(idx, expr, root)
         if tgt:
             fl = idx["flags"].get(tgt, {})
-            mark = ("  [출력]" if fl.get("out") else "") + \
-                   ("  [요청중단]" if fl.get("halt") else "")
+            mark = ("  [emits]" if fl.get("out") else "") + \
+                   ("  [can end the request]" if fl.get("halt") else "")
             print(f"      {tgt}{mark}")
         else:
-            print(f"      ? {expr[:60]}  (동적)")
-    print(f"  사슬 전체 {len(order)}개 파일"
-          + (f" · 미해결 {len(unresolved)}개" if unresolved else ""))
+            print(f"      ? {expr[:60]}  (dynamic)")
+    print(f"  {len(order)} files in the whole chain"
+          + (f" · {len(unresolved)} unresolved" if unresolved else ""))
 
     gates = [f for f in order if idx["flags"].get(f, {}).get("halt")]
     if gates:
-        # 인증 게이트와 장애 안내가 같은 모양이라 판정하지 않고 대상만 보인다.
-        print(f"  ⚠ 요청을 중단시킬 수 있는 include {len(gates)}개 "
-              "(리다이렉트 후 exit)")
+        # An auth gate and an outage notice have the same shape, so it shows the target without judging.
+        print(f"  ⚠ {len(gates)} includes that can end the request "
+              "(a redirect followed by exit)")
         for g in gates[:4]:
             via = seen.get(g) or []
             trail = " ← ".join(reversed([v.split("/")[-1] for v in via[1:]]))
-            print(f"      {g}" + (f"   경유 {trail}" if trail else ""))
+            print(f"      {g}" + (f"   via {trail}" if trail else ""))
             print(f"          → {idx['flags'][g]['halt']}")
     else:
-        print("  요청을 중단시키는 include 없음")
+        print("  no include can end the request")
 
     outs = [f for f in order
             if idx["flags"].get(f, {}).get("out") and f != root]
     if outs:
-        print(f"  include 만으로 출력하는 파일 {len(outs)}개")
+        print(f"  {len(outs)} files that emit from the include alone")
         print("      " + ", ".join(o.split("/")[-1] for o in outs[:6])
-              + (f" 외 {len(outs)-6}개" if len(outs) > 6 else ""))
-    print("  전체 트리 →  --full")
+              + (f" and {len(outs)-6} more" if len(outs) > 6 else ""))
+    print("  whole tree →  --full")
     return 0
 
 
-# ----------------------------------------------------------------- 충돌
+# ----------------------------------------------------------------- conflicts
 def show_conflicts(idx, only=None):
     for key, kor in KINDS:
         if only and key != only:
@@ -315,16 +315,16 @@ def show_conflicts(idx, only=None):
                 rows.append((len(shared), name, sorted(shared)))
         rows.sort(reverse=True)
         cap = 20 if only else 6
-        print(f"\n[{kor}] 공유 파일 여러 곳에 정의된 이름 {len(rows)}개")
+        print(f"\n[{kor}] {len(rows)} names defined in several shared files")
         for n, name, files in rows[:cap]:
-            print(f"  {name}  ({n}곳)")
+            print(f"  {name}  ({n} places)")
             for f in files[:3]:
                 print(f"      {f}")
             if len(files) > 3:
-                print(f"      … {len(files)-3}개 더")
+                print(f"      … {len(files)-3} more")
         if len(rows) > cap:
-            print(f"  … {len(rows)-cap}개 더"
-                  + ("" if only else f"  (전부 보려면 --conflicts {key})"))
+            print(f"  … {len(rows)-cap} more"
+                  + ("" if only else f"  (--conflicts {key} to see them all)"))
     return 0
 
 
@@ -332,13 +332,13 @@ def main():
     require_config("phpwhere")
     root = tree_root()
     if not root:
-        sys.exit("phpwhere: legacy.root 아래에 legacy.treeMarker 가 없다")
+        sys.exit("phpwhere: legacy.treeMarker is not under legacy.root")
     args = sys.argv[1:]
     if not args:
-        sys.exit("사용법: phpwhere <이름> | --tpl <파일> | --entry <파일> [--full]"
-                 " | --conflicts [종류]")
+        sys.exit("usage: phpwhere <name> | --tpl <file> | --entry <file> [--full]"
+                 " | --conflicts [kind]")
     idx, label, metas = load(root)
-    print(f"# 범위: {label} · 인덱스 {min(m['built'] for m in metas)}")
+    print(f"# scope: {label} · index {min(m['built'] for m in metas)}")
     if args[0] == "--conflicts":
         kinds = {k for k, _ in KINDS}
         return show_conflicts(idx, args[1] if len(args) > 1

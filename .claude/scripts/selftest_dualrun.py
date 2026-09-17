@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
-"""dualrun-report 케이스. 합성 JSONL 로, 그리고 있으면 진짜 PHP 헬퍼로.
+"""dualrun-report cases. With synthetic JSONL, and with the real PHP helper where available.
 
-    python3 selftest_dualrun.py [dualrun-report 경로] [MigrationExperiment.php 경로]
+    python3 selftest_dualrun.py [path to dualrun-report] [path to MigrationExperiment.php]
 
-합성 로그만으로도 집계·종료 코드·ignore 매칭은 전부 검사된다. 그러나 합성 로그는
-**우리가 스키마를 옳게 이해했다는 것만** 증명한다. 헬퍼가 실제로 그 스키마로 쓰는지는
-헬퍼를 돌려야 알 수 있고, 그래서 로컬에 php 가 있으면 템플릿을 실제로 실행해 만든
-로그도 같은 케이스에 넣는다. php 가 없으면 그 케이스는 '건너뜀'으로 명시한다 —
-건너뛴 검사는 통과가 아니다.
+A synthetic log alone exercises the aggregation, the exit codes and the ignore matching. But a
+synthetic log proves **only that we understood the schema correctly**. Whether the helper really
+writes that schema can only be known by running it, so when php is present locally the template
+is actually executed and the resulting log joins the same cases. Without php that case is marked
+'skipped' - a skipped check is not a pass.
 
-이 파일은 실제 workspace.json 을 읽지 않는다. 합성 설정을 써서 `--config` 로 준다.
+This file never reads the real workspace.json. It writes a synthetic config and passes it with `--config`.
 """
 import json
 import os
@@ -26,7 +26,7 @@ TEMPLATE = (sys.argv[2] if len(sys.argv) > 2
             else os.path.join(os.path.dirname(HERE), "templates",
                               "MigrationExperiment.php"))
 if not os.path.isfile(TOOL):
-    sys.exit(f"사용법: selftest_dualrun.py [dualrun-report 경로]  (찾은 곳: {TOOL})")
+    sys.exit(f"usage: selftest_dualrun.py [path to dualrun-report]  (looked at: {TOOL})")
 
 BASE = tempfile.mkdtemp(prefix="dualrun-selftest-")
 results, skipped = [], []
@@ -35,12 +35,12 @@ results, skipped = [], []
 def check(name, ok, detail="", secs=None):
     results.append((name, ok, detail))
     t = f"  {secs:5.1f}s" if secs is not None else "        "
-    print(f"  {'통과' if ok else 'FAIL'}{t}  {name}" + (f"   {detail}" if detail else ""))
+    print(f"  {'pass' if ok else 'FAIL'}{t}  {name}" + (f"   {detail}" if detail else ""))
 
 
 def skip(name, why):
     skipped.append((name, why))
-    print(f"  건너뜀       {name}   ({why})")
+    print(f"  skipped      {name}   ({why})")
 
 
 def run(args, timeout=60):
@@ -87,58 +87,60 @@ EMPTY_CONFIG = os.path.join(BASE, "workspace-empty.json")
 with open(EMPTY_CONFIG, "w", encoding="utf-8") as fh:
     json.dump({"legacy": {}}, fh)
 
-print(f"# 도구 {TOOL}")
-print("\n### 1. 집계와 종료 코드")
+print(f"# tool {TOOL}")
+print("\n### 1. aggregation and exit codes")
 
 lg = log("equal", [row(), row(), row()])
 p, secs = run(["--log", lg])
-check("전부 equal 이면 exit 0 이고 '예상 밖 없음'이라고 말한다",
-      p.returncode == 0 and "예상 밖 불일치 없음" in p.stdout,
+check("all equal is exit 0 and it says 'no unexpected'",
+      p.returncode == 0 and "No unexpected mismatches" in p.stdout,
       f"exit={p.returncode}", secs=secs)
 
 lg = log("unexpected", [row(), row(equal=False, diff=["total"]),
                         row(equal=False, diff=["total"]),
                         row(equal=False, diff=["items[0].title", "total"])])
 p, _ = run(["--log", lg])
-check("예상 밖 불일치가 있으면 exit 1",
+check("an unexpected mismatch is exit 1",
       p.returncode == 1, f"exit={p.returncode}")
-check("diff_keys 서명으로 묶어 두 가지로 보고한다 (건수 4가 아니라 서명 2)",
-      "서명 2가지" in p.stdout and "3건" not in p.stdout.split("서명 2가지")[0],
-      [l for l in p.stdout.splitlines() if "서명" in l][:1])
-check("서명별 건수를 센다 (같은 서명 2건)",
-      "list-page  2건" in p.stdout,
-      [l.strip() for l in p.stdout.splitlines() if "건 " in l or l.strip().endswith("건")][:2])
+check("it groups by diff_keys signature and reports two (2 signatures, not 4 hits)",
+      "2 diff_keys signatures" in p.stdout
+      and len([l for l in p.stdout.splitlines() if l.startswith(" [")]) == 2,
+      [l for l in p.stdout.splitlines() if "signature" in l][:1])
+check("it counts hits per signature (2 under the same signature)",
+      "list-page  2 hits" in p.stdout,
+      [l.strip() for l in p.stdout.splitlines() if "hits" in l][:2])
 
 ig = ignore_file("total", [{"experiment": "list-page", "keys": ["total"],
-                            "ledger": "R-17", "reason": "의도수정: 기본값 결함 교정"}])
+                            "rules": "R-17", "reason": "의도수정: corrected the default-value defect"}])
 p, _ = run(["--log", lg, "--ignore", ig])
-check("ignore 가 덮는 불일치는 '예상'으로 빠지고, 나머지만 남는다",
-      p.returncode == 1 and "서명 1가지" in p.stdout, f"exit={p.returncode}")
-check("부분적으로만 덮인 불일치에는 원장 행 힌트가 붙는다",
-      "R-17" in p.stdout, "" if "R-17" in p.stdout else "힌트가 없다")
+check("a mismatch covered by ignore drops out as 'expected', leaving the rest",
+      p.returncode == 1 and "1 diff_keys signatures" in p.stdout, f"exit={p.returncode}")
+check("a partially covered mismatch carries the rule-row hint",
+      "R-17" in p.stdout, "" if "R-17" in p.stdout else "no hint")
 
 ig2 = ignore_file("both", [{"experiment": "list-page",
-                            "keys": ["total", "items[].title"], "ledger": "R-17",
+                            "keys": ["total", "items[].title"], "rules": "R-17",
                             "reason": "의도수정"}])
 p, _ = run(["--log", lg, "--ignore", ig2])
-check("배열 인덱스 와일드카드가 먹는다 (items[].title 이 items[0].title 을 덮는다)",
-      p.returncode == 0 and "예상 밖 불일치 없음" in p.stdout, f"exit={p.returncode}")
+check("the array-index wildcard works (items[].title covers items[0].title)",
+      p.returncode == 0 and "No unexpected mismatches" in p.stdout, f"exit={p.returncode}")
 
 lg_other = log("other", [row(experiment="detail-page", equal=False, diff=["body"]),
                          row(experiment="list-page", equal=False, diff=["total"])])
 p, _ = run(["--log", lg_other, "--ignore", ig])
-check("ignore 의 experiment 는 다른 실험까지 덮지 않는다",
-      p.returncode == 1 and "detail-page" in p.stdout and "서명 1가지" in p.stdout,
+check("an ignore entry's experiment does not cover another experiment",
+      p.returncode == 1 and "detail-page" in p.stdout and "1 diff_keys signatures" in p.stdout,
       f"exit={p.returncode}")
 
-print("\n### 2. 절단·예외·필터")
+print("\n### 2. truncation, errors and filters")
 
 lg = log("trunc", [row(equal=False, diff=["items"], truncated=True,
                        control=None, candidate=None)])
 p, _ = run(["--log", lg])
 out_trunc = "\n".join(l for l in p.stdout.splitlines() if "truncated" in l)
-check("truncated 행은 본문 없이 sha 만 보여주고, 절단 수를 센다",
-      p.returncode == 1 and "truncated" in p.stdout and "aaaaaaaa"[:8] in p.stdout,
+check("a truncated row shows only the sha, no body, and the truncation count",
+      p.returncode == 1 and "(truncated - sha only, no body: " in p.stdout
+      and '"total": 120' not in p.stdout,
       out_trunc.strip()[:70])
 
 lg = log("boom", [json.dumps({"ts": "2026-09-08T12:00:00+09:00",
@@ -148,48 +150,51 @@ lg = log("boom", [json.dumps({"ts": "2026-09-08T12:00:00+09:00",
                                                   "message": "backend said no"}},
                              ensure_ascii=False)])
 p, _ = run(["--log", lg])
-check("candidate 예외는 예상 밖으로 남는다 (diff_keys 가 비었다고 조용히 통과시키지 않는다)",
+check("a candidate error stays unexpected (empty diff_keys never passes in silence)",
       p.returncode == 1 and "RuntimeException" in p.stdout, f"exit={p.returncode}")
 
 lg = log("filter", [row(ts="2026-09-01T00:00:00+09:00", equal=False, diff=["old"]),
                     row(ts="2026-09-08T12:00:00+09:00", equal=False, diff=["new"])])
 p, _ = run(["--log", lg, "--since", "2026-09-05T00:00:00+09:00"])
-# 서명 줄로 본다. 임시 디렉터리 경로가 보고에 찍히고 그 경로에 'old' 가 들어 있을 수 있다.
-check("--since 가 그 이전 줄을 걸러낸다",
-      p.returncode == 1 and "서명: new" in p.stdout and "서명: old" not in p.stdout,
-      f"exit={p.returncode} 걸러냄 " + ("1" if "걸러냄 1" in p.stdout else "?"))
-p, _ = run(["--log", lg, "--since", "어제"])
-check("읽을 수 없는 --since 는 exit 2",
+# Read it from the signature line. A temp directory path appears in the report and may contain 'old'.
+check("--since filters out the lines before it",
+      p.returncode == 1 and "signature: new" in p.stdout and "signature: old" not in p.stdout,
+      f"exit={p.returncode} filtered " + ("1" if "filtered 1" in p.stdout else "?"))
+p, _ = run(["--log", lg, "--since", "yesterday"])
+check("an unreadable --since is exit 2",
       p.returncode == 2 and "ISO" in p.stderr, f"exit={p.returncode}")
 p, _ = run(["--log", lg, "--since", "2030-01-01T00:00:00+09:00"])
-check("전부 걸러져 남은 줄이 없으면 exit 2 — 0건과 '못 읽었다'는 다르다",
-      p.returncode == 2 and "하나도 없다" in p.stderr, f"exit={p.returncode}")
+check("no line left after filtering is exit 2 - zero and 'could not read' differ",
+      p.returncode == 2 and "not one line matched" in p.stderr, f"exit={p.returncode}")
 
 p, _ = run(["--log", lg_other, "--experiment", "detail-page"])
-check("--experiment 가 실험 하나만 남긴다",
+check("--experiment leaves one experiment only",
       p.returncode == 1 and "list-page" not in p.stdout, f"exit={p.returncode}")
 
-print("\n### 3. 못 읽는 경우")
+print("\n### 3. when it cannot read")
 
-lg = log("broken", [row(), "{이건 JSON 이 아니다", row(equal=False, diff=["total"]),
+lg = log("broken", [row(), "{this is not JSON", row(equal=False, diff=["total"]),
                     json.dumps({"ts": "x", "mode": "dual"})])
 p, _ = run(["--log", lg])
-check("깨진 줄이 있으면 exit 2 이고 몇 번째 줄인지 말한다",
+check("a broken line is exit 2 and it names the line number",
       p.returncode == 2 and "[2]" in p.stderr and "[4]" in p.stderr,
       p.stderr.strip().splitlines()[-1][:80] if p.stderr else "")
-check("깨진 줄이 있어도 읽은 만큼의 보고는 먼저 낸다",
-      "실험" in p.stdout, "" if "실험" in p.stdout else "보고가 통째로 사라졌다")
+# `"experiment" in p.stdout` was the table's column header, which prints even when every line
+# failed to parse - the exact state this case exists to rule out. Assert the counts instead.
+check("it still emits the report for what it did read",
+      "lines 4 · counted 2" in p.stdout and "signature: total" in p.stdout,
+      "" if "signature: total" in p.stdout else "the report vanished entirely")
 
-p, _ = run(["--log", os.path.join(BASE, "없는파일.jsonl")])
-check("로그가 없으면 exit 2 (빈 로그와 구분한다)",
-      p.returncode == 2 and "로그가 없다" in p.stderr, f"exit={p.returncode}")
+p, _ = run(["--log", os.path.join(BASE, "nosuchfile.jsonl")])
+check("a missing log is exit 2 (told apart from an empty one)",
+      p.returncode == 2 and "no log" in p.stderr, f"exit={p.returncode}")
 
 p, _ = run(["--config", EMPTY_CONFIG])
-check("logPath 설정도 --log 도 없으면 멈추고 어느 키인지 말한다",
+check("with neither the logPath config nor --log it stops and names the key",
       p.returncode == 2 and "legacy.dualRun.logPath" in p.stderr, f"exit={p.returncode}")
 
 p, _ = run(["--config", CONFIG])
-check("--log 가 없으면 legacy.dualRun.logPath 를 쓴다",
+check("without --log it uses legacy.dualRun.logPath",
       p.returncode == 1 and os.path.basename(DEFAULT_LOG) in p.stdout,
       f"exit={p.returncode}")
 
@@ -197,66 +202,79 @@ bad_ig = os.path.join(BASE, "ignore-bad.json")
 with open(bad_ig, "w", encoding="utf-8") as fh:
     json.dump({"rules": [{"experiment": "x", "keys": "total"}]}, fh)
 p, _ = run(["--log", lg_other, "--ignore", bad_ig])
-check("ignore 형태가 어긋나면 조용히 무시하지 않고 exit 2",
+check("a malformed ignore is exit 2, never ignored in silence",
       p.returncode == 2 and "keys" in p.stderr, f"exit={p.returncode}")
 
-print("\n### 4. --as-fixtures · --json")
+print("\n### 4. --as-regressions · --json")
 
-fx = os.path.join(BASE, "fixtures.json")
-p, _ = run(["--log", lg_other, "--as-fixtures", fx])
+fx = os.path.join(BASE, "regressions.json")
+p, _ = run(["--log", lg_other, "--as-regressions", fx])
 doc = json.load(open(fx, encoding="utf-8")) if os.path.isfile(fx) else None
-check("--as-fixtures 가 {experiment, input, control, candidate} 목록을 쓴다",
+check("--as-regressions writes a list of {experiment, input, control, candidate}",
       isinstance(doc, list) and len(doc) == 2
       and sorted(doc[0]) == ["candidate", "control", "experiment", "input"],
-      f"{doc if not isinstance(doc, list) else len(doc)}건")
+      f"{doc if not isinstance(doc, list) else len(doc)} entries")
 
 p, _ = run(["--log", lg_other, "--json"])
 try:
     j = json.loads(p.stdout)
 except ValueError:
     j = None
-check("--json 이 기계용 요약을 낸다 (실험별 집계와 서명 목록)",
+check("--json emits a machine summary (per-experiment counts and the signature list)",
       isinstance(j, dict) and j.get("unexpected") == 2
       and len(j.get("groups") or []) == 2
       and set(j["experiments"]) == {"list-page", "detail-page"},
       "" if j else p.stdout[:120])
 
-print("\n### 5. 템플릿이 5.6 에서도 파싱되는가")
+print("\n### 5. does the template parse on 5.6 too")
 
-# `php -l` 은 8.x 로 도는 로컬 바이너리라 5.6 호환을 증명하지 못한다 - 상위 집합을 통과시킨다.
-# 그래서 5.6 에 없는 구문을 이름으로 막는다. 이 트리의 한쪽 런타임이 5.6 이고, 거기서 나는
-# 파스 에러는 흰 화면 하나로 끝나 어느 테스트도 잡지 않는다.
+# `php -l` runs on the local 8.x binary and cannot prove 5.6 compatibility - it accepts a superset.
+# So syntax absent from 5.6 is blocked by name. One runtime in this tree is 5.6, and a parse error
+# there ends as one blank page that no test catches.
 BANNED = {
-    "?? 연산자": r"\?\?",
-    "우주선 연산자": r"<=>",
-    "화살표 함수": r"\bfn\s*\(",
-    "스칼라 타입 선언": r"function\s+\w+\s*\([^)]*\b(int|float|string|bool|iterable|object)\s+\$",
-    "반환 타입 선언": r"function\s+\w+\s*\([^)]*\)\s*:\s*[\\\w]",
+    "?? operator": r"\?\?",
+    "spaceship operator": r"<=>",
+    "arrow function": r"\bfn\s*\(",
+    "scalar type declaration": r"function\s+\w+\s*\([^)]*\b(int|float|string|bool|iterable|object)\s+\$",
+    "return type declaration": r"function\s+\w+\s*\([^)]*\)\s*:\s*[\\\w]",
     "strict_types": r"declare\s*\(\s*strict_types",
-    "PHP7+ 내장 함수": r"\b(str_contains|str_starts_with|str_ends_with|array_key_first|"
+    "PHP7+ builtin": r"\b(str_contains|str_starts_with|str_ends_with|array_key_first|"
                     r"random_int|is_iterable|intdiv)\s*\(",
     "JSON_THROW_ON_ERROR": r"JSON_THROW_ON_ERROR",
 }
 if not os.path.isfile(TEMPLATE):
-    skip("템플릿 5.6 구문 검사", f"템플릿 없음: {TEMPLATE}")
+    skip("template 5.6 syntax check", f"no template: {TEMPLATE}")
 else:
     raw = open(TEMPLATE, "rb").read()
-    check("템플릿이 순수 ASCII 다 (레거시 트리는 파일마다 인코딩이 다르다)",
-          all(b < 128 for b in raw), f"비ASCII {sum(1 for b in raw if b > 127)}바이트")
-    code = re.sub(r"/\*.*?\*/", "", raw.decode("ascii"), flags=re.S)
+    nonascii = [i for i, b in enumerate(raw) if b > 127]
+    where = ""
+    if nonascii:
+        # Name the line. "45 non-ASCII bytes" alone means scanning the whole file by eye
+        # to find those 45 bytes.
+        lines = sorted({raw[:i].count(b"\n") + 1 for i in nonascii})
+        where = (f"{len(nonascii)} non-ASCII bytes · {len(lines)} lines "
+                 f"({', '.join(str(n) for n in lines[:6])}"
+                 + (" and more" if len(lines) > 6 else "") + ")")
+    check("the template is pure ASCII (encoding differs per file in the legacy tree)",
+          not nonascii, where)
+    # `errors="replace"`. If this line died with an exception while the check above is red,
+    # **the checks after it would not run at all** - one failure making everything else skip is
+    # the worst property a check suite can have. Even with one broken line the 5.6 syntax check
+    # can still answer.
+    code = re.sub(r"/\*.*?\*/", "", raw.decode("ascii", "replace"), flags=re.S)
     code = re.sub(r"//[^\n]*", "", code)
     hits = {name: len(re.findall(rx, code)) for name, rx in BANNED.items()
             if re.search(rx, code)}
-    check("5.6 에 없는 구문을 쓰지 않는다 (php -l 은 8.x 라 이것을 증명하지 못한다)",
+    check("it uses no syntax absent from 5.6 (php -l is 8.x and cannot prove this)",
           not hits, str(hits) if hits else "")
 
-print("\n### 6. 진짜 PHP 헬퍼가 쓴 로그")
+print("\n### 6. a log written by the real PHP helper")
 
 php = shutil.which("php")
 if not php:
-    skip("템플릿을 실제로 돌려 만든 로그", "php 없음")
+    skip("a log made by actually running the template", "no php")
 elif not os.path.isfile(TEMPLATE):
-    skip("템플릿을 실제로 돌려 만든 로그", f"템플릿 없음: {TEMPLATE}")
+    skip("a log made by actually running the template", f"no template: {TEMPLATE}")
 else:
     driver = os.path.join(BASE, "driver.php")
     with open(driver, "w", encoding="ascii") as fh:
@@ -289,29 +307,29 @@ else:
     secs = time.time() - t0
     lines = (open(php_log, encoding="utf-8").read().splitlines()
              if os.path.isfile(php_log) else [])
-    check("헬퍼가 dual 모드에서 호출마다 한 줄씩 남긴다",
+    check("the helper writes one line per call in dual mode",
           r.returncode == 0 and r.stdout.strip() == "dual" and len(lines) == 2,
-          f"exit={r.returncode} 줄={len(lines)} {r.stderr.strip()[:60]}", secs=secs)
+          f"exit={r.returncode} lines={len(lines)} {r.stderr.strip()[:60]}", secs=secs)
     p, _ = run(["--log", php_log])
-    check("그 로그를 dualrun-report 가 그대로 읽어 불일치 한 건을 짚는다",
-          p.returncode == 1 and "서명 1가지" in p.stdout and "total" in p.stdout,
+    check("dualrun-report reads that log as-is and names one mismatch",
+          p.returncode == 1 and "1 diff_keys signatures" in p.stdout and "total" in p.stdout,
           f"exit={p.returncode} {p.stderr.strip()[:80]}")
-    check("호출자 file:line 이 보고에 실린다 (같은 메서드를 다른 페이지가 부른다)",
+    check("the caller file:line rides in the report (another page calls the same method)",
           "driver.php:" in p.stdout,
-          [l.strip() for l in p.stdout.splitlines() if "호출자" in l][:1])
+          [l.strip() for l in p.stdout.splitlines() if "caller" in l][:1])
     ig3 = ignore_file("php", [{"experiment": "list-page", "keys": ["total"],
-                               "ledger": "R-17", "reason": "의도수정"}])
+                               "rules": "R-17", "reason": "의도수정"}])
     p, _ = run(["--log", php_log, "--ignore", ig3])
-    check("헬퍼가 쓴 diff_keys 가 ignore.json 의 키와 같은 어휘다",
+    check("the diff_keys the helper wrote use the same vocabulary as ignore.json keys",
           p.returncode == 0, f"exit={p.returncode}")
 
-# ------------------------------------------------------------------ 정리
+# ------------------------------------------------------------------ wrap-up
 shutil.rmtree(BASE, ignore_errors=True)
 bad = [n for n, ok, _ in results if not ok]
 print("\n" + "=" * 64)
 if skipped:
-    print(f"건너뜀 {len(skipped)}개 — " + ", ".join(n for n, _ in skipped))
-    print("  건너뛴 검사는 통과가 아니다.")
-print(f"{len(results) - len(bad)}/{len(results)} 통과"
-      + ("" if not bad else "   실패: " + ", ".join(bad)))
+    print(f"skipped {len(skipped)} - " + ", ".join(n for n, _ in skipped))
+    print("  a skipped check is not a pass.")
+print(f"{len(results) - len(bad)}/{len(results)} pass"
+      + ("" if not bad else "   failed: " + ", ".join(bad)))
 sys.exit(1 if bad else 0)

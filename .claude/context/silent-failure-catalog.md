@@ -1,40 +1,40 @@
 ---
 name: silent-failure-catalog
-kind: 전문성
+kind: expertise
 inject:
-  agents: [php-rule-redteam, backend-slice-designer, domain-boundary-auditor]
-  skills: [slice-scout, local-stack]
+  agents: [php-feature-explainer, php-rule-recheck, backend-designer, domain-placement-checker, php-behavior-analyst, php-swap-extractor]
+  skills: [page-picker, local-stack]
   paths: []
 token: CTX-SILENT-FAIL-8b73
 ---
 
-# 조용한 실패 점검표
+# Failures that look like success
 
-이 환경에서 관측된 실패는 거의 전부 **성공과 같은 모양으로 도착했다.** 에러가 아니라 빈손, 그럴듯한 숫자, 정상 렌더로 왔다. 그래서 "확인했다"는 말이 성립하려면 **무엇으로 확인했는지**가 함께 있어야 한다.
+Nearly every failure observed in this environment **arrived in the same shape as success.** Not an error, but an empty result, a plausible number, a page that rendered fine. So "I checked" only means something when **what you checked it with** comes with it.
 
-## 점검표
+## The catalogue
 
-| # | 실패 | 어떤 모양으로 도착하는가 | 무엇으로 배제하는가 |
+| # | Failure | What it looks like | What rules it out |
 |---|---|---|---|
-| 1 | 검색이 인코딩 때문에 눈멀었다 | 0건 · exit 1 · 개수조차 안 찍힘 | 두 인코딩 패스를 합친다. 전용 검색 도구를 쓴다 |
-| 2 | 한 패스로 센 숫자 | **그럴듯한 숫자.** 의심을 부르지 않고 순위를 뒤집는다 | 세는 단계마다 규칙 1 을 통과시키고 단위를 적는다 |
-| 3 | 정의형 검색의 0건 | "규칙이 없다"와 구별되지 않는다 | 정의는 검색이 아니라 정의 조회 도구로 |
-| 4 | 정적 분석의 빈 참조 목록 | 0. "인덱싱 안 됨"과 "참조 없음"이 같은 값 | 답을 아는 심볼로 먼저 교정한다. 동적 호출은 정적으로 안 보인다 |
-| 5 | 미인증 응답이 HTTP 200 | 페이지 로드 성공. 스위트 전부 초록 | 상태 코드가 아니라 **본문 표식**으로 판정한다 |
-| 6 | 설정 파일의 줄이 동작하지 않는다 | 파일에 있으므로 배선됐다고 읽힌다 | 최종 소비자에게 **물어서** 되읽는다 |
-| 7 | 컨테이너가 마운트/이미지/기동 중 어디선가 빠졌다 | 화면은 뜬다 | 화면이 뜨는 것은 환경이 맞다는 증거가 아니다 |
-| 8 | **잔여 컨테이너** — 도는 이름이 설정의 이름과 다르다 | 이름으로 스택을 찾는 도구가 **조용히 빈손** | 기동 전에 실제로 도는 이름과 설정을 대조한다 |
-| 9 | 기준선이 운영과 다른 런타임에서 나왔다 | **정상 렌더된다.** 바이트까지 같을 수 있다 | 표면마다 어느 런타임이 서비스하는지 설정에서 확인 |
-| 10 | 빌드가 JDK 때문에 죽었다 | 버전 번호 한 줄 | 설계 결함을 의심하기 전에 이 축을 배제한다 |
-| 11 | 형제 체크아웃·이미지·DB 접근이 없다 | 포함 실패·접근 거부 하나로 표면 전체가 죽음. 원인을 말하지 않는다 | 스택 기동 점검을 먼저 통과시킨다 |
-| 12 | **결과가 없을 때 하드코딩된 기본값을 돌려준다** | 뒷단이 죽어도 화면은 그럴듯한 숫자를 렌더한다 | 응답 관찰로는 절대 안 잡힌다. 이중 실행 로그나 경계 감사가 잡는다 |
-| 13 | **토크나이저가 짧은 열기 태그를 삼킨다** | 에러가 아니라 **더 적은 토큰**. "제어 구조 없음"으로 보고된다 | 토큰 수가 아니라 삼킴 가드로 확인한다. 로컬 기본값과 운영 설정이 다르다 |
-| 14 | 설계가 적은 의심이 원장 행이 되지 않았다 | 동등성 루프가 초록으로 닫힌다 | 의심마다 원장 행 ID 를 붙인다 |
+| 1 | A search went blind on encoding | 0 hits · exit 1 · not even a count | Combine both encoding passes. Use the dedicated search tool |
+| 2 | A number counted in one pass | **A plausible number.** Invites no suspicion and inverts the ranking | Put every counting step through rule 1 and state the unit |
+| 3 | Zero hits from a definition-shaped search | Indistinguishable from "there is no rule" | Definitions come from the definition lookup, not from a search |
+| 4 | An empty reference list from static analysis | 0. "Not indexed" and "no references" are the same value | Calibrate first on a symbol whose answer you know. Dynamic calls are invisible statically |
+| 5 | An unauthenticated response is HTTP 200 | The page loads. The whole suite is green | Judge on a **body marker**, never on the status code |
+| 6 | A line in a config file does nothing | It is in the file, so it reads as wired up | **Ask the final consumer** and read the value back |
+| 7 | A container is missing a mount, an image, or a start step | The page still renders | A page rendering is not evidence that the environment is right |
+| 8 | **A leftover container** — the running name differs from the configured one | A tool that finds the stack by name **comes back quietly empty** | Compare the actually running names against the config before starting |
+| 9 | The baseline came from a different runtime than production | **It renders correctly.** It can even match byte for byte | Check in the config which runtime serves each surface |
+| 10 | The build died on the JDK | One version number | Rule this axis out before suspecting a design fault |
+| 11 | A sibling checkout, image, or DB is unreachable | One include failure or denied connection kills a whole surface without naming the cause | Put the stack start-up check first |
+| 12 | **A hardcoded default is returned when there is no result** | The backend is dead and the page still renders a plausible number | Observing the response will never catch this. The dual-run log or the completeness pass does |
+| 13 | **The tokeniser swallows short open tags** | Not an error but **fewer tokens**, reported as "no control structures" | Verify with the swallow guard, not with a token count. The local default and the production setting differ |
+| 14 | A suspicion the design wrote down never became a rule row | The equivalence loop closes green | Attach a rule ID to every suspicion |
 
-## 판정 규칙
+## Rules for judging
 
-**"못 찾았다"와 "없다"를 절대 같은 말로 쓰지 않는다.** 보고에 부재를 적을 때는 명령·범위·조건을 함께 적는다. 그렇게 적을 수 없으면 그것은 부재가 아니라 미확인이다.
+**Never write "could not find" and "does not exist" as the same sentence.** When a report states an absence, it states the command, the scope and the conditions with it. If it cannot, that is not an absence but an unverified claim.
 
-**도구를 늘리면 조용한 실패의 종류도 는다.** 새 도구가 답을 준다는 것과 그 답이 맞다는 것은 다른 사실이다. 도구를 붙인 직후에는 답을 이미 아는 질문으로 한 번 교정하고 쓴다.
+**Adding tools adds kinds of silent failure.** That a new tool gives an answer and that the answer is correct are two different facts. Right after wiring one up, calibrate it once against a question whose answer you already know.
 
-**의심은 문서가 아니라 조인 키에 적는다.** 세 문서가 모두 알고 있던 위험이 아무도 관찰 가능한 행으로 바꾸지 않아 통과한 적이 있다.
+**A suspicion goes into the rule list, not into a document.** Three documents once all knew about a risk, nobody turned it into an observable row, and the run passed.

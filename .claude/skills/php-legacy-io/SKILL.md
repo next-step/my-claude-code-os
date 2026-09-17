@@ -1,157 +1,125 @@
 ---
 name: php-legacy-io
-description: 레거시 PHP 트리의 파일을 망가뜨리지 않고 읽고 검색하고 고치고 문법 검사한다. 그 트리는 파일마다 CP949 와 UTF-8 이 섞여 있어서, Read 는 한글을 깨진 글자로 보여주고 UTF-8 검색은 한글 매치를 조용히 놓치며 Write·Edit 는 파일 전체를 재인코딩해 안의 한글을 전부 지운다. 로컬 php 버전은 운영과 다르므로 `php -l` 도 아무것도 증명하지 않는다. "레거시 파일 읽어", "PHP 검색", "이 파일 고쳐", "한글이 깨져", "인코딩", "문법 검사", "phpv", "phpgrep", "phped", "phplint", "phpseam", "이음새 린트", "본문 해시" 같은 요청에 쓰고, 한 줄만 고치는 것처럼 사소해 보이는 작업에도 반드시 쓴다.
+description: 레거시 PHP 트리의 파일을 망가뜨리지 않고 읽고 검색하고 고치고 문법 검사한다. 그 트리는 파일마다 CP949 와 UTF-8 이 섞여 있어서, Read 는 한글을 깨진 글자로 보여주고 UTF-8 검색은 한글 매치를 조용히 놓치며 Write·Edit 는 파일 전체를 재인코딩해 안의 한글을 전부 지운다. 로컬 php 버전은 운영과 다르므로 `php -l` 도 아무것도 증명하지 않는다. "레거시 파일 읽어", "PHP 검색", "이 파일 고쳐", "한글이 깨져", "인코딩", "문법 검사", "phpv", "phpgrep", "phped", "phplint", "phpmove", "교체 지점 린트", "본문 해시" 같은 요청에 쓰고, 한 줄만 고치는 것처럼 사소해 보이는 작업에도 반드시 쓴다.
 ---
 
-# 레거시 트리 읽기 · 검색 · 편집
+# Reading, searching and editing the legacy tree
 
-도구는 이 프로젝트의 **`.claude/scripts/`** 에 있다. 아래에서는 이름만 적지만, 항상 그
-디렉터리의 절대경로로 부른다. 대상 체크아웃의 위치는 `.claude/config/workspace.json` 의
-`legacy.root` 가 갖고 있다.
+The tools live in this project's **`.claude/scripts/`**. Below they are named without a path, but always call them by that directory's absolute path. Where the target checkout sits is held by `legacy.root` in `.claude/config/workspace.json`.
 
-**절대경로로 부르는 것 외에 필요한 준비는 없다.** 각 스크립트가 자기 위치에서
-`workspace.json` 을 찾고, 거기서 트리와 서비스 목록을 읽으므로 호출자가 어디에 서 있든
-동작한다. `PHP_LEGACY_ROOT` 는 다른 체크아웃을 가리켜야 할 때만 쓰는 오버라이드다.
+**Beyond calling them by absolute path there is nothing to set up.** Each script finds `workspace.json` from its own location and reads the tree and the service list from there, so it works wherever the caller is standing. `PHP_LEGACY_ROOT` is an override for pointing at a different checkout, nothing more.
 
-## 범용 도구가 여기서 틀리는 이유
+## Why general-purpose tools are wrong here
 
-| | 무슨 일이 벌어지는가 |
+| | What happens |
 |---|---|
-| Read, `cat` | CP949 파일의 한글이 `���»�` 로 온다. 한글 주석과 화면 문구가 통째로 읽히지 않는다 |
-| `rg <한글>` | UTF-8 파일만 찾는다. 한글 매치의 다수가 CP949 파일에 있어서 빠지는데, 에러가 아니라 0건으로 도착한다 |
-| `grep -a "$(... iconv ...)"` | 에러 없이 0 을 돌려준다. BSD grep 은 유효하지 않은 UTF-8 **정규식**에 결코 매치하지 않는다. `-F` 가 그것을 고친다 |
-| Write, Edit, MultiEdit | 파일을 UTF-8 로 다시 쓴다. 고친 줄만이 아니라 파일 안의 모든 한글이 `U+FFFD` 가 된다 |
+| Read, `cat` | Korean in a CP949 file arrives as `���»�`. Korean comments and on-screen text go entirely unread |
+| `rg <Korean>` | Finds only UTF-8 files. Most Korean matches are in CP949 files, and they drop out — arriving as zero hits rather than as an error |
+| `grep -a "$(… iconv …)"` | Returns 0 with no error. BSD grep never matches an invalid-UTF-8 **regex**. `-F` fixes that |
+| Write, Edit, MultiEdit | Rewrites the file as UTF-8. Not just the edited line — every Korean character in the file becomes `U+FFFD` |
 
-**ASCII 패턴에 대한 `rg` 는 CP949 파일 안에서도 답이 맞는다.** 다만 **빠르지는 않다** —
-범위를 좁히지 않은 맨 `rg` 는 같은 검색에서 `phpgrep` 보다 3배 느렸다(206초 대 68초,
-2026-09-08 실측). 이 파일시스템은 파일 열기마다 고정 지연이 붙고, 전용 도구는 범위를 좁히고
-벤더·테스트 트리를 접어서 파일을 덜 연다. 즉 **정확성으로 갈리지 않는 경우에도 성능으로
-갈린다.**
+**`rg` over an ASCII pattern gets the right answer even inside CP949 files.** It is just **not fast** — a bare `rg` with no scope was 3× slower than `phpgrep` on the same search (206 s versus 68 s, measured 2026-09-08). This filesystem adds a fixed delay per file open, and the dedicated tool opens fewer files because it narrows the scope and folds away vendor and test trees. So **even where accuracy does not decide it, performance does.**
 
-정말 좁은 디렉터리 하나에 대한 ASCII 검색이라면 `rg` 로 충분하다. 그 범위를 스스로 좁힐 수
-없다면 `phpgrep` 이 대신 좁혀 준다.
+For an ASCII search inside one genuinely narrow directory, `rg` is enough. If you cannot narrow that scope yourself, `phpgrep` narrows it for you.
 
-## 읽기
+## Reading
 
 ```
-phpv <file>              파일 전체, 디코드해서 줄번호와 함께
-phpv <file> 40:120       40~120 줄
-phpv <file> 80 20        80 줄부터 20 줄
+phpv <file>              the whole file, decoded, with line numbers
+phpv <file> 40:120       lines 40–120
+phpv <file> 80 20        20 lines starting at line 80
 ```
 
-머리 줄이 감지한 인코딩을 알린다. `unknown` 은 UTF-8 도 CP949 도 아니라는 뜻이므로,
-보이는 내용을 믿지 말고 바이트를 직접 확인한다.
+The header line reports the encoding it detected. `unknown` means neither UTF-8 nor CP949, so do not trust what you see — check the bytes directly.
 
-## 검색
-
-```
-phpgrep <낱말>                  현재 서비스 + 공용 라이브러리
-phpgrep <Identifier>            ASCII 식별자도 같은 명령
-phpgrep --all X                 트리 전체, 디렉터리별 건수
-phpgrep --scope <서비스경로> X    지정한 디렉터리 하나
-phpgrep --tests X               테스트·사장된 트리까지 포함
-phpgrep -l X                    파일 목록만
-phpgrep -i X                    대소문자 무시
-```
-
-**범위는 서 있는 곳에서 추론하고, 추론할 수 없으면 이관 대상 서비스로 떨어진다.** 서비스
-하나는 자기 자신과 공용 라이브러리 두 트리에만 닿는다. 이 OS 는 체크아웃보다 한 단계
-위에서 돌고 전역 규칙이 `cd` 를 금지하므로 그 폴백이 기본 경로다. **사용한 범위는 항상 첫
-줄에 찍히므로 이 기본값은 감춰지지 않는다.** 0건이 나왔다면 그것은 "이 범위에 없다"이고,
-"어디에도 없다"가 아니다. 결론을 내리기 전에 `--all` 로 넓혀 본다.
-
-모르는 옵션은 검색어가 되지 않고 거절된다. 그렇지 않던 시절에는 `-F` 같은 플래그가
-검색어로 바뀌고 진짜 패턴이 조용히 버려져서, 옵션 이름을 찾은 결과가 그럴듯한 건수로
-돌아왔다. 검색어가 `-` 로 시작한다면 `--` 뒤에 둔다.
-
-벤더 번들은 항상 제외되고, 테스트·사장된 트리는 `--tests` 없이는 제외된다. 어느 트리가
-벤더인지는 `workspace.json` 의 `legacy.vendorGlobs` 가 답한다.
-
-## 편집 — 왕복
-
-이것이 기본이다. 디코드된 사본을 평소 도구로 고친 뒤 원래 인코딩으로 되돌린다.
+## Searching
 
 ```
-phped open <file>     UTF-8 작업본의 경로를 찍는다
-                      → 그 경로를 Read/Edit/Write 로 평소처럼 고친다. 한글이 안전하다
-phped save <file>     재인코딩해서 원본에 쓴다
-phped discard <file>  작업본을 버린다. 원본은 그대로
-phped status          아직 열려 있는 작업본
+phpgrep <word>                   the current service plus the shared library
+phpgrep <Identifier>             an ASCII identifier uses the same command
+phpgrep --all X                  the whole tree, with per-directory counts
+phpgrep --scope <service path> X one named directory
+phpgrep --tests X                includes test and retired trees
+phpgrep -l X                     file list only
+phpgrep -i X                     case-insensitive
 ```
 
-`save` 는 다음 경우에 쓰기를 거절하고 원본을 그대로 남긴다.
+**Scope is inferred from where you stand, and falls back to the service being migrated when it cannot be inferred.** One service reaches exactly two trees: itself and the shared library. This OS runs one level above the checkout and a global rule forbids `cd`, so that fallback is the ordinary path. **The scope actually used is always printed on the first line, so this default is never hidden.** Zero hits means "not in this scope", not "nowhere" — widen with `--all` before concluding.
 
-- 대상 인코딩으로 표현할 수 없는 문자가 있을 때. 엠대시, 둥근 인용부호, 이모지가 여기
-  걸린다 — CP949 에 자리가 없다. ASCII 등가물을 쓴다
-- 왕복이 바이트 단위로 일치하지 않을 때
-- `open` 이후 원본이 디스크에서 바뀌었을 때
+An unrecognized option is rejected rather than treated as a search term. Before that was true, a flag like `-F` would turn into the search term while the real pattern was silently dropped, so a search for an option name came back as a plausible count. If the search term starts with `-`, put it after `--`.
 
-성공하면 바이트 증감과 실제로 바뀐 줄 수를 알린다. 그 숫자가 의도보다 크게 많으면 다른
-일을 하기 전에 `git diff` 로 확인한다.
+Vendor bundles are always excluded, and test and retired trees are excluded unless `--tests` is passed. Which trees count as vendor is answered by `legacy.vendorGlobs` in `workspace.json`.
 
-## 편집 — 국소
+## Editing — the round trip
 
-아주 큰 파일에서 한 줄만 고치고, 전체를 컨텍스트에 올릴 값이 없으며, 바꿀 문자열이 이미
-정확히 손에 있을 때.
+This is the default. Edit a decoded copy with ordinary tools, then write it back in the original encoding.
+
+```
+phped open <file>     prints the path of a UTF-8 working copy
+                      → edit that path with Read/Edit/Write as usual. Korean is safe
+phped save <file>     re-encodes and writes it back to the original
+phped discard <file>  throws the working copy away, leaving the original untouched
+phped status          working copies still open
+```
+
+`save` refuses to write, leaving the original untouched, when:
+
+- a character cannot be represented in the target encoding. Em dashes, curly quotes and emoji land here — CP949 has no room for them. Use ASCII equivalents
+- the round trip does not match byte for byte
+- the original changed on disk since `open`
+
+On success it reports the byte delta and how many lines actually changed. If that number is much larger than you intended, check `git diff` before doing anything else.
+
+## Editing — surgical
+
+For a single line in a very large file, where loading the whole thing into context is not worth it and you already have the exact string to replace.
 
 ```
 phped replace <file> <old> <new>
 ```
 
-패턴이 없거나 두 번 이상 나오면 거절하므로, 옛 문자열을 유일하게 만들어 넘긴다. 두
-문자열 모두 파일 자신의 인코딩으로 변환되므로 어느 쪽에 한글이 있어도 된다.
+It refuses when the pattern is absent or appears more than once, so pass an old string that is unique. Both strings are converted to the file's own encoding, so either may contain Korean.
 
-## 문법 검사
-
-```
-phplint <file>...        각 파일을 자기 서비스의 런타임으로 검사
-phplint --as <path> -    stdin 을 검사하고, 버전은 <path> 로 고른다
-```
-
-로컬 `php` 는 쓰지 않는다. 그것은 옛 런타임이 거부하는 문법을 받아들이므로 파일이 실제로
-올라가는 런타임에 대해 아무것도 증명하지 않는다. `phplint` 는 파일을 컨테이너에 stdin
-으로 보낸다. 어느 서비스가 어느 버전으로 도는지와 그 버전을 검사할 이미지는
-`workspace.json` 의 `legacy.runtimes` 가 갖고 있다. 인코딩은 상관없다 — PHP 는 바이트를
-렉싱한다.
-
-**`phplint` 는 세 가지로 답한다.** 실패, 통과, 그리고 **검사하지 못함**. 세 번째는 통과가
-아니다. 이미지가 없거나 docker 가 내려가 있거나 그 접두어가 설정에 없을 때 그렇게
-답하며, 어느 경우에도 작업을 막지 않는다 — 불명확한 결과로 막으면 도구를 끄게 되고,
-그러면 검사가 없느니만 못하다. 대신 무엇이 없는지와 어떻게 되돌리는지를 말한다.
-
-`phped save` 와 `phped replace` 가 쓰기 전에 이것을 돌리고, 대상 런타임이 거부하는 것은
-쓰지 않는다. 고치기 전에 이미 실패하던 파일은 그대로 쓰이고, 검사를 못 돌린 경우는 막지
-않는다. 일부러 건너뛰려면 `--no-lint` 를 넘긴다.
-
-## 이음새 모양과 본문 해시
+## Syntax checking
 
 ```
-phpseam lint <page.php> [--json]               페이지 스크립트가 허용된 모양 안에 있는가
-phpseam lint --template <tpl.php> [--strict]   템플릿의 제어 구조를 보고한다
-phpseam pin <file.php> <함수|메서드>              본문의 바이트 해시를 기록한다
-phpseam check [--pins pins.json]               기록해 둔 본문이 전부 그대로인가
+phplint <file>…          checks each file against its own service's runtime
+phplint --as <path> -    checks stdin, choosing the version from <path>
 ```
 
-이 도구는 파일을 고치지 않는다. **읽어서 모양을 말한다.** `phpv`·`phpgrep` 이 "무엇이 쓰여 있는가"에 답한다면 이쪽은 "그 파일이 아직 허용된 모양인가"에 답한다. 검색으로는 물을 수 없는 질문이다 — 위반은 특정 문자열이 아니라 **허용 목록 밖의 모든 것**이라서, 찾을 문자열을 미리 적을 수가 없다.
+Do not use the local `php`. It accepts syntax the old runtime rejects, so it proves nothing about the runtime the file actually ships to. `phplint` sends the file into the container on stdin. Which service runs which version, and which image checks that version, are held by `legacy.runtimes` in `workspace.json`. Encoding does not matter — PHP lexes bytes.
 
-언제 쓰는가.
+**`phplint` has three answers.** Fail, pass, and **could not check**. The third is not a pass. It answers that way when the image is missing, docker is down, or that prefix has no entry in the config, and in none of those cases does it block the work — blocking on an inconclusive result makes people switch the tool off, and then the check is worse than none. Instead it says what is missing and how to restore it.
 
-- **이음새를 추출한 직후.** include·가드·파싱·서비스 호출·바인딩·템플릿 include 말고 다른 것이 페이지에 남았는지 `lint` 가 줄 번호로 말한다. 남겨 둔 `if` 하나는 나중에 감사에서 `템플릿 규칙 잔존` 으로 돌아온다.
-- **레거시 본문을 옮긴 직후.** `pin` 으로 그 본문의 바이트 해시를 기록한다. 이중 실행의 레거시 쪽은 "예전과 똑같이 도는 코드"여야 의미가 있는데, 한 글자만 고쳐도 그 전제가 깨지고 아무도 모른다. `check` 가 그것을 막는다 — 0 바이트 변경이 규칙이므로 정규화하지 않는다.
-- **감사에 들어가기 전에.** 기계가 답할 수 있는 것을 사람에게 묻지 않기 위해서다. 그 순서는 `boundary-audit` 이 정의한다.
+`phped save` and `phped replace` run this before writing and will not write something the target runtime rejects. A file that was already failing before your edit is written anyway, and a case where the check could not run does not block. To skip it deliberately, pass `--no-lint`.
 
-**토큰화는 `short_open_tag` 를 켠 채로 한다.** 이 트리의 템플릿은 `<?` 를 쓰고, 그 플래그 없이 토큰화하면 PHP 블록이 통째로 HTML 문자열에 삼켜진다. 결과가 에러가 아니라 **더 적은 토큰**이라서, 린터는 "제어 구조가 없다"고 보고하고 그 보고는 정상 통과와 구별되지 않는다. 도구는 삼킴을 감지하면 답하지 않고 exit 2 로 이유를 말한다 — 이 질문에서 조용한 통과가 가장 나쁜 답이기 때문이다.
+## Swap-point shape and body hashes
 
-`phplint` 와 겹치지 않는다. `phplint` 는 **운영 런타임이 이 파일을 파싱할 수 있는가**에 답하고(컨테이너로 보낸다), `phpseam` 은 구조 질의다. 토큰이 나온다고 그 런타임에서 도는 것은 아니므로 둘은 대체 관계가 아니다.
+```
+phpmove lint <page.php> [--json]               is this page script inside the allowed shape
+phpmove lint --template <tpl.php> [--strict]   report the template's control structures
+phpmove hash <file.php> <function|method>      record the body's byte hash
+phpmove check [--hashes body-hashes.json]      are all the recorded bodies unchanged
+phpmove fields --adapter <adapter.php>…        does the adapter ask for the schema's fields
+```
 
-## 계측
+This tool edits nothing. **It reads, and tells you the shape.** Where `phpv` and `phpgrep` answer "what is written here", this answers "is that file still inside the allowed shape". A search cannot ask that question — a violation is not a particular string but **everything outside an allow list**, so there is no string to look for.
 
-이 도구들이 실제로 쓰였는지는 `phpstats` 가 답한다. 전용 도구로 갔는지 범용 도구로
-우회했는지를 짝지어 보여주므로, 호출 횟수보다 그 비율이 읽을 값이다.
+When to use it.
 
-## 이 체크아웃에서 실제로 측정한 값
+- **Right after extracting a swap point.** `lint` names by line number anything left on the page other than include, guard, parse, the service call, bind and the template include. One `if` left behind comes back later as `템플릿 규칙 잔존` in the completeness pass.
+- **Right after moving a legacy body.** Record that body's byte hash with `hash`. The legacy side of a dual run only means something if it is "code that runs exactly as before", and one changed character breaks that premise with nobody the wiser. `check` prevents it — zero bytes changed is the rule, so there is no normalization.
+- **Right after writing an adapter.** `fields` compares the schema's exposed fields against the adapter's requested fields. When the rule is in the backend and the rule list says `이관됨` but the adapter never requests that field, the on-screen value is unchanged and no equivalence check goes red. Passing `--rules` alongside narrows the verdict to fields cited by `이관됨` rows, which cuts false violations; `--schema` is read from the config when omitted. **Exit 3 from this command is not a pass but "could not find it"** — it means the query was not found or is a shape the tool cannot handle, so reading it as 0 records an unrun check as a passing one.
+- **Before entering the completeness pass.** So that a person is not asked what a machine can answer. That ordering is defined by `domain-leftover`.
 
-인코딩 분포, 서비스별 파일 수, 검색 건수 같은 실측치는
-`references/measured.local.md` 에 있다. 그 파일은 트리의 디렉터리 이름을 그대로 적으므로
-추적되지 않는다. 없으면 이 저장소를 처음 쓰는 체크아웃이라는 뜻이고, 위의 규칙은 수치
-없이도 그대로 성립한다.
+**Tokenize with `short_open_tag` on.** This tree's templates use `<?`, and tokenizing without that flag swallows whole PHP blocks into an HTML string. The result is not an error but **fewer tokens**, so the linter reports "no control structures" and that report is indistinguishable from a clean pass. When the tool detects the swallow it refuses to answer and exits 2 with the reason — because on this question a silent pass is the worst possible answer.
+
+It does not overlap with `phplint`. `phplint` answers **can the production runtime parse this file** (it sends it to a container); `phpmove` is a structural query. Producing tokens does not mean it runs on that runtime, so neither replaces the other.
+
+## Instrumentation
+
+Whether these tools were actually used is answered by `phpstats`. It pairs going to the dedicated tool against routing around it with a general one, so the ratio is what to read, not the call count.
+
+## Values actually measured in this checkout
+
+Measured figures — the encoding distribution, file counts per service, search counts — are in `references/measured.local.md`. That file names the tree's directories verbatim, so it is not tracked. If it is absent, this is a checkout using this repository for the first time, and the rules above hold without the numbers.

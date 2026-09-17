@@ -1,20 +1,20 @@
 #!/usr/bin/env python3
 """
-Skill 사용 기록 훅 (PostToolUse / matcher: Skill)
+Skill usage logging hook (PostToolUse / matcher: Skill)
 
-Claude Code는 스킬을 호출할 때 `Skill` 툴을 사용한다.
-이 스크립트는 그 툴 호출 직후 실행되어, 어떤 스킬을 어떤 맥락에서 썼는지
-`.claude/skill-usage.jsonl` 에 한 줄(JSON)씩 append 한다.
+Claude Code invokes a skill through the `Skill` tool.
+This script runs right after that tool call and appends one JSON line to
+`.claude/skill-usage.jsonl` recording which skill was used in what context.
 
-stdin 으로 들어오는 훅 페이로드(JSON) 주요 필드:
-  session_id      : 세션 식별자
-  transcript_path : 이 세션의 대화 기록(JSONL) 경로  -> "맥락" 추출에 사용
-  cwd             : 훅 실행 시점의 작업 디렉터리
+Key fields of the hook payload (JSON) arriving on stdin:
+  session_id      : the session identifier
+  transcript_path : this session's transcript (JSONL) path -> used to extract the "context"
+  cwd             : the working directory when the hook ran
   tool_name       : "Skill"
-  tool_input      : {"skill": "<이름>", "args": "<인자>"}
+  tool_input      : {"skill": "<name>", "args": "<args>"}
 
-원칙: 훅은 절대 세션을 방해하면 안 된다.
-      어떤 예외가 나든 조용히 exit 0 한다.
+Principle: a hook must never interrupt the session.
+      Whatever the exception, exit 0 quietly.
 """
 
 import json
@@ -23,13 +23,13 @@ import re
 import sys
 from datetime import datetime
 
-MAX_PROMPT = 160   # 맥락 스니펫 최대 길이
+MAX_PROMPT = 160   # maximum length of the context snippet
 MAX_ARGS = 120
-TAIL_BYTES = 512 * 1024  # 트랜스크립트는 뒤쪽 512KB만 읽는다 (긴 세션 대비)
+TAIL_BYTES = 512 * 1024  # read only the last 512KB of the transcript (for long sessions)
 
 
 def clean(text: str) -> str:
-    """시스템이 주입한 블록과 개행을 걷어내고 한 줄로 만든다."""
+    """Strip system-injected blocks and newlines and make it one line."""
     text = re.sub(r"<system-reminder>.*?</system-reminder>", " ", text, flags=re.S)
     text = re.sub(r"<local-command-stdout>.*?</local-command-stdout>", " ", text, flags=re.S)
     text = re.sub(r"<command-message>.*?</command-message>", " ", text, flags=re.S)
@@ -39,9 +39,9 @@ def clean(text: str) -> str:
 
 
 def last_user_message(transcript_path: str) -> str:
-    """트랜스크립트에서 가장 최근 '사람이 실제로 쓴' 메시지를 찾는다.
+    """Find the most recent message a person actually wrote, from the transcript.
 
-    툴 실행 결과(tool_result)도 role=user 로 기록되므로 걸러내야 한다.
+    A tool result (tool_result) is also recorded as role=user, so it has to be filtered out.
     """
     if not transcript_path or not os.path.exists(transcript_path):
         return ""
@@ -68,7 +68,7 @@ def last_user_message(transcript_path: str) -> str:
         if isinstance(content, str):
             text = content
         elif isinstance(content, list):
-            # tool_result 만 들어있는 턴은 사람의 발화가 아니다
+            # A turn holding only a tool_result is not a person speaking
             texts = [b.get("text", "") for b in content
                      if isinstance(b, dict) and b.get("type") == "text"]
             if not texts:
@@ -88,12 +88,12 @@ def main() -> None:
 
     skill = (tool_input.get("skill") or "").strip()
     if not skill:
-        return  # 스킬 이름이 없으면 기록할 것도 없다
+        return  # with no skill name there is nothing to record
 
     args = clean(str(tool_input.get("args") or ""))[:MAX_ARGS]
     prompt = last_user_message(payload.get("transcript_path", ""))
 
-    # 사용자가 /스킬명 으로 직접 부른 것인지, 모델이 알아서 고른 것인지 구분한다.
+    # Tell apart the user calling /skillname directly from the model choosing it.
     short = skill.split(":")[-1]
     trigger = "user" if re.search(r"(^|\s)/(%s|%s)\b" % (re.escape(skill), re.escape(short)),
                                   prompt) else "auto"
@@ -119,5 +119,5 @@ if __name__ == "__main__":
     try:
         main()
     except Exception:
-        pass  # 훅 실패가 세션을 막지 않도록 항상 조용히 종료
+        pass  # always exit quietly so a hook failure never blocks the session
     sys.exit(0)

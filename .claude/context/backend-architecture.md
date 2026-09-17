@@ -1,45 +1,41 @@
 ---
 name: backend-architecture
-kind: 도메인
+kind: domain
 inject:
-  agents: [backend-slice-designer, backend-slice-implementer, domain-boundary-auditor]
+  agents: [backend-designer, backend-test-author, backend-builder, domain-placement-checker]
   skills: []
   paths: ["${backend.root}/**"]
 token: CTX-BACKEND-ARCH-3e07
 ---
 
-# 새 백엔드의 계층
+# Layers of the new backend
 
-## 규칙은 이 파일에 없다 — 살아있는 파일에서 읽는다
+## The rules are not in this file — read them from the living one
 
-**계층 규칙의 정본은 설정의 `backend.architectureRules` 가 가리키는 모듈(또는 테스트)이다.** 그 파일을 열어서 읽는다. 여기 옮겨 적지 않는 이유는 하나다 — **첫 실행 뒤에 규칙이 뒤집힌 적이 있다.** 문서에 사본을 두면 그 사본이 사실보다 오래 살아남고, 뒤집힌 규칙을 근거로 한 설계는 빌드가 아니라 리뷰에서야 드러난다.
+**The canonical layer rules are the module (or test) that `backend.architectureRules` in the config points at.** Open that file and read it. There is one reason they are not copied here: **after the first run, the rules were reversed.** A copy in a document outlives the fact it copied, and a design built on a reversed rule surfaces at review rather than at build time.
 
-같은 이유로 **규칙이 무엇인지 기억에서 답하지 않는다.** 설계서를 쓰기 전에 그 파일을 읽고, 읽은 시점을 설계서에 적는다. `backend.architectureCheck` 는 그 규칙을 단독으로 돌리는 명령이다 — 규칙이 빌드에서 강제되지 않으면 그것은 게이트가 아니라 조언이다.
+For the same reason, **never answer from memory what the rules are.** Read that file before writing a design, and record in the design when you read it. `backend.architectureCheck` is the command that runs those rules on their own — a rule not enforced by the build is advice, not a check.
 
-## 배치 판정
+## Placement
 
-세 모듈의 역할만 원칙으로 남긴다. 이름·경로·패키지는 전부 설정에서 읽는다(`backend.proxy` · `backend.fixity` · `backend.contract`).
+Only the three modules' roles are stated as principle. Names, paths and packages all come from config (`backend.proxy` · `backend.fixity` · `backend.contract`).
 
-| 원장 분류 | 어디로 |
+| Rule class | Where it goes |
 |---|---|
-| **도메인** | 도메인 서비스(`backend.fixity`) — 데이터의 의미·유효성·상태·가시성·순서·계산 |
-| **화면** | BFF(`backend.proxy`) 의 뷰모델 — 이 표면에서만 참인 표현 |
-| **경계** | BFF 의 입력 검증 + 도메인의 진실. **양쪽에 둔다** |
+| **도메인** | The domain service (`backend.fixity`) — meaning, validity, state, visibility, ordering and computation of the data |
+| **화면** | The view model in the BFF (`backend.proxy`) — presentation true only on this surface |
+| **경계** | Input validation in the BFF **plus** truth in the domain. **Both sides** |
 
-판정이 흔들리는 지점은 대개 하나다: 화면 규칙처럼 보이지만 다른 클라이언트도 지켜야 하는 규칙. 그것은 도메인이고, BFF 에 두면 다음 클라이언트에서 다시 구현된다.
+Placement wobbles in one place almost every time: a rule that looks like a screen rule but that other clients would also have to obey. That is 도메인, and putting it in the BFF means the next client reimplements it.
 
-계약 모듈(`backend.contract`)에는 **두 모듈이 공유하는 타입만** 둔다. 여기에 로직이 들어가면 어느 계층에도 속하지 않은 규칙이 생기고, 감사는 그것을 계층 오배치로 잡는다.
+**When the data comes from another service, the question is not read versus write.** It is what that service's answer is for. Material to be shown beside ours is composed in the BFF. A fact one of our rules cannot decide without is fetched by the domain service itself, read or write — handed in as a parameter it would be a fact we cannot check, and a rule whose grounds we cannot check is not ours. The design names which of the two each call is.
 
-## 부재 점검표
+The contract module (`backend.contract`) holds **only types shared by the two modules**. Logic there creates a rule belonging to no layer, and the completeness pass catches it as `계층 오배치`.
 
-설계에서 가장 자주 빠지는 것은 잘못 놓인 규칙이 아니라 **아예 없는 규칙**이다. 레거시에 없었으므로 원장에도 없고, 원장에 없으므로 아무도 묻지 않는다. 다음 다섯은 매번 명시적으로 답한다 — 새 원장 행을 만들거나, "해당 없음 + 이유"를 적는다.
+## Where the build dies quietly
 
-트랜잭션 경계 · 입력 검증 · 인가 · 멱등성 · 에러 매핑.
+**If the default JDK is outside the build tool's supported range, the build dies leaving one version number.** It does not look like a cause of failure. `backend.javaHome` in the config points at the JDK that build requires, and the build runs on it. Rule this axis out before reading a build failure as a design fault.
 
-## 빌드가 조용히 죽는 자리
+## Fixing a defect on the way across
 
-**기본 JDK 가 빌드 도구의 지원 범위 밖이면 빌드는 버전 번호 한 줄만 남기고 죽는다.** 실패 원인처럼 보이지 않는다. 설정의 `backend.javaHome` 이 그 빌드가 요구하는 JDK 를 가리키고 있고, 빌드는 그것으로 돈다. 빌드 실패를 설계 결함으로 오독하기 전에 이 축을 먼저 배제한다.
-
-## 결함을 고치고 갈 때
-
-레거시의 결함을 새 백엔드에서 고치는 것은 **기본값이 아니다.** 고치기로 한 결함마다 교정표에 구체 입력 예·레거시 값·교정 값을 적고 승인을 받는다. 승인은 원장 행에 승인자와 일자로 남는다. 그 행이 없으면 그 차이는 동등성 루프에서 **예상 밖 불일치**로 잡혀야 하고, 실제로 잡히는 것이 맞다.
+Fixing a legacy defect in the new backend is **not the default.** For every defect you decide to fix, the correction table records a concrete input, the legacy value and the corrected value, and it is approved. The approval lands on the rule row as approver and date. Without that row, the difference has to be caught by the equivalence loop as an **unexpected mismatch** — and catching it there is the correct outcome.

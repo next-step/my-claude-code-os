@@ -31,17 +31,17 @@ sys.dont_write_bytecode = True
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from _phpenc import require_config, runtime_for_prefix, service_of  # noqa: E402
 
-# 이미지 참조는 workspace.json 의 `legacy.runtimes[<prefix>]` 에 있다. 태그가
-# 움직일 수 있는 이미지는 그쪽에서 다이제스트로 고정하고, 없을 때 어떻게 얻는지도
-# `howto` 로 함께 적어 둔다 — 이미지 부재는 문법 실패가 아니라 "검사하지 못함"
-# 이므로, 그 구분을 사용자에게 넘기려면 얻는 방법이 손에 있어야 한다.
+# Image references live in `legacy.runtimes[<prefix>]` of workspace.json. An image whose tag can
+# move is pinned there by digest, and how to obtain it when absent is recorded alongside as
+# `howto` - a missing image is not a syntax failure but "could not check", and handing that
+# distinction to the user requires having the way to obtain it at hand.
 LINT_EXT = (".php", ".inc", ".tpl", ".phtml")
 
-# 도커에 줄 수 있는 총 시간(초). 호출자가 자기 예산 안에 이 도구를 넣을 수 있어야
-# 한다: `php-encoding-guard.py` 는 훅 35초 안에서 이 도구를 25초로 부르므로, 그
-# 안쪽인 도커가 60초면 **바깥이 먼저 죽고 결과는 "검사 못 함"이 아니라 아무것도
-# 아닌 채로 사라진다.** 그래서 예산은 환경변수로 받는다. 직접 부를 때의 기본값은
-# 그대로 60초다.
+# The total seconds available to docker. A caller has to be able to fit this tool inside its own
+# budget: `php-encoding-guard.py` calls it with 25s inside a 35s hook, so if docker inside that
+# were 60s **the outer one dies first and the result disappears as nothing at all rather than as
+# "could not check".** So the budget comes from an env var. The default when called directly
+# remains 60s.
 DOCKER_BUDGET_ENV = "PHPLINT_DOCKER_TIMEOUT"
 DOCKER_BUDGET_DEFAULT = 60
 
@@ -78,10 +78,10 @@ LATER_FUNCTIONS = {
 def runtime_for(path):
     """The PHP version this path ships on, or None when config does not say.
 
-    답은 `legacy.runtimes` 가 준다. 두 런타임에서 모두 로드되는 공용 트리는 설정에서
-    낮은 쪽으로 적어 둔다 — 낮은 버전에서 파싱되는 코드는 높은 버전에서도 파싱되지만
-    그 반대는 성립하지 않기 때문이다. 설정에 없는 접두어는 None 이고, 호출자는 그것을
-    "통과"가 아니라 "검사하지 못함"으로 보고한다.
+    `legacy.runtimes` gives the answer. A shared tree loaded by both runtimes is recorded in the
+    config as the lower one - code that parses on the lower version parses on the higher one, but
+    not the reverse. A prefix absent from the config is None, and the caller reports that as
+    "could not check", never as "passed".
     """
     svc = service_of(path)
     if not svc:
@@ -119,8 +119,8 @@ def parse_check(data, version):
 def _parse_once(data, version, budget=None):
     image, howto = image_for(version)
     if not image:
-        return None, (f"PHP {version} 을 검사할 이미지가 workspace.json 의 "
-                      "legacy.runtimes 에 없다")
+        return None, (f"workspace.json has no image in legacy.runtimes to check "
+                      f"PHP {version} with")
     # Name the container so a timeout can still reach it. `subprocess.run`'s
     # timeout kills the docker *client*, not the container it started, and
     # `--rm` only fires when the container itself stops - so an emulated 5.3
@@ -144,15 +144,15 @@ def _parse_once(data, version, budget=None):
         # `stop`, not `rm -f`: the container was started with --rm, so stopping
         # it is enough to have it removed, and it leaves a force-delete out of
         # a tool that runs unattended.
-        # `stop` 자체의 상한은 짧게 둔다. 이 정리까지 포함해서 호출자의 예산
-        # 안에 들어와야 하고, `-t 0` 은 데몬에 한 번 묻는 일이다.
+        # Keep `stop`'s own cap short. This cleanup has to fit inside the caller's budget too,
+        # and `-t 0` is one question to the daemon.
         try:
             subprocess.run(["docker", "stop", "-t", "0", name],
                            capture_output=True, timeout=5)
         except (OSError, subprocess.SubprocessError):
-            pass          # 정리가 실패해도 답은 "검사 못 함" 하나다
+            pass          # even if cleanup fails, the answer is the single "could not check"
         return None, (f"docker timed out running {image} "
-                      f"({int(budget if budget is not None else docker_budget())}초)")
+                      f"({int(budget if budget is not None else docker_budget())}s)")
     out = (p.stdout + p.stderr).decode("utf-8", "replace")
     if "Unable to find image" in out or "no such image" in out.lower():
         return None, f"PHP {version} image is missing - {howto}"
@@ -239,10 +239,10 @@ def main(argv):
             continue
         with open(path, "rb") as fh:
             worst = max(worst, lint(fh.read(), path, version))
-    # 검사하지 못한 것을 0 으로 돌려주지 않는다. 0 은 호출자에게 "이 파일은 운영
-    # 런타임에서 파스된다"로 읽히고, 그것이 이 도구가 막으려는 실패 그 자체다.
-    # 막지는 않는다 - 3 은 실패가 아니라 "답하지 못했다"는 뜻이고, 호출자가
-    # 통과와 구분할 수 있으면 그것으로 족하다.
+    # It never returns 0 for something it could not check. To a caller 0 reads as "this file
+    # parses on the production runtime", and that is the very failure this tool exists to prevent.
+    # It does not block - 3 means "did not answer", not a failure, and it is enough that the
+    # caller can tell it from a pass.
     if worst == 0 and unchecked:
         return 3
     return worst

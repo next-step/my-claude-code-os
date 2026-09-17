@@ -1,0 +1,225 @@
+#!/usr/bin/env python3
+"""Round records → proposed context-file revisions. It applies nothing.
+
+This tool does three things and no more.
+
+1. `--propose` : gather `global` entries **that cite evidence** from the role records and print
+   which context file to add what to. It edits no file.
+2. `--stale`   : check whether the files, symbols and config keys an entry cites still exist, and
+   mark the vanished ones as expiry candidates. Accumulated prose rots when left alone.
+3. `--check`   : check the form of the record entries. An entry without `evidence` is not an entry.
+
+**Why it applies nothing.** There is a measurement showing that fixing a harness from an agent's
+own self-generated reflection comes out worse than not fixing it. So only evidenced entries become
+candidates, and turning a candidate into an actual sentence, and deciding what to delete, is done by a person. The approval is `git diff`.
+
+And it never rewrites wholesale. It proposes only increments - regenerating everything collapses the detail.
+
+When a config key cannot be read it stops rather than quietly giving a narrowed answer.
+"""
+import argparse
+import json
+import os
+import re
+import sys
+
+ROOT = os.environ.get("CLAUDE_PROJECT_DIR") or os.path.dirname(
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+)
+NEEDED = ("lesson", "trigger", "evidence", "scope")
+SCOPES = ("surface", "area", "global")
+
+# Which context file a role's lesson belongs to. It is only a proposal; a person moves it.
+ROLE_HOME = {
+    "php-swap-extractor": "swap-point-shape",
+    "php-behavior-analyst": "rules-contract",
+    "php-rule-recheck": "silent-failure-catalog",
+    "observation-author": "equivalence-checks",
+    "backend-designer": "backend-architecture",
+    "backend-builder": "equivalence-checks",
+    "domain-placement-checker": "silent-failure-catalog",
+    "domain-scribe": "rules-contract",
+}
+
+
+def where(p, ln):
+    """Relative inside the repository, absolute outside. `../../..` is useless to everyone."""
+    rp = os.path.relpath(p, ROOT)
+    return f"{p if rp.startswith('..') else rp}:{ln}"
+
+
+def die(msg, code=3):
+    print(f"stopping: {msg}", file=sys.stderr)
+    sys.exit(code)
+
+
+def config():
+    p = os.path.join(ROOT, ".claude", "config", "workspace.json")
+    if not os.path.isfile(p):
+        die(f"{p} is missing - copy workspace.example.json and fill it in")
+    try:
+        return json.load(open(p, encoding="utf-8"))
+    except Exception as exc:
+        die(f"workspace.json could not be read: {exc}")
+
+
+def record_dir(cfg, override):
+    if override:
+        return override
+    docs = cfg.get("docs") or {}
+    root, sub = docs.get("root"), docs.get("recordDir")
+    if not root:
+        die("the config key docs.root is missing")
+    if not sub:
+        die("the config key docs.recordDir is missing - the records need somewhere to go")
+    return os.path.join(root, sub)
+
+
+def load(jdir):
+    """A list of (entry, file, line number, error). One broken line leaves the rest alive."""
+    if not os.path.isdir(jdir):
+        die(f"no record directory ({jdir}) - no round has left an entry yet")
+    out = []
+    for dirpath, _, files in os.walk(jdir):
+        for fn in sorted(files):
+            if not fn.endswith(".jsonl"):
+                continue
+            p = os.path.join(dirpath, fn)
+            for i, line in enumerate(open(p, encoding="utf-8"), 1):
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    out.append((json.loads(line), p, i, None))
+                except json.JSONDecodeError as exc:
+                    out.append((None, p, i, f"not JSON: {exc}"))
+    if not out:
+        print(f"no entry in the records ({jdir})")
+    return out
+
+
+def check(items):
+    bad = 0
+    for it, p, ln, err in items:
+        w = where(p, ln)
+        if err:
+            print(f"  FAIL  {w}  {err}")
+            bad += 1
+            continue
+        missing = [k for k in NEEDED if not str(it.get(k) or "").strip()]
+        if missing:
+            print(f"  FAIL  {w}  missing fields: {', '.join(missing)}"
+                  + ("  ← an entry without evidence is not an entry" if "evidence" in missing else ""))
+            bad += 1
+        elif it.get("scope") not in SCOPES:
+            print(f"  FAIL  {w}  scope is outside {SCOPES}: {it.get('scope')!r}")
+            bad += 1
+        elif not it.get("role"):
+            print(f"  FAIL  {w}  no role - there is no way to know which role should read it")
+            bad += 1
+    return bad
+
+
+def evidence_paths(ev):
+    """Extract the paths verifiable against this repository from the evidence string."""
+    return [m for m in re.findall(r"[\w./-]+\.(?:php|kt|kts|json|jsonl|md|py|sh|sql)(?::\d+(?:-\d+)?)?", ev or "")]
+
+
+def missing_refs(it):
+    """Cited paths that do not exist now."""
+    gone = []
+    for ref in evidence_paths(it.get("evidence", "")):
+        path = ref.split(":")[0]
+        if not any(os.path.exists(c) for c in (path, os.path.join(ROOT, path))):
+            gone.append(path)
+    return gone
+
+
+def stale(items):
+    n = 0
+    for it, p, ln, err in items:
+        if err or not it:
+            continue
+        for path in missing_refs(it):
+            print(f"  expiry candidate  {where(p, ln)}  the cited path is gone: {path}")
+            print(f"             lesson: {str(it.get('lesson',''))[:90]}")
+            n += 1
+    return n
+
+
+def propose(items):
+    """Only evidenced global entries are candidates. It edits no file."""
+    eligible, stale_out = [], []
+    for it, p, ln, err in items:
+        if err or not it or it.get("scope") != "global":
+            continue
+        if not all(str(it.get(k) or "").strip() for k in NEEDED):
+            continue
+        # An entry whose cited evidence is gone is not a candidate. Promoting it to context would
+        # deterministically inject a rule nobody can verify, and that is the path to rot.
+        gone = missing_refs(it)
+        (stale_out if gone else eligible).append((it, p, ln, gone))
+    cands = [(it, p, ln) for it, p, ln, _ in eligible]
+    if stale_out:
+        print(f"excluded: {len(stale_out)} entries whose evidence is gone were dropped (see `--stale`).")
+        for it, p, ln, gone in stale_out:
+            print(f"  {where(p, ln)}  missing paths {', '.join(gone)}")
+        print()
+    if not cands:
+        print("no candidate. Only entries that are `global` and cite evidence become candidates.")
+        print("A `surface` or `area` entry stays in that record for the same role to read - promoting it")
+        print("would deterministically inject a rule that is wrong on another surface.")
+        return 0
+    by_home = {}
+    for it, p, ln in cands:
+        home = ROLE_HOME.get(it.get("role"), "(owner undecided - a person decides)")
+        by_home.setdefault(home, []).append((it, p, ln))
+    for home, group in sorted(by_home.items()):
+        target = os.path.join(".claude", "context", f"{home}.md")
+        exists = os.path.isfile(os.path.join(ROOT, target))
+        print(f"\n## {target}{'' if exists else '   ← no such file'}")
+        for it, p, ln in group:
+            print(f"\n  Add  ({it.get('role')}, {where(p, ln)})")
+            print(f"    lesson   : {it['lesson']}")
+            print(f"    trigger  : {it['trigger']}")
+            print(f"    evidence : {it['evidence']}")
+    print(f"\n{len(cands)} candidates. **Nothing was applied.**")
+    print("Two things for a person. (1) Decide which section of the context file this sentence goes")
+    print("into, as an increment - never rewrite wholesale. (2) **Delete the prose that mechanism")
+    print("replaces, in the same change.** Building a mechanism and leaving the sentence it replaced")
+    print("only grows the surface to maintain. Then check the budget: python3 .claude/scripts/selftest_budget.py")
+    return 0
+
+
+def main():
+    ap = argparse.ArgumentParser(add_help=True)
+    ap.add_argument("--propose", action="store_true", help="propose context revisions from evidenced global entries (it edits nothing)")
+    ap.add_argument("--stale", action="store_true", help="mark entries whose cited paths are gone as expiry candidates")
+    ap.add_argument("--check", action="store_true", help="check the form of the record entries")
+    ap.add_argument("--record-dir", help="use this directory instead of the config")
+    a = ap.parse_args()
+    if not (a.propose or a.stale or a.check):
+        ap.print_help()
+        return 2
+
+    jdir = a.record_dir or record_dir(config(), None)
+    items = load(jdir)
+    rc = 0
+    if a.check:
+        print("## record format")
+        bad = check(items)
+        good = len([1 for it, _, _, e in items if not e])
+        print(f"  {good - bad}/{len(items)} pass" if items else "  no entry")
+        rc = max(rc, 1 if bad else 0)
+    if a.stale:
+        print("## expiry candidates")
+        n = stale(items)
+        print(f"  {n} candidates" if n else "  none")
+    if a.propose:
+        print("## proposed context revisions")
+        propose(items)
+    return rc
+
+
+if __name__ == "__main__":
+    sys.exit(main())

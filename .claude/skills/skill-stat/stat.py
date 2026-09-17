@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 """
-.claude/skill-usage.jsonl 을 읽어 스킬 사용 통계를 출력한다.
+Read .claude/skill-usage.jsonl and print skill usage statistics.
 
-사용법:
-  python3 .claude/skills/skill-stat/stat.py                # 전체 통계
-  python3 .claude/skills/skill-stat/stat.py --since 7d     # 최근 7일
+Usage:
+  python3 .claude/skills/skill-stat/stat.py                # everything
+  python3 .claude/skills/skill-stat/stat.py --since 7d     # the last 7 days
   python3 .claude/skills/skill-stat/stat.py --since 2026-08-01
-  python3 .claude/skills/skill-stat/stat.py --skill git-commit   # 특정 스킬만
-  python3 .claude/skills/skill-stat/stat.py --recent 10    # 최근 호출 내역(맥락 포함)
-  python3 .claude/skills/skill-stat/stat.py --json         # 기계용 출력
+  python3 .claude/skills/skill-stat/stat.py --skill git-commit   # one skill only
+  python3 .claude/skills/skill-stat/stat.py --recent 10    # recent calls, with their context
+  python3 .claude/skills/skill-stat/stat.py --json         # machine-readable output
 """
 
 import argparse
@@ -26,7 +26,7 @@ DEFAULT_LOG = os.path.join(
 
 
 def parse_since(value):
-    """'7d' / '12h' / '2026-08-01' 을 datetime(aware) 으로 바꾼다."""
+    """Turn '7d' / '12h' / '2026-08-01' into an aware datetime."""
     if not value:
         return None
     now = datetime.now().astimezone()
@@ -38,7 +38,7 @@ def parse_since(value):
     try:
         dt = datetime.fromisoformat(value)
     except ValueError:
-        sys.exit("--since 형식이 잘못됨: %r (예: 7d, 12h, 2w, 2026-08-01)" % value)
+        sys.exit("bad --since format: %r (e.g. 7d, 12h, 2w, 2026-08-01)" % value)
     return dt if dt.tzinfo else dt.replace(tzinfo=now.tzinfo)
 
 
@@ -54,7 +54,7 @@ def load(path, since=None, skill=None, session=None):
             try:
                 r = json.loads(line)
             except ValueError:
-                continue  # 깨진 줄은 건너뛴다 (append-only 로그의 현실적 방어)
+                continue  # skip a broken line (a practical defence for an append-only log)
             try:
                 r["_ts"] = datetime.fromisoformat(r["ts"])
             except (KeyError, ValueError):
@@ -71,12 +71,12 @@ def load(path, since=None, skill=None, session=None):
 
 
 def width_of(text):
-    """터미널 표시 폭. 한글·이모지는 2칸을 차지하므로 len() 으로는 정렬이 어긋난다."""
+    """Terminal display width. Korean and emoji take two columns, so len() misaligns the table."""
     return sum(2 if unicodedata.east_asian_width(ch) in "WF" else 1 for ch in text)
 
 
 def pad(text, w, align="<"):
-    """표시 폭 기준으로 자르고 채운다."""
+    """Cut to the display width and pad."""
     while width_of(text) > w:
         text = text[:-1]
     space = " " * (w - width_of(text))
@@ -96,8 +96,8 @@ def human(dt):
 
 def report(rows, recent):
     if not rows:
-        print("기록된 스킬 호출이 없습니다.")
-        print("(훅 등록 후 새 세션에서 스킬을 한 번 이상 호출해야 로그가 쌓입니다)")
+        print("no skill call has been recorded.")
+        print("(the log fills only after a skill is called at least once in a new session, with the hook registered)")
         return
 
     counts = Counter(r["skill"] for r in rows)
@@ -111,18 +111,18 @@ def report(rows, recent):
     span = "%s ~ %s" % (human(rows[0]["_ts"]), human(rows[-1]["_ts"]))
     sessions = len({r.get("session", "") for r in rows})
 
-    print("스킬 사용 통계")
+    print("Skill usage")
     print("─" * 64)
-    print("기간      : %s" % span)
-    print("총 호출   : %d회   |   스킬 종류: %d개   |   세션: %d개"
+    print("period    : %s" % span)
+    print("total     : %d calls   |   distinct skills: %d   |   sessions: %d"
           % (total, len(counts), sessions))
     print()
 
     top = counts.most_common(1)[0][1]
     name_w = min(max(max(width_of(s) for s in counts), 12), 34)
     row = "%s %s %s  %s %s"
-    print(row % (pad("스킬", name_w), pad("횟수", 5, ">"), pad("비율", 5, ">"),
-                 pad("", 24), "최근 사용"))
+    print(row % (pad("skill", name_w), pad("calls", 5, ">"), pad("share", 5, ">"),
+                 pad("", 24), "last used"))
     print("─" * 64)
     for skill, n in counts.most_common():
         print(row % (pad(skill, name_w), pad(str(n), 5, ">"),
@@ -130,18 +130,18 @@ def report(rows, recent):
                      pad(bar(n, top), 24), human(last_used[skill])))
     print()
 
-    # 직접 호출(/스킬명) vs 모델이 스스로 선택 — 스킬 설명(description)이
-    # 제대로 작동하는지 보여주는 지표다.
+    # Called directly (/skillname) versus chosen by the model - this is the indicator of
+    # whether the skill's description is doing its job.
     user_n = sum(t["user"] for t in triggers.values())
-    print("호출 경로 : 사용자 직접 %d회 / 모델 자동 선택 %d회" % (user_n, total - user_n))
+    print("call path : %d by the user directly / %d chosen by the model" % (user_n, total - user_n))
 
     if recent:
         print()
-        print("최근 호출 %d건" % min(recent, total))
+        print("%d recent calls" % min(recent, total))
         print("─" * 64)
         for r in rows[-recent:][::-1]:
             print("%s  %s (%s)" % (human(r["_ts"]), r["skill"], r.get("trigger", "auto")))
-            ctx = r.get("context") or "(맥락 없음)"
+            ctx = r.get("context") or "(no context)"
             print("    ↳ %s" % ctx)
 
 

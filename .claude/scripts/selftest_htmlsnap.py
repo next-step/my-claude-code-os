@@ -1,21 +1,21 @@
 #!/usr/bin/env python3
-"""htmlsnap 케이스. 합성 페이지를 스레드로 서빙해, 실제 표면 없이 검사한다.
+"""htmlsnap cases. Serves a synthetic page from a thread, checking without a real surface.
 
-    python3 selftest_htmlsnap.py [htmlsnap 경로]
+    python3 selftest_htmlsnap.py [path to htmlsnap]
 
-이 파일은 **실제 workspace.json 을 읽지 않는다.** 스크래치 디렉터리에 합성 설정을 쓰고
-`--config` 로 그것을 가리킨다. 그래서 스택이 내려가 있어도, 설정이 비어 있어도 돌고,
-로컬 표면에 요청을 하나도 보내지 않는다.
+This file **never reads the real workspace.json.** It writes a synthetic config into a scratch
+directory and points `--config` at it. So it runs with the stack down and with an empty config,
+and sends not one request to a local surface.
 
-서빙하는 페이지는 이 도구가 틀릴 수 있는 자리마다 하나씩이다.
-  정상       CP949 본문 + charset 없는 헤더        - 바이트로 저장하는가
-  로그아웃   200 + `<script>confirm(...)</script>`  - 상태 코드로 판정하지 않는가
-  5xx        서버 오류                              - error_page 로 잡는가
-  토큰       매 요청 바뀌는 값                      - 정규화가 먹는가
-  목록       텍스트만 다른 두 판                    - structure 모드가 같다고 하는가
-  되읽기     현재 모드를 출력                       - --toggle-expect 가 실제로 읽는가
-  느림       타임아웃보다 오래                      - timeout 을 unreachable 과 가르는가
-  쿠키       받은 Cookie 헤더를 본문에 반영         - storageState 가 요청에 실리는가
+It serves one page per place this tool can get things wrong.
+  normal     CP949 body with no charset in the header  - is it stored as bytes
+  logged out 200 + `<script>confirm(...)</script>`     - is the verdict not made from the status code
+  5xx        server error                              - is it caught as error_page
+  token      a value that changes per request          - does normalization take effect
+  list       two editions differing only in text       - does structure mode call them identical
+  read-back  prints the current mode                   - does --toggle-expect really read it
+  slow       longer than the timeout                   - is timeout told apart from unreachable
+  cookie     reflects the received Cookie header       - does storageState ride on the request
 """
 import http.server
 import json
@@ -31,11 +31,11 @@ import time
 HERE = os.path.dirname(os.path.abspath(__file__))
 TOOL = sys.argv[1] if len(sys.argv) > 1 else os.path.join(HERE, "htmlsnap")
 if not os.path.isfile(TOOL):
-    sys.exit(f"사용법: selftest_htmlsnap.py [htmlsnap 경로]  (찾은 곳: {TOOL})")
+    sys.exit(f"usage: selftest_htmlsnap.py [path to htmlsnap]  (looked at: {TOOL})")
 
 BASE = tempfile.mkdtemp(prefix="htmlsnap-selftest-")
-SURFACE = "synth"                       # 가짜 표면 이름. 실제 이름을 적지 않는다.
-KO = "가나다 공지사항".encode("cp949")   # CP949 바이트. 디코드하면 안 되는 그 바이트.
+SURFACE = "synth"                       # a fake surface name. The real one is never written here.
+KO = "가나다 공지사항".encode("cp949")   # CP949 bytes. The very bytes that must not be decoded.
 
 results = []
 
@@ -43,24 +43,24 @@ results = []
 def check(name, ok, detail="", secs=None):
     results.append((name, ok, detail))
     t = f"  {secs:5.1f}s" if secs is not None else "        "
-    print(f"  {'통과' if ok else 'FAIL'}{t}  {name}" + (f"   {detail}" if detail else ""))
+    print(f"  {'pass' if ok else 'FAIL'}{t}  {name}" + (f"   {detail}" if detail else ""))
 
 
-# ------------------------------------------------------------- 합성 서버
+# ------------------------------------------------------------- the synthetic server
 
-STATE = {"mode": "php"}                 # 되읽기 페이지가 말할 값
+STATE = {"mode": "php"}                 # the value the read-back page will state
 COUNTER = {"n": 0}
 
 
 class Handler(http.server.BaseHTTPRequestHandler):
     protocol_version = "HTTP/1.0"
 
-    def log_message(self, *a):          # 조용히
+    def log_message(self, *a):          # quietly
         pass
 
     def _send(self, code, body, ctype="text/html"):
         self.send_response(code)
-        self.send_header("Content-Type", ctype)      # charset 을 일부러 붙이지 않는다
+        self.send_header("Content-Type", ctype)      # deliberately without a charset
         self.send_header("Content-Length", str(len(body)))
         self.end_headers()
         self.wfile.write(body)
@@ -107,7 +107,7 @@ PORT = srv.server_address[1]
 threading.Thread(target=srv.serve_forever, daemon=True).start()
 BASE_URL = f"http://127.0.0.1:{PORT}"
 
-# ------------------------------------------------------------- 합성 설정
+# ------------------------------------------------------------- the synthetic config
 
 CONFIG = os.path.join(BASE, "workspace.json")
 SESSION = os.path.join(BASE, "storageState.json")
@@ -138,8 +138,8 @@ with open(SESSION, "w", encoding="utf-8") as fh:
     ], "origins": []}, fh)
 
 
-def corpus(name, entries, surface=SURFACE):
-    path = os.path.join(BASE, f"corpus-{name}.json")
+def observations(name, entries, surface=SURFACE):
+    path = os.path.join(BASE, f"observations-{name}.json")
     with open(path, "w", encoding="utf-8") as fh:
         json.dump({"surface": surface, "entries": entries}, fh, ensure_ascii=False)
     return path
@@ -154,7 +154,7 @@ def run(args, timeout=90):
 
 def capture(name, entries, extra=None, timeout=90):
     out = os.path.join(BASE, "cap-" + name)
-    args = ["capture", "--corpus", corpus(name, entries), "--out", out,
+    args = ["capture", "--observations", observations(name, entries), "--out", out,
             "--config", CONFIG] + (extra or [])
     p, secs = run(args, timeout=timeout)
     return p, out, secs
@@ -173,51 +173,52 @@ E_TOKEN = {"id": "token", "path": "/token.php"}
 E_SLOW = {"id": "slow", "path": "/slow.php"}
 
 
-print(f"# 합성 표면 {BASE_URL} · 도구 {TOOL}")
-print("\n### 1. capture — 플래그를 제대로 붙이는가")
+print(f"# synthetic surface {BASE_URL} · tool {TOOL}")
+print("\n### 1. capture - does it attach the right flags")
 
 p, out_flags, secs = capture("flags", [E_OK, E_OUT, E_BOOM, E_SLOW],
                              extra=["--timeout", "1"])
 m = manifest(out_flags) if os.path.isfile(os.path.join(out_flags, "manifest.json")) else {}
-check("정상 페이지는 유효하고 CP949 바이트가 그대로 저장된다",
+check("a normal page is valid and its CP949 bytes are stored unchanged",
       bool(m) and m["ok"]["valid"]
       and open(os.path.join(out_flags, "ok.raw.html"), "rb").read().find(KO) > 0,
       "" if m else f"exit={p.returncode} {p.stderr[-200:]}", secs=secs)
-check("미인증 200 + confirm() 을 logged_out 으로 잡는다 (상태 코드가 아니라 본문)",
+check("an unauthenticated 200 + confirm() is caught as logged_out (by body, not status code)",
       bool(m) and m["loggedout"]["status"] == 200
       and m["loggedout"]["flags"] == ["logged_out"],
       str(m.get("loggedout", {}).get("flags")))
-check("5xx 를 error_page 로 잡는다",
+check("a 5xx is caught as error_page",
       bool(m) and m["boom"]["flags"] == ["error_page"],
       str(m.get("boom", {}).get("flags")))
-check("타임아웃을 timeout 으로 잡는다 (unreachable 과 구분한다)",
+check("a timeout is caught as timeout (told apart from unreachable)",
       bool(m) and m["slow"]["flags"] == ["timeout"] and m["slow"]["error"],
       str(m.get("slow", {}).get("flags")))
-check("invalid 가 섞이면 capture 는 exit 1", p.returncode == 1, f"exit={p.returncode}")
+check("capture exits 1 when an invalid is mixed in",
+      p.returncode == 1 and "valid 1 · invalid 3" in p.stdout, f"exit={p.returncode}")
 
 p2, out_dead, secs2 = capture("dead", [E_SLOW], extra=["--timeout", "1"])
-check("전부 전송 실패면 exit 2 — 검사 실패가 아니라 '답할 수 없음'이다",
-      p2.returncode == 2 and "표면이 떠 있는지" in p2.stderr,
+check("every transport failing is exit 2 - not a check failure but 'cannot answer'",
+      p2.returncode == 2 and "Check the surface is up" in p2.stderr,
       f"exit={p2.returncode}", secs=secs2)
 
-print("\n### 2. 쿠키 — storageState 가 요청 헤더에 실리는가")
+print("\n### 2. cookies - does storageState ride on the request header")
 cookie_body = open(os.path.join(out_flags, "ok.raw.html"), "rb").read().decode("cp949")
-check("storageState 의 쿠키가 Cookie 헤더로 나간다",
+check("cookies from storageState go out in the Cookie header",
       "cookie:SESSIONID=abc123" in cookie_body, cookie_body.split("<!--")[-1][:60])
-check("도메인이 다른 쿠키는 빼고, 뺐다는 사실을 말한다",
-      "ELSEWHERE" not in cookie_body and "1개는 도메인이" in p.stderr,
-      "" if "ELSEWHERE" not in cookie_body else "다른 도메인 쿠키가 새어나갔다")
+check("cookies for another domain are dropped, and the drop is stated",
+      "ELSEWHERE" not in cookie_body and "1 dropped" in p.stderr,
+      "" if "ELSEWHERE" not in cookie_body else "a cookie for another domain leaked out")
 
-print("\n### 3. 정규화·구조 모드")
+print("\n### 3. normalization and structure mode")
 pa, out_t1, _ = capture("tok1", [E_TOKEN])
 pb, out_t2, _ = capture("tok2", [E_TOKEN])
 pa_m, pb_m = manifest(out_t1), manifest(out_t2)
 _norm_same = pa_m["token"]["sha256_norm"] == pb_m["token"]["sha256_norm"]
 _raw_diff = pa_m["token"]["sha256_raw"] != pb_m["token"]["sha256_raw"]
-check("매 요청 바뀌는 토큰이 정규화로 지워져 두 캡처의 정규화본이 같다",
+check("a per-request token is normalized away so both normalized copies match",
       _norm_same and _raw_diff,
       "" if _norm_same and _raw_diff
-      else ("raw 가 같아 검사가 성립하지 않는다" if not _raw_diff else "정규화가 안 먹었다"))
+      else ("raw is identical so the check does not hold" if not _raw_diff else "normalization did not take"))
 
 L1 = {"id": "list", "path": "/list.php", "params": {"v": "1"}, "mode": "structure"}
 L2 = {"id": "list", "path": "/list.php", "params": {"v": "2"}, "mode": "structure"}
@@ -229,83 +230,88 @@ _, out_f1, _ = capture("f1", [F1])
 _, out_f2, _ = capture("f2", [F2])
 ps, _ = run(["compare", out_s1, out_s2, "--config", CONFIG])
 pf, _ = run(["compare", out_f1, out_f2, "--config", CONFIG])
-check("structure 모드: 텍스트만 다른 두 판이 identical",
-      ps.returncode == 0 and "identical" in ps.stdout, f"exit={ps.returncode}")
-check("full 모드로는 같은 쌍이 different — 구조 모드가 실제로 무언가를 지운다",
-      pf.returncode == 1 and "different" in pf.stdout, f"exit={pf.returncode}")
+check("structure mode: two editions differing only in text are identical",
+      ps.returncode == 0 and "identical 1 · different 0" in ps.stdout, f"exit={ps.returncode}")
+check("the same pair is different in full mode - structure mode really drops something",
+      pf.returncode == 1 and "different 1" in pf.stdout, f"exit={pf.returncode}")
 
-print("\n### 4. compare — 네 가지 결과와 종료 코드")
+print("\n### 4. compare - four results and their exit codes")
 pc, _ = run(["compare", out_t1, out_t1, "--config", CONFIG])
-check("같은 디렉터리끼리는 identical, exit 0", pc.returncode == 0, f"exit={pc.returncode}")
+check("identical directories are identical, exit 0",
+      pc.returncode == 0 and "identical 1 · different 0 · missing 0 · invalid 0" in pc.stdout,
+      f"exit={pc.returncode}")
 
 _, out_two, _ = capture("two", [E_TOKEN, E_OK])
 pm, _ = run(["compare", out_t1, out_two, "--config", CONFIG])
-check("한쪽에만 있는 id 는 missing, exit 1",
-      pm.returncode == 1 and "missing" in pm.stdout, f"exit={pm.returncode}")
+check("an id present on one side only is missing, exit 1",
+      pm.returncode == 1 and "missing 1" in pm.stdout, f"exit={pm.returncode}")
 
 rep = os.path.join(BASE, "report.md")
 pd, _ = run(["compare", out_f1, out_f2, "--config", CONFIG, "--report", rep,
              "--context", "1"])
 body = open(rep, encoding="utf-8").read() if os.path.isfile(rep) else ""
-check("--report 가 마크다운 표와 diff 를 쓴다",
-      "| id | 결과 | 비고 |" in body and "```diff" in body, f"{len(body)}바이트")
+check("--report writes a markdown table and a diff",
+      "| id | result | note |" in body and "```diff" in body, f"{len(body)} bytes")
 
 _, out_bad, _ = capture("bad", [E_OUT])
 pi, _ = run(["compare", out_bad, out_bad, "--config", CONFIG])
-check("어느 쪽에든 invalid 캡처가 있으면 exit 2 — 로그아웃 페이지는 기준선이 못 된다",
-      pi.returncode == 2 and "기준선이 될 수 없" in pi.stderr, f"exit={pi.returncode}")
+check("an invalid capture on either side is exit 2 - a logged-out page cannot be a baseline",
+      pi.returncode == 2 and "cannot be a baseline" in pi.stderr, f"exit={pi.returncode}")
 
-print("\n### 5. 토글 되읽기")
+print("\n### 5. toggle read-back")
 STATE["mode"] = "php"
 pt, _, secs = capture("tog-bad", [E_OK], extra=["--toggle-expect", "dual"])
-check("되읽기가 다른 모드를 말하면 캡처하지 않고 exit 2",
+check("a read-back stating another mode captures nothing and exits 2",
       pt.returncode == 2 and "'legacy'" in pt.stderr and "'dual'" in pt.stderr,
       f"exit={pt.returncode} {pt.stderr.strip()[-90:]}", secs=secs)
 STATE["mode"] = "dual"
 pt2, out_tog, secs2 = capture("tog-ok", [E_OK], extra=["--toggle-expect", "dual"])
-check("되읽기가 맞으면 캡처하고 manifest 에 기록한다",
+check("a matching read-back captures and records it in the manifest",
       pt2.returncode == 0 and manifest(out_tog) and
       json.load(open(os.path.join(out_tog, "manifest.json")))["toggle_readback"] == "dual",
       f"exit={pt2.returncode}", secs=secs2)
 STATE["mode"] = "php"
 
-print("\n### 6. corpus validate · 설정 부재")
-good = corpus("valid-ok", [E_OK])
-pv, _ = run(["corpus", "validate", good, "--config", CONFIG])
-check("정상 코퍼스는 exit 0", pv.returncode == 0, f"exit={pv.returncode}")
+print("\n### 6. observations validate · a missing config")
+good = observations("valid-ok", [E_OK])
+pv, _ = run(["observations", "validate", good, "--config", CONFIG])
+check("a valid observation list is exit 0",
+      pv.returncode == 0 and "1 entries · 0 problems" in pv.stdout, f"exit={pv.returncode}")
 
-bad_corpus = os.path.join(BASE, "corpus-broken.json")
-with open(bad_corpus, "w", encoding="utf-8") as fh:
-    json.dump({"surface": "없는표면", "entries": [
-        {"id": "a b", "path": "relative", "mode": "이상함"},
+bad_observations = os.path.join(BASE, "observations-broken.json")
+with open(bad_observations, "w", encoding="utf-8") as fh:
+    json.dump({"surface": "nosuchsurface", "entries": [
+        {"id": "a b", "path": "relative", "mode": "weird"},
         {"id": "dup", "path": "/x.php"}, {"id": "dup", "path": "/y.php"}]}, fh,
         ensure_ascii=False)
-pv2, _ = run(["corpus", "validate", bad_corpus, "--config", CONFIG])
-check("어긋난 코퍼스는 문제를 하나씩 짚고 exit 1",
-      pv2.returncode == 1 and pv2.stdout.count("문제") >= 5,
-      f"exit={pv2.returncode} 문제 {pv2.stdout.count('문제') - 1}건")
+pv2, _ = run(["observations", "validate", bad_observations, "--config", CONFIG])
+# Not `>= 5`: the count is 6 (five problem lines plus the word in the summary), so one lost
+# detection still cleared the threshold. The tool prints the number - assert the number.
+check("a broken observation list names each problem and exits 1",
+      pv2.returncode == 1 and "3 entries · 5 problems" in pv2.stdout,
+      f"exit={pv2.returncode} {pv2.stdout.count('problem') - 1} problems")
 
 write_config(logged_out=None)
 pn, _, _ = capture("nomarker", [E_OK])
-check("loggedOutMarker 가 없으면 캡처하지 않고 이유를 말한다 (exit 2)",
+check("without loggedOutMarker it captures nothing and says why (exit 2)",
       pn.returncode == 2 and "loggedOutMarker" in pn.stderr,
       f"exit={pn.returncode}")
 write_config(snapshot=False)
 pn2, _, _ = capture("nosnap", [E_OK])
-check("legacy.snapshot 이 없어도 멈춘다",
+check("it stops when legacy.snapshot is missing too",
       pn2.returncode == 2 and "legacy.snapshot" in pn2.stderr, f"exit={pn2.returncode}")
 write_config()
 
-pu, _ = run(["capture", "--corpus", good, "--out", os.path.join(BASE, "x"),
-             "--config", CONFIG, "--모르는옵션", "1"])
-check("모르는 옵션은 조용히 무시하지 않는다",
-      pu.returncode == 2 and "모르는 옵션" in pu.stderr, f"exit={pu.returncode}")
+pu, _ = run(["capture", "--observations", good, "--out", os.path.join(BASE, "x"),
+             "--config", CONFIG, "--nosuchoption", "1"])
+check("an unknown option is not ignored in silence",
+      pu.returncode == 2 and "unknown option" in pu.stderr, f"exit={pu.returncode}")
 
-# ------------------------------------------------------------------ 정리
+# ------------------------------------------------------------------ wrap-up
 srv.shutdown()
 shutil.rmtree(BASE, ignore_errors=True)
 bad = [n for n, ok, _ in results if not ok]
 print("\n" + "=" * 64)
-print(f"{len(results) - len(bad)}/{len(results)} 통과"
-      + ("" if not bad else "   실패: " + ", ".join(bad)))
+print(f"{len(results) - len(bad)}/{len(results)} pass"
+      + ("" if not bad else "   failed: " + ", ".join(bad)))
 sys.exit(1 if bad else 0)

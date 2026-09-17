@@ -1,25 +1,25 @@
 #!/usr/bin/env python3
-"""phpindex - 이름이 어디서 정의되는지 미리 훑어 인덱스로 굳힌다.
+"""phpindex - sweep once for where names are defined and freeze it into an index.
 
-    phpindex                    현재 서비스 + 공용 라이브러리
-    phpindex --scope <서비스경로>  특정 서비스
-    phpindex --all              이관 대상 서비스 + 공용 라이브러리
-    phpindex --list             만들어진 인덱스 상태
+    phpindex                    the current service + the shared library
+    phpindex --scope <service path>  one named service
+    phpindex --all              the service being migrated + the shared library
+    phpindex --list             the state of the built indexes
 
-왜 필요한가. 이 트리에는 선언 문법이 없어서 "정의"가 문법적으로 존재하지 않는다.
-실제 정의가 `$X[상수] = 값` 형태로 여러 줄에 걸쳐 있으면 `$X =` 로 grep 해서 0건이
-나온다. grep 은 "못 찾았다"와 "없다"를 구분하지 못하므로 그 0건이 잘못된 결론으로
-이어진다. 인덱스는 정의 형태를 만들 때 한 번 정규화해서 넣어 두고, 없으면 없다고
-말한다.
+Why it is needed. This tree has no declaration syntax, so a "definition" does not exist
+syntactically. When the real definition is spread across lines as `$X[CONST] = value`, grepping
+`$X =` returns zero. grep cannot tell "could not find" from "there is none", so that zero leads
+to a wrong conclusion. The index normalizes definition shapes once when it is built, and when
+there is none it says so.
 
-범위. phpgrep 과 같다 - 서비스 하나는 자기 자신과 공용 라이브러리 두 트리에만 닿는다.
-공용 라이브러리가 정의의 대부분을 갖고 있어 어느 서비스 인덱스에도 반드시 붙지만,
-복사하지 않고 그것 하나를 따로 만들어 조회 시점에 합친다. 어느 트리가 공용인지는
-workspace.json 의 `legacy.sharedLibrary` 가 답한다.
+Scope. The same as phpgrep - one service reaches exactly two trees, itself and the shared library.
+The shared library holds most of the definitions so it attaches to every service index, but it is
+built once on its own and merged at lookup time rather than copied. Which tree is shared is
+answered by `legacy.sharedLibrary` in workspace.json.
 
-산출물은 프로젝트의 `.claude/.state/index/<이름>.json` 이고 런타임에 들어가지 않는다.
-틀려도 조회가 틀릴 뿐 화면은 영향을 받지 않는다. 레거시 체크아웃 안이 아니라 여기
-두는 이유는, 체크아웃이 다시 만들어질 때 함께 사라지지 않게 하려는 것이다.
+The output is `.claude/.state/index/<name>.json` in the project and never enters the runtime.
+A wrong index costs a wrong lookup and nothing on screen. The reason it lives here rather than
+inside the legacy checkout is so it does not vanish when the checkout is rebuilt.
 """
 import json
 import os
@@ -33,19 +33,19 @@ from _phpenc import (PHPLIB, SERVICES, config, current_service,  # noqa: E402
                      primary_service, read_text, require_config, state_dir,
                      tree_root)
 
-# 인덱스를 만들 대상. 이관 대상 서비스 하나이고, 공용 라이브러리는 따로 만들어
-# 조회 시점에 합친다. 값은 workspace.json 의 `legacy.primaryService` 가 준다.
+# What to index. One service being migrated; the shared library is built separately and merged
+# at lookup time. The value comes from `legacy.primaryService` in workspace.json.
 def ours():
     p = primary_service()
     return [p[0]] if p else []
 
-# 어떤 서비스가 자기 자신 외에 함께 훑어야 하는 트리를 갖는 경우를 위한 자리.
-# 지금은 어느 서비스도 공용 라이브러리 하나로 닫히므로 비어 있다.
+# A slot for the case where a service has a tree to sweep besides itself.
+# Right now every service closes over the single shared library, so it is empty.
 SCOPE_EXTRA = {}
 
 
 def short_name(prefix):
-    """설정에 적힌 짧은 이름. 인덱스 파일명이 된다."""
+    """The short name recorded in the config. It becomes the index filename."""
     return (config().get("services") or {}).get(prefix, prefix.split("/")[-1])
 
 BUNDLE_PARTS = ("/vendor/", "/node_modules/", "/bower_components/", "/phpexcel",
@@ -54,7 +54,7 @@ BUNDLE_PARTS = ("/vendor/", "/node_modules/", "/bower_components/", "/phpexcel",
                 "/pear/", "/third_party/", "/system/")
 CODE_EXT = (".php", ".inc")
 
-# ------------------------------------------------------------------ 톱레벨 분석
+# ------------------------------------------------------------------ top-level analysis
 RE_STR1 = re.compile(r"'(?:\\.|[^'\\])*'", re.S)
 RE_STR2 = re.compile(r'"(?:\\.|[^"\\])*"', re.S)
 RE_HEREDOC = re.compile(r"<<<\s*'?(\w+)'?\n.*?\n\s*\1\s*;", re.S)
@@ -62,8 +62,8 @@ RE_BLOCKC = re.compile(r"/\*.*?\*/", re.S)
 RE_LINEC = re.compile(r"//[^\n]*")
 RE_HASHC = re.compile(r"#[^\n]*")
 
-# 문자열을 주석보다 먼저 지운다. 반대로 하면 "http://..." 안의 // 가 주석으로
-# 잘리면서 따옴표 짝이 깨지고 그 뒤 전부가 오염된다.
+# Strip strings before comments. The other way round, the // inside "http://…" is cut as a
+# comment, the quote pairing breaks, and everything after it is contaminated.
 def scrub(text):
     text = RE_HEREDOC.sub("'H'", text)
     text = RE_STR1.sub("''", text)
@@ -80,8 +80,8 @@ WORD = re.compile(r"[A-Za-z_]\w*")
 
 
 def top_level(text):
-    """중괄호 깊이 0에서 정의되는 클래스와 함수. 깊이를 실제로 세지 않으면
-    메서드가 톱레벨 함수로 잡히고 클래스명이 부작용으로 잡힌다."""
+    """Classes and functions defined at brace depth 0. Without actually counting depth,
+    methods are caught as top-level functions and class names as a side effect."""
     code = scrub(text)
     blocks = re.findall(r"<\?(?:php|=)?(.*?)(?:\?>|\Z)", code, flags=re.S)
     if blocks:
@@ -131,15 +131,15 @@ def top_level(text):
     return classes, funcs
 
 
-# ------------------------------------------------------------------ 라인 패턴
+# ------------------------------------------------------------------ line patterns
 RE_DEFINE = re.compile(r"""define(?:_once)?\s*\(\s*['"]([A-Za-z_]\w*)['"]""")
 RE_CONST = re.compile(r"^\s*const\s+([A-Z_]\w*)\s*=")
-# 컬럼 0 대입만 톱레벨로 본다. $X = / $X[..] = / $X .= 를 모두 잡는다.
+# Only a column-0 assignment counts as top level. Catches $X = , $X[..] = and $X .= alike.
 RE_GLOBAL_ASSIGN = re.compile(r"^\$([A-Za-z_]\w*)\s*(?:\[[^\]]*\])?\s*\.?=[^=]")
 RE_LIT = re.compile(r"""['\"]([^'\"]*)['\"]""")
-# header('Location: ...') 뒤에 exit 이 오는 형태 = 이 파일을 include 하면
-# 요청이 여기서 끝날 수 있다. 인증 게이트도 이 모양이고 장애 안내 페이지도
-# 이 모양이라, 어느 쪽인지는 판정하지 않고 리다이렉트 대상을 같이 남긴다.
+# The shape of `header('Location: ...')` followed by exit = including this file can end the
+# request here. An auth gate has this shape and so does an outage page, so it does not judge
+# which and records the redirect target alongside.
 RE_HALT = re.compile(
     r"header\s*\(\s*['\"]Location:\s*([^;]*);\s*(?://[^\n]*\n\s*)?(?:exit|die)\b",
     re.I)
@@ -157,7 +157,7 @@ SUPERGLOBALS = {"_GET", "_POST", "_REQUEST", "_SERVER", "_SESSION", "_COOKIE",
 
 
 def emits_output(text):
-    """PHP 블록 밖에 내용이 있으면 이 파일은 include 되는 순간 출력한다."""
+    """Content outside a PHP block means this file emits the moment it is included."""
     pos = 0
     n = len(text)
     while pos < n:
@@ -174,8 +174,8 @@ def emits_output(text):
 
 
 def string_spans(text):
-    """따옴표 안 구간. define('ROOT_INCLUDE', $p . '/include') 의 문자열 속
-    'include' 가 include 문으로 잡히는 것을 막는다."""
+    """Quoted spans. Stops the 'include' inside the string of
+    define('ROOT_INCLUDE', $p . '/include') being caught as an include statement."""
     spans = []
     for m in RE_STR1.finditer(text):
         spans.append(m.span())
@@ -256,7 +256,7 @@ def build(root, scopes, label):
                 if m and m.group(1) not in SUPERGLOBALS:
                     idx["globals"].setdefault("$" + m.group(1), []).append(
                         [short, lineno, line.strip()[:100]])
-            # include 간선
+            # include edges
             edges = []
             spans = string_spans(text)
             for m in RE_INCLUDE.finditer(text):
@@ -267,7 +267,7 @@ def build(root, scopes, label):
                     edges.append([m.group(1), expr[:120]])
             if edges:
                 idx["includes"][short] = edges
-            # 템플릿을 렌더하는 쪽: fetch('x.tpl.php') 와 set() 키
+            # The rendering side: fetch('x.tpl.php') and its set() keys
             keys = set(RE_SET_LIT.findall(text))
             for holder in RE_SET_VAR.findall(text):
                 keys |= {k for v, k in RE_ARR_KEY.findall(text) if v == holder}
@@ -276,7 +276,7 @@ def build(root, scopes, label):
                     os.path.basename(tpl), {"rendered_by": [], "keys": []})
                 e["rendered_by"].append(short)
                 e["keys"] = sorted(set(e["keys"]) | keys)
-            # 템플릿 자신: 정의 없이 쓰이는 변수
+            # The template itself: variables used with no definition
             if short.lower().endswith((".tpl.php", ".tpl")):
                 used = set(RE_VAR_USE.findall(text)) - SUPERGLOBALS
                 bound = set(RE_VAR_SET.findall(text))
@@ -287,8 +287,8 @@ def build(root, scopes, label):
                     os.path.basename(short), {"rendered_by": [], "keys": []})
                 e["path"] = short
                 e["free_vars"] = free
-    # 어떤 파일이 '남에게 include 되는' 파일인가. 이 구분이 없으면 엔트리포인트의
-    # 컬럼0 대입(그 페이지의 지역 변수)이 공유 전역 정의와 뒤섞여 93%가 잡음이 된다.
+    # Which files are 'included by others'. Without that distinction, an entry point's column-0
+    # assignments (that page's local variables) mix with shared global definitions and 93% is noise.
     by_base = {}
     for f in idx["files"]:
         by_base.setdefault(f.rsplit("/", 1)[-1].lower(), []).append(f)
@@ -311,10 +311,10 @@ def build(root, scopes, label):
 
 
 def index_dir(root=None):
-    """프로젝트의 gitignore 된 상태 디렉터리. `root` 는 받지만 쓰지 않는다."""
+    """The project's gitignored state directory. `root` is accepted but unused."""
     d = state_dir("index")
     if not d:
-        sys.exit("phpindex: 프로젝트의 .claude/.state/ 를 찾지 못했다")
+        sys.exit("phpindex: could not find the project's .claude/.state/")
     return d
 
 
@@ -326,40 +326,40 @@ def write(root, name, idx):
         json.dump(idx, fh, ensure_ascii=False, separators=(",", ":"))
     size = os.path.getsize(path)
     dup = sum(1 for v in idx["classes"].values() if len(set(v)) > 1)
-    print(f"  {name+'.json':<22} {idx['meta']['files']:>6} 파일  "
+    print(f"  {name+'.json':<22} {idx['meta']['files']:>6} files  "
           f"{size/1024/1024:>5.1f}MB  "
-          f"클래스 {len(idx['classes']):>5}(충돌 {dup})  "
-          f"함수 {len(idx['functions']):>5}  "
-          f"상수 {len(idx['constants']):>5}  "
-          f"전역 {len(idx['globals']):>5}  "
-          f"템플릿 {len(idx['templates']):>4}")
+          f"classes {len(idx['classes']):>5}(conflicts {dup})  "
+          f"functions {len(idx['functions']):>5}  "
+          f"constants {len(idx['constants']):>5}  "
+          f"globals {len(idx['globals']):>5}  "
+          f"templates {len(idx['templates']):>4}")
 
 
 def main():
     require_config("phpindex")
     root = tree_root()
     if not root:
-        sys.exit("phpindex: legacy.root 아래에 legacy.treeMarker 가 없다")
+        sys.exit("phpindex: legacy.treeMarker is not under legacy.root")
     args = sys.argv[1:]
-    # 모르는 옵션에 기본 동작(인덱스 재생성, 약 10초)을 하지 않는다. 도구를
-    # 처음 만나면 `--help` 를 먼저 쳐 보는 것이 자연스럽고, 거기서 10초를
-    # 쓰고 산출물을 덮는 것은 도움말이 없는 것보다 나쁘다.
+    # An unknown option does not trigger the default action (rebuilding the index, about 10s).
+    # Typing `--help` first is the natural thing on meeting a tool, and spending 10 seconds and
+    # overwriting the output there is worse than having no help at all.
     unknown = [a for a in args
                if a.startswith("-") and a not in ("--list", "--all", "--scope")]
     if unknown:
         print(__doc__.strip())
         if unknown != ["--help"] and unknown != ["-h"]:
-            sys.exit(f"\nphpindex: 모르는 옵션 {' '.join(unknown)}")
+            sys.exit(f"\nphpindex: unknown option {' '.join(unknown)}")
         return
     if "--list" in args:
         out = index_dir(root)
         if not os.path.isdir(out):
-            sys.exit("인덱스 없음. phpindex 를 먼저 실행하라.")
+            sys.exit("no index. Run phpindex first.")
         for fn in sorted(os.listdir(out)):
             if not fn.endswith(".json"):
                 continue
             meta = json.load(open(os.path.join(out, fn), encoding="utf-8"))["meta"]
-            print(f"  {fn:<22} {meta['files']:>6} 파일  생성 {meta['built']}")
+            print(f"  {fn:<22} {meta['files']:>6} files  built {meta['built']}")
         return
     if "--all" in args:
         wanted = ours()
@@ -369,26 +369,26 @@ def main():
         cur = current_service()
         if not cur or cur[0] == PHPLIB:
             wanted = ours()
-            print("# 서비스 밖이라 이관 대상 서비스를 만든다")
+            print("# outside a service, so the service being migrated is built")
         else:
             wanted = [cur[0]]
     known = {p for p, _ in SERVICES}
     for w in wanted:
         if w not in known:
-            sys.exit(f"phpindex: 모르는 스코프 '{w}'")
+            sys.exit(f"phpindex: unknown scope '{w}'")
 
     t0 = time.time()
-    print(f"# 트리 {root}")
-    print(f"# 산출 {index_dir(root)}\n")
+    print(f"# tree {root}")
+    print(f"# output {index_dir(root)}\n")
     write(root, short_name(PHPLIB), build(root, [PHPLIB],
-                                         f"{short_name(PHPLIB)} (공용)"))
+                                         f"{short_name(PHPLIB)} (shared)"))
     for rel in wanted:
         scopes = [rel] + SCOPE_EXTRA.get(rel, [])
         name = short_name(rel)
         label = name + ("" if len(scopes) == 1
                         else f" + {short_name(scopes[1])}")
         write(root, name, build(root, scopes, label))
-    print(f"\n{time.time()-t0:.1f}초. 조회는 phpwhere <이름>.")
+    print(f"\n{time.time()-t0:.1f}s. Look up with phpwhere <name>.")
 
 
 if __name__ == "__main__":

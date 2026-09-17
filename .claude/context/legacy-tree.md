@@ -1,45 +1,45 @@
 ---
 name: legacy-tree
-kind: 전문성
+kind: expertise
 inject:
-  agents: [php-seam-extractor, php-behavior-analyst, php-rule-redteam, php-swap-engineer, domain-boundary-auditor]
-  skills: [php-legacy-io, php-legacy-trace, php-legacy-map, slice-scout, boundary-audit]
+  agents: [php-feature-explainer, php-swap-extractor, php-behavior-analyst, php-rule-recheck, backend-builder, domain-placement-checker]
+  skills: [php-legacy-io, php-legacy-trace, php-legacy-map, page-picker, domain-leftover]
   paths: ["${legacy.root}/**"]
 token: CTX-LEGACY-TREE-7f3a
 ---
 
-# 레거시 트리를 읽는 법
+# Reading the legacy tree
 
-이 트리는 **한 인코딩이 아니다.** 같은 디렉터리 안에서 CP949 파일과 UTF-8 파일이 섞인다. 그리고 이 사실을 모르는 도구는 에러를 내지 않는다 — **빈손이나 낮은 숫자를 낸다.**
+This tree is **not one encoding.** CP949 files and UTF-8 files sit in the same directory. A tool that does not know this **does not raise an error — it returns an empty result or a low number.**
 
-여기서 틀리면 그 틀림이 자기 이름을 대지 않는다. "규칙이 없다"와 정확히 같은 모양으로 도착한다.
+Get this wrong and the mistake does not announce itself. It arrives in exactly the same shape as "there is no rule here."
 
-## 규칙을 외우지 말고 도구를 쓴다
+## Do not memorise the rules; call the tools
 
-`.claude/scripts/` 의 도구들을 **절대경로로** 부른다. 각 도구가 스스로 설정을 찾으므로 어디에 서 있든 상관없다.
+Call the tools in `.claude/scripts/` **by absolute path**. Each one locates its own config, so it does not matter where you stand.
 
-| 도구 | 답하는 질문 |
+| Tool | Question it answers |
 |---|---|
-| `phpv` | 이 파일에 무엇이 쓰여 있는가 (인코딩 상관없이) |
-| `phpgrep` | 누가 이것을 쓰는가 (두 인코딩 모두) |
-| `phpwhere` | 이것이 **어디서 정의되는가** |
-| `phpindex` | 위 조회가 읽는 인덱스를 만든다 |
-| `phped` | 인코딩을 지키면서 고친다 |
-| `phplint` | 실제로 올라가는 런타임에서 파싱되는가 |
-| `phpseam` | 이 페이지가 허용된 모양인가, 본문이 그대로인가, 이음새 밖 호출자가 있는가 |
+| `phpv` | What does this file actually say (whatever its encoding) |
+| `phpgrep` | Who uses this (both encodings) |
+| `phpwhere` | Where is this **defined** |
+| `phpindex` | Builds the index the lookup above reads |
+| `phped` | Edit without destroying the encoding |
+| `phplint` | Does this parse on the runtime it actually ships to |
+| `phpmove` | Is this page inside the allowed shape, is the body unchanged, is anyone calling it from outside the swap point |
 
-## 판정 규칙 다섯
+## Five rules for judging an answer
 
-1. **0건은 "없다"가 아니다.** 빈 결과를 근거로 쓰려면 명령·범위·인코딩을 함께 적는다. 그렇게 적을 수 없으면 원장에 "규칙 없음"이 아니라 "확인 불가"로 적는다.
+1. **Zero hits is not "there is none."** To use an empty result as evidence, state the command, the scope and the encoding alongside it. If you cannot state those, write "could not determine" in the rule list, not "no rule."
 
-2. **정의를 찾을 때는 검색이 아니라 `phpwhere` 다.** 이 언어에는 선언 문법이 없어서 정의가 문법적으로 존재하지 않는다. 실제 정의가 `$X[키] = 값` 으로 여러 줄에 흩어져 있으면 `$X =` 검색은 0건을 낸다. 템플릿 변수는 정의문 자체가 없다 — 렌더 호출이 변수로 바꿀 때까지 문자열 키로만 있다.
+2. **For a definition, use `phpwhere`, not a search.** This language has no declaration syntax, so a definition does not exist syntactically. When the real definition is spread across lines as `$X[key] = value`, searching `$X =` returns zero. Template variables have no definition statement at all — they exist only as string keys until the render call turns them into variables.
 
-3. **한글 검색은 두 패스를 합쳐야 한다.** 한 인코딩으로만 훑으면 다른 인코딩의 파일이 통째로 빠지고, 어느 쪽이 큰지는 낱말마다 다르다. 업무 의도는 한글 주석에 쓰여 있으므로 이 축을 건너뛸 수 없다.
+3. **A Korean-text search has to combine two passes.** Sweep in one encoding and every file written in the other drops out entirely, and which side is larger differs per word. Business intent lives in Korean comments, so this axis cannot be skipped.
 
-4. **숫자에도 같은 규칙이 걸린다.** 한 패스로 센 값은 빈손과 달리 의심을 부르지 않는다. 그럴듯한 숫자로 도착해서 순위와 결론을 조용히 뒤집는다. 보고하거나 정렬 기준으로 쓸 숫자는 먼저 규칙 3 을 통과시키고, **단위(줄 수인가 매치 수인가)를 함께 적는다.**
+4. **The same rule binds counts.** A number counted in one pass does not invite suspicion the way an empty result does. It arrives looking plausible and quietly inverts a ranking or a conclusion. Any number you will report or sort by goes through rule 3 first, and **carries its unit (line count or match count).**
 
-5. **읽는 동안에도 인코딩을 보존한다.** 디코딩은 눈으로 가는 길에만 하고 파일로 돌아가는 길에는 하지 않는다. 편집은 `phped` 를 통과시킨다 — 훅은 이미 망가진 바이트를 알려줄 뿐 되돌리지 못한다.
+5. **Preserve the encoding while reading, too.** Decode on the way to human eyes, never on the way back to the file. Route edits through `phped` — the hook can tell you the bytes are already broken, but it cannot undo that.
 
-## 정적 분석의 빈손도 같은 모양이다
+## Static analysis returns empty in the same shape
 
-LSP 의 참조 조회가 0 을 돌려주는 것은 "참조가 없다"와 "인덱싱되지 않았다"를 구분하지 못한다. 동적 호출·문자열로 조립한 메서드 이름·런타임에 만들어지는 심볼 경로는 어떤 정적 분석에도 보이지 않고, 이 트리에서는 **권한 판정**이 그 모양으로 들어 있다. 답이 전수여야 할 때(스왑 전 호출자 조사, 규칙이 떠났다는 감사) 정적 답 하나로 끝내지 않는다.
+An LSP reference lookup returning 0 cannot distinguish "there are no references" from "it was never indexed." Dynamic calls, method names assembled from strings, and symbol paths built at runtime are invisible to any static analysis, and in this tree **the authorization decisions** are written in exactly that shape. When the answer has to be exhaustive (finding callers before a swap, or a completeness pass claiming a rule has left), do not stop at one static answer.

@@ -18,7 +18,7 @@
           {
             "type": "command",
             "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/php-encoding-guard.py\"",
-            "statusMessage": "인코딩 검사 중...",
+            "statusMessage": "checking encoding...",
             "timeout": 10
           }
         ]
@@ -29,7 +29,7 @@
           {
             "type": "command",
             "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/php-tooling-hook.py\"",
-            "statusMessage": "php 도구 사용 기록 중...",
+            "statusMessage": "recording php tool use...",
             "timeout": 10
           }
         ]
@@ -61,7 +61,7 @@
           {
             "type": "command",
             "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/context-inject.py\"",
-            "statusMessage": "컨텍스트 주입 중...",
+            "statusMessage": "injecting context...",
             "timeout": 10
           }
         ]
@@ -84,7 +84,7 @@
           {
             "type": "command",
             "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/php-encoding-guard.py\"",
-            "statusMessage": "인코딩·문법 확인 중...",
+            "statusMessage": "verifying encoding and syntax...",
             "timeout": 35
           }
         ]

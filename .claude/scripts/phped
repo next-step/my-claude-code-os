@@ -37,12 +37,12 @@ LINT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "phplint")
 
 
 def edit_dir():
-    # cwd 로 떨어지지 않는다. 이 도구가 만드는 것은 회사 소스를 디코드한 사본이고,
-    # 이 트리는 자신을 gitignore 하는 공개 저장소 안에 체크아웃되어 있다. 루트를
-    # 못 찾은 채 cwd 에 쓰면 그 사본이 추적되는 자리에 놓인다. 실패가 낫다.
+    # It must not fall back to cwd. What this tool creates is a decoded copy of
+    # company source, and this tree is checked out inside a public repository that
+    # gitignores itself. Writing that copy to cwd puts it somewhere tracked. Failing is better.
     root = checkout_root()
     if not root:
-        sys.exit("phped: php_legacy 트리를 찾지 못했다. 작업본을 트리 밖에 만들지 않는다.")
+        sys.exit("phped: could not find the php_legacy tree. A working copy is never created outside it.")
     d = os.path.join(root, ".claude", ".edit")
     os.makedirs(d, exist_ok=True)
     return d

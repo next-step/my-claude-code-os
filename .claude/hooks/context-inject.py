@@ -1,34 +1,39 @@
 #!/usr/bin/env python3
-"""컨텍스트 결정적 주입 훅 (SubagentStart · PreToolUse)
+"""Deterministic context injection hook (SubagentStart · PreToolUse)
 
-`.claude/context/*.md` 의 프론트매터가 라우팅 표다. 세 트리거로 발동한다.
+The frontmatter of `.claude/context/*.md` is the routing table. Three triggers fire it.
 
-  agent   SubagentStart — 시작하는 서브에이전트 이름이 `inject.agents` 에 있으면 주입
-  skill   PreToolUse(Skill) — 호출된 스킬 이름이 `inject.skills` 에 있으면 주입
-  path    PreToolUse(Read|Edit|Write|Bash) — 인자의 절대경로가 `inject.paths` 글롭에
-          맞으면 주입. 경로 글롭 안의 `${key}` 는 workspace.json 에서 치환한다
+  agent   SubagentStart - inject when the starting subagent's name is in `inject.agents`
+  skill   PreToolUse(Skill) - inject when the invoked skill's name is in `inject.skills`
+  path    PreToolUse(Read|Edit|Write|Bash) - inject when an absolute path in the arguments
+          matches an `inject.paths` glob. `${key}` inside a path glob is substituted from workspace.json
 
-왜 훅인가. LLM 에게 "필요하면 읽어라"로 맡기면 느리고(초 단위) 비결정적이다 — 그리고
-빠뜨렸다는 사실이 아무 데도 남지 않는다. 훅은 ms 단위이고, 결정적이고, **주입한 것을
-로그로 남기므로 주입 자체를 테스트할 수 있다.** 이 파일이 존재하는 이유가 마지막 항목이다.
+Why a hook. Leaving it to the LLM as "read it if you need it" is slow (seconds) and
+non-deterministic - and the fact that it was skipped is recorded nowhere. A hook is milliseconds,
+deterministic, and **logs what it injected, so the injection itself can be tested.** That last item is why this file exists.
 
-중복 억제. 같은 세션·같은 에이전트에 같은 파일을 두 번 주입하지 않는다. 컨텍스트는
-쓸수록 썩는 유한 자원이고, 같은 문단을 반복해 넣는 것은 그 자원을 태우면서 아무것도
-더 알려주지 않는다. 상태는 `.claude/.state/context-injected.json` 에 남는다 — 훅은
-호출마다 새 프로세스라 메모리로는 이어지지 않는다.
+Budget and priority. There is a cap on how much goes in at once (`MAX_INJECT_BYTES`), and the
+overflow is cut per file. The cutting order is set by `inject.priority` in the frontmatter (lower
+goes in first; absent means `DEFAULT_PRIORITY`). **The names of the cut files stay at the head of
+the injected block** - the receiving agent has to know what it did not get, and stderr does not reach it.
 
-**이 훅은 어떤 경우에도 도구 실행을 막지 않는다.** 실패하면 조용히 exit 0 하고 이유만
-stderr 로 흘린다. 컨텍스트를 못 넣은 것은 불편이고, 도구를 막는 것은 사고다.
+Duplicate suppression. The same file is never injected twice into the same session and agent.
+Context is a finite resource that rots as it is used, and repeating the same paragraph burns that
+resource while telling nobody anything new. The state lives in `.claude/.state/context-injected.json` -
+the hook is a new process per call, so memory does not carry over.
 
-설정이 없으면 **경로 트리거만** 꺼진다. 에이전트·스킬 트리거는 설정을 읽지 않으므로
-계속 돈다. 그 사실은 세션마다 한 번 stderr 에 적는다 — 조용히 좁아진 동작이 이 저장소가
-반복해서 기록한 실패 모양이다.
+**This hook never blocks a tool call, whatever happens.** On failure it exits 0 quietly and leaks
+only the reason to stderr. Failing to inject context is an inconvenience; blocking a tool is an accident.
 
-`CONTEXT_INJECT_OFF=1` 로 세션을 시작하면 주입하지 않는다. A/B 비교의 B 쪽이다 —
-같은 스킬을 컨텍스트 없이 돌리기 위한 스위치이고, 꺼졌다는 사실은 stderr 로 말한다.
+With no config, **only the path trigger** switches off. The agent and skill triggers do not read the
+config and keep running. That fact is written to stderr once per session - a quietly narrowed
+behavior is the failure shape this repository has recorded again and again.
 
-`--check` 로 부르면 훅이 아니라 검사기로 돈다(라우팅 표 검증). 그때만 0 이 아닌 코드를
-낸다: 0 깨끗, 1 이름 어긋남(--strict), 2 프론트매터를 읽을 수 없음.
+Starting a session with `CONTEXT_INJECT_OFF=1` injects nothing. That is the B side of an A/B
+comparison - a switch for running the same skill without context - and being off is stated on stderr.
+
+Called with `--check` it runs as a checker rather than a hook (validating the routing table). Only
+then does it emit a non-zero code: 0 clean, 1 name mismatch (--strict), 2 frontmatter unreadable.
 """
 import fnmatch
 import json
@@ -37,23 +42,33 @@ import re
 import sys
 import time
 
-# ---------------------------------------------------------------- 상수(스위치)
+# ---------------------------------------------------------------- constants (switches)
 
-# SubagentStart 의 출력 형식은 문서에 명시돼 있지 않다. 두 형식을 모두 구현해 두고
-# 실측(docs/context-system.md 의 프로브 절차)으로 고른다. 프로브 전에는 "모른다"가
-# 정답이므로, 어느 쪽이 맞는지 코드가 단정하지 않는다.
+# The output form of SubagentStart is not documented. Both forms are implemented and the choice
+# is made by measurement (the probe procedure in docs/context-system.md). Before the probe,
+# "unknown" is the correct answer, so the code does not assert which one is right.
 #   "json"   -> {"hookSpecificOutput": {"hookEventName": "SubagentStart", ...}}
-#   "stdout" -> 평문을 그대로 stdout 에
+#   "stdout" -> plain text straight to stdout
 SUBAGENT_OUTPUT = "json"
 
-# 위 둘 다 서브에이전트에 닿지 않을 때의 폴백. PreToolUse(Task) 에서 도구 입력을
-# 통째로 돌려주며 `prompt` 끝에 컨텍스트를 덧붙인다. 기본은 꺼둔다 — 켜면 프롬프트가
-# 길어지고, SubagentStart 가 동작하는 환경에서는 같은 내용이 두 번 들어간다.
+# The fallback for when neither of the two above reaches the subagent. It returns the whole tool
+# input at PreToolUse(Task) with the context appended to the end of `prompt`. Off by default - it
+# lengthens the prompt, and where SubagentStart works the same content goes in twice.
 TASK_FALLBACK = False
 
-# 한 번에 주입할 수 있는 최대 바이트. 넘으면 파일 단위로 자른다(문단 중간에서 자르지
-# 않는다). 컨텍스트를 아끼자고 만든 장치가 컨텍스트를 태우면 안 된다.
+# The maximum bytes injectable at once. Overflow is cut per file (never mid-paragraph).
+# A device built to save context must not burn context.
 MAX_INJECT_BYTES = 24 * 1024
+
+# **What gets dropped first** when the budget fills. `inject.priority` in the frontmatter decides
+# it - lower goes in first, and absent means this value.
+#
+# Leaving the packing order to filenames makes the alphabet the policy. The six files reaching the
+# completeness checker were using nine tenths of the budget, and the last in that order happened
+# to be the public-repository boundary file - which is to say, the first thing dropped when the
+# budget overflowed was the rule "do not write company content into a tracked file". Priority
+# exists so that outcome is decided by judgment rather than by a name.
+DEFAULT_PRIORITY = 50
 MAX_LOG = 5 * 1024 * 1024
 STATE_TTL = 86400
 COUNTS = "__counts"
@@ -71,10 +86,10 @@ def warn(msg):
         pass
 
 
-# ---------------------------------------------------------------- 프로젝트·설정
+# ---------------------------------------------------------------- project and config
 
 def project_dir(payload=None):
-    """이 OS 체크아웃. `.claude/context/` 를 가진 최초 조상."""
+    """This OS checkout. The nearest ancestor holding `.claude/context/`."""
     env = os.environ.get("CLAUDE_PROJECT_DIR")
     if env:
         d = os.path.abspath(os.path.expanduser(env))
@@ -94,30 +109,30 @@ def project_dir(payload=None):
 
 
 def load_config(project, override=None):
-    """workspace.json 전체. `(dict, 문제 이유 or None)`.
+    """The whole workspace.json. `(dict, problem reason or None)`.
 
-    `legacy` 절만 읽는 기존 도구들과 달리 여기서는 전체가 필요하다 — 경로 글롭이
-    `${backend.root}` 처럼 다른 절도 가리키기 때문이다.
+    Unlike the existing tools that read only the `legacy` section, the whole thing is needed here -
+    a path glob can point at another section, such as `${backend.root}`.
     """
     path = override or (os.path.join(project, ".claude", "config", "workspace.json")
                         if project else None)
     if not path:
-        return {}, "프로젝트를 찾지 못해 설정 경로를 알 수 없다"
+        return {}, "the project was not found, so the config path is unknown"
     if not os.path.isfile(path):
-        return {}, f"{path} 가 없다 — 경로 트리거만 꺼진다"
+        return {}, f"{path} does not exist - only the path trigger switches off"
     try:
         with open(path, encoding="utf-8") as fh:
             data = json.load(fh)
     except (OSError, ValueError) as exc:
-        return {}, f"{path} 를 읽을 수 없다: {exc}"
+        return {}, f"{path} could not be read: {exc}"
     return (data if isinstance(data, dict) else {}), None
 
 
 def resolve(spec, cfg, project):
-    """`${a.b}` 를 설정 값으로 바꾼다. 못 바꾸면 None(= 이 글롭은 쓸 수 없다).
+    """Replace `${a.b}` with the config value. None when it cannot be replaced (= this glob is unusable).
 
-    `${project.root}` 만은 설정이 아니라 이 체크아웃 자신이다. 이 OS 의 경계 규칙은
-    설정 없이도 걸려야 하므로 예외를 둔다.
+    `${project.root}` alone is not the config but this checkout itself. This OS's boundary rule has
+    to fire without a config, so it is an exception.
     """
     missing = []
 
@@ -143,15 +158,15 @@ def resolve(spec, cfg, project):
     return None if missing else out
 
 
-# ---------------------------------------------------------------- 프론트매터
+# ---------------------------------------------------------------- frontmatter
 
 def parse_front(text, name):
-    """`---` 프론트매터의 최소 YAML. 실패하면 ValueError 로 이유를 말한다."""
+    """Minimal YAML of the `---` frontmatter. On failure it raises ValueError with the reason."""
     if not text.startswith("---"):
-        raise ValueError(f"{name}: 프론트매터가 `---` 로 시작하지 않는다")
+        raise ValueError(f"{name}: the frontmatter does not start with `---`")
     end = text.find("\n---", 3)
     if end < 0:
-        raise ValueError(f"{name}: 프론트매터가 닫히지 않았다")
+        raise ValueError(f"{name}: the frontmatter is not closed")
     head = text[text.find("\n", 3) + 1:end]
     body = text[end + 4:].lstrip("\n")
 
@@ -175,11 +190,11 @@ def parse_front(text, name):
         s = line.strip()
         if s.startswith("- "):
             if cur_list is None:
-                raise ValueError(f"{name}: 목록 항목이 키 없이 나왔다 — {s!r}")
+                raise ValueError(f"{name}: a list item appeared with no key - {s!r}")
             cur_list.append(value(s[2:]))
             continue
         if ":" not in s:
-            raise ValueError(f"{name}: 키가 아닌 줄 — {s!r}")
+            raise ValueError(f"{name}: a line that is not a key - {s!r}")
         key, raw = s.split(":", 1)
         key, raw = key.strip(), raw.strip()
         if indent == 0:
@@ -191,7 +206,7 @@ def parse_front(text, name):
                 meta[key] = value(raw)
         else:
             if cur_map is None:
-                raise ValueError(f"{name}: 들여쓴 키의 부모가 없다 — {s!r}")
+                raise ValueError(f"{name}: an indented key with no parent - {s!r}")
             if raw == "":
                 cur_map[key] = []
                 cur_list = cur_map[key]
@@ -200,28 +215,35 @@ def parse_front(text, name):
                 cur_list = None
     for req in ("name", "kind", "token"):
         if not meta.get(req):
-            raise ValueError(f"{name}: `{req}` 가 없다")
+            raise ValueError(f"{name}: `{req}` is missing")
     inject = meta.get("inject")
     if not isinstance(inject, dict):
-        raise ValueError(f"{name}: `inject` 절이 없다")
+        raise ValueError(f"{name}: no `inject` section")
     for k in ("agents", "skills", "paths", "tools"):
         v = inject.get(k, [])
         if isinstance(v, str):
             v = [v] if v else []
         if not isinstance(v, list):
-            raise ValueError(f"{name}: `inject.{k}` 가 목록이 아니다")
+            raise ValueError(f"{name}: `inject.{k}` is not a list")
         inject[k] = v
+    # Priority is an integer. If it is not a number it is said here - silently substituting the
+    # default would let one typo push that file to the budget boundary with no record of it.
+    prio = inject.get("priority", DEFAULT_PRIORITY)
+    try:
+        inject["priority"] = int(str(prio).strip())
+    except (TypeError, ValueError):
+        raise ValueError(f"{name}: `inject.priority` is not an integer - {prio!r}")
     meta["inject"] = inject
     meta["body"] = body
     return meta
 
 
 def load_context(project):
-    """`(항목 목록, 오류 목록)`. 하나가 깨져도 나머지는 산다."""
+    """`(items, errors)`. One broken file leaves the rest alive."""
     items, errors = [], []
     d = os.path.join(project, ".claude", "context") if project else None
     if not d or not os.path.isdir(d):
-        return items, [f"{d} 가 없다"]
+        return items, [f"{d} does not exist"]
     for fn in sorted(os.listdir(d)):
         if not fn.endswith(".md") or fn.startswith("_"):
             continue
@@ -238,7 +260,7 @@ def load_context(project):
     return items, errors
 
 
-# ---------------------------------------------------------------- 상태·로그
+# ---------------------------------------------------------------- state and log
 
 def state_path(project):
     return os.path.join(project, ".claude", ".state", "context-injected.json")
@@ -291,11 +313,11 @@ def prune(state, now):
 
 
 def bump(state, sess, matched, injected, now):
-    """트리거가 맞은 횟수와 실제로 주입한 횟수. 둘의 차이가 중복 억제량이다.
+    """How often a trigger matched and how often it actually injected. The difference is the suppression.
 
-    억제된 호출은 로그에 줄을 남기지 않는다 — 로그는 "무엇이 주입됐는가"여야 하고,
-    억제가 그 로그의 대부분을 차지하면 로그가 자기 목적을 잃는다. 그래서 수치는
-    상태 파일의 예약 키에 센다. `ctxstats` 가 이 둘로 억제율을 낸다.
+    A suppressed call leaves no line in the log - the log has to be "what was injected", and if
+    suppression took most of it the log would lose its purpose. So the numbers are counted into
+    reserved keys of the state file. `ctxstats` derives the suppression rate from the two.
     """
     row = state.setdefault(COUNTS, {}).setdefault(sess or "-", {"matched": 0,
                                                                 "injected": 0,
@@ -318,7 +340,7 @@ def log(project, rec):
         pass
 
 
-# ---------------------------------------------------------------- 매칭
+# ---------------------------------------------------------------- matching
 
 def short(name):
     return name.split(":")[-1].strip()
@@ -341,7 +363,7 @@ def match_skill(items, skill):
 
 
 def candidate_paths(tool, tool_input):
-    """도구 입력에서 판정에 쓸 절대경로들."""
+    """The absolute paths from the tool input to judge against."""
     out = []
     if tool in PATH_TOOLS:
         for key in ("file_path", "notebook_path", "path"):
@@ -376,24 +398,43 @@ def match_path(items, paths, tool, cfg, project):
     return hit
 
 
-# ---------------------------------------------------------------- 조립·출력
+# ---------------------------------------------------------------- assembly and output
 
-def render(items, trigger):
-    parts = ["# 자동 주입된 컨텍스트 — `.claude/context/` "
-             f"(트리거: {trigger} · 세션·에이전트당 파일 1회)"]
+def render(items, trigger, errors=()):
+    """`(the text to inject, the items actually packed)`.
+
+    **Pack in priority order and record what was cut inside the block.** Once the budget fills,
+    everything after it is cut - slipping a smaller later file into the remaining room would invert the priority.
+
+    Stating the cut on stderr alone is not enough. The stderr of a hook that exited 0 does not reach
+    the receiving agent, so from there it is indistinguishable from "this file never comes". So one
+    line stays at the head of the block - knowing what it did not get, the agent can read it
+    directly; not knowing, it behaves as though the rule does not exist.
+    """
+    parts, kept, cut = [], [], []
     used = 0
-    kept = []
-    for it in items:
+    for it in sorted(items, key=lambda x: (x["inject"]["priority"], x["file"])):
         block = (f"\n<context name=\"{it['name']}\" kind=\"{it['kind']}\" "
                  f"token=\"{it['token']}\">\n{it['body'].rstrip()}\n</context>")
         b = len(block.encode("utf-8"))
-        if used + b > MAX_INJECT_BYTES and kept:
-            warn(f"{it['file']} 은 이번 주입에서 잘렸다(예산 {MAX_INJECT_BYTES}B)")
-            break
+        if cut or (used + b > MAX_INJECT_BYTES and kept):
+            cut.append(it["file"])
+            continue
         parts.append(block)
         used += b
         kept.append(it)
-    return "\n".join(parts), kept
+    head = ["# Automatically injected context - `.claude/context/` "
+            f"(trigger: {trigger} · once per file per session and agent)"]
+    if cut:
+        warn(f"{', '.join(cut)} was cut from this injection (budget {MAX_INJECT_BYTES}B)")
+        head.append(f"# files not packed because the budget ({MAX_INJECT_BYTES}B) filled: "
+                    + ", ".join(cut)
+                    + " - this content did not arrive, so read "
+                      "`.claude/context/<file>` directly if you need it.")
+    if errors:
+        head.append("# some context files could not be read (frontmatter error): "
+                    + " / ".join(str(e) for e in errors))
+    return "\n".join(head + parts), kept
 
 
 def emit_pre(text, updated_input=None):
@@ -413,26 +454,26 @@ def emit_subagent(text):
                   sys.stdout, ensure_ascii=False)
 
 
-# ---------------------------------------------------------------- 검사기
+# ---------------------------------------------------------------- checker
 
 def check(argv):
     strict = "--strict" in argv
     project = project_dir()
     if not project:
-        warn("프로젝트를 찾지 못했다")
+        warn("the project was not found")
         return 2
     items, errors = load_context(project)
     for e in errors:
-        print(f"오류  {e}")
+        print(f"error  {e}")
     if errors:
         return 2
     if not items:
-        print("오류  컨텍스트 파일이 하나도 없다")
+        print("error  there is no context file at all")
         return 2
     tokens, dup = {}, []
     for it in items:
         if it["token"] in tokens:
-            dup.append(f"{it['file']} 과 {tokens[it['token']]} 의 token 이 같다")
+            dup.append(f"{it['file']} and {tokens[it['token']]} have the same token")
         tokens[it["token"]] = it["file"]
     agents = {os.path.splitext(f)[0]
               for f in os.listdir(os.path.join(project, ".claude", "agents"))
@@ -445,24 +486,27 @@ def check(argv):
     for it in items:
         for a in it["inject"]["agents"]:
             if short(a) not in agents:
-                unknown.append(f"{it['file']}: 에이전트 `{a}` 가 없다")
+                unknown.append(f"{it['file']}: no agent `{a}`")
         for s in it["inject"]["skills"]:
             if short(s) not in skills:
-                unknown.append(f"{it['file']}: 스킬 `{s}` 가 없다")
+                unknown.append(f"{it['file']}: no skill `{s}`")
     cfg, problem = load_config(project)
     for it in items:
         for spec in it["inject"]["paths"]:
             if resolve(spec, cfg, project) is None:
-                unknown.append(f"{it['file']}: 경로 글롭 `{spec}` 의 키를 설정에서 못 찾았다")
-    print(f"컨텍스트 {len(items)}개 · 토큰 {len(tokens)}개"
-          + (f" · 설정 문제: {problem}" if problem else ""))
-    for it in items:
+                unknown.append(f"{it['file']}: the key of path glob `{spec}` was not found in the config")
+    print(f"{len(items)} context files · {len(tokens)} tokens"
+          + (f" · config problem: {problem}" if problem else ""))
+    # Print in priority order. That is the order things are cut when the budget fills, and this is
+    # the only place it can be seen.
+    for it in sorted(items, key=lambda x: (x["inject"]["priority"], x["file"])):
         n = len(it["body"].splitlines())
-        print(f"  {it['file']:<30} {it['kind']:<4} {it['token']:<26} 본문 {n}줄")
+        print(f"  {it['file']:<30} {it['kind']:<10} {it['token']:<26} "
+              f"priority {it['inject']['priority']:>3} · body {n} lines")
     for d in dup:
-        print(f"오류  {d}")
+        print(f"error  {d}")
     for u in unknown:
-        print(f"경고  {u}")
+        print(f"warn   {u}")
     if dup:
         return 2
     if unknown and strict:
@@ -470,7 +514,7 @@ def check(argv):
     return 0
 
 
-# ---------------------------------------------------------------- 본체
+# ---------------------------------------------------------------- main
 
 def main():
     if "--check" in sys.argv[1:]:
@@ -479,22 +523,22 @@ def main():
         print(__doc__)
         sys.exit(0)
 
-    # A/B 스위치. 주입 없이 같은 스킬을 돌려 비교하려면 이 값을 켜고 세션을 시작한다
-    # (훅은 세션 시작 시점에 스냅샷되므로 세션 중간에 끄고 켤 수 없다). 꺼졌다는
-    # 사실은 반드시 말한다 — 조용히 안 도는 훅은 "주입이 필요 없었다"로 오독된다.
+    # The A/B switch. To compare the same skill without injection, set this and start a session
+    # (hooks are snapshotted at session start, so it cannot be toggled mid-session). Being off is
+    # always stated - a hook that silently does nothing is misread as "injection was not needed".
     if os.environ.get("CONTEXT_INJECT_OFF"):
-        warn("CONTEXT_INJECT_OFF 가 설정돼 있어 주입하지 않는다 (A/B 의 B 쪽)")
+        warn("CONTEXT_INJECT_OFF is set, so nothing is injected (the B side of the A/B)")
         return
 
     raw = sys.stdin.read()
     try:
         payload = json.loads(raw) if raw.strip() else {}
     except ValueError:
-        warn("훅 입력이 JSON 이 아니다")
+        warn("the hook input is not JSON")
         return
     project = project_dir(payload)
     if not project:
-        warn("프로젝트를 찾지 못했다 — 주입하지 않는다")
+        warn("the project was not found - injecting nothing")
         return
 
     event = payload.get("hook_event_name") or ""
@@ -508,7 +552,7 @@ def main():
 
     items, errors = load_context(project)
     for e in errors:
-        warn(e)          # 깨진 파일 하나가 나머지 주입을 막지 않는다
+        warn(e)          # one broken file does not block the rest of the injection
     if not items:
         return
 
@@ -544,7 +588,7 @@ def main():
         if problem and "_cfgwarn" not in room:
             room["_cfgwarn"] = now
             write_state(project, state)
-            warn(problem + " (에이전트·스킬 트리거는 그대로 동작한다)")
+            warn(problem + " (the agent and skill triggers keep working)")
         if problem:
             return
 
@@ -555,7 +599,7 @@ def main():
             bump(state, sess, len(hits), 0, now)
             write_state(project, state)
         return
-    text, kept = render(fresh, trigger)
+    text, kept = render(fresh, trigger, errors)
     for it in kept:
         room[f"{who}|{it['name']}"] = now
         log(project, {"ts": now, "session_id": sess, "agent_id": agent_id,
@@ -579,6 +623,6 @@ def main():
 if __name__ == "__main__":
     try:
         main()
-    except Exception as exc:            # 훅 실패가 도구를 막지 않는다
-        warn(f"물러난다: {exc!r}")
+    except Exception as exc:            # a hook failure never blocks a tool
+        warn(f"backing off: {exc!r}")
     sys.exit(0)

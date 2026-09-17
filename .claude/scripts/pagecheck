@@ -1,0 +1,1319 @@
+#!/usr/bin/env python3
+"""pagecheck - run one page's seven automatic stages and record the round in `state.json`.
+
+    pagecheck <page-dir> --stage <list>   [--observations <file>] [--surface <key>]
+                                            [--note <cause>] [--why <text>]
+                                            [--json] [--dry-run] [--config <file>]
+    pagecheck <page-dir> --round L0|cov|L1  [--note <cause>] [--why <text>]
+    pagecheck <page-dir> --cap L0=4         [--why <text>]
+    pagecheck <page-dir> --init --page <id> [--unit <sym>] [--area <name>]
+                                            [--depth shallow|normal|deep]
+                                            [--cap L2=5,L3=3]
+    pagecheck <page-dir> --show [--json]
+
+  --stage takes lists and ranges: `3`, `3,4,7`, `1..7`, `3-5`, mixed.
+
+| Stage | What it does | Passes when |
+|---|---|---|
+| 1 env | backend schema · upstream reachable · read-back is not a placeholder · container names compared | all four |
+| 2 noise | the **run-to-run difference**, which is what every other file calls this stage: toggle held at `legacy`, legacy against legacy dual run → `diff_keys` as seeds | seeds created |
+| 3 dual | toggle `dual` → read back → capture → `dualrun-report` | zero unexpected mismatches |
+| 4 migrated | toggle `migrated` → read back → capture → compare with the baseline | zero differences (a difference goes to a person with the rule hints) |
+| 5 fake value | in `migrated`, replace the legacy return value with a fake one and capture | the capture must be **identical** to pass · body hashes unchanged |
+| 6 coverage | (when Xdebug is present) executed lines of the moved legacy body | 0. Without it, skip and record that in `state.json` |
+| 7 restore | toggle `legacy` · instrumentation variables cleared · record in `state.json` | confirmed by read-back |
+
+**Five loops, and the cause every round after the first one carries.** Stages 3-6 spend L2 and
+L3. L0, coverage and L1 turn inside a Phase, no stage runs them, and until this was written
+nothing counted them - their caps were decoration. `--round` raises those three, and it is the
+same counter with the same cap stop.
+
+**From the second round on a round does not proceed without a cause** (`--note`), and the cause is
+one word of the vocabulary in `CAUSE` below. The first round carries none: nothing has been
+retried yet. Forcing a retry into a neighbouring word manufactures a false three-of-a-kind and a
+false three-of-a-kind repairs the wrong thing, so a word outside the vocabulary is refused and the
+word for "no box fits" is `기타`, which requires `--why`. `causestats` reads these back.
+
+**A cap change is recorded, not forbidden.** Raising a cap is one legitimate output of that
+reading and at the same time the cheapest way to make the metric look better, so `--cap` against an
+existing page writes which loop went from what to what into `cap_changes`, and `--show` and
+`causestats` report it apart from everything else.
+
+**Only this file and the orchestrator write `state.json`.** Subagents neither read nor write it.
+Rounds and caps are incremented here; `page`, `unit`, `area`, `depth`, `phase` and the cap values
+are placed by the orchestrator with `--init`. **A missing or broken `state.json` is never quietly
+recreated** - doing so revives a loop past its cap at round 1, and the reason nobody saw L2 run
+twice its cap on the second page was precisely that there was no counter.
+
+**Only this file touches the toggle.** Every time, it reads the value back from the application
+with `htmlsnap toggle --expect`, and **stops without capturing** when the read-back differs from
+what was expected. Writing a value to the env file and that value reaching PHP are different things, and a capture taken under a mismatched toggle produces a confident, wrong equivalence result.
+
+**It does not reimplement anything.** Capture and compare are `htmlsnap`, mismatch aggregation is
+`dualrun-report`, body hashes are `phpmove check`, config loading is `_phpenc`. What this file
+owns is the order, the toggle, the rounds and the check results.
+
+Exit codes:
+    0  pass
+    1  fail - the check ran and it is red
+    2  wrong usage - including a cause that is missing, outside the vocabulary, or `기타` with no sentence
+    3  **could not check** - environment, config or a missing tool. Mixing this with 0 removes the reason this tool exists
+    4  cap reached - it did not proceed. Distinct from 1 (not red, but out of budget)
+"""
+import datetime
+import json
+import os
+import shutil
+import socket
+import subprocess
+import sys
+import urllib.parse
+
+sys.dont_write_bytecode = True
+HERE = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, HERE)
+from _phpenc import dotted, is_placeholder, workspace  # noqa: E402
+
+TOOL = "pagecheck"
+HTMLSNAP = os.path.join(HERE, "htmlsnap")
+DUALRUN = os.path.join(HERE, "dualrun-report")
+PHPMOVE = os.path.join(HERE, "phpmove")
+
+STAGES = {1: "env", 2: "noise", 3: "dual", 4: "migrated", 5: "fakevalue",
+          6: "coverage", 7: "restore"}
+# The loops that count rounds. Which loop's budget a stage spends - 3 and 4 are equivalence (L2),
+# 5 and 6 are completeness (L3). 1, 2 and 7 are setup and cleanup and spend nothing.
+STAGE_LOOP = {3: "L2", 4: "L2", 5: "L3", 6: "L3"}
+# The three that no stage spends. They turn inside a Phase - extraction, coverage, implementation -
+# so the only thing that can raise them is the orchestrator saying so: `--round <name>`.
+ROUND_LOOPS = ("L0", "cov", "L1")
+DEFAULT_CAPS = {"L0": 3, "cov": 2, "L1": 5, "L2": 5, "L3": 3}
+CHECKS = ("unexpected", "baseline_diff", "fakevalue", "legacy_lines")
+
+# ------------------------------------------------------------ the cause vocabulary
+# **This dict is the canonical copy.** §4 of docs/legacy-migration-os.md holds the same table
+# for a person to read, and `selftest.py` compares the two; `causestats` imports this one rather
+# than keeping a second. Two layers: the upper is closed and the metrics are computed from it
+# alone, so the lower can grow without the metrics changing meaning.
+#
+# `기타` has no upper layer on purpose. It drops out of the first metric's denominator, so
+# writing everything as `기타` does not improve that metric - it makes it uncomputable, and
+# `causestats` says so. There is no way to buy a better number with it.
+# **Every value here is a literal on purpose**: `selftest.py` reads this dict with
+# `ast.literal_eval` and compares it against the table, so it never has to run this file, and a
+# name in place of a string would make that check quietly unable to extract anything.
+CAUSE = {
+    "환경": "이관아님",        # the stack, the settings or the build did not line up
+    "OS결함": "이관아님",      # a defect in the orchestrator, a tool or an instruction
+    "확인만": "이관아님",      # measured again with nothing fixed
+    "이관결함": "이관",        # the legacy and the backend values really differ
+    "규칙누락": "이관",        # a rule that was not in the rule list showed up later
+    "설계결함": "이관",        # it has to go back to the design
+    "기타": "정할 수 없음",    # no box fits. **A sentence is required alongside**
+}
+OTHER = "기타"
+NO_UPPER = CAUSE[OTHER]       # derived, so the two cannot drift inside this file either
+
+EXIT_OK, EXIT_RED, EXIT_USAGE, EXIT_CANNOT, EXIT_CAP = 0, 1, 2, 3, 4
+
+
+def note(msg):
+    sys.stderr.write(f"{TOOL}: {msg}\n")
+
+
+def usage(msg):
+    sys.stderr.write(f"{TOOL}: {msg}\n")
+    sys.exit(EXIT_USAGE)
+
+
+def cannot(msg):
+    """A state where checking is impossible. Instead of quietly giving a narrowed answer, leave the reason and stop with 3."""
+    sys.stderr.write(f"{TOOL}: {msg}\n")
+    sys.exit(EXIT_CANNOT)
+
+
+# --------------------------------------------------------------- config
+
+class Env(object):
+    """Values read from the config. **When a key is missing, say which one and stop.**
+
+    Each stage demands only its own keys. Stopping because a key for a stage you did not call is
+    missing would mean filling in the whole config to run one stage, and then nobody runs one
+    stage at all.
+    """
+
+    def __init__(self, cfg, path, page_id, surface):
+        self.cfg = cfg
+        self.path = path
+        self.page_id = page_id
+        self.surface = surface
+
+    def get(self, key, why):
+        val = dotted(self.cfg, key)
+        if val is None:
+            cannot(f"{self.path} has no {key}. {why}")
+        if is_placeholder(val):
+            cannot(f"{key} in {self.path} is still the skeleton placeholder ({val!r}). "
+                   f"{why} - an unfilled key is more dangerous than a missing one: it passes as "
+                   "though it had a value, and every later verdict is then aimed at the wrong place.")
+        return val
+
+    def maybe(self, key, default=None):
+        val = dotted(self.cfg, key, default)
+        return default if is_placeholder(val) else val
+
+    def surface_get(self, key, why):
+        return self.get(f"legacy.surfaces.{self.surface}.{key}", why)
+
+    def toggle_var(self):
+        pattern = self.get("legacy.switch.envVarPattern",
+                           "Without the toggle env var name there is no way to change mode.")
+        name = pattern.replace("{PAGE}", slug(self.page_id))
+        if "<" in name or ">" in name:
+            cannot(f"a placeholder remains in the toggle env var name ({name!r}). "
+                   "Fill the prefix of legacy.switch.envVarPattern with the real value.")
+        return name
+
+    def toggle_value(self, mode):
+        return self.get(f"legacy.switch.values.{mode}",
+                        f"without the env var value for mode {mode} there is no way to switch to it.")
+
+
+def slug(text):
+    return "".join(c if c.isalnum() else "_" for c in str(text)).upper()
+
+
+# --------------------------------------------------------------- state.json
+
+def state_path(page_dir):
+    return os.path.join(page_dir, "state.json")
+
+
+def read_state(page_dir):
+    """`state.json`, or stop. **It never creates a missing one.**"""
+    path = state_path(page_dir)
+    if not os.path.isfile(path):
+        cannot(f"{path} does not exist. The orchestrator has to place it first with "
+               f"`pagecheck {page_dir} --init --page <id>`. If this tool created a missing "
+               "round history, a loop past its cap would revive at round 1.")
+    try:
+        with open(path, encoding="utf-8") as fh:
+            doc = json.load(fh)
+    except (OSError, ValueError) as exc:
+        cannot(f"{path} could not be read: {exc}. Fix it and call again - overwriting a broken "
+               "record means nobody knows how many rounds ran before it.")
+    bad = state_problems(doc)
+    if bad:
+        cannot(f"the shape of {path} differs from the contract: {'; '.join(bad)}. Fix it and "
+               "call again - this tool does not recreate a broken record.")
+    return doc, path
+
+
+def state_problems(doc):
+    bad = []
+    if not isinstance(doc, dict):
+        return ["the top level is not an object"]
+    if not doc.get("page"):
+        bad.append("no page")
+    loops = doc.get("loops")
+    if not isinstance(loops, dict) or not loops:
+        bad.append("no loops object")
+    else:
+        for name, val in loops.items():
+            if not isinstance(val, dict) or not isinstance(val.get("n"), int) \
+                    or not isinstance(val.get("cap"), int):
+                bad.append(f"loops.{name} is not {{'n': int, 'cap': int}}")
+    if not isinstance(doc.get("checks"), dict):
+        bad.append("no checks object")
+    if not isinstance(doc.get("rounds"), list):
+        bad.append("no rounds array")
+    return bad
+
+
+def write_state(doc, path):
+    tmp = path + ".tmp"
+    with open(tmp, "w", encoding="utf-8") as fh:
+        json.dump(doc, fh, ensure_ascii=False, indent=1, sort_keys=True)
+        fh.write("\n")
+    os.replace(tmp, path)
+
+
+def now():
+    return datetime.datetime.now().astimezone().isoformat(timespec="seconds")
+
+
+def cmd_init(page_dir, o):
+    if not o.get("--page"):
+        usage("--init requires --page <id>.")
+    path = state_path(page_dir)
+    if os.path.isfile(path):
+        cannot(f"{path} already exists. --init does not overwrite - erasing the round history is "
+               "the easiest way to dodge a cap.")
+    caps = dict(DEFAULT_CAPS)
+    given = parse_caps(o.get("--cap"), caps)
+    caps.update(given)
+    # A starting cap that is not the default is a cap change too - it is just made before the
+    # first round rather than after the third. Left unrecorded it is the one way to raise a
+    # budget and have nothing anywhere say so, so it goes in the same list, marked as init.
+    started = [{"at": now(), "loop": k, "from": DEFAULT_CAPS[k], "to": v,
+                "why": o.get("--why") or "", "at_init": True}
+               for k, v in sorted(given.items()) if v != DEFAULT_CAPS[k]]
+    doc = {"page": o["--page"], "unit": o.get("--unit") or "",
+           "area": o.get("--area") or "", "depth": o.get("--depth") or "shallow",
+           "phase": 0,
+           "loops": {k: {"n": 0, "cap": v} for k, v in caps.items()},
+           # Before measuring it is null, not 0. Zero means measured and clean, and recording
+           # something unmeasured as 0 makes that check green forever.
+           "checks": {g: None for g in CHECKS},
+           "toggle": None, "skips": {}, "rounds": [], "cap_changes": started}
+    os.makedirs(page_dir, exist_ok=True)
+    write_state(doc, path)
+    print(f"{TOOL} --init: {path}  page {doc['page']} · caps "
+          + " · ".join(f"{k} {v['cap']}" for k, v in sorted(doc["loops"].items())))
+    for c in started:
+        note(f"the starting cap for {c['loop']} is {c['to']}, not the default {c['from']}. "
+             "It is recorded in cap_changes and `causestats` reports it separately.")
+    return EXIT_OK
+
+
+def parse_caps(spec, known):
+    """`L2=5,L3=3` → {name: int}, for the names in `known`. Only what was given."""
+    out = {}
+    for item in (spec or "").split(","):
+        if not item.strip():
+            continue
+        if "=" not in item:
+            usage(f"--cap has the form `L2=5,L3=3` (got {item!r})")
+        name, _, val = item.partition("=")
+        if name.strip() not in known:
+            usage(f"unknown loop {name.strip()!r}. Available: {', '.join(known)}")
+        try:
+            out[name.strip()] = int(val)
+        except ValueError:
+            usage(f"the value of --cap is not an integer ({val!r})")
+    return out
+
+
+# --------------------------------------------------------------- the cause
+
+def read_cause(o):
+    """(cause, sentence) from the options, or stop with 2. **The shape only** - whether a cause is
+    required at all is decided by the round number, in `demand_cause`.
+
+    A word outside the vocabulary is refused rather than stored. Storing free text lets the same
+    retry be written a different way each time, and three of the same cause is what this whole
+    loop is built to notice - a synonym is a way of never reaching three.
+    """
+    word = (o.get("--note") or "").strip()
+    why = (o.get("--why") or "").strip()
+    if not word:
+        if why:
+            usage("--why was given with no --note. The sentence explains a cause word; on its own "
+                  "it is the free text this vocabulary exists to replace.")
+        return "", ""
+    if word not in CAUSE:
+        usage(f"--note {word!r} is outside the cause vocabulary. It is one of: "
+              + " · ".join(CAUSE)
+              + f". Do not force a retry into a neighbouring word - that manufactures a false "
+                f"three-of-a-kind, which repairs the wrong thing. When none of them fits, "
+                f"`{OTHER}` with --why is the answer, and a third `{OTHER}` is the signal to "
+                "grow the vocabulary.")
+    if word == OTHER and not why:
+        usage(f"`{OTHER}` requires --why <sentence>. Without it the record says only that no "
+              "word fitted, and the entry that is supposed to teach the vocabulary its next "
+              "word teaches nothing.")
+    return word, why
+
+
+def demand_cause(state, names, word):
+    """From the second round on, no cause means no round. **Checked before anything is touched.**
+
+    The first round of a loop carries none - nothing has been retried yet. The second is the
+    first that has something to explain, and an unexplained retry is exactly the round that
+    later cannot be counted.
+    """
+    if word:
+        return
+    second = [n for n in names if (state["loops"].get(n) or {}).get("n", 0) >= 1]
+    if not second:
+        return
+    usage("loop " + " · ".join(f"{n} is entering round {state['loops'][n]['n'] + 1}"
+                                   for n in second)
+          + ", and from the second round on the round needs a cause: --note <word> "
+            f"[--why <sentence>]. Words: " + " · ".join(CAUSE)
+          + ". **Nothing was touched** - neither the toggle, nor a capture, nor the counter.")
+
+
+def cap_stop(state, name):
+    """The message and exit code for a loop that has no budget left. Shared by stages and `--round`."""
+    loop = state["loops"][name]
+    sys.stderr.write(
+        f"{TOOL}: loop {name} reached its cap ({loop['n']}/{loop['cap']}). "
+        "**It did not proceed** - neither the toggle nor a capture was touched. This is a "
+        "loop that running the same way once more will not close, so a person has to "
+        f"decide which Phase to go back to. Check results: "
+        + " · ".join(f"{g}={fmt(state['checks'].get(g))}" for g in CHECKS)
+        + "\n")
+    return EXIT_CAP
+
+
+def cmd_round(page_dir, o):
+    """Raise one of the three loops no stage spends. Same counter, same cap, same cause rule.
+
+    It touches nothing outside `state.json`: these loops close on a person's or an agent's
+    verdict, not on a measurement this tool can take. What it does own is that the round is
+    counted at all - the reason L0, coverage and L1 had caps nobody could exceed on paper and
+    everybody exceeded in practice is that no line of code ever added 1 to them.
+    """
+    name = (o.get("--round") or "").strip()
+    if name not in ROUND_LOOPS:
+        usage(f"--round takes one of {', '.join(ROUND_LOOPS)} (got {name!r}). "
+              "L2 and L3 are spent by stages 3-6, and a loop with two things adding to it is a "
+              "loop whose count means nothing.")
+    state, spath = read_state(page_dir)
+    loop = state["loops"].get(name)
+    if not loop:
+        cannot(f"loops in {spath} has no {name}. A state.json made before this loop existed is "
+               "not extended here - add the key, with the cap it should have had.")
+    word, why = read_cause(o)
+    demand_cause(state, [name], word)
+    if loop["n"] >= loop["cap"]:
+        return cap_stop(state, name)
+    loop["n"] += 1
+    # The verdict slot says what happened to this line, and for these three loops nothing was
+    # measured - the round was counted and that is all this tool did. "round" here printed as
+    # `round 2  loop L0  round`, the same word twice, in a block a person reads every session.
+    state["rounds"].append({"n": loop["n"], "loop": name, "stage": None,
+                            "verdict": "counted", "at": now(), "note": word, "why": why})
+    write_state(state, spath)
+    print(f"{TOOL} {state['page']}  loop {name} {loop['n']}/{loop['cap']}"
+          + (f"  cause {word}" if word else "  (first round, no cause)")
+          + (f"  · {why}" if why else "") + f"  → {spath}")
+    return EXIT_OK
+
+
+def cmd_cap(page_dir, o):
+    """Change a cap on an existing page, and leave the change where it can be seen.
+
+    Raising a cap is one of the three things the cause loop is allowed to produce, and it is also
+    the cheapest way to make "went over its cap" stop happening without fixing anything. So it is
+    not forbidden - it is written down, with the loop, the old value, the new one and the reason,
+    and reported apart from everything else by `--show` and `causestats`.
+    """
+    state, spath = read_state(page_dir)
+    given = parse_caps(o.get("--cap"), state["loops"])
+    if not given:
+        usage("--cap has the form `L2=5,L3=3`.")
+    why = (o.get("--why") or "").strip()
+    changed = []
+    for name in sorted(given):
+        old, new = state["loops"][name]["cap"], given[name]
+        if old == new:
+            print(f"  {name} cap is already {old} - nothing recorded")
+            continue
+        state["loops"][name]["cap"] = new
+        state.setdefault("cap_changes", []).append(
+            {"at": now(), "loop": name, "from": old, "to": new, "why": why,
+             "at_init": False})
+        changed.append(f"{name} {old} → {new}")
+    if changed:
+        write_state(state, spath)
+        print(f"{TOOL} {state['page']}  cap change  " + " · ".join(changed)
+              + (f"  · {why}" if why else "") + f"  → {spath}")
+        note("a cap was changed. It is recorded in cap_changes and `causestats` reports cap "
+             "changes separately from the rounds - the number that improves after a cap moves "
+             "improved for a different reason than a number that improves on its own."
+             + ("" if why else " **No reason was given** (--why)."))
+    return EXIT_OK
+
+
+def cmd_show(page_dir, as_json):
+    doc, path = read_state(page_dir)
+    if as_json:
+        print(json.dumps(doc, ensure_ascii=False, indent=2, sort_keys=True))
+        return EXIT_OK
+    print(f"{TOOL} {path}")
+    print(f"  page {doc['page']} · unit {doc.get('unit') or '-'} · area "
+          f"{doc.get('area') or '-'} · depth {doc.get('depth')} · phase "
+          f"{doc.get('phase')} · toggle {doc.get('toggle') or '-'}")
+    print("  loops  " + " · ".join(f"{k} {v['n']}/{v['cap']}"
+                                  for k, v in sorted(doc["loops"].items())))
+    print("  checks " + " · ".join(
+        f"{g}={fmt(doc['checks'].get(g))}" for g in CHECKS))
+    for name, why in sorted((doc.get("skips") or {}).items()):
+        print(f"  skipped stage {name}: {why}")
+    # Reported apart from the rounds, and never folded into them. A cap that moved is the one
+    # change that makes two runs of the same numbers mean different things.
+    for c in doc.get("cap_changes") or []:
+        print(f"  cap change  {c.get('loop')} {c.get('from')} → {c.get('to')}  "
+              f"{c.get('at')}{'  (at --init)' if c.get('at_init') else ''}"
+              f"  {c.get('why') or '(no reason given)'}")
+    for r in doc["rounds"][-8:]:
+        where = f"stage {r['stage']}" if r.get("stage") else f"loop {r.get('loop') or '-'}"
+        print(f"  round {r.get('n')}  {where}  {r.get('verdict')}  "
+              f"{r.get('at')}  {r.get('note') or ''}"
+              + (f" · {r['why']}" if r.get("why") else ""))
+    return EXIT_OK
+
+
+def fmt(value):
+    return "unmeasured" if value is None else str(value)
+
+
+# --------------------------------------------------------------- external tools
+
+def run(args, timeout=900, env=None):
+    """(returncode, stdout, stderr). Lets no exception out."""
+    try:
+        p = subprocess.run(args, capture_output=True, text=True, timeout=timeout,
+                           env=env or os.environ.copy())
+        return p.returncode, p.stdout, p.stderr
+    except subprocess.TimeoutExpired:
+        return None, "", f"{args[0]} did not finish within {timeout}s"
+    except OSError as exc:
+        return None, "", str(exc)
+
+
+def tool(script, args, timeout=900):
+    return run([sys.executable, script] + args, timeout=timeout)
+
+
+def docker(env, args, timeout=300):
+    """A compose subcommand. No `docker` means a state where checking is impossible."""
+    exe = shutil.which("docker")
+    if not exe:
+        cannot("docker was not found on PATH. Changing the toggle requires recreating the "
+               "container that serves the surface, and without that only the env file changes.")
+    compose_dir = env.get("legacy.docker.composeDir",
+                          "containers cannot be handled without the compose project directory.")
+    env_file = env.get("legacy.docker.envFile",
+                       "the compose env file carrying the migration toggle is required.")
+    return run([exe, "compose", "--project-directory", compose_dir,
+                "--env-file", env_file] + args, timeout=timeout)
+
+
+# --------------------------------------------------------------- the env file
+
+def read_env_file(path):
+    """(an ordered list of lines). Comments, blank lines and unrecognized shapes are preserved verbatim."""
+    try:
+        with open(path, encoding="utf-8") as fh:
+            return fh.read().splitlines()
+    except FileNotFoundError:
+        cannot(f"no compose env file: {path}. Check that legacy.docker.envFile really points "
+               "at the file compose reads.")
+    except OSError as exc:
+        cannot(f"the compose env file could not be read ({path}): {exc}")
+
+
+def set_env_keys(path, pairs):
+    """Set `KEY=VALUE`, or delete it when the value is None. No other line is touched by one character.
+
+    This file is not ours - values belonging to other services live in it, and rewriting even one
+    of those lines makes it impossible to tell a change this tool made from one the code made.
+    """
+    lines = read_env_file(path)
+    out, seen = [], set()
+    for line in lines:
+        stripped = line.strip()
+        if not stripped or stripped.startswith("#") or "=" not in stripped:
+            out.append(line)
+            continue
+        key = stripped.split("=", 1)[0].strip()
+        if key in pairs:
+            seen.add(key)
+            if pairs[key] is not None:
+                out.append(f"{key}={pairs[key]}")
+            # None deletes the line - an empty value and an absent value mean the same thing to
+            # the helper, but a leftover blank line reads to a person as "this mode was on".
+            continue
+        out.append(line)
+    for key, val in pairs.items():
+        if key not in seen and val is not None:
+            out.append(f"{key}={val}")
+    with open(path, "w", encoding="utf-8") as fh:
+        fh.write("\n".join(out).rstrip("\n") + "\n")
+
+
+# --------------------------------------------------------------- the toggle
+
+def set_toggle(env, mode, extra=None, verbose=True):
+    """Write the env file, recreate the container, and **read the value back from the application.**
+
+    When the read-back differs from what was expected it stops here. Making it impossible for the
+    caller to move on to a capture is the purpose of this function.
+    """
+    env_file = env.get("legacy.docker.envFile",
+                       "a compose env file is required to write the toggle value.")
+    pairs = {env.toggle_var(): env.toggle_value(mode)}
+    pairs.update(extra or {})
+    set_env_keys(env_file, pairs)
+
+    container = env.surface_get(
+        "container", "without knowing which container serves this surface, an env change never "
+                     "reaches a container that is already running.")
+    code, out, err = docker(env, ["up", "-d", "--force-recreate", container])
+    if code != 0:
+        cannot(f"could not recreate the container {container} (exit {code}): "
+               f"{(err or out).strip()[-500:]}")
+    return readback(env, mode, verbose=verbose)
+
+
+def readback(env, expect, verbose=True):
+    """Read back with `htmlsnap toggle --expect`. Stop on a mismatch."""
+    args = ["toggle", "--surface", env.surface, "--expect", expect,
+            "--config", env.path]
+    code, out, err = tool(HTMLSNAP, args, timeout=120)
+    if code != 0:
+        cannot(f"the toggle read-back did not confirm {expect!r}: "
+               f"{(err or out).strip()[-500:]}")
+    if verbose:
+        note(f"toggle read-back: {out.strip()} (matches what was expected)")
+    return out.strip()
+
+
+def clear_instrumentation(env):
+    """Clear the noise and fake-value variables. Recreating the container afterwards is the caller's job."""
+    env_file = env.maybe("legacy.docker.envFile")
+    if not env_file:
+        return {}
+    pairs = {}
+    for key in ("legacy.dualRun.noiseEnvVar", "legacy.dualRun.fakeValueEnvVar"):
+        name = env.maybe(key)
+        if name:
+            pairs[name] = None
+    return pairs
+
+
+# --------------------------------------------------------------- helper support
+
+def helper_file(env):
+    """The path of the experiment helper installed in the tree. None when absent."""
+    base = env.maybe("legacy.switch.helperPath")
+    if not base:
+        return None
+    base = os.path.expanduser(base)
+    for cand in (base,
+                 os.path.join(base, "MigrationExperiment.php"),
+                 os.path.join(os.path.dirname(base), "MigrationExperiment.php")):
+        if os.path.isfile(cand) and cand.endswith(".php"):
+            return cand
+    return None
+
+
+def helper_supports(env, const, envvar_key, what):
+    """Does the helper support this instrumentation variable? (env var name, problem).
+
+    When it does not, it **does not skip quietly.** Recording a stage green without knowing
+    whether it is supported is the failure this tool exists to prevent.
+    """
+    name = env.maybe(envvar_key)
+    if not name:
+        return None, (f"{env.path} has no {envvar_key}. {what}")
+    path = helper_file(env)
+    if not path:
+        return None, (f"MigrationExperiment.php was not found under legacy.switch.helperPath. "
+                      f"{what} - without knowing where the helper is installed, support cannot "
+                      "be confirmed, and unconfirmed support is not support.")
+    try:
+        with open(path, "rb") as fh:
+            body = fh.read()
+    except OSError as exc:
+        return None, f"{path} could not be read: {exc}"
+    if (b"const " + const.encode()) not in body:
+        return None, (
+            f"the installed helper ({path}) has no {const} constant - it does not support this mode. "
+            f"{what} Copying the current edition of `.claude/templates/MigrationExperiment.php` "
+            f"is enough (that edition has {const} and the branch that reads it).")
+    if name.encode() not in body:
+        return None, (f"the {const} value in the installed helper ({path}) differs from "
+                      f"{envvar_key} in the config ({name}). When the two drift the variable "
+                      "never switches on, and that fact arrives looking exactly like 'there were no mismatches'.")
+    return name, None
+
+
+# --------------------------------------------------------------- stages
+
+class Result(object):
+    def __init__(self, ok, line, code=None, checks=None, skip=None, extra=None):
+        self.ok = ok
+        self.line = line
+        self.code = code if code is not None else (EXIT_OK if ok else EXIT_RED)
+        self.checks = checks or {}
+        self.skip = skip
+        self.extra = extra or {}
+
+
+def captures(page_dir, name):
+    return os.path.join(page_dir, "captures", name)
+
+
+def observation_surface(path):
+    try:
+        with open(path, encoding="utf-8") as fh:
+            doc = json.load(fh)
+    except (OSError, ValueError) as exc:
+        cannot(f"the observation list could not be read ({path}): {exc}")
+    surface = doc.get("surface") if isinstance(doc, dict) else None
+    if not surface:
+        cannot(f"{path} has no surface. Without knowing which surface to hit there is no "
+               "capture and no read-back.")
+    return surface
+
+
+def capture(env, ctx, mode, out_dir):
+    """`htmlsnap capture`. The caller has already read back, and the capture confirms it once more."""
+    code, out, err = tool(HTMLSNAP, [
+        "capture", "--observations", ctx["observations"], "--out", out_dir,
+        "--toggle-expect", mode, "--config", env.path])
+    if code == EXIT_USAGE or code is None:
+        cannot(f"the capture ended in a state where it could not answer (exit {code}): "
+               f"{(err or out).strip()[-800:]}")
+    return code, out, err
+
+
+# ---- 1 env
+
+def stage_environment(env, ctx):
+    checks = []
+
+    schema_dir = env.get("backend.graphqlSchemaDir",
+                         "this is where to see whether the backend holds this page's schema.")
+    root = env.get("backend.root", "without the backend repository path the schema cannot be found.")
+    path = schema_dir if os.path.isabs(schema_dir) else os.path.join(root, schema_dir)
+    files = []
+    if os.path.isdir(path):
+        for base, _dirs, names in os.walk(path):
+            files += [os.path.join(base, n) for n in names if n.endswith(".graphqls")]
+    checks.append(("backend schema", bool(files),
+                   f"{len(files)} files" if files else f"{path} has no .graphqls"))
+
+    base_url = env.surface_get("localBaseUrl", "this is where to see whether the upstream is reachable.")
+    reach_ok, reach_why = http_reach(base_url)
+    port = env.maybe("backend.proxy.port")
+    if port:
+        ok2, why2 = tcp_reach(port)
+        reach_ok, reach_why = (reach_ok and ok2,
+                              "; ".join(x for x in (reach_why, why2) if x))
+    checks.append(("upstream reachable", reach_ok, reach_why or "surface and BFF both responded"))
+
+    readback_path = env.maybe("legacy.dualRun.readbackPath")
+    values = dotted(env.cfg, "legacy.switch.values", {}) or {}
+    holes = [k for k in ("legacy", "dual", "migrated")
+             if not values.get(k) or is_placeholder(values.get(k))]
+    if not readback_path or is_placeholder(readback_path) or holes:
+        checks.append(("read-back config", False,
+                       f"readbackPath={readback_path!r} · placeholder mode values {holes}"))
+    else:
+        code, out, err = tool(HTMLSNAP, ["toggle", "--surface", env.surface,
+                                         "--config", env.path], timeout=120)
+        checks.append(("read-back config", code == 0,
+                       out.strip() if code == 0 else (err or out).strip()[-200:]))
+
+    # Two axes carry a name here and they are not the same string: the compose **service**
+    # (`php8.3-fpm`) and the **container** it runs as (`os-php8.3-fpm`). Every use this file makes
+    # of the value is a compose subcommand - `up --force-recreate`, `exec`, `ps` - so the value is
+    # a service name. Reading only one axis turns a running stack into "this project has no such
+    # container", which reads as a broken environment and sends the next person to docker instead
+    # of to one line of config. So read both and, when the value lands on the wrong axis, say so.
+    container = env.surface_get("container", "the compose **service** name to compare against "
+                                             "the running services.")
+    code, out, _err = docker(env, ["ps", "--format", "{{.Service}}\t{{.State}}\t{{.Name}}"])
+    running, as_container = {}, {}
+    for line in (out or "").splitlines():
+        parts = line.split("\t")
+        if len(parts) >= 2:
+            svc, state = parts[0].strip(), parts[1].strip()
+            running[svc] = state
+            if len(parts) >= 3 and parts[2].strip():
+                as_container[parts[2].strip()] = svc
+    state = running.get(container)
+    if state:
+        why = f"{container}={state}"
+    elif container in as_container:
+        why = (f"{container!r} is a container name, not a compose service. This value is used as a "
+               f"compose service (up --force-recreate, exec, ps), so set "
+               f"`legacy.surfaces.*.container` to {as_container[container]!r}.")
+    else:
+        why = (f"this compose project has no {container} (services running: "
+               + (", ".join(sorted(running)) or "none") + ")")
+    checks.append(("container comparison", bool(state) and "run" in state.lower(), why))
+
+    bad = [c for c in checks if not c[1]]
+    line = " · ".join(f"{n} {'OK' if ok else 'X'}" for n, ok, _ in checks)
+    for n, ok, why in checks:
+        if not ok:
+            note(f"stage 1 {n}: {why}")
+    # A red stage 1 is not a check failure but **a state where checking is impossible**.
+    # Every stage below leans on these four, so it exits 3.
+    return Result(not bad, line, code=EXIT_OK if not bad else EXIT_CANNOT)
+
+
+def http_reach(base_url):
+    import urllib.error
+    import urllib.request
+    try:
+        req = urllib.request.Request(base_url, headers={"User-Agent": TOOL})
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            resp.read(64)
+        return True, ""
+    except urllib.error.HTTPError as exc:
+        return True, f"surface {exc.code}"          # a 4xx or 5xx is still reached
+    except Exception as exc:
+        return False, f"could not reach the surface ({base_url}): {exc}"
+
+
+def tcp_reach(port):
+    try:
+        with socket.create_connection(("127.0.0.1", int(port)), timeout=5):
+            return True, ""
+    except Exception as exc:
+        return False, f"could not reach the BFF port {port}: {exc}"
+
+
+# ---- 2 run-to-run difference
+
+def stage_noise(env, ctx):
+    name, problem = helper_supports(
+        env, "NOISE_ENV", "legacy.dualRun.noiseEnvVar",
+        "stage 2 is a legacy-body against legacy-body dual run, which only works when the helper "
+        "runs control twice and compares while the toggle stays at legacy.")
+    if problem:
+        return Result(False, f"the helper does not support noise mode - {problem}",
+                      code=EXIT_CANNOT)
+
+    log = env.get("legacy.dualRun.logPath",
+                  "the run-to-run difference comes from reading the log the helper wrote.")
+    t0 = now()
+    set_toggle(env, "legacy", extra={name: "1"})
+    code, out, err = capture(env, ctx, "legacy", captures(ctx["dir"], "noise"))
+    if code not in (0, 1):
+        return Result(False, f"the capture cannot answer: {(err or out).strip()[-200:]}",
+                      code=EXIT_CANNOT)
+
+    rc, rout, rerr = tool(DUALRUN, ["--log", log, "--since", t0, "--json",
+                                    "--config", env.path], timeout=300)
+    if rc not in (0, 1):
+        return Result(False,
+                      "could not read the noise log - either the variable never reached PHP or "
+                      f"the log path is not inside the container: {(rerr or rout).strip()[-400:]}",
+                      code=EXIT_CANNOT)
+    try:
+        report = json.loads(rout)
+    except ValueError:
+        return Result(False, "could not parse dualrun-report --json",
+                      code=EXIT_CANNOT)
+
+    seeds = []
+    for g in report.get("groups") or []:
+        keys = [k for k in g.get("signature") or [] if k and not k.startswith("<")]
+        if keys:
+            seeds.append({"experiment": g.get("experiment"), "keys": keys,
+                          "rules": None, "origin": "noise",
+                          "reason": f"run-to-run difference: a key that moved even legacy against "
+                                    f"legacy ({g.get('count')} hits, measured since {t0})"})
+    added, kept = merge_ignore(env, ctx, seeds)
+    return Result(True,
+                  f"legacy against legacy {report.get('records')} records · noise signatures "
+                  f"{len(seeds)} kinds → {added} seeds ({kept} human-approved rules "
+                  "left alone)",
+                  extra={"noise_signatures": len(seeds)})
+
+
+def ignore_path(env, ctx):
+    name = env.maybe("legacy.dualRun.ignoreFile", "ignore.json")
+    return name if os.path.isabs(name) else os.path.join(ctx["dir"], name)
+
+
+def merge_ignore(env, ctx, seeds):
+    """**Merge** the seeds into `ignore.json`. Human-approved rules are untouched.
+
+    A seed carries `origin: "noise"` and an empty `rules` - because it points at no approved rule
+    row. Without that distinction, noise suppression and approved corrections live in the same
+    file in the same shape, and then "why is this key ignored" has no answer.
+    """
+    path = ignore_path(env, ctx)
+    doc = {"rules": []}
+    if os.path.isfile(path):
+        try:
+            with open(path, encoding="utf-8") as fh:
+                doc = json.load(fh)
+        except (OSError, ValueError) as exc:
+            cannot(f"{path} could not be read: {exc}. Merging noise seeds requires reading the "
+                   "existing rules first, and overwriting without reading loses approved corrections.")
+    if not isinstance(doc, dict) or not isinstance(doc.get("rules"), list):
+        cannot(f"{path} has no rules array. Fix the shape and call again.")
+    human = [r for r in doc["rules"]
+             if not (isinstance(r, dict) and r.get("origin") == "noise")]
+    doc["rules"] = human + seeds
+    with open(path, "w", encoding="utf-8") as fh:
+        json.dump(doc, fh, ensure_ascii=False, indent=2, sort_keys=True)
+        fh.write("\n")
+    return len(seeds), len(human)
+
+
+# ---- 3 dual
+
+def stage_dual(env, ctx):
+    log = env.get("legacy.dualRun.logPath", "the dual-run comparison is read only from this log.")
+    ign = ignore_path(env, ctx)
+    t0 = now()
+    set_toggle(env, "dual", extra=clear_instrumentation(env))
+    code, out, err = capture(env, ctx, "dual", captures(ctx["dir"], "dual"))
+    if code not in (0, 1):
+        return Result(False, f"the capture cannot answer: {(err or out).strip()[-200:]}",
+                      code=EXIT_CANNOT)
+    invalid = code == 1
+
+    args = ["--log", log, "--since", t0, "--json", "--config", env.path]
+    if os.path.isfile(ign):
+        args += ["--ignore", ign]
+    rc, rout, rerr = tool(DUALRUN, args, timeout=300)
+    if rc not in (0, 1):
+        return Result(False,
+                      "could not read the dual-run log - even if the toggle reached PHP, the log "
+                      f"path may not exist inside the container: {(rerr or rout).strip()[-400:]}",
+                      code=EXIT_CANNOT)
+    try:
+        report = json.loads(rout)
+    except ValueError:
+        return Result(False, "could not parse dualrun-report --json",
+                      code=EXIT_CANNOT)
+    unexpected = int(report.get("unexpected") or 0)
+    noise_rules = count_noise_rules(ign)
+    sigs = [",".join(g.get("signature") or []) for g in (report.get("groups") or [])]
+    line = (f"{report.get('records')} records · unexpected {unexpected} · {len(sigs)} signatures"
+            + (f" [{'; '.join(sigs[:3])}]" if sigs else "")
+            + (f" · {noise_rules} noise-origin entries in ignore" if noise_rules else "")
+            + (" · a capture is invalid" if invalid else ""))
+    return Result(unexpected == 0 and not invalid, line,
+                  checks={"unexpected": unexpected})
+
+
+def count_noise_rules(path):
+    if not os.path.isfile(path):
+        return 0
+    try:
+        with open(path, encoding="utf-8") as fh:
+            rules = json.load(fh).get("rules") or []
+    except (OSError, ValueError):
+        return 0
+    return sum(1 for r in rules if isinstance(r, dict) and r.get("origin") == "noise")
+
+
+# ---- 4 migrated
+
+def stage_migrated(env, ctx):
+    baseline = captures(ctx["dir"], "legacy")
+    if not os.path.isfile(os.path.join(baseline, "manifest.json")):
+        return Result(False,
+                      f"no baseline capture ({baseline}). Phase 1's baseline capture has to "
+                      "exist first for migrated to have something to compare against.",
+                      code=EXIT_CANNOT)
+    out_dir = captures(ctx["dir"], "migrated")
+    set_toggle(env, "migrated", extra=clear_instrumentation(env))
+    code, out, err = capture(env, ctx, "migrated", out_dir)
+    if code not in (0, 1):
+        return Result(False, f"the capture cannot answer: {(err or out).strip()[-200:]}",
+                      code=EXIT_CANNOT)
+    rc, rout, rerr = tool(HTMLSNAP, ["compare", baseline, out_dir,
+                                     "--config", env.path], timeout=300)
+    if rc not in (0, 1):
+        return Result(False, f"the comparison cannot answer: {(rerr or rout).strip()[-300:]}",
+                      code=EXIT_CANNOT)
+    diff_ids = different_ids(rout)
+    hints = rules_hints(out_dir, diff_ids)
+    line = (f"{len(diff_ids)} differences"
+            + (f" [{', '.join(diff_ids[:5])}]" if diff_ids else "")
+            + (f" · rule rows cited by those observation entries: {', '.join(hints)}" if hints else ""))
+    if diff_ids:
+        note("stage 4 passes when 'every difference is explained by an 의도수정 row', and that "
+             "verdict is not made by a machine. Read the rule rows above, and if it is an "
+             "approved correction, add an entry to ignore.json with that row ID and run again. "
+             "If it is not explained, it is a missing screen rule or the adapter's return shape.")
+    return Result(not diff_ids, line, checks={"baseline_diff": len(diff_ids)})
+
+
+def different_ids(stdout):
+    ids = []
+    for line in (stdout or "").splitlines():
+        parts = line.split()
+        if len(parts) >= 2 and parts[0] in ("different", "missing"):
+            ids.append(parts[1])
+    return ids
+
+
+def rules_hints(capture_dir, ids):
+    hints = set()
+    for eid in ids:
+        try:
+            with open(os.path.join(capture_dir, f"{eid}.json"), encoding="utf-8") as fh:
+                hints |= set(json.load(fh).get("rules") or [])
+        except (OSError, ValueError):
+            continue
+    return sorted(hints)
+
+
+# ---- 5 fake-value injection
+
+def stage_fakevalue(env, ctx):
+    name, problem = helper_supports(
+        env, "FAKEVALUE_ENV", "legacy.dualRun.fakeValueEnvVar",
+        "stage 5 only works when the legacy body's return value is replaced with a fake one in migrated.")
+    if problem:
+        return Result(False, f"the helper does not support fake-value injection - {problem}",
+                      code=EXIT_CANNOT)
+    base = captures(ctx["dir"], "migrated")
+    if not os.path.isfile(os.path.join(base, "manifest.json")):
+        return Result(False,
+                      f"no migrated baseline ({base}). Run stage 4 first - that capture is what "
+                      "the faked screen is compared against.",
+                      code=EXIT_CANNOT)
+
+    marker = f"PAGECHECK-{slug(ctx['page'])}"
+    out_dir = captures(ctx["dir"], "fakevalue")
+    set_toggle(env, "migrated", extra={name: marker})
+    code, out, err = capture(env, ctx, "migrated", out_dir)
+    if code not in (0, 1):
+        set_toggle(env, "migrated", extra=clear_instrumentation(env), verbose=False)
+        return Result(False, f"the capture cannot answer: {(err or out).strip()[-200:]}",
+                      code=EXIT_CANNOT)
+    rc, rout, rerr = tool(HTMLSNAP, ["compare", base, out_dir,
+                                     "--config", env.path], timeout=300)
+    # The variable is cleared again inside this stage. Left set, the next capture records a
+    # faked screen, and that capture becomes a baseline with nothing marking it.
+    set_toggle(env, "migrated", extra=clear_instrumentation(env), verbose=False)
+    if rc not in (0, 1):
+        return Result(False, f"the comparison cannot answer: {(rerr or rout).strip()[-300:]}",
+                      code=EXIT_CANNOT)
+    diff_ids = different_ids(rout)
+
+    # The fake value touches only the wrapper, so the body hashes must be unchanged. That fact is
+    # confirmed here - deferring it to Phase 7 makes "fake-value injection passed" indistinguishable
+    # from passing by editing the body.
+    hashes = env.maybe("legacy.swap.hashesFile", "body-hashes.json")
+    hashes = hashes if os.path.isabs(hashes) else os.path.join(ctx["dir"], hashes)
+    hash_ok, hash_why = True, "hashes confirmed"
+    if not os.path.isfile(hashes):
+        hash_ok, hash_why = False, f"{hashes} does not exist - an unrecorded body cannot be confirmed"
+        hash_code = EXIT_CANNOT
+    else:
+        pc, pout, perr = tool(PHPMOVE, ["check", "--hashes", hashes,
+                                        "--config", env.path], timeout=300)
+        hash_code = EXIT_CANNOT if pc not in (0, 1) else EXIT_RED
+        hash_ok = pc == 0
+        hash_why = ("body hashes unchanged" if pc == 0
+                    else f"a body hash moved: {(perr or pout).strip()[-300:]}")
+
+    verdict = "pass" if (not diff_ids and hash_ok) else "fail"
+    line = (f"fake value {marker} · {len(diff_ids)} capture differences"
+            + (f" [{', '.join(diff_ids[:5])}]" if diff_ids else " (identical)")
+            + f" · {hash_why}")
+    if diff_ids:
+        note("the screen moving under fake-value injection means that on-screen value comes from "
+             "legacy, not from the backend. It is one of two things: something outside the swap "
+             "point uses the legacy return value, or the legacy body writes screen state as a side effect rather than through its return value.")
+    code_out = EXIT_OK if verdict == "pass" else (
+        hash_code if not hash_ok else EXIT_RED)
+    return Result(verdict == "pass", line, code=code_out,
+                  checks={"fakevalue": verdict})
+
+
+# ---- 6 coverage
+
+def stage_coverage(env, ctx):
+    container = env.surface_get("container", "where to ask whether Xdebug is attached.")
+    code, out, err = docker(env, ["exec", "-T", container, "php", "-m"], timeout=120)
+    if code is None:
+        return Result(False, f"could not ask the container: {(err or '').strip()[-200:]}",
+                      code=EXIT_CANNOT)
+    if code != 0 or "xdebug" not in (out or "").lower():
+        why = ("the legacy container has no Xdebug (no xdebug in php -m)"
+               if code == 0 else
+               f"could not run php -m (exit {code}) - whether Xdebug is present was not confirmed")
+        return Result(True, f"skipped - {why}. **An absence is never recorded as a pass.**",
+                      skip=why, checks={"legacy_lines": None})
+
+    cov_path = env.maybe("legacy.dualRun.coveragePath")
+    if not cov_path:
+        return Result(False,
+                      f"{env.path} has no legacy.dualRun.coveragePath. With Xdebug present but "
+                      "no idea where to read the coverage artifact, zero executed lines gets "
+                      "recorded as 'measured 0' when it is really 'could not measure'.",
+                      code=EXIT_CANNOT)
+    if os.path.isfile(cov_path):
+        os.remove(cov_path)
+    set_toggle(env, "migrated", extra=clear_instrumentation(env))
+    capture(env, ctx, "migrated", captures(ctx["dir"], "coverage"))
+    if not os.path.isfile(cov_path):
+        return Result(False,
+                      f"Xdebug is attached but {cov_path} was never created. Collection is not "
+                      "wired up - unwired coverage is never recorded as 0.",
+                      code=EXIT_CANNOT)
+    try:
+        with open(cov_path, encoding="utf-8") as fh:
+            cov = json.load(fh)
+    except (OSError, ValueError) as exc:
+        return Result(False, f"{cov_path} could not be read: {exc}", code=EXIT_CANNOT)
+
+    hashes = env.maybe("legacy.swap.hashesFile", "body-hashes.json")
+    hashes = hashes if os.path.isabs(hashes) else os.path.join(ctx["dir"], hashes)
+    try:
+        with open(hashes, encoding="utf-8") as fh:
+            recorded = (json.load(fh).get("hashes") or {}).values()
+    except (OSError, ValueError) as exc:
+        return Result(False,
+                      f"{hashes} could not be read: {exc}. Only the recorded hashes know which "
+                      "line range is 'the moved legacy body'.",
+                      code=EXIT_CANNOT)
+    hit, where = 0, []
+    for entry in recorded:
+        lo, hi = (entry.get("lines") or [0, 0])[:2]
+        for line_no, hits in (cov.get(entry.get("file")) or {}).items():
+            try:
+                n = int(line_no)
+            except (TypeError, ValueError):
+                continue
+            if lo <= n <= hi and int(hits or 0) > 0:
+                hit += 1
+                where.append(f"{entry.get('symbol')}:{n}")
+    return Result(hit == 0,
+                  f"executed lines in the moved body: {hit}"
+                  + (f" [{', '.join(where[:6])}]" if where else " (0)"),
+                  checks={"legacy_lines": hit})
+
+
+# ---- 7 restore
+
+def stage_restore(env, ctx):
+    mode = set_toggle(env, "legacy", extra=clear_instrumentation(env))
+    return Result(True, f"toggle {mode} · instrumentation variables cleared · confirmed by read-back",
+                  extra={"toggle": mode})
+
+
+STAGE_FN = {1: stage_environment, 2: stage_noise, 3: stage_dual,
+            4: stage_migrated, 5: stage_fakevalue, 6: stage_coverage,
+            7: stage_restore}
+
+
+# --------------------------------------------------------------- main
+
+def parse_stages(spec):
+    want = []
+    for part in str(spec).replace(" ", "").split(","):
+        if not part:
+            continue
+        sep = ".." if ".." in part else ("-" if "-" in part[1:] else None)
+        try:
+            if sep:
+                lo, _, hi = part.partition(sep)
+                lo, hi = int(lo), int(hi)
+                if lo > hi:
+                    usage(f"the --stage range is backwards: {part!r}")
+                want += list(range(lo, hi + 1))
+            else:
+                want.append(int(part))
+        except ValueError:
+            usage(f"could not parse --stage: {part!r}. The forms are `3`, `3,4,7`, `1..7`.")
+    bad = [s for s in want if s not in STAGES]
+    if bad:
+        usage(f"unknown stage {bad}. Stages are 1-7: "
+              + " · ".join(f"{k} {v}" for k, v in STAGES.items()))
+    seen, out = set(), []
+    for s in want:                       # the order is **as written**, not numeric
+        if s not in seen:
+            seen.add(s)
+            out.append(s)
+    return out
+
+
+def main():
+    o, pos = parse_opts(sys.argv[1:])
+    if len(pos) != 1:
+        usage("usage: pagecheck <page-dir> --stage <list>   (--help for everything)")
+    page_dir = os.path.abspath(os.path.expanduser(pos[0]))
+
+    if o.get("--init"):
+        return cmd_init(page_dir, o)
+    if o.get("--show"):
+        return cmd_show(page_dir, bool(o.get("--json")))
+    if o.get("--round"):
+        return cmd_round(page_dir, o)
+    if o.get("--cap"):
+        return cmd_cap(page_dir, o)
+    if not o.get("--stage"):
+        usage("no --stage. Give it as `--stage 1,2` or `--stage 3..7`.")
+    want = parse_stages(o["--stage"])
+    cause, cause_why = read_cause(o)         # the shape, before anything is opened
+
+    if not os.path.isdir(page_dir):
+        cannot(f"{page_dir} is not a directory.")
+    state, spath = read_state(page_dir)
+
+    cfg, cfg_path, problem = workspace(o.get("--config"))
+    if problem:
+        cannot(problem)
+
+    observations = o.get("--observations") or os.path.join(page_dir, "observations.json")
+    observations = os.path.abspath(os.path.expanduser(observations))
+    needs_observations = [s for s in want if s in (2, 3, 4, 5, 6)]
+    if needs_observations and not os.path.isfile(observations):
+        cannot(f"no observation list ({observations}). Stage {needs_observations} has to hit the page, "
+               "and only the observation list knows what to hit.")
+    surface = o.get("--surface") or (observation_surface(observations)
+                                    if os.path.isfile(observations) else None)
+    if not surface:
+        usage("the surface is unknown. Give it with --surface or record surface in the observation list.")
+
+    env = Env(cfg, cfg_path, state["page"], surface)
+    ctx = {"dir": page_dir, "observations": observations, "page": state["page"]}
+
+    # ---- caps. Checked before measuring.
+    loops = sorted({STAGE_LOOP[s] for s in want if s in STAGE_LOOP})
+    for name in loops:
+        loop = state["loops"].get(name)
+        if not loop:
+            cannot(f"loops in {spath} has no {name}. It is the budget stage "
+                   f"{[s for s in want if STAGE_LOOP.get(s) == name]} spends, "
+                   "and a loop with no cap is never created.")
+        # Consecutive could-not-measure rounds are announced loudly but **do not block.** Blocking
+        # would remove the way to confirm a fixed wiring, which is a deadlock. And a could-not-measure
+        # round returns its budget below, so there is no budget to save by blocking - what is needed
+        # here is not a stop but that a person does not walk past the fact.
+        if state.get("unmeasurable", {}).get(name, 0) >= 2:
+            sys.stderr.write(
+                f"{TOOL}: warning - loop {name} has ended **could-not-measure "
+                f"{state['unmeasurable'][name]} times in a row**. No round was spent, but what "
+                "you are fixing right now may be the instrumentation rather than the migration. "
+                "What could not be checked is in the previous round's output.\n")
+        if loop["n"] >= loop["cap"]:
+            return cap_stop(state, name)
+
+    # The second round of any of these loops needs a cause. A dry run spends none of them, so it
+    # is not asked for one - refusing to *describe* a plan is not a measurement this protects.
+    if not o.get("--dry-run"):
+        demand_cause(state, loops, cause)
+
+    if o.get("--dry-run"):
+        print(f"{TOOL} --dry-run  {page_dir}")
+        print(f"  config {cfg_path} · surface {surface} · observations {observations}")
+        print(f"  toggle variable {env.toggle_var()}")
+        for s in want:
+            print(f"  stage {s} {STAGES[s]}"
+                  + (f"  (loop {STAGE_LOOP[s]} "
+                     f"{state['loops'][STAGE_LOOP[s]]['n']}"
+                     f"/{state['loops'][STAGE_LOOP[s]]['cap']})"
+                     if s in STAGE_LOOP else ""))
+        return EXIT_OK
+
+    for name in loops:
+        state["loops"][name]["n"] += 1
+    write_state(state, spath)            # the round is counted **before** it runs
+    # Why before: a run that died partway still spent a round. But **a round where the check
+    # itself could not run** (exit 3) spends no budget - no measurement happened, so that round
+    # says nothing about the loop. It is returned below, and the consecutive count is kept instead.
+    spent = list(loops)
+
+    print(f"{TOOL} {state['page']}  surface {surface}  stages "
+          + ",".join(str(s) for s in want)
+          + ("  loops " + " · ".join(f"{n} {state['loops'][n]['n']}/"
+                                    f"{state['loops'][n]['cap']}" for n in loops)
+             if loops else ""))
+
+    exit_code, results, stamped = EXIT_OK, [], set()
+    for s in want:
+        res = STAGE_FN[s](env, ctx)
+        results.append((s, res))
+        verdict = ("skipped" if res.skip else ("pass" if res.ok else "fail"))
+        print(f"  stage {s} {STAGES[s]:<9} {verdict}  {res.line}")
+        first = bool(STAGE_LOOP.get(s)) and STAGE_LOOP[s] not in stamped
+        stamped.add(STAGE_LOOP.get(s, ""))
+        state["checks"].update(res.checks)
+        state["toggle"] = res.extra.get("toggle", state.get("toggle"))
+        if s in (2, 3):
+            state["toggle"] = {2: "legacy", 3: "dual"}[s]
+        elif s in (4, 5, 6):
+            state["toggle"] = "migrated"
+        if res.skip:
+            state.setdefault("skips", {})[str(s)] = res.skip
+        else:
+            state.get("skips", {}).pop(str(s), None)
+        state["rounds"].append({
+            "n": state["loops"].get(STAGE_LOOP.get(s, ""), {}).get("n"),
+            # Which loop this line belongs to. Without it a reader of the record cannot tell the
+            # two stages of one L2 round from two rounds, and `causestats` would count one retry
+            # twice. Stages 1, 2 and 7 spend nothing and carry "" here.
+            "loop": STAGE_LOOP.get(s, ""),
+            "stage": s, "verdict": verdict, "at": now(),
+            # **The cause belongs to the round, not to the stage.** `--stage 3,4` is one L2
+            # round with two stages in it, so the cause is written on the first line of each
+            # loop and left off the rest. Writing it on both would make one retry count twice
+            # wherever these lines are counted.
+            "note": cause if first else "", "why": cause_why if first else "",
+            **{k: v for k, v in res.checks.items() if v is not None}})
+        write_state(state, spath)
+        if not res.ok:
+            exit_code = res.code
+            note(f"stopping at stage {s}. The later stages did not run - a check that did not "
+                 "run is not a pass.")
+            break
+
+    # A round where no measurement happened is returned to the budget. That return is not left
+    # silent but recorded in `unmeasurable` as a consecutive count - twice in a row and the next call stops.
+    unmeas = state.setdefault("unmeasurable", {})
+    if exit_code == EXIT_CANNOT:
+        for name in spent:
+            state["loops"][name]["n"] = max(0, state["loops"][name]["n"] - 1)
+            unmeas[name] = unmeas.get(name, 0) + 1
+        note("the round was returned because the check could not run ("
+             + " · ".join(f"{n} {state['loops'][n]['n']}/{state['loops'][n]['cap']}"
+                          f" · could-not-measure {unmeas[n]} in a row" for n in spent)
+             + "). What to fix next is the instrumentation, not the migration.")
+    else:
+        for name in spent:
+            if unmeas.pop(name, 0):
+                note(f"the could-not-measure streak for loop {name} was reset to 0.")
+    write_state(state, spath)
+
+    print("  checks " + " · ".join(
+        f"{g}={fmt(state['checks'].get(g))}" for g in CHECKS) + f"  → {spath}")
+    if o.get("--json"):
+        print(json.dumps({"page": state["page"], "surface": surface,
+                          "stages": [{"stage": s, "ok": r.ok, "code": r.code,
+                                      "skip": r.skip, "line": r.line}
+                                     for s, r in results],
+                          "checks": state["checks"], "loops": state["loops"],
+                          "exit": exit_code}, ensure_ascii=False, indent=2))
+    return exit_code
+
+
+FLAGS = {"--init", "--show", "--json", "--dry-run"}
+VALUED = {"--stage", "--observations", "--surface", "--note", "--config", "--page",
+          "--unit", "--area", "--depth", "--cap", "--round", "--why"}
+
+
+def parse_opts(argv):
+    o, pos, i = {}, [], 0
+    while i < len(argv):
+        a = argv[i]
+        if a in ("-h", "--help", "help"):
+            print(__doc__.strip())
+            sys.exit(EXIT_OK)
+        if a in FLAGS:
+            o[a] = True
+            i += 1
+        elif a in VALUED:
+            if i + 1 >= len(argv):
+                usage(f"{a} has no value")
+            o[a] = argv[i + 1]
+            i += 2
+        elif a.startswith("-"):
+            usage(f"unknown option {a!r}. Use --help to see the available options.")
+        else:
+            pos.append(a)
+            i += 1
+    return o, pos
+
+
+if __name__ == "__main__":
+    sys.exit(main())

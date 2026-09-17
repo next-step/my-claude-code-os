@@ -5,15 +5,15 @@ assume one of them. CP949 (not EUC-KR) is the right legacy codec: it is a
 superset, so choosing it costs nothing, while choosing EUC-KR risks a decode
 exception that reaches the caller as an empty result.
 
-**이 모듈에는 환경 상수가 없다.** 어느 디렉터리가 어느 서비스이고, 어느 트리가
-공용 라이브러리이고, 무엇이 벤더 번들인지는 전부 `.claude/config/workspace.json`
-의 `legacy` 절에서 읽는다. 그 파일은 gitignore 되고, 공개 골격은
-`workspace.example.json` 이다. 도구가 이 저장소에서 추적될 수 있는 이유가 그것
-이고, 훅 둘이 먼저 같은 거래를 했다.
+**This module holds no environment constants.** Which directory is which service, which tree is
+the shared library, and what counts as a vendor bundle are all read from the `legacy` section of
+`.claude/config/workspace.json`. That file is gitignored and its public skeleton is
+`workspace.example.json`. That is why the tools can be tracked in this repository, and two hooks
+made the same trade first.
 
-설정을 못 찾으면 도구는 **조용히 좁은 답을 내지 않고 멈춘다.** 이 도구들이 막으려는
-실패가 정확히 "못 찾은 것을 없는 것으로 읽는" 것이므로, 설정 부재가 0건으로
-위장하는 경로를 열어두면 도구가 자기 목적을 배반한다.
+When the config cannot be found a tool **stops rather than quietly giving a narrowed answer.**
+The failure these tools exist to prevent is exactly "reading what was not found as what is not
+there", so leaving a path where a missing config disguises itself as zero hits would make the tool betray its purpose.
 """
 import json
 import os
@@ -23,8 +23,8 @@ TEXT_EXT = (".php", ".inc", ".tpl", ".html", ".htm", ".js", ".css", ".txt", ".xm
 
 CONFIG_REL = os.path.join(".claude", "config", "workspace.json")
 
-# 어느 체크아웃에나 있는 서드파티 이름들. 회사 정보가 아니므로 여기 남는다.
-# 체크아웃마다 다른 벤더 트리는 workspace.json 의 `legacy.vendorGlobs` 가 준다.
+# Third-party names present in any checkout. Not company information, so they stay here.
+# Vendor trees that differ per checkout come from `legacy.vendorGlobs` in workspace.json.
 GENERIC_BUNDLES = [
     "!**/vendor/**", "!**/node_modules/**", "!**/bower_components/**",
     "!**/[Pp][Hh][Pp][Ee]xcel/**", "!**/phpExcel/**", "!**/namo*/**",
@@ -56,11 +56,11 @@ def _walk_up_for(start, rel):
 def project_dir():
     """The OS checkout that holds `.claude/config/workspace.json`.
 
-    세 곳을 본다 — `CLAUDE_PROJECT_DIR`, 이 파일 자신의 위치에서 위로, 작업
-    디렉터리에서 위로. 두 번째가 핵심이다. 이 모듈은 프로젝트의 `.claude/scripts/`
-    에 놓이므로 자기 경로가 곧 프로젝트의 답이고, 그래서 호출자는 어디에 서 있든
-    절대경로 하나로 이 도구들을 부를 수 있다. 호출자가 매번 기억해야 하는 값은
-    도구가 스스로 알 수 있는 값이면 안 된다.
+    It looks in three places - `CLAUDE_PROJECT_DIR`, upward from this file's own location, and
+    upward from the working directory. The second is the point. This module sits in the project's
+    `.claude/scripts/`, so its own path is the answer for the project, and a caller can therefore
+    invoke these tools by one absolute path wherever it stands. A value a caller has to remember
+    every time must not be one the tool can work out for itself.
     """
     env = os.environ.get("CLAUDE_PROJECT_DIR")
     if env:
@@ -78,8 +78,8 @@ _cfg_reason = None
 def config():
     """The `legacy` section of workspace.json. `{}` when it cannot be read.
 
-    실패 이유는 `config_problem()` 이 갖고 있다. 이유 없는 빈 설정을 돌려주면
-    호출자가 "설정이 비었다"와 "설정을 못 찾았다"를 구분할 수 없다.
+    The reason for a failure is held by `config_problem()`. Returning an empty config with no
+    reason leaves the caller unable to tell "the config is empty" from "the config was not found".
     """
     global _cfg_cache, _cfg_reason
     if _cfg_cache is not None:
@@ -87,22 +87,22 @@ def config():
     root = project_dir()
     if not root:
         _cfg_cache, _cfg_reason = {}, (
-            f"{CONFIG_REL} 을 찾지 못했다. 이 도구는 프로젝트의 .claude/scripts/ "
-            "안에 있어야 자기 위치로 프로젝트를 찾는다.")
+            f"could not find {CONFIG_REL}. This tool has to sit inside the project's "
+            ".claude/scripts/ to find the project from its own location.")
         return _cfg_cache
     path = os.path.join(root, CONFIG_REL)
     try:
         with open(path, encoding="utf-8") as fh:
             lg = json.load(fh).get("legacy") or {}
     except (OSError, ValueError) as exc:
-        _cfg_cache, _cfg_reason = {}, f"{path} 를 읽을 수 없다: {exc}"
+        _cfg_cache, _cfg_reason = {}, f"{path} could not be read: {exc}"
         return _cfg_cache
     missing = [k for k in ("root", "treeMarker", "services", "primaryService")
                if not lg.get(k)]
     if missing:
         _cfg_cache, _cfg_reason = {}, (
-            f"{path} 의 legacy 절에 {', '.join(missing)} 가 없다. "
-            "workspace.example.json 의 `_tooling` 항목을 참고해 채워라.")
+            f"the legacy section of {path} has no {', '.join(missing)}. "
+            "Fill it in following the `_tooling` entry in workspace.example.json.")
         return _cfg_cache
     _cfg_cache = lg
     return _cfg_cache
@@ -115,7 +115,7 @@ def config_problem():
 
 
 def require_config(tool):
-    """Config, or exit with the reason. 좁은 답보다 멈추는 것이 낫다."""
+    """Config, or exit with the reason. Stopping beats a narrowed answer."""
     lg = config()
     if not lg:
         sys.exit(f"{tool}: {config_problem()}")
@@ -158,8 +158,8 @@ def runtime_for_prefix(prefix):
     return (config().get("runtimes") or {}).get(prefix)
 
 
-# Module-level aliases. 기존 도구들이 상수로 import 하던 이름을 그대로 유지해,
-# 설정으로 옮기는 변경이 호출부까지 번지지 않게 한다.
+# Module-level aliases. Keep the names the existing tools imported as constants, so moving them
+# into config does not spread into the call sites.
 SERVICES = _services()
 PHPLIB = shared_library()
 SOLE_SERVICE = primary_service()
@@ -169,9 +169,9 @@ BUNDLE_GLOBS = bundle_globs()
 def checkout_root():
     """The legacy checkout root, verified by `treeMarker`.
 
-    `PHP_LEGACY_ROOT` 가 최우선이다. 다른 체크아웃을 가리켜야 할 때 쓴다. 값이
-    가리키는 곳에 마커가 없으면 조용히 무시하지 않고 알린 뒤 설정값으로 넘어간다.
-    오타가 "트리 밖에 있다"로 위장하는 것이 이 함수가 막으려는 실패다.
+    `PHP_LEGACY_ROOT` wins. Use it to point at a different checkout. When the marker is absent
+    under what it names, that is announced rather than ignored, and the config value is used
+    instead. A typo disguising itself as "outside the tree" is the failure this function prevents.
     """
     lg = config()
     marker = lg.get("treeMarker") or ""
@@ -180,14 +180,14 @@ def checkout_root():
         d = os.path.abspath(os.path.expanduser(env))
         if marker and os.path.isdir(os.path.join(d, marker)):
             return d
-        print(f"PHP_LEGACY_ROOT={env} 아래에 {marker or '<treeMarker 미설정>'} "
-              "가 없다. 무시하고 설정값을 쓴다.", file=sys.stderr)
+        print(f"{marker or '<treeMarker unset>'} is not under "
+              f"PHP_LEGACY_ROOT={env}. Ignoring it and using the config value.", file=sys.stderr)
     root = lg.get("root")
     if not root:
         return None
     root = os.path.abspath(os.path.expanduser(root))
     if marker and not os.path.isdir(os.path.join(root, marker)):
-        print(f"workspace.json 의 legacy.root 아래에 {marker} 가 없다.",
+        print(f"{marker} is not under legacy.root in workspace.json.",
               file=sys.stderr)
         return None
     return root
@@ -220,10 +220,10 @@ def service_of(path, root=None):
 def current_service(cwd=None):
     """The service the caller is standing in.
 
-    트리 밖이거나 서비스가 아닌 곳에 서 있으면 이관 대상 서비스로 떨어진다. 이
-    OS 는 체크아웃보다 한 단계 위에서 돌고 전역 규칙이 `cd` 를 금지하므로, 그
-    경우가 기본이지 예외가 아니다. 호출자가 항상 사용한 범위를 출력하니 이 기본값은
-    감춰지지 않는다.
+    Standing outside the tree or somewhere that is not a service falls back to the service being
+    migrated. This OS runs one level above the checkout and a global rule forbids `cd`, so that
+    case is the default rather than the exception. The caller always prints the scope it used, so
+    this default is never hidden.
     """
     return service_of(cwd or os.getcwd()) or primary_service()
 
@@ -292,10 +292,10 @@ def sibling_encoding(path):
 def state_dir(*parts):
     """A directory under the project's gitignored `.claude/.state/`.
 
-    인덱스와 계측 로그가 여기 산다. 레거시 체크아웃 안에 두면 체크아웃이 다시
-    만들어질 때 함께 사라지고, 계측은 오래 두고 값을 재야 의미가 있다. 편집
-    작업본은 여기 오지 않는다 — 그것은 회사 소스를 디코드한 사본이므로 공개
-    저장소 디렉터리 안이 아니라 트리 안에 남는다.
+    The index and the instrumentation log live here. Put inside the legacy checkout they would
+    vanish with it on a re-clone, and instrumentation only means something measured over time.
+    Editing working copies do not come here - those are decoded copies of company source, so they
+    stay inside the tree rather than in a public repository's directory.
     """
     root = project_dir()
     if not root:
@@ -303,3 +303,62 @@ def state_dir(*parts):
     d = os.path.join(root, ".claude", ".state", *parts)
     os.makedirs(d, exist_ok=True)
     return d
+
+
+# ------------------------------------------------- the whole config (v2 and v3 tools)
+
+def workspace(explicit=None):
+    """(document, path, problem). The whole-document edition of `config()`, which gives only `legacy`.
+
+    Tools reading sections outside `legacy` (`backend`, `e2e`, `docs`) numbered three in v2 and one
+    more in v3, and **all four rewrote the same twenty lines** - walking up to find the project,
+    opening the file, turning the reason it failed into a string. The reason it lives here once is
+    not line count but the verdict: if four of them each define "could not find the config"
+    differently, one of them eventually treats it as an empty config.
+
+    Problems are returned rather than raised - the exit code differs per tool
+    (`htmlsnap` 2, `pagecheck` 3). The verdict belongs to the caller.
+    """
+    if explicit:
+        path = os.path.abspath(os.path.expanduser(explicit))
+    else:
+        root = project_dir()
+        if not root:
+            return {}, None, (
+                f"could not find {CONFIG_REL}. Give its location with --config, or call this "
+                "tool from inside the project's .claude/scripts/.")
+        path = os.path.join(root, CONFIG_REL)
+    try:
+        with open(path, encoding="utf-8") as fh:
+            doc = json.load(fh)
+    except (OSError, ValueError) as exc:
+        return {}, path, f"{path} could not be read: {exc}"
+    if not isinstance(doc, dict):
+        return {}, path, f"the top level of {path} is not an object"
+    return doc, path, None
+
+
+PLACEHOLDER = ("<", ">")
+
+
+def dotted(cfg, key, default=None):
+    """One config value by `a.b.c`. An empty string and None both count as absent."""
+    cur = cfg
+    for part in key.split("."):
+        if not isinstance(cur, dict) or part not in cur:
+            return default
+        cur = cur[part]
+    return default if cur in ("", None) else cur
+
+
+def is_placeholder(value):
+    """Is it still the placeholder from `workspace.example.json`?
+
+    A key copied from the skeleton and never filled is **more dangerous than a missing one.** A
+    missing key stops the tool; `"<abs path>"` passes as though it had a value and aims every
+    later verdict at the wrong place.
+    """
+    if not isinstance(value, str):
+        return False
+    v = value.strip()
+    return v.startswith(PLACEHOLDER[0]) and v.endswith(PLACEHOLDER[1])

@@ -1,0 +1,1604 @@
+#!/usr/bin/env python3
+"""phpmove - is anything left in this page that the swap was supposed to take?
+
+    phpmove lint <page.php> [--json]                 only the allowed statement kinds remain?
+    phpmove lint --template <tpl.php> [--strict]     report control structures in a template
+    phpmove hash <file.php> <function|Class::method> [--hashes <body-hashes.json>]
+    phpmove check [--hashes <body-hashes.json>]                are the recorded bodies unchanged?
+    phpmove callers <symbol> [--allow-file <f>]... [--scope <dir>]
+    phpmove fields [--schema <dir>] --adapter <file>... [--rules <rules>]
+                                                      does the adapter ask for that field?
+
+    common: [--config <workspace.json>]  [-h | --help]
+
+The question this tool answers is the one e2e cannot. PHP can keep computing a rule and
+the value on screen stays the same, so the whole suite remains green. So "did it move?"
+is asked as a matter of **shape**, not observation - if the page script holds any statement
+other than include, guard, parse, the swap-point call, bind and template, a rule is still on the screen.
+
+The verdict is made from tokens. Counting `if` with a regex counts the `if` inside strings and
+comments too, and that number arrives with no sign that it is wrong. Tokenizing calls
+`php -d short_open_tag=1`. This tree's templates use `<?`, and under the CLI default
+(`short_open_tag=0`) the tokenizer does not see that as PHP and swallows it whole into an HTML
+string. The result is not an error but **fewer tokens**, and the linter reports "no control
+structures". Measured, it was 116 against 252. So if `<?` remains inside `T_INLINE_HTML` after
+tokenizing, it stops with exit 2 instead of judging.
+
+Files are read as bytes and hashed as bytes. This tree mixes CP949 and UTF-8 per file, and a
+Korean literal stays in the token as its original bytes. Decoding happens only when showing
+something to a person.
+
+Not one environment value lives in this file. They all come from the `legacy.swap` section of
+`.claude/config/workspace.json`, and when a required key is missing it **stops instead of
+returning a narrowed answer**. The failure this tool exists to prevent is exactly "reading what
+was not seen as what is not there", so leaving a path where a missing config masquerades as "zero violations" would make the tool betray its own purpose.
+"""
+import base64
+import datetime
+import hashlib
+import json
+import os
+import re
+import shutil
+import subprocess
+import sys
+import tempfile
+import time
+
+sys.dont_write_bytecode = True
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from _phpenc import CONFIG_REL, config, config_problem, detect  # noqa: E402
+from _phpenc import read_text  # noqa: E402
+from _phpenc import project_dir  # noqa: E402
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+PHPGREP = os.path.join(HERE, "phpgrep")
+
+# Tokens travel base64-encoded. Feeding a file holding CP949 literals straight into
+# json_encode makes PHP return false, and that false arrives as empty output - another
+# silent failure. Calling token_name() on the PHP side is for the same reason: the numeric
+# values of the T_* constants differ per PHP version, so passing numbers makes 8.3 and 8.5 disagree.
+TOKEN_PHP = (
+    "$s=file_get_contents($argv[1]);"
+    "if($s===false){fwrite(STDERR,'unreadable');exit(3);}"
+    "$o=array();"
+    "foreach(token_get_all($s) as $x){"
+    "$o[]=is_array($x)?array(token_name($x[0]),base64_encode($x[1]))"
+    ":array('CHAR',base64_encode($x));}"
+    "echo json_encode($o);"
+)
+
+NOISE = {"T_WHITESPACE", "T_COMMENT", "T_DOC_COMMENT",
+         "T_OPEN_TAG", "T_OPEN_TAG_WITH_ECHO", "T_CLOSE_TAG"}
+CONTROL = {"T_IF", "T_ELSE", "T_ELSEIF", "T_FOR", "T_FOREACH", "T_WHILE",
+           "T_SWITCH", "T_DO"}
+INCLUDES = {"T_INCLUDE", "T_INCLUDE_ONCE", "T_REQUIRE", "T_REQUIRE_ONCE"}
+CASTS = {"T_INT_CAST", "T_STRING_CAST", "T_BOOL_CAST", "T_DOUBLE_CAST",
+         "T_ARRAY_CAST", "T_OBJECT_CAST", "T_UNSET_CAST"}
+COMPARE = {"T_IS_EQUAL", "T_IS_NOT_EQUAL", "T_IS_IDENTICAL",
+           "T_IS_NOT_IDENTICAL", "T_IS_SMALLER_OR_EQUAL",
+           "T_IS_GREATER_OR_EQUAL", "T_SPACESHIP"}
+ARITH_TOK = {"T_POW", "T_INC", "T_DEC", "T_SL", "T_SR", "T_PLUS_EQUAL",
+             "T_MINUS_EQUAL", "T_MUL_EQUAL", "T_DIV_EQUAL", "T_MOD_EQUAL",
+             "T_POW_EQUAL"}
+ARITH_CHR = {b"+", b"-", b"*", b"/", b"%", b"<", b">"}
+TERNARY = {"T_COALESCE", "T_COALESCE_EQUAL"}
+NAMES = {"T_STRING", "T_NAME_QUALIFIED", "T_NAME_FULLY_QUALIFIED",
+         "T_NAME_RELATIVE"}
+STRINGS = {"T_CONSTANT_ENCAPSED_STRING", "T_ENCAPSED_AND_WHITESPACE",
+           "T_INLINE_HTML"}
+OPEN_CURLY = {"T_CURLY_OPEN", "T_DOLLAR_OPEN_CURLY_BRACES"}
+FREE_CALLS = {"T_ISSET", "T_EMPTY", "T_ARRAY", "T_LIST", "T_UNSET",
+              "T_PRINT", "T_ECHO"}
+SUPERGLOBALS = {"$_GET", "$_POST", "$_REQUEST", "$_SERVER", "$_COOKIE",
+                "$_SESSION", "$_FILES", "$_ENV"}
+SQL_WORDS = re.compile(rb"\b(select|insert|update|delete|where|join)\b", re.I)
+
+
+def die(msg, code=2):
+    print(f"phpmove: {msg}", file=sys.stderr)
+    sys.exit(code)
+
+
+# ------------------------------------------------------------------ config
+
+def load_cfg(path):
+    """(the legacy section, a display path, the project directory or None).
+
+    `--config` is not there so that the selftest can run without a real workspace.json; it is
+    there so a caller can state which checkout this tool is aimed at. Self-testing against a
+    synthetic config is a consequence of that property.
+    """
+    if path:
+        if not os.path.isfile(path):
+            die(f"--config {path} does not exist.")
+        try:
+            with open(path, encoding="utf-8") as fh:
+                raw = json.load(fh)
+        except (OSError, ValueError) as exc:
+            die(f"--config {path} could not be read: {exc}")
+        lg = raw.get("legacy")
+        if not isinstance(lg, dict) or not lg:
+            die(f"{path} has no legacy section. Fill it in from workspace.example.json.")
+        proj = None
+        # A `<proj>/.claude/config/*.json` shape lets us work out the project.
+        # This is needed so the sub-tool (phpgrep) sees the same config.
+        head = os.path.dirname(os.path.abspath(path))
+        if os.path.basename(head) == "config":
+            head2 = os.path.dirname(head)
+            if os.path.basename(head2) == ".claude":
+                proj = os.path.dirname(head2)
+        return lg, path, proj
+    lg = config()
+    if not lg:
+        die(config_problem() or "could not read the config.")
+    root = project_dir()
+    return lg, os.path.join(root or "", CONFIG_REL), root
+
+
+def need(cfg, dotted, where):
+    """The config value, or stop. Never falls through to a default in silence."""
+    cur = cfg
+    for part in dotted.split("."):
+        if not isinstance(cur, dict) or part not in cur or cur[part] in (None, "", [], {}):
+            die(f"{where} has no legacy.{dotted}. "
+                "Fill it in from the legacy.swap section of workspace.example.json. "
+                "An answer given without this value is a narrowed answer, indistinguishable from zero violations.")
+        cur = cur[part]
+    return cur
+
+
+def opt(cfg, dotted, default):
+    cur = cfg
+    for part in dotted.split("."):
+        if not isinstance(cur, dict) or part not in cur:
+            return default
+        cur = cur[part]
+    return default if cur in (None, "", [], {}) else cur
+
+
+def compile_one(pattern, label):
+    try:
+        return re.compile(pattern)
+    except re.error as exc:
+        die(f"could not compile the regex for {label}: {exc}")
+
+
+def compile_many(patterns, label):
+    if isinstance(patterns, str):
+        patterns = [patterns]
+    return [compile_one(p, label) for p in patterns]
+
+
+def tree_root_of(cfg, where):
+    root = cfg.get("treeRoot")
+    if root:
+        return os.path.abspath(os.path.expanduser(root))
+    if cfg.get("root") and cfg.get("treeMarker"):
+        return os.path.join(os.path.abspath(os.path.expanduser(cfg["root"])),
+                            cfg["treeMarker"])
+    die(f"{where} has neither legacy.treeRoot nor legacy.root+treeMarker. "
+        "Caller paths cannot be resolved back to absolute.")
+
+
+# ---------------------------------------------------------------- tokenize
+
+class Tok:
+    __slots__ = ("name", "text", "off", "line")
+
+    def __init__(self, name, text, off, line):
+        self.name, self.text, self.off, self.line = name, text, off, line
+
+    def __repr__(self):                                   # for debugging
+        return f"<{self.name} {self.text[:16]!r} L{self.line}>"
+
+
+def tokenize(path, php_bin):
+    """(raw bytes, tokens). Exits 2 when it cannot answer - it never returns empty-handed."""
+    try:
+        with open(path, "rb") as fh:
+            raw = fh.read()
+    except OSError as exc:
+        die(f"{path} could not be read: {exc}")
+    cmd = [php_bin, "-d", "short_open_tag=1", "-d", "display_errors=0",
+           "-r", TOKEN_PHP, os.path.abspath(path)]
+    try:
+        p = subprocess.run(cmd, capture_output=True, timeout=60)
+    except FileNotFoundError:
+        die(f"php binary {php_bin!r} not found "
+            "(legacy.tooling.phpBinary). Nothing is judged without tokens.")
+    except subprocess.TimeoutExpired:
+        die(f"{php_bin} tokenizing took over 60s: {path} - could not check (timeout)")
+    if p.returncode != 0:
+        err = p.stderr.decode("utf-8", "replace").strip()[:200]
+        die(f"{php_bin} tokenizing failed (exit {p.returncode}) {path}: {err}")
+    try:
+        data = json.loads(p.stdout.decode("ascii"))
+    except (ValueError, UnicodeDecodeError) as exc:
+        die(f"could not read the token JSON ({path}): {exc}")
+    toks, off, line = [], 0, 1
+    for name, b64 in data:
+        text = base64.b64decode(b64)
+        toks.append(Tok(name, text, off, line))
+        line += text.count(b"\n")
+        off += len(text)
+    if off != len(raw) or b"".join(t.text for t in toks) != raw:
+        die(f"the tokens did not reconstruct {path} byte for byte "
+            f"({off} vs {len(raw)} bytes). The tokenizer output cannot be trusted.")
+    for t in toks:
+        if t.name == "T_INLINE_HTML" and b"<?" in t.text:
+            die(f"`<?` remains inside HTML at {path}:{t.line} - "
+                "short_open_tag did not take effect. Counting in this state drops control "
+                "structures entirely, and that omission looks exactly like 'zero violations'. "
+                f"Check that {php_bin} is not ignoring -d short_open_tag=1.")
+    return raw, toks
+
+
+def sig(toks):
+    """Meaningful tokens only. Whitespace, comments and tags take no part in the verdict."""
+    out = []
+    for t in toks:
+        if t.name in NOISE:
+            continue
+        if t.name == "T_INLINE_HTML" and not t.text.strip():
+            continue
+        out.append(t)
+    return out
+
+
+def statements(toks):
+    """Cut into top-level statements. Order is not enforced; only the kind is read."""
+    out, cur = [], []
+    curly = paren = square = 0
+    for t in toks:
+        cur.append(t)
+        if t.name in OPEN_CURLY:
+            curly += 1
+            continue
+        if t.name == "T_ATTRIBUTE":
+            square += 1
+            continue
+        if t.name == "CHAR":
+            c = t.text
+            if c == b"{":
+                curly += 1
+            elif c == b"(":
+                paren += 1
+            elif c == b"[":
+                square += 1
+            elif c == b"}":
+                curly = max(0, curly - 1)
+                if curly == paren == square == 0:
+                    out.append(cur)
+                    cur = []
+            elif c == b")":
+                paren = max(0, paren - 1)
+            elif c == b"]":
+                square = max(0, square - 1)
+            elif c == b";" and curly == paren == square == 0:
+                out.append(cur)
+                cur = []
+        elif t.name == "T_CLOSE_TAG" and curly == paren == square == 0:
+            out.append(cur)
+            cur = []
+    if cur:
+        out.append(cur)
+    return [s for s in out if sig(s)]
+
+
+# ------------------------------------------------------------- lint (page)
+
+def text_of(stmt):
+    return b"".join(t.text for t in stmt)
+
+
+def decode_with(data, enc):
+    return data.decode("cp949" if enc in (None, "unknown") else enc, "replace")
+
+
+def one_line(data, enc, width=78):
+    s = " ".join(decode_with(data, enc).split())
+    return s if len(s) <= width else s[:width - 1] + "…"
+
+
+def call_names(stmt):
+    """A list of (name, token). Counts `f(`, `$o->m(`, `C::m(` and `new C(` alike."""
+    s = sig(stmt)
+    out = []
+    for i, t in enumerate(s):
+        if t.name not in NAMES:
+            continue
+        if i and s[i - 1].name == "T_FUNCTION":
+            continue
+        nxt = s[i + 1] if i + 1 < len(s) else None
+        prv = s[i - 1] if i else None
+        if nxt and nxt.name == "CHAR" and nxt.text == b"(":
+            out.append((t.text.decode("ascii", "replace"), t))
+        elif prv and prv.name == "T_NEW":
+            out.append(("new " + t.text.decode("ascii", "replace"), t))
+    return out
+
+
+def split_assign(s):
+    """(left, right) around the top-level `=`. None when it is not an assignment."""
+    depth = 0
+    for i, t in enumerate(s):
+        if t.name in OPEN_CURLY:
+            depth += 1
+        elif t.name == "CHAR":
+            if t.text in (b"(", b"[", b"{"):
+                depth += 1
+            elif t.text in (b")", b"]", b"}"):
+                depth -= 1
+            elif t.text == b"=" and depth == 0:
+                return s[:i], s[i + 1:]
+    return None
+
+
+def base_var(s):
+    for t in s:
+        if t.name == "T_VARIABLE":
+            return t.text.decode("ascii", "replace")
+    return None
+
+
+def arithmetic_in(s):
+    for t in s:
+        if t.name in COMPARE or t.name in ARITH_TOK:
+            return True
+        if t.name == "CHAR" and t.text in ARITH_CHR:
+            return True
+    return False
+
+
+def swap_names(text, swap_re):
+    """Names the swap-point call itself uses. Counting those as 'a call outside the allow
+    list' would make a page violate because of the very swap point it has."""
+    out = set()
+    for m in swap_re.finditer(text):
+        out |= {w.lower() for w in re.findall(r"\w+", m.group(0))}
+    return out
+
+
+def hard_reasons(stmt, allowed, in_include, exempt=()):
+    """Things outside the swap point regardless of statement kind. Only the first reason is written."""
+    reasons = []
+    s = sig(stmt)
+    for t in s:
+        if t.name in CONTROL:
+            reasons.append(f"control structure ({t.name})")
+            break
+    for t in s:
+        if t.name in STRINGS and SQL_WORDS.search(t.text):
+            kw = SQL_WORDS.search(t.text).group(1).decode()
+            reasons.append(f"SQL keyword inside a string ({kw})")
+            break
+    for t in s:
+        if t.name == "T_GLOBAL" or (t.name == "T_VARIABLE" and t.text == b"$GLOBALS"):
+            reasons.append("writes to a global")
+            break
+    if not in_include and arithmetic_in(s):
+        reasons.append("arithmetic or comparison (computation goes inside the swap point)")
+    if not in_include:
+        for name, t in call_names(stmt):
+            bare = name.lower().replace("new ", "")
+            if bare not in allowed and bare not in exempt:
+                reasons.append(f"call outside the allow list: {name}()")
+                break
+    return reasons
+
+
+def is_parse(lhs, rhs, allowed):
+    """Is the right side only a read of request input plus its cast or default?"""
+    if not lhs or not rhs or lhs[0].name != "T_VARIABLE":
+        return False
+    has_super = any(t.name == "T_VARIABLE"
+                    and t.text.decode("ascii", "replace") in SUPERGLOBALS
+                    for t in rhs)
+    calls = [n for n, _ in call_names(rhs)]
+    if any(n.lower().replace("new ", "") not in allowed for n in calls):
+        return False
+    if arithmetic_in(sig(rhs)):
+        return False
+    return bool(has_super or calls
+                or any(t.name in CASTS or t.name in FREE_CALLS for t in rhs))
+
+
+def is_bind(lhs, rhs, swap_var):
+    if not swap_var or not lhs or lhs[0].name != "T_VARIABLE":
+        return False
+    return any(t.name == "T_VARIABLE"
+               and t.text.decode("ascii", "replace") == swap_var for t in rhs)
+
+
+def is_view_bind(lhs, view_re):
+    """A screen-wiring assignment unrelated to the swap point, judged **only by the name on the left**.
+
+    Why the shape of the right-hand side is not accepted instead is the whole point of this
+    function. `$navSelected = 'notice'` and `$aParam['limit'] = 10` are indistinguishable as
+    tokens, yet the first is a screen constant read by an included header, with nothing for the
+    swap point to take, while the second is a domain value that must go into it. Allowing literal
+    assignments by shape lets the second through in silence, and that is exactly the violation
+    this linter exists to catch. So what is widened is the name, not the shape, and only names stated in the config are accepted.
+    """
+    if view_re is None or not lhs or lhs[0].name != "T_VARIABLE":
+        return False
+    name = base_var(lhs)
+    return bool(name and view_re.search(name))
+
+
+def classify(raw_file, stmts, cfg, where):
+    guards = compile_many(need(cfg, "swap.guardIdioms", where), "swap.guardIdioms")
+    swap_re = compile_one(need(cfg, "swap.callPattern", where),
+                          "swap.callPattern")
+    tpl_re = compile_one(need(cfg, "swap.templateIncludePattern", where),
+                         "swap.templateIncludePattern")
+    # Optional key. The real binding in this tree is not an include but a template **object**
+    # (`new Template` -> `set()` -> `fetch()`). While only includes were considered, those three
+    # lines were all caught as violations, and a violation list mixed with real violations is unreadable.
+    # Without it only the include-based verdict remains - not a silent narrowing, but a statement
+    # that the tree has no template object.
+    render_pat = opt(cfg, "swap.templateRenderPattern", None)
+    render_re = (compile_one(render_pat, "swap.templateRenderPattern")
+                 if render_pat else None)
+    # Optional key. The names of screen-wiring variables - values read by an included header or
+    # template, with nothing for the swap point to take, so they do not disappear from the page
+    # even after extraction. Not accepting them makes "zero violations" an unreachable exit
+    # condition, and a person then retreats to the weaker condition of counting "nine that were
+    # already there" by hand. Without it this verdict does not exist at all - narrowing is the default.
+    view_pat = opt(cfg, "swap.viewVarPattern", None)
+    view_re = (compile_one(view_pat, "swap.viewVarPattern")
+               if view_pat else None)
+    allowed = {str(c).lower() for c in need(cfg, "swap.allowedCalls", where)}
+
+    rows, swap_var, prev_kind = [], None, None
+
+    # Pass 1: find the swap-point call first. The bind verdict needs its result variable.
+    texts = [text_of(s) for s in stmts]
+    shown = []
+    for st in stmts:
+        v = sig(st)
+        shown.append(raw_file[v[0].off:v[-1].off + len(v[-1].text)] if v
+                     else text_of(st))
+    for stmt, raw in zip(stmts, texts):
+        if swap_re.search(raw.decode("utf-8", "replace")) or swap_re.search(
+                raw.decode("cp949", "replace")):
+            parts = split_assign(sig(stmt))
+            if parts:
+                swap_var = base_var(parts[0])
+            break
+
+    for stmt, raw, disp in zip(stmts, texts, shown):
+        s = sig(stmt)
+        line = s[0].line if s else stmt[0].line
+        kind, reason = None, ""
+        as_text = raw.decode("utf-8", "replace")
+        as_legacy = raw.decode("cp949", "replace")
+
+        if all(t.name == "T_INLINE_HTML" for t in s):
+            rows.append((line, "violation", disp, "the page emits HTML directly"))
+            prev_kind = "violation"
+            continue
+
+        if any(g.search(as_text) or g.search(as_legacy) for g in guards):
+            kind = "guard"
+        elif prev_kind == "guard" and len(s) <= 2 and s[0].name == "T_EXIT":
+            kind = "guard"                       # a bare exit after a guard
+        else:
+            in_include = any(t.name in INCLUDES for t in s)
+            exempt = (swap_names(as_text, swap_re)
+                      | swap_names(as_legacy, swap_re))
+            hard = hard_reasons(stmt, allowed, in_include, exempt)
+            if in_include and not hard:
+                kind = "template" if (tpl_re.search(as_text)
+                                      or tpl_re.search(as_legacy)) else "include"
+            elif not hard and (swap_re.search(as_text) or swap_re.search(as_legacy)):
+                kind = "call"
+            elif render_re is not None and (render_re.search(as_text)
+                                            or render_re.search(as_legacy)):
+                # This comes **after** the swap-point call verdict. Put it before and a render
+                # regex that is even slightly wide swallows the swap-point call as a template,
+                # and lint then says "zero swap-point calls" - as an absence, not a violation.
+                kind = "template"
+            elif hard:
+                kind, reason = "violation", hard[0]
+            else:
+                parts = split_assign(s)
+                lhs, rhs = parts if parts else (None, None)
+                if parts and is_parse(lhs, rhs, allowed):
+                    kind = "parse"
+                elif parts and is_bind(lhs, rhs, swap_var):
+                    kind = "bind"
+                elif parts and is_view_bind(lhs, view_re):
+                    kind = "bind"
+                elif len(s) >= 2 and s[0].name == "T_STRING" \
+                        and s[0].text == b"extract" and swap_var \
+                        and any(t.name == "T_VARIABLE"
+                                and t.text.decode("ascii", "replace") == swap_var
+                                for t in s):
+                    kind = "bind"
+                else:
+                    kind = "violation"
+                    reason = ("not one of the allowed shapes "
+                              "(outside include, guard, parse, call, bind, template)")
+        rows.append((line, kind, disp, reason))
+        prev_kind = kind
+    return rows
+
+
+def cmd_lint(path, cfg, where, as_json):
+    php_bin = opt(cfg, "tooling.phpBinary", "php")
+    raw, toks = tokenize(path, php_bin)
+    enc = detect(raw) or "unknown"
+    rows = classify(raw, statements(toks), cfg, where)
+    swap = sum(1 for _, k, _, _ in rows if k == "call")
+    bad = [r for r in rows if r[1] == "violation"]
+    if swap != 1:
+        bad.append((0, "violation", b"",
+                    f"there are {swap} swap-point calls - there must be exactly one"))
+    nlines = raw.count(b"\n") + 1
+
+    if as_json:
+        json.dump({
+            "file": os.path.abspath(path), "encoding": enc, "lines": nlines,
+            "swapCalls": swap, "violations": len(bad),
+            "statements": [{"line": l, "kind": k,
+                            "text": one_line(t, enc, 200), "reason": r}
+                           for l, k, t, r in rows],
+        }, sys.stdout, ensure_ascii=False, indent=2)
+        print()
+    else:
+        print(f"# {path}  [{enc}, {nlines} lines · {len(rows)} statements] "
+              f" call {swap} · violations {len(bad)}")
+        for l, k, t, r in rows:
+            head = f"{l:>5}  {k:<10} {one_line(t, enc)}"
+            print(head + (f"\n{'':>7}└ {r}" if r else ""))
+        for l, k, t, r in bad:
+            if l == 0:
+                print(f"{'':>5}  {k:<10} (whole file)\n{'':>7}└ {r}")
+    sys.stdout.flush()
+    print(f"# violations {len(bad)} / statements {len(rows)} - a violation is a statement outside the swap point",
+          file=sys.stderr)
+    return 1 if bad else 0
+
+
+# --------------------------------------------------------- lint --template
+
+def cmd_lint_template(path, cfg, strict):
+    php_bin = opt(cfg, "tooling.phpBinary", "php")
+    raw, toks = tokenize(path, php_bin)
+    enc = detect(raw) or "unknown"
+    s = sig(toks)
+    counts = {"if": 0, "else": 0, "foreach": 0, "for": 0, "while": 0,
+              "switch": 0, "ternary": 0}
+    rows = []
+    for i, t in enumerate(s):
+        if t.name == "T_IF" or t.name == "T_ELSEIF":
+            counts["if"] += 1
+            cond = []
+            depth = 0
+            for u in s[i + 1:]:
+                if u.name == "CHAR" and u.text == b"(":
+                    depth += 1
+                    if depth == 1:
+                        continue
+                elif u.name == "CHAR" and u.text == b")":
+                    depth -= 1
+                    if depth == 0:
+                        break
+                if depth:
+                    cond.append(u)
+            suspect = arithmetic_in(cond)
+            rows.append((t.line, t.name.lower()[2:],
+                         "suspected rule" if suspect else ""))
+        elif t.name in ("T_ELSE",):
+            counts["else"] += 1
+            rows.append((t.line, "else", ""))
+        elif t.name in ("T_FOREACH", "T_FOR", "T_WHILE", "T_SWITCH"):
+            counts[t.name.lower()[2:]] += 1
+            rows.append((t.line, t.name.lower()[2:], ""))
+        elif t.name == "CHAR" and t.text == b"?":
+            counts["ternary"] += 1
+            rows.append((t.line, "ternary", "suspected rule"))
+        elif t.name in TERNARY:
+            counts["ternary"] += 1
+            rows.append((t.line, "??", ""))
+    suspects = [r for r in rows if r[2]]
+    print(f"# {path}  [{enc}, {raw.count(b"\n") + 1} lines · {len(toks)} tokens]"
+          f"  control structures {len(rows)} · suspected rules {len(suspects)}")
+    for line, kind, note in rows:
+        print(f"{line:>5}  {kind:<8} {note}")
+    sys.stdout.flush()
+    print("# " + " · ".join(f"{k} {v}" for k, v in counts.items() if v),
+          file=sys.stderr)
+    print("# suspected rule = the condition carries a comparison or arithmetic. This is the line the checker reads.",
+          file=sys.stderr)
+    return 1 if (strict and suspects) else 0
+
+
+# ----------------------------------------------------------------- hash/check
+
+def find_bodies(toks, symbol):
+    """[(class, name, start_off, end_off, start_line, end_line)] - the ones whose name matches."""
+    want_cls, _, want_fn = symbol.rpartition("::")
+    s = sig(toks)
+    out = []
+    stack = []          # [(kind, name, depth_at_open)]
+    pending_cls = None
+    depth = 0
+    i = 0
+    while i < len(s):
+        t = s[i]
+        if t.name in ("T_CLASS", "T_INTERFACE", "T_TRAIT"):
+            nxt = s[i + 1] if i + 1 < len(s) else None
+            pending_cls = nxt.text.decode("ascii", "replace") \
+                if nxt and nxt.name in NAMES else None
+        elif t.name == "T_FUNCTION":
+            nxt = s[i + 1] if i + 1 < len(s) else None
+            if nxt and nxt.name == "CHAR" and nxt.text == b"&":
+                nxt = s[i + 2] if i + 2 < len(s) else None
+            if nxt and nxt.name in NAMES:
+                name = nxt.text.decode("ascii", "replace")
+                cls = stack[-1][1] if stack else ""
+                j, d = i + 1, 0
+                open_tok = None
+                while j < len(s):
+                    u = s[j]
+                    if u.name == "CHAR" and u.text == b"(":
+                        d += 1
+                    elif u.name == "CHAR" and u.text == b")":
+                        d -= 1
+                    elif d == 0 and u.name == "CHAR" and u.text == b"{":
+                        open_tok = u
+                        break
+                    elif d == 0 and u.name == "CHAR" and u.text == b";":
+                        break            # abstract method - no body
+                    j += 1
+                if open_tok is not None:
+                    k, bd = j, 0
+                    close_tok = None
+                    while k < len(s):
+                        u = s[k]
+                        if u.name in OPEN_CURLY or (u.name == "CHAR" and u.text == b"{"):
+                            bd += 1
+                        elif u.name == "CHAR" and u.text == b"}":
+                            bd -= 1
+                            if bd == 0:
+                                close_tok = u
+                                break
+                        k += 1
+                    if close_tok is not None and name == want_fn \
+                            and (not want_cls or want_cls == cls):
+                        out.append((cls, name, open_tok.off,
+                                    close_tok.off + len(close_tok.text),
+                                    open_tok.line, close_tok.line))
+        if t.name in OPEN_CURLY or (t.name == "CHAR" and t.text == b"{"):
+            depth += 1
+            if pending_cls:
+                stack.append(("class", pending_cls, depth))
+                pending_cls = None
+        elif t.name == "CHAR" and t.text == b"}":
+            if stack and stack[-1][2] == depth:
+                stack.pop()
+            depth -= 1
+        i += 1
+    return out
+
+
+# The first clause of a body_digest() failure is what the `check` report prints in its
+# one-line column. Both the writer and the reader of that clause use this literal.
+SEPARATOR = " - "
+
+
+def body_digest(path, symbol, php_bin):
+    """(sha256, byte count, [start line, end line], class) - (None, reason) when not found."""
+    raw, toks = tokenize(path, php_bin)
+    found = find_bodies(toks, symbol)
+    if not found:
+        return None, f"could not find the body of {symbol} in {path}"
+    if len(found) > 1:
+        names = ", ".join(f"{c or '(global)'}::{n}@{a}" for c, n, _, _, a, _ in found)
+        return None, (f"{path} has {len(found)} of {symbol}{SEPARATOR}{names}. "
+                      "Narrow it with Class::method.")
+    cls, name, a, b, la, lb = found[0]
+    body = raw[a:b]
+    return {"sha256": hashlib.sha256(body).hexdigest(), "bytes": len(body),
+            "lines": [la, lb], "class": cls}, None
+
+
+def hashes_path(cfg, given, where):
+    if given:
+        return os.path.abspath(given)
+    name = opt(cfg, "swap.hashesFile", None)
+    if not name:
+        die(f"{where} has no legacy.swap.hashesFile and no --hashes either. "
+            "There is no way to know where to record the hash.")
+    return os.path.abspath(name)
+
+
+def load_hashes(path):
+    try:
+        with open(path, encoding="utf-8") as fh:
+            data = json.load(fh)
+    except (OSError, ValueError) as exc:
+        die(f"{path} could not be read: {exc}")
+    if not isinstance(data.get("hashes"), dict):
+        die(f"{path} has no hashes object.")
+    return data
+
+
+def cmd_hash(path, symbol, cfg, where, given):
+    php_bin = opt(cfg, "tooling.phpBinary", "php")
+    if not os.path.isfile(path):
+        die(f"{path} is not a file")
+    info, err = body_digest(path, symbol, php_bin)
+    if err:
+        die(err)
+    pf = hashes_path(cfg, given, where)
+    data = {"hashes": {}}
+    if os.path.isfile(pf):
+        data = load_hashes(pf)
+    key = f"{os.path.abspath(path)}::{symbol}"
+    old = data["hashes"].get(key)
+    data["hashes"][key] = {
+        "file": os.path.abspath(path), "symbol": symbol,
+        "sha256": info["sha256"], "bytes": info["bytes"],
+        "lines": info["lines"],
+        "recorded": datetime.datetime.now().astimezone().isoformat(timespec="seconds"),
+    }
+    os.makedirs(os.path.dirname(pf) or ".", exist_ok=True)
+    with open(pf, "w", encoding="utf-8") as fh:
+        json.dump(data, fh, ensure_ascii=False, indent=2, sort_keys=True)
+        fh.write("\n")
+    verb = "updated" if old else "recorded"
+    print(f"{symbol}  {info['sha256'][:16]}…  {info['bytes']} bytes  "
+          f"lines {info['lines'][0]}–{info['lines'][1]}  → {pf} ({verb})")
+    if old and old.get("sha256") != info["sha256"]:
+        print(f"# differs from the previous hash {old['sha256'][:16]}…. Confirm this is a "
+              "re-record after the body legitimately changed.", file=sys.stderr)
+    return 0
+
+
+def cmd_check(cfg, where, given):
+    php_bin = opt(cfg, "tooling.phpBinary", "php")
+    pf = hashes_path(cfg, given, where)
+    if not os.path.isfile(pf):
+        die(f"{pf} does not exist. Record the body first with phpmove hash.")
+    data = load_hashes(pf)
+    hashes = data["hashes"]
+    if not hashes:
+        die(f"{pf} holds no recorded body - having nothing to check is not the same as passing.")
+    changed, ok = [], 0
+    for key, entry in sorted(hashes.items()):
+        path, symbol = entry.get("file"), entry.get("symbol")
+        if not path or not symbol:
+            die(f"{key} in {pf} has no file/symbol.")
+        if not os.path.isfile(path):
+            changed.append((symbol, path, "the file does not exist"))
+            continue
+        info, err = body_digest(path, symbol, php_bin)
+        if err:
+            # SEPARATOR is the literal body_digest() builds that message with. Writing it
+            # twice is how this broke once: the message was reworded to a different dash and
+            # this split quietly became a no-op, so the whole multi-sentence error landed in
+            # a one-line column instead of its first clause.
+            changed.append((symbol, path, err.split(SEPARATOR)[0]))
+            continue
+        if info["sha256"] != entry.get("sha256"):
+            changed.append((symbol, path,
+                            f"the body changed ({entry.get('bytes')}→{info['bytes']} bytes, "
+                            f"{entry.get('sha256', '')[:12]}… → {info['sha256'][:12]}…)"))
+        else:
+            ok += 1
+    print(f"# {pf}  {len(hashes)} recorded · unchanged {ok} · changed {len(changed)}")
+    for symbol, path, why in changed:
+        print(f"  {symbol}  {path}\n      └ {why}")
+    if changed:
+        print("# the legacy body must not change by even one byte. It is the control side "
+              "of the dual run.", file=sys.stderr)
+    return 1 if changed else 0
+
+
+# ------------------------------------------------------------------ callers
+
+HIT_RE = re.compile(r"^\s+(\S+):(\d+):\s?(.*)$")
+FILE_RE = re.compile(r"^\s+(\S+)$")
+
+
+def run_phpgrep(args, proj, label):
+    env = dict(os.environ)
+    env.pop("PHP_LEGACY_ROOT", None)
+    if proj:
+        env["CLAUDE_PROJECT_DIR"] = proj
+    t0 = time.time()
+    try:
+        p = subprocess.run([sys.executable, PHPGREP] + args,
+                           capture_output=True, timeout=300, env=env)
+    except FileNotFoundError:
+        die(f"{PHPGREP} not found. phpmove callers searches only through phpgrep.")
+    except subprocess.TimeoutExpired:
+        die(f"phpgrep took over 300s ({label}) - could not search (timeout)")
+    out = p.stdout.decode("utf-8", "replace")
+    err = p.stderr.decode("utf-8", "replace")
+    secs = time.time() - t0
+    if p.returncode == 2:
+        die(f"phpgrep could not search ({label}):\n{err.strip()}")
+    if p.returncode == 1 and "no hits" not in err:
+        # phpgrep always prints "no hits" when the count is zero. An exit 1 without it
+        # means the search never finished. Reading that as zero produces "no callers",
+        # which is precisely the answer this tool exists to prevent.
+        die(f"phpgrep did not confirm zero ({label}) — "
+            f"a failed search cannot be told from zero hits:\n{(err or out).strip()[:300]}")
+    print(f"# phpgrep {label}: exit {p.returncode} · {secs:.1f}s", file=sys.stderr)
+    return p.returncode, out, err
+
+
+def phpgrep_project(cfg_path, proj):
+    """Make phpgrep see the **same** config as phpmove. (project directory, temp copy).
+
+    phpgrep reads only `<proj>/.claude/config/workspace.json`. When `--config` is not that file,
+    the two tools see different configs, and the caller list that comes back is not "the answer
+    under this config" but **the answer for a different tree**. Such an answer cannot be trusted
+    whether it is zero or three, so a temp project holding a copy of the config is built and passed.
+    """
+    if not cfg_path:
+        return proj, None
+    canonical = os.path.join(proj, CONFIG_REL) if proj else None
+    if canonical and os.path.abspath(canonical) == os.path.abspath(cfg_path):
+        return proj, None
+    tmp = tempfile.mkdtemp(prefix="phpmove-cfg-")
+    d = os.path.join(tmp, ".claude", "config")
+    os.makedirs(d, exist_ok=True)
+    shutil.copyfile(cfg_path, os.path.join(d, "workspace.json"))
+    return tmp, tmp
+
+
+def cmd_callers(symbol, cfg, where, allow_files, scope, proj, cfg_path=None):
+    if not re.match(r"^\w+$", symbol):
+        die(f"the symbol name looks wrong: {symbol!r}")
+    root = tree_root_of(cfg, where)
+    allow = {os.path.abspath(a) for a in allow_files}
+    scope_args = ["--scope", scope] if scope else []
+    proj, tmp = phpgrep_project(cfg_path, proj)
+
+    hits = []
+    for pat in (f"->{symbol}(", f"::{symbol}("):
+        rc, out, _ = run_phpgrep(scope_args + ["--", pat], proj, pat)
+        if rc != 0:
+            continue
+        for line in out.splitlines():
+            m = HIT_RE.match(line)
+            if m:
+                hit = (os.path.join(root, m.group(1)), int(m.group(2)),
+                       m.group(3))
+                if (hit[0], hit[1]) not in {(h[0], h[1]) for h in hits}:
+                    hits.append(hit)
+
+    defs = set()
+    if hits:
+        rc, out, _ = run_phpgrep(scope_args + ["-l", "--", f"function {symbol}"],
+                                 proj, f"function {symbol}")
+        if rc == 0:
+            for line in out.splitlines():
+                m = FILE_RE.match(line)
+                if m and not line.startswith("##"):
+                    defs.add(os.path.join(root, m.group(1)))
+
+    outside = [h for h in hits
+               if os.path.abspath(h[0]) not in allow and h[0] not in defs]
+    print(f"# symbol {symbol} · allowed files {len(allow)} · defining files {len(defs)}"
+          + (f" · scope {scope}" if scope else ""))
+    for path, line, text in sorted(outside):
+        print(f"   {os.path.relpath(path, root)}:{line}: {text}")
+    if tmp:
+        shutil.rmtree(tmp, ignore_errors=True)
+    sys.stdout.flush()
+    if not outside:
+        print(f"# the search finished. Of {len(hits)} hits, 0 callers outside the swap point "
+              "- not 'could not find' but 'there are none'.", file=sys.stderr)
+        return 0
+    print(f"# callers outside the swap point: {len(outside)} / "
+          f"{len({h[0] for h in outside})} files. These callers do not follow the swap "
+          "- create a swap point for them, or record them as excluded from scope.", file=sys.stderr)
+    return 1
+
+
+# ------------------------------------------------------------------- fields
+# This check prevents one failure - the rule is in the backend, the field is in the schema, a
+# unit test pins that field, and the rule list says `이관됨`, yet **the adapter never requests
+# that field, so nobody reads it**. The shape lint looks at the page shape, the body hash looks
+# at immutability, the caller sweep looks at calls outside the swap point, and none of them looks
+# at "which of the backend's fields does the adapter request". The second page failed its
+# completeness pass in exactly that blind spot, and what the checker found was the set difference
+# of two file lists - which is to say, a computation. Leaving computation to a person defers the finding to Phase 7.
+#
+# The scope verdict forks. `requested but absent from the schema` is a violation regardless of
+# scope - that request fails on the server or comes back empty. `exposed but not requested` is
+# different. The schema is per area and the adapter is one page, so a field another page uses
+# being exposed is normal. So this side looks only at fields of **types the adapter actually
+# selected into** (excluding root types - the schema's `Query` holds the entry point of every
+# page), and when a rule list is given it narrows further to fields cited by `이관됨` rows.
+# A check that produces many false violations gets switched off, and a switched-off check is
+# worse than no check. What was narrowed away is not hidden but counted and printed as held.
+
+SCHEMA_EXT = (".graphqls", ".graphql", ".gql", ".sdl")
+BUILTIN_SCALARS = {"Int", "Float", "String", "Boolean", "ID"}
+DEF_HEAD = re.compile(
+    r"(?m)^[ \t]*(?:extend[ \t]+)?"
+    r"(schema|type|interface|input|enum|union|scalar)\b[ \t]*([A-Za-z_]\w*)?")
+HEREDOC = re.compile(
+    r"<<<[ \t]*(['\"]?)([A-Za-z_]\w*)\1[ \t]*\r?\n(.*?)\r?\n[ \t]*\2\b",
+    re.S | re.M)
+GQL_HEAD = re.compile(
+    r"^\s*(?:(query|mutation|subscription)\b[ \t]*([A-Za-z_]\w*)?"
+    r"[ \t]*(?:\([^)]*\))?[ \t]*)?\{", re.S)
+SEL_TOKEN = re.compile(r"\.\.\.|[{}:,]|[A-Za-z_]\w*|\S")
+SEL_CLEAN = re.compile(r"^[\sA-Za-z_0-9{},:$%]*$")
+CITE = re.compile(r"[A-Za-z_]\w*")
+MD_RULE = re.compile(r"^\s*\|[\s:|-]+\|\s*$")
+
+
+def _match_brace(s, i):
+    """The position of the `}` matching s[i] when it is `{`. -1 when there is none."""
+    depth = 0
+    while i < len(s):
+        if s[i] == "{":
+            depth += 1
+        elif s[i] == "}":
+            depth -= 1
+            if depth == 0:
+                return i
+        i += 1
+    return -1
+
+
+def _drop_spans(s, opener, closer):
+    """Delete a balanced span whole. Needed so an argument parenthesis is not mistaken for a field."""
+    out, depth = [], 0
+    for ch in s:
+        if ch == opener:
+            depth += 1
+        elif ch == closer and depth:
+            depth -= 1
+        elif not depth:
+            out.append(ch)
+    return "".join(out)
+
+
+def _strip_sdl(text):
+    """Strip description strings and `#` comments. Counting a field inside a comment invents a field."""
+    text = re.sub(r'"""(?:.|\n)*?"""', " ", text)
+    text = re.sub(r'"(?:\\.|[^"\n])*"', " ", text)
+    return re.sub(r"(?m)#.*$", "", text)
+
+
+def _sdl_fields(body):
+    """From a `{...}` body: (field name -> type name with its wrappers stripped)."""
+    out = {}
+    for line in _drop_spans(body, "(", ")").splitlines():
+        line = line.split("@")[0].split("=")[0]
+        m = re.match(r"\s*([A-Za-z_]\w*)\s*:\s*([\[\]!\s\w]+)", line)
+        if m:
+            parts = re.sub(r"[\[\]!]", " ", m.group(2)).split()
+            if parts:
+                out[m.group(1)] = parts[0]
+    return out
+
+
+class Schema:
+    def __init__(self):
+        self.fields = {}        # type -> {field: type}
+        self.kinds = {}         # type -> object|interface|input|enum|union|scalar
+        self.roots = {"query": "Query", "mutation": "Mutation",
+                      "subscription": "Subscription"}
+        self.files = []
+
+    def kind_of(self, name):
+        if name in self.kinds:
+            return self.kinds[name]
+        return "scalar" if name in BUILTIN_SCALARS else "unknown"
+
+
+def parse_schema_dir(d):
+    """(Schema, None), or (None, why it could not be found). A reason means exit 3."""
+    if not os.path.isdir(d):
+        return None, (f"no schema directory: {d} - this is not 'no mismatch' "
+                      "but could-not-check.")
+    files = []
+    for root, _dirs, names in os.walk(d):
+        for n in sorted(names):
+            if n.lower().endswith(SCHEMA_EXT):
+                files.append(os.path.join(root, n))
+    if not files:
+        return None, (f"{d} holds no schema file ({' '.join(SCHEMA_EXT)}). "
+                      "Zero types cannot be the same answer as zero violations.")
+    sc = Schema()
+    sc.files = sorted(files)
+    for path in sc.files:
+        try:
+            with open(path, "rb") as fh:
+                raw = fh.read()
+        except OSError as exc:
+            return None, f"{path} could not be read: {exc}"
+        text = _strip_sdl(raw.decode("utf-8", "replace"))
+        for m in DEF_HEAD.finditer(text):
+            kw, name = m.group(1), m.group(2)
+            nxt = DEF_HEAD.search(text, m.end())
+            b = text.find("{", m.end())
+            body = None
+            if b != -1 and (nxt is None or b < nxt.start()):
+                e = _match_brace(text, b)
+                if e == -1:
+                    return None, (f"could not find the closing brace in the body of "
+                                  f"{kw} {name or ''} in {path} - this is a parse failure.")
+                body = text[b + 1:e]
+            if kw == "schema":
+                for k, v in re.findall(
+                        r"(query|mutation|subscription)\s*:\s*([A-Za-z_]\w*)",
+                        body or ""):
+                    sc.roots[k] = v
+                continue
+            if not name:
+                continue
+            if kw in ("type", "interface", "input"):
+                sc.kinds.setdefault(
+                    name, {"type": "object"}.get(kw, kw))
+                sc.fields.setdefault(name, {}).update(_sdl_fields(body or ""))
+            else:
+                sc.kinds.setdefault(name, kw)
+    if not sc.fields:
+        return None, (f"not a single type could be extracted from the {len(sc.files)} schema "
+                      f"files in {d} - a parse failure, not 'no fields'.")
+    return sc, None
+
+
+# ---------------------------------------------------------- adapter queries
+
+def _line_of(text, pos):
+    return text.count("\n", 0, pos) + 1
+
+
+def _mask(text, a, b):
+    """Delete [a,b) while preserving the line count. Needed so a heredoc body is not read as a string twice."""
+    span = "".join("\n" if c == "\n" else " " for c in text[a:b])
+    return text[:a] + span + text[b:]
+
+
+def _php_strings(text):
+    """A list of (start, end, body, quote). Strings inside comments are not counted."""
+    out = []
+    i, n = 0, len(text)
+    while i < n:
+        c = text[i]
+        if c in "'\"":
+            j, buf = i + 1, []
+            while j < n:
+                if text[j] == "\\" and j + 1 < n:
+                    buf.append(text[j + 1])
+                    j += 2
+                    continue
+                if text[j] == c:
+                    break
+                buf.append(text[j])
+                j += 1
+            if j >= n:
+                break
+            out.append((i, j + 1, "".join(buf), c))
+            i = j + 1
+            continue
+        if c == "#" or (c == "/" and text[i + 1:i + 2] == "/"):
+            nl = text.find("\n", i)
+            i = n if nl == -1 else nl + 1
+            continue
+        if c == "/" and text[i + 1:i + 2] == "*":
+            end = text.find("*/", i)
+            i = n if end == -1 else end + 2
+            continue
+        i += 1
+    return out
+
+
+def adapter_candidates(path):
+    """(candidate list, encoding). A candidate is (line, body, shape). Decoding is done by `_phpenc`
+    - this tree mixes CP949 and UTF-8 per file, and reading it as fixed utf-8 makes a query in an
+    adapter containing Korean disappear in silence."""
+    text, enc = read_text(path)
+    cands = []
+    for m in HEREDOC.finditer(text):
+        cands.append((_line_of(text, m.start()), m.group(3),
+                      "nowdoc" if m.group(1) == "'" else "heredoc"))
+    for m in list(HEREDOC.finditer(text))[::-1]:
+        text = _mask(text, m.start(), m.end())
+
+    strs = _php_strings(text)
+    i = 0
+    while i < len(strs):
+        start, _end, body, _quote = strs[i]
+        parts = [body]
+        j = i
+        while j + 1 < len(strs):
+            gap = text[strs[j][1]:strs[j + 1][0]]
+            if "." not in gap or ";" in gap:
+                break
+            if re.search(r"[$(]", gap):
+                # A variable or a call sits between the strings. Leave a signal that the field
+                # set is not static so the parser catches it - concatenating in silence builds
+                # a field list that does not exist.
+                parts.append(" $dyn ")
+            j += 1
+            parts.append(strs[j][2])
+        cands.append((_line_of(text, start), "".join(parts), "string"))
+        i = j + 1
+    return cands, enc
+
+
+def looks_gql(body):
+    m = GQL_HEAD.match(body)
+    if not m:
+        return False
+    if m.group(1):
+        return True     # if it says `query` or `mutation`, there is an obligation to answer
+    # With no keyword, treat it as a query only when it has a nested selection and is **as clean
+    # as a selection set**. Treating a JSON string with nested `{` as a query floods the output
+    # with `unsupported shape`, and once exit 3 is common nobody trusts that code. Interpolation
+    # markers (`$`, `%`) are left in - those are a shape the parser must report with a reason.
+    sel = re.sub(r"@\w+", " ", _drop_spans(body[m.end() - 1:], "(", ")"))
+    return body.count("{") >= 2 and SEL_CLEAN.match(sel) is not None
+
+
+def parse_gql(body):
+    """(operation, tree), or (None, why it is unsupported). A node is {'name','children'}."""
+    m = GQL_HEAD.match(body)
+    if not m:
+        return None, "the query head is unrecognizable"
+    op = m.group(1) or "query"
+    sel = _drop_spans(body[m.end() - 1:], "(", ")")
+    sel = re.sub(r"@\w+", " ", sel)
+    if "$" in sel or "%" in sel:
+        return None, ("a variable interpolation or placeholder sits where a selected field goes "
+                      "- the field set is not statically determined")
+    root, last, depth = [], None, 0
+    stack = [root]
+    for tok in (t.group(0) for t in SEL_TOKEN.finditer(sel)):
+        if tok == "...":
+            return None, "a query using a fragment (`...`) is not handled"
+        if tok == "{":
+            depth += 1
+            if depth == 1:
+                continue
+            if last is None:
+                return None, "the selection set is not attached to a field"
+            stack.append(last["children"])
+            last = None
+            continue
+        if tok == "}":
+            depth -= 1
+            if depth < 0:
+                return None, "there are more closing braces than opening ones"
+            if depth >= 1:
+                stack.pop()
+            last = None
+            continue
+        if tok == ",":
+            continue
+        if tok == ":":
+            # It is an alias. The node just built carries the alias name, so drop it and take the next name.
+            if last is None or not stack[-1]:
+                return None, "no field name after the alias"
+            stack[-1].pop()
+            last = None
+            continue
+        if re.fullmatch(r"[A-Za-z_]\w*", tok):
+            if depth == 0:
+                        return None, f"a name outside a selection set: {tok}"
+            node = {"name": tok, "children": []}
+            stack[-1].append(node)
+            last = node
+            continue
+        return None, f"unsupported token {tok!r}"
+    if depth != 0:
+        return None, "the braces were never closed"
+    if not root:
+        return None, "not a single field was selected"
+    return op, root
+
+
+# ------------------------------------------------------------------- rules
+
+def _md_rules(text):
+    """A Markdown-table rule list -> a list of (ID, migration state, note). None when no table is found."""
+    lines = text.splitlines()
+    for i, line in enumerate(lines):
+        if not line.lstrip().startswith("|"):
+            continue
+        head = [c.strip().strip("`") for c in line.strip().strip("|").split("|")]
+        state_ix = next((k for k, h in enumerate(head)
+                         if h.startswith("이관")), None)
+        if "ID" not in head or state_ix is None:
+            continue
+        if i + 1 >= len(lines) or not MD_RULE.match(lines[i + 1]):
+            continue
+        id_ix = head.index("ID")
+        note_ix = next((k for k, h in enumerate(head)
+                        if h.startswith("비고")), None)
+        rows = []
+        for body in lines[i + 2:]:
+            if not body.lstrip().startswith("|"):
+                break
+            cells = [c.strip() for c in body.strip().strip("|").split("|")]
+            if len(cells) <= max(id_ix, state_ix):
+                continue
+            note = (cells[note_ix]
+                    if note_ix is not None and note_ix < len(cells) else "")
+            rows.append((cells[id_ix].strip("`"), cells[state_ix], note))
+        if rows:
+            return rows
+    return None
+
+
+def read_rules(path):
+    """(rows, format). A row is (id, migration state, note). Stops with exit 3 when unreadable."""
+    if not os.path.isfile(path):
+        die(f"the rule list {path} does not exist - the cited fields could not be checked.", 3)
+    text, _enc = read_text(path)
+    first = next((l for l in text.splitlines() if l.strip()), "")
+    if first.lstrip().startswith("{"):
+        rows = []
+        for i, line in enumerate(text.splitlines(), 1):
+            if not line.strip():
+                continue
+            try:
+                doc = json.loads(line)
+            except ValueError as exc:
+                die(f"could not read {path}:{i} as one JSONL line: {exc}", 3)
+            if not isinstance(doc, dict):
+                die(f"{path}:{i} is not an object - one line of the rule list is one rule.", 3)
+            rows.append((str(doc.get("id") or f"line {i}"),
+                         str(doc.get("state") or ""),
+                         str(doc.get("note") or "")))
+        if not rows:
+            die(f"not a single rule row could be read from {path}.", 3)
+        return rows, "jsonl"
+    rows = _md_rules(text)
+    if rows is None:
+        die(f"could not recognize a rule list in {path} - it is neither JSONL nor a Markdown "
+            "table with `ID` and `이관` columns. This cannot be told from zero cited fields, so it stops.", 3)
+    return rows, "markdown"
+
+
+def cited_names(state, note, pool):
+    """Of the names cited by `이관됨` rows, **only those that are schema field names**.
+
+    The rule list's `이관됨:<symbol>` is a backend symbol and the note column is prose. Treating
+    every identifier inside them as a violation candidate floods the output with false violations.
+    Intersecting with schema field names leaves only "the rule list cited a field the schema exposes".
+    """
+    out = set()
+    tail = state.split(":", 1)[1] if ":" in state else ""
+    for blob in (tail, note):
+        for name in CITE.findall(blob or ""):
+            if name in pool:
+                out.add(name)
+    return out
+
+
+# ------------------------------------------------------------ the fields command
+
+def backend_schema_dir(cfg_path, proj, where):
+    """The consumer of `backend.graphqlSchemaDir`. Without it, say which key is missing and stop."""
+    path = cfg_path or (os.path.join(proj, CONFIG_REL) if proj else None)
+    if not path or not os.path.isfile(path):
+        die("there is no --schema and no config file either. "
+            "`backend.graphqlSchemaDir` cannot be read.")
+    try:
+        with open(path, encoding="utf-8") as fh:
+            raw = json.load(fh)
+    except (OSError, ValueError) as exc:
+        die(f"{path} could not be read: {exc}")
+    be = raw.get("backend") or {}
+    rel, root = be.get("graphqlSchemaDir"), be.get("root")
+    if not rel:
+        die(f"{where} has no backend.graphqlSchemaDir and no --schema either. "
+            "Fill it in from the backend section of workspace.example.json - an answer given "
+            "without this value is a narrowed answer, indistinguishable from zero violations.")
+    if os.path.isabs(os.path.expanduser(rel)):
+        return os.path.expanduser(rel)
+    if not root:
+        die(f"backend.graphqlSchemaDir in {where} is relative but there is no backend.root. "
+            "The schema directory cannot be resolved to an absolute path.")
+    return os.path.join(os.path.abspath(os.path.expanduser(root)), rel)
+
+
+def cmd_fields(schema_dir, adapters, rules, where, cfg_path, proj):
+    if not adapters:
+        die("usage: phpmove fields [--schema <dir>] --adapter <file…> "
+            "[--rules <rule list>]")
+    for a in adapters:
+        if not os.path.isfile(a):
+            die(f"--adapter {a} is not a file")
+    schema_dir = (os.path.abspath(os.path.expanduser(schema_dir)) if schema_dir
+                  else backend_schema_dir(cfg_path, proj, where))
+    sc, why = parse_schema_dir(schema_dir)
+    if sc is None:
+        die(why, 3)
+
+    docs, unsupported, nofind = [], [], []
+    for path in adapters:
+        cands, enc = adapter_candidates(path)
+        gql = [c for c in cands if looks_gql(c[1])]
+        if not gql:
+            nofind.append((path, enc, len(cands)))
+            continue
+        for line, body, shape in gql:
+            op, tree = parse_gql(body)
+            if op is None:
+                unsupported.append((path, line, shape, tree))
+            else:
+                docs.append((path, line, shape, enc, op, tree))
+
+    requested, missing, unknown_t = {}, [], []
+
+    def walk(nodes, tname, path, line):
+        for nd in nodes:
+            name = nd["name"]
+            if name.startswith("__"):           # meta fields such as __typename
+                continue
+            fields = sc.fields.get(tname) or {}
+            if name not in fields:
+                missing.append((f"{tname}.{name}", path, line,
+                                "requested by the adapter but absent from the schema"))
+                continue
+            requested.setdefault(tname, set()).add(name)
+            child = fields[name]
+            kind = sc.kind_of(child)
+            if nd["children"]:
+                if kind in ("object", "interface"):
+                    walk(nd["children"], child, path, line)
+                elif kind == "union":
+                    unsupported.append((path, line, "union",
+                                        f"{tname}.{name} is a union, so an inline "
+                                        "fragment is required - not handled"))
+                else:
+                    missing.append((f"{tname}.{name}", path, line,
+                                    f"there is a sub-selection but {child} is a leaf"))
+            else:
+                if kind in ("object", "interface"):
+                    missing.append((f"{tname}.{name}", path, line,
+                                    f"object type {child} with no sub-selection"))
+                elif kind == "unknown":
+                    unknown_t.append(f"{tname}.{name}: {child}")
+
+    roots_used = set()
+    for path, line, shape, enc, op, tree in docs:
+        rootname = sc.roots.get(op) or op.capitalize()
+        if rootname not in sc.fields:
+            die(f"the schema has no {op} root type {rootname} - "
+                f"the query at {path}:{line} cannot be attached to the schema.", 3)
+        roots_used.add(rootname)
+        walk(tree, rootname, path, line)
+
+    # Types the adapter selected into (root excluded). This is the scope of `exposed but not requested`.
+    sel_types = {t for t in requested if t not in roots_used}
+    # The closure following object fields from those types. This is the candidate name pool for
+    # rule-list citations - it also catches a sub-type never entered because the adapter did not request the parent.
+    pool_types, seen = set(), set()
+    stack = list(sel_types)
+    while stack:
+        t = stack.pop()
+        if t in seen or t in roots_used:
+            continue
+        seen.add(t)
+        if t not in sc.fields:
+            continue
+        pool_types.add(t)
+        for ft in sc.fields[t].values():
+            if sc.kind_of(ft) in ("object", "interface"):
+                stack.append(ft)
+    pool = {}
+    for t in sorted(pool_types):
+        for f in sc.fields.get(t, {}):
+            pool.setdefault(f, []).append(t)
+    req_all = {f for s in requested.values() for f in s}
+
+    rows, lfmt = ([], None)
+    if rules:
+        rows, lfmt = read_rules(rules)
+    migrated = [r for r in rows if r[1].startswith("이관됨")]
+    rules_bad = []
+    for rid, state, note in migrated:
+        for name in sorted(cited_names(state, note, pool)):
+            if name not in req_all:
+                rules_bad.append((rid, name, ",".join(pool[name])))
+
+    exposed, held = [], 0
+    for t in sorted(sel_types):
+        for f in sorted(set(sc.fields.get(t, {})) - requested.get(t, set())):
+            if rules and f not in {n for _r, n, _o in rules_bad} \
+                    and not any(f in cited_names(s, nt, pool)
+                                for _i, s, nt in migrated):
+                held += 1
+                continue
+            exposed.append(f"{t}.{f}")
+
+    # ------------------------------------------------------------- output
+    print(f"# schema {schema_dir}  [{len(sc.files)} files · "
+          f"{len(sc.fields)} types · roots {'·'.join(sorted(roots_used)) or 'none'}]")
+    for path, line, shape, enc, op, tree in docs:
+        print(f"# query {path}:{line}  [{shape}, {enc}]  {op}")
+    for t in sorted(requested):
+        print(f"   requested  {t}: " + ", ".join(sorted(requested[t])))
+    if rules:
+        print(f"# rule list {rules}  [{lfmt} · {len(rows)} rows · 이관됨 "
+              f"{len(migrated)}]")
+    if unknown_t:
+        print("# note - fields whose type has no definition in the schema directory: "
+              + ", ".join(sorted(set(unknown_t))[:8]))
+
+    if exposed:
+        print("# violation · exposed but not requested - the adapter does not ask for this field")
+        for name in exposed:
+            print(f"   {name}")
+    if missing:
+        print("# violation · requested but absent from the schema - this request receives no value")
+        for name, path, line, why2 in missing:
+            print(f"   {name}\n       └ {os.path.basename(path)}:{line} · {why2}")
+    if rules_bad:
+        print("# violation · a field cited by an `이관됨` row is not requested - the rule moved and "
+              "nobody reads that value")
+        for rid, name, owner in rules_bad:
+            print(f"   {rid}  {name}  (a field of {owner})")
+    if nofind:
+        print("# not found · no query found in the adapter")
+        for path, enc, n in nofind:
+            print(f"   {path}  [{enc}, {n} string candidates]")
+    if unsupported:
+        print("# not found · unsupported query shape")
+        for path, line, shape, why2 in unsupported:
+            print(f"   {os.path.basename(path)}:{line} [{shape}]\n       └ {why2}")
+    sys.stdout.flush()
+
+    if held:
+        print(f"# {held} held, narrowed by rule-list scope - a field the rule list does not cite "
+              "may belong to another page.", file=sys.stderr)
+    if nofind or unsupported:
+        print(f"# could not find - no query {len(nofind)} · unsupported shape "
+              f"{len(unsupported)}. This answer is incomplete, so it is not 'no mismatch'.",
+              file=sys.stderr)
+        return 3
+    bad = len(exposed) + len(missing) + len(rules_bad)
+    if bad:
+        print(f"# {bad} violations - exposed-not-requested {len(exposed)} · requested-absent "
+              f"{len(missing)} · rule-cited-not-requested {len(rules_bad)}", file=sys.stderr)
+        return 1
+    print(f"# {len(docs)} queries requested {len(req_all)} fields with 0 mismatches "
+          "- not 'could not find' but 'there are none'.", file=sys.stderr)
+    if not rules:
+        print("# this verdict ran without a rule list. The check on fields cited by `이관됨` "
+              "rows needs --rules.", file=sys.stderr)
+    return 0
+
+
+# --------------------------------------------------------------------- cli
+
+def main(argv):
+    if not argv or argv[0] in ("-h", "--help"):
+        print(__doc__.strip(), file=sys.stderr if not argv else sys.stdout)
+        return 2 if not argv else 0
+
+    cfg_path = None
+    rest = []
+    i = 0
+    while i < len(argv):
+        a = argv[i]
+        if a == "--config":
+            i += 1
+            if i >= len(argv):
+                die("--config has no path after it")
+            cfg_path = argv[i]
+        elif a in ("-h", "--help"):
+            print(__doc__.strip())
+            return 0
+        else:
+            rest.append(a)
+        i += 1
+
+    if not rest:
+        die("no subcommand. It must be one of lint · hash · check · callers · fields.")
+    cmd, args = rest[0], rest[1:]
+    cfg, where, proj = load_cfg(cfg_path)
+
+    if cmd == "lint":
+        as_json = "--json" in args
+        strict = "--strict" in args
+        tpl = "--template" in args
+        files = [a for a in args if not a.startswith("-")]
+        if len(files) != 1:
+            die(f"lint takes one file (got {len(files)})")
+        if not os.path.isfile(files[0]):
+            die(f"{files[0]} is not a file")
+        if tpl:
+            return cmd_lint_template(files[0], cfg, strict)
+        return cmd_lint(files[0], cfg, where, as_json)
+
+    if cmd == "hash":
+        given = None
+        pos = []
+        j = 0
+        while j < len(args):
+            if args[j] == "--hashes":
+                j += 1
+                given = args[j] if j < len(args) else die("--hashes has no path after it")
+            elif args[j].startswith("-"):
+                die(f"unknown option {args[j]}")
+            else:
+                pos.append(args[j])
+            j += 1
+        if len(pos) != 2:
+            die("usage: phpmove hash <file.php> <function|Class::method>")
+        return cmd_hash(pos[0], pos[1], cfg, where, given)
+
+    if cmd == "check":
+        given = None
+        j = 0
+        while j < len(args):
+            if args[j] == "--hashes":
+                j += 1
+                given = args[j] if j < len(args) else die("--hashes has no path after it")
+            else:
+                die(f"unknown option {args[j]}")
+            j += 1
+        return cmd_check(cfg, where, given)
+
+    if cmd == "callers":
+        allow, scope, pos = [], None, []
+        j = 0
+        while j < len(args):
+            if args[j] == "--allow-file":
+                j += 1
+                allow.append(args[j] if j < len(args) else die("--allow-file has no value after it"))
+            elif args[j] == "--scope":
+                j += 1
+                scope = args[j] if j < len(args) else die("--scope has no value after it")
+            elif args[j].startswith("-"):
+                die(f"unknown option {args[j]}")
+            else:
+                pos.append(args[j])
+            j += 1
+        if len(pos) != 1:
+            die("usage: phpmove callers <symbol> [--allow-file f]... [--scope dir]")
+        return cmd_callers(pos[0], cfg, where, allow, scope, proj, cfg_path)
+
+    if cmd == "fields":
+        schema, rules, adapters = None, None, []
+        j = 0
+        while j < len(args):
+            a = args[j]
+            if a in ("--schema", "--rules"):
+                j += 1
+                if j >= len(args):
+                    die(f"{a} has no path after it")
+                if a == "--schema":
+                    schema = args[j]
+                else:
+                    rules = args[j]
+            elif a == "--adapter":
+                # Takes several files. Stops at the next flag.
+                j += 1
+                if j >= len(args) or args[j].startswith("-"):
+                    die("--adapter has no file after it")
+                while j < len(args) and not args[j].startswith("-"):
+                    adapters.append(args[j])
+                    j += 1
+                continue
+            elif a.startswith("-"):
+                die(f"unknown option {a}")
+            else:
+                die(f"positional arguments are not accepted: {a} - files come after --adapter")
+            j += 1
+        return cmd_fields(schema, adapters, rules, where, cfg_path, proj)
+
+    die(f"unknown subcommand {cmd!r}. It must be one of lint · hash · check · callers · fields.")
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv[1:]))

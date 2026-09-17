@@ -1,35 +1,35 @@
 #!/usr/bin/env python3
-"""dualrun-report - 이중 실행 로그를 읽어 '예상 밖 불일치' 만 남긴다.
+"""dualrun-report - read the dual-run log and leave only the 'unexpected mismatches'.
 
     dualrun-report [--log <path>] [--ignore ignore.json] [--since <ISO>]
-                   [--experiment <name>] [--as-fixtures <out.json>] [--json]
-                   [--fixture-limit 3] [--config <file>]
+                   [--experiment <name>] [--as-regressions <out.json>] [--json]
+                   [--regression-limit 3] [--config <file>]
 
-    --log <path>          JSONL 로그. 기본값은 legacy.dualRun.logPath
-    --ignore <file>       의도수정 행에서 만든 예상 불일치 목록
-    --since <ISO>         이 시각 이후의 줄만 (예: 2026-09-08T12:00:00+09:00)
-    --experiment <name>   실험 하나만
-    --as-fixtures <out>   예상 밖 샘플을 회귀 픽스처 JSON 으로 저장
-    --fixture-limit N     서명 하나당 저장·표시할 샘플 수 (기본 3)
-    --json                기계용 요약
-    --config <file>       workspace.json 위치
+    --log <path>          the JSONL log. Defaults to legacy.dualRun.logPath
+    --ignore <file>       the expected-mismatch list built from 의도수정 rows
+    --since <ISO>         only lines after this time (e.g. 2026-09-08T12:00:00+09:00)
+    --experiment <name>   one experiment only
+    --as-regressions <out>   save unexpected samples as a regression-input JSON
+    --regression-limit N     samples saved and shown per signature (default 3)
+    --json                a machine-readable summary
+    --config <file>       where workspace.json is
 
-**이 도구가 답하는 질문 하나.** "레거시와 새 백엔드가 다르게 답한 입력이 있는가, 그리고
-그 다름이 우리가 미리 승인한 것인가." 승인한 다름은 `ignore.json` 에 있다 — 원장의
-`의도수정` 행에서 만들어지고, 행 ID 를 달고 있다. 그러니 이 도구의 출력에서 볼 것은
-**예상 밖** 숫자 하나이고, Phase 6 의 루프는 그 숫자가 0 이 될 때 닫힌다.
+**The one question this tool answers.** "Is there an input where legacy and the new backend
+answered differently, and was that difference approved in advance?" Approved differences are in
+`ignore.json` - built from the rule list's `의도수정` rows and carrying a row ID. So what to read
+in this tool's output is one number, **unexpected**, and the Phase 6 loop closes when it is 0.
 
-**불일치를 건별로 나열하지 않고 `diff_keys` 서명으로 묶는다.** 같은 규칙 하나가 빠지면
-불일치는 수백 건이 나오지만 서명은 하나다. 사람이 읽어야 하는 것은 건수가 아니라 서명의
-가짓수이고, 그것이 곧 "몇 개의 규칙이 어긋났는가" 다.
+**Mismatches are grouped by their `diff_keys` signature rather than listed one by one.** One
+missing rule produces hundreds of mismatches but a single signature. What a person needs to read
+is not the count but the number of signatures, which is "how many rules diverged".
 
-**깨진 줄이 하나라도 있으면 exit 2 다.** 이 도구의 초록은 "예상 밖 0건"인데, 읽지 못한
-줄이 있으면 그것을 말할 수 없다. 못 읽은 것을 없는 것으로 세면 이 도구가 막으려는 실패를
-이 도구가 저지르는 것이다. 로그는 헬퍼가 `LOCK_EX` 로 한 줄씩 붙이므로 깨진 줄은
-정상 상태가 아니다 — 디스크가 찼거나, 두 프로세스가 다른 경로를 같은 파일로 알고 있거나,
-컨테이너 마운트가 어긋난 것이다.
+**One broken line anywhere is exit 2.** Green from this tool means "zero unexpected", and with a
+line it could not read it cannot say that. Counting the unread as absent would make this tool
+commit the very failure it exists to prevent. The helper appends one line at a time under
+`LOCK_EX`, so a broken line is not a normal state - the disk filled, two processes know different
+paths as the same file, or a container mount is wrong.
 
-종료 코드: 0 예상 밖 0건 · 1 예상 밖 있음 · 2 로그 없음·비었음·깨짐·설정 없음 (stderr 에 이유).
+Exit codes: 0 zero unexpected · 1 there are some · 2 log missing, empty, broken, or no config (reason on stderr).
 """
 import datetime
 import json
@@ -54,7 +54,7 @@ def note(msg):
     sys.stderr.write(f"{TOOL}: {msg}\n")
 
 
-# --------------------------------------------------------------- 설정
+# --------------------------------------------------------------- config
 
 def config_path(explicit):
     if explicit:
@@ -71,8 +71,8 @@ def config_path(explicit):
             d = None if parent == d else parent
         root = d
     if not root:
-        die(f"{CONFIG_REL} 을 찾지 못했다. --config 로 위치를 주거나 --log 로 로그를 "
-            "직접 가리켜라.")
+        die(f"could not find {CONFIG_REL}. Give its location with --config, or point at the log "
+            "directly with --log.")
     return os.path.join(root, CONFIG_REL)
 
 
@@ -82,7 +82,7 @@ def load_config(explicit):
         with open(path, encoding="utf-8") as fh:
             return json.load(fh), path
     except (OSError, ValueError) as exc:
-        die(f"{path} 를 읽을 수 없다: {exc}")
+        die(f"{path} could not be read: {exc}")
 
 
 def opt(cfg, dotted, default=None):
@@ -97,34 +97,34 @@ def opt(cfg, dotted, default=None):
 # --------------------------------------------------------------- ignore
 
 def load_ignore(path):
-    """(rules, 문제). 규칙 하나라도 형태가 어긋나면 멈춘다 — 조용히 안 맞는 규칙은
-    '예상 밖'을 만들고, 그 예상 밖은 사람을 잘못된 곳으로 보낸다."""
+    """(rules, problem). Stops when even one rule has the wrong shape - a rule that quietly does
+    not match creates an 'unexpected', and that unexpected sends a person to the wrong place."""
     try:
         with open(path, encoding="utf-8") as fh:
             doc = json.load(fh)
     except (OSError, ValueError) as exc:
-        die(f"ignore 파일을 읽을 수 없다 ({path}): {exc}")
+        die(f"the ignore file could not be read ({path}): {exc}")
     rules = doc.get("rules") if isinstance(doc, dict) else None
     if not isinstance(rules, list):
-        die(f"{path} 에 rules 배열이 없다. "
-            '{"rules":[{"experiment":"<name>","keys":["total"],"ledger":"R-17",'
-            '"reason":"의도수정: ..."}]} 형태여야 한다.')
+        die(f"{path} has no rules array. "
+            '{"rules":[{"experiment":"<name>","keys":["total"],"rules":"R-17",'
+            '"reason":"의도수정: ..."}]} is the required shape.')
     for i, r in enumerate(rules):
         if not isinstance(r, dict):
-            die(f"{path} rules[{i}] 가 객체가 아니다")
+            die(f"{path} rules[{i}] is not an object")
         keys = r.get("keys")
         if not isinstance(keys, list) or not keys or any(
                 not isinstance(k, str) for k in keys):
-            die(f"{path} rules[{i}] 의 keys 가 문자열 배열이 아니다")
-        if not r.get("ledger"):
-            note(f"{path} rules[{i}] 에 ledger 가 없다 — 예상 불일치는 원장의 "
-                 "의도수정 행에서 나와야 한다. 행 ID 없이 무시하면 근거가 사라진다.")
+            die(f"keys in {path} rules[{i}] is not an array of strings")
+        if not r.get("rules"):
+            note(f"{path} rules[{i}] names no rule row - an expected mismatch has to come from an "
+                 "의도수정 row in the rule list. Ignoring without a row ID loses the evidence.")
     return rules
 
 
 def key_covered(diff_key, rule_key):
-    """규칙 키가 diff 키를 덮는가. `items[].title` 은 `items[0].title` 을 덮고,
-    `items` 는 그 아래 전부를 덮는다."""
+    """Does the rule key cover the diff key? `items[].title` covers `items[0].title`, and
+    `items` covers everything below it."""
     rx = re.escape(rule_key).replace(r"\[\]", r"\[\d+\]").replace(r"\[\*\]", r"\[\d+\]")
     try:
         return re.fullmatch(rx + r"([.\[].*)?", diff_key) is not None
@@ -133,7 +133,7 @@ def key_covered(diff_key, rule_key):
 
 
 def matching_rules(rec, rules):
-    """(전부 덮였는가, 관련 규칙 목록). diff_keys 가 비면 덮은 것으로 보지 않는다."""
+    """(was everything covered, the related rules). Empty diff_keys is never treated as covered."""
     keys = [k for k in (rec.get("diff_keys") or []) if isinstance(k, str)]
     exp = rec.get("experiment")
     related, covered = [], set()
@@ -148,16 +148,16 @@ def matching_rules(rec, rules):
     return (bool(keys) and covered == set(keys)), related
 
 
-# --------------------------------------------------------------- 로그
+# --------------------------------------------------------------- the log
 
 REQUIRED = ("experiment", "equal")
 
 
 def read_log(path, since, only_exp):
-    """(records, 통계). 못 읽은 줄을 세어 돌려준다 — 건너뛰고 조용히 있지 않는다."""
+    """(records, stats). Counts the lines it could not read - it does not skip them in silence."""
     if not os.path.isfile(path):
-        die(f"로그가 없다: {path}. 토글이 dual 이었는지, 로그 경로가 컨테이너 안으로 "
-            "마운트돼 있는지 확인해라. 빈 로그와 '로그가 없다'는 다른 사실이다.")
+        die(f"no log: {path}. Check the toggle was dual and that the log path is mounted into "
+            "the container. An empty log and 'no log' are different facts.")
     recs, broken_json, broken_schema, skipped_mode, filtered = [], [], [], 0, 0
     total_lines = 0
     with open(path, "rb") as fh:
@@ -211,7 +211,7 @@ def short(value, width=88):
     return s if len(s) <= width else s[:width - 1] + "…"
 
 
-# --------------------------------------------------------------- 본체
+# --------------------------------------------------------------- main
 
 def main():
     o = parse_opts(sys.argv[1:])
@@ -221,24 +221,24 @@ def main():
         cfg, cfg_file = load_config(o.get("--config"))
         log = opt(cfg, "legacy.dualRun.logPath")
         if not log:
-            die(f"{cfg_file} 에 legacy.dualRun.logPath 가 없다. 그 키를 채우거나 "
-                "--log 로 경로를 직접 줘라.")
+            die(f"{cfg_file} has no legacy.dualRun.logPath. Fill that key in, or give the path "
+                "directly with --log.")
     log = os.path.abspath(os.path.expanduser(log))
 
     since = None
     if o.get("--since"):
         since = parse_ts(o["--since"])
         if since is None:
-            die(f"--since 를 ISO 시각으로 읽지 못했다: {o['--since']!r}")
+            die(f"could not read --since as an ISO time: {o['--since']!r}")
 
     rules = load_ignore(os.path.expanduser(o["--ignore"])) if o.get("--ignore") else []
-    limit = int(o.get("--fixture-limit") or 3)
+    limit = int(o.get("--regression-limit") or 3)
     recs, stat = read_log(log, since, o.get("--experiment"))
 
     per = {}
     groups = {}
     for rec in recs:
-        exp = rec.get("experiment") or "<이름 없음>"
+        exp = rec.get("experiment") or "<unnamed>"
         s = per.setdefault(exp, {"total": 0, "equal": 0, "mismatch": 0, "expected": 0,
                                  "unexpected": 0, "candidate_error": 0, "truncated": 0,
                                  "control_ms": 0, "candidate_ms": 0})
@@ -259,10 +259,10 @@ def main():
             continue
         s["unexpected"] += 1
         sig = tuple(sorted(k for k in (rec.get("diff_keys") or [])
-                           if isinstance(k, str))) or ("<diff_keys 없음>",)
-        g = groups.setdefault((exp, sig), {"count": 0, "samples": [], "ledger": set()})
+                           if isinstance(k, str))) or ("<no diff_keys>",)
+        g = groups.setdefault((exp, sig), {"count": 0, "samples": [], "rules": set()})
         g["count"] += 1
-        g["ledger"] |= {r["ledger"] for r in related if r.get("ledger")}
+        g["rules"] |= {r["rules"] for r in related if r.get("rules")}
         if len(g["samples"]) < limit:
             g["samples"].append(rec)
 
@@ -277,25 +277,25 @@ def main():
             "filtered_out": stat["filtered"], "non_dual_rows": stat["skipped_mode"],
             "experiments": per, "unexpected": unexpected,
             "groups": [{"experiment": e, "signature": list(sig), "count": g["count"],
-                        "ledger": sorted(g["ledger"]),
+                        "rules": sorted(g["rules"]),
                         "samples": [sample_of(r) for r in g["samples"]]}
                        for (e, sig), g in sorted(groups.items())],
         }, ensure_ascii=False, indent=2))
     else:
         report(log, recs, stat, per, groups, rules, since)
 
-    if o.get("--as-fixtures"):
-        write_fixtures(o["--as-fixtures"], groups)
+    if o.get("--as-regressions"):
+        write_regressions(o["--as-regressions"], groups)
 
     if broken:
-        die(f"읽지 못한 줄이 {broken}개 있다 "
-            f"(JSON 아님: {stat['broken_json'][:10]}, 스키마 어긋남: "
-            f"{stat['broken_schema'][:10]}). 그 줄들이 무엇이었는지 모르는 채로는 "
-            "'예상 밖 0건'을 말할 수 없다.")
+        die(f"there are {broken} lines that could not be read "
+            f"(not JSON: {stat['broken_json'][:10]}, schema mismatch: "
+            f"{stat['broken_schema'][:10]}). Without knowing what those lines were, "
+            "'zero unexpected' cannot be stated.")
     if not recs:
-        die(f"조건에 맞는 줄이 하나도 없다 ({log}, 전체 {stat['lines']}줄, "
-            f"걸러진 줄 {stat['filtered']}개). 로그가 비었다면 토글이 PHP 에 "
-            "도달하지 않은 것이다 — 되읽기부터 확인해라.")
+        die(f"not one line matched the conditions ({log}, {stat['lines']} lines total, "
+            f"{stat['filtered']} filtered out). An empty log means the toggle never reached "
+            "PHP - start from the read-back.")
     return 1 if unexpected else 0
 
 
@@ -312,50 +312,52 @@ def report(log, recs, stat, per, groups, rules, since):
     span = [parse_ts(r.get("ts")) for r in recs]
     span = sorted(t for t in span if t)
     print(f"{TOOL}: {log}")
-    print(f"  줄 {stat['lines']} · 집계 {len(recs)} · 걸러냄 {stat['filtered']}"
-          f" · dual 아닌 줄 {stat['skipped_mode']} · 깨진 줄 "
+    print(f"  lines {stat['lines']} · counted {len(recs)} · filtered {stat['filtered']}"
+          f" · non-dual lines {stat['skipped_mode']} · broken lines "
           f"{len(stat['broken_json']) + len(stat['broken_schema'])}"
           + (f" · {span[0]:%Y-%m-%d %H:%M} ~ {span[-1]:%Y-%m-%d %H:%M}" if span else "")
           + (f" · --since {since:%Y-%m-%d %H:%M}" if since else ""))
-    print(f"  ignore 규칙 {len(rules)}개"
-          + ("" if rules else "  (없음 — 의도수정 행이 있다면 전부 예상 밖으로 잡힌다)"))
+    print(f"  {len(rules)} ignore rules"
+          + ("" if rules else "  (none - if there are 의도수정 rows, all of them are caught as unexpected)"))
 
-    print(f"\n{'실험':<34}{'총':>6}{'equal':>7}{'불일치':>8}{'예상':>7}"
-          f"{'예상밖':>8}{'예외':>6}{'절단':>6}   ms(ctl/cand)")
+    print(f"\n{'experiment':<34}{'total':>6}{'equal':>7}{'mismatch':>10}{'expected':>10}"
+          f"{'unexpected':>12}{'error':>7}{'trunc':>7}   ms(ctl/cand)")
     for exp in sorted(per):
         s = per[exp]
         n = max(s["total"], 1)
-        print(f"{exp:<34}{s['total']:>6}{s['equal']:>7}{s['mismatch']:>8}"
-              f"{s['expected']:>7}{s['unexpected']:>8}{s['candidate_error']:>6}"
-              f"{s['truncated']:>6}   {s['control_ms'] // n}/{s['candidate_ms'] // n}")
+        # These widths are the header's, one for one. They were left at the Korean widths once
+        # and every number sat up to 11 columns left of the word naming it.
+        print(f"{exp:<34}{s['total']:>6}{s['equal']:>7}{s['mismatch']:>10}"
+              f"{s['expected']:>10}{s['unexpected']:>12}{s['candidate_error']:>7}"
+              f"{s['truncated']:>7}   {s['control_ms'] // n}/{s['candidate_ms'] // n}")
 
     if not groups:
-        print("\n예상 밖 불일치 없음.")
+        print("\nNo unexpected mismatches.")
         return
-    print(f"\n예상 밖 불일치 — diff_keys 서명 {len(groups)}가지")
+    print(f"\nUnexpected mismatches - {len(groups)} diff_keys signatures")
     for i, ((exp, sig), g) in enumerate(sorted(groups.items()), 1):
-        hint = ", ".join(sorted(g["ledger"])) if g["ledger"] else "없음"
-        print(f"\n [{i}] {exp}  {g['count']}건   원장 힌트: {hint}")
-        print(f"     서명: {', '.join(sig)}")
+        hint = ", ".join(sorted(g["rules"])) if g["rules"] else "none"
+        print(f"\n [{i}] {exp}  {g['count']} hits   rule hint: {hint}")
+        print(f"     signature: {', '.join(sig)}")
         for j, rec in enumerate(g["samples"], 1):
-            print(f"     샘플 {j}  input     {short(rec.get('input'))}")
+            print(f"     sample {j}  input     {short(rec.get('input'))}")
             if rec.get("truncated"):
-                print(f"              (truncated — 본문 없이 sha 만: "
+                print(f"              (truncated - sha only, no body: "
                       f"{str(rec.get('control_sha'))[:12]} / "
                       f"{str(rec.get('candidate_sha'))[:12]})")
             else:
                 print(f"              control   {short(rec.get('control'))}")
                 print(f"              candidate {short(rec.get('candidate'))}")
             if rec.get("candidate_error"):
-                print(f"              candidate 예외 {short(rec['candidate_error'])}")
+                print(f"              candidate error {short(rec['candidate_error'])}")
             where = rec.get("caller") or rec.get("page")
             if where:
-                print(f"              호출자    {where}")
+                print(f"              caller    {where}")
 
 
-def write_fixtures(path, groups):
-    """예상 밖 샘플을 회귀 픽스처로. 서명마다 몇 건씩만 — 같은 규칙이 만든 수백 건을
-    전부 저장해도 알려주는 것은 같다."""
+def write_regressions(path, groups):
+    """Unexpected samples as regression inputs. Only a few per signature - saving all several
+    hundred produced by one rule tells you nothing more."""
     fixtures = [{"experiment": exp, "input": rec.get("input"),
                  "control": rec.get("control"), "candidate": rec.get("candidate")}
                 for (exp, _sig), g in sorted(groups.items()) for rec in g["samples"]]
@@ -363,14 +365,14 @@ def write_fixtures(path, groups):
         with open(os.path.expanduser(path), "w", encoding="utf-8") as fh:
             json.dump(fixtures, fh, ensure_ascii=False, indent=2, sort_keys=True)
     except OSError as exc:
-        die(f"픽스처를 쓸 수 없다 ({path}): {exc}")
-    note(f"픽스처 {len(fixtures)}건 → {path}")
+        die(f"the regression inputs could not be written ({path}): {exc}")
+    note(f"{len(fixtures)} regression inputs → {path}")
 
 
 def parse_opts(argv):
     flags = {"--json"}
-    valued = {"--log", "--ignore", "--since", "--experiment", "--as-fixtures",
-              "--fixture-limit", "--config"}
+    valued = {"--log", "--ignore", "--since", "--experiment", "--as-regressions",
+              "--regression-limit", "--config"}
     o, i = {}, 0
     while i < len(argv):
         a = argv[i]
@@ -383,11 +385,11 @@ def parse_opts(argv):
             continue
         if a in valued:
             if i + 1 >= len(argv):
-                die(f"{a} 에 값이 없다")
+                die(f"{a} has no value")
             o[a] = argv[i + 1]
             i += 2
             continue
-        die(f"모르는 인자 {a!r}. --help 로 쓸 수 있는 옵션을 봐라.")
+        die(f"unknown argument {a!r}. Use --help to see the available options.")
     return o
 
 

@@ -1,155 +1,124 @@
 ---
 name: php-legacy-trace
-description: 레거시 PHP 트리에서 이름이 어디서 오는지 찾는다 — 변수, 상수, 함수, 클래스, 그리고 아무 데서도 정의되지 않은 채 나타나는 템플릿 변수. 이 트리에는 선언 문법이 없어서 정의가 문법적으로 존재하지 않고, 그래서 grep 으로는 정의를 찾을 수 없다. 실제 정의가 `$X[키] = 값` 형태로 여러 줄에 흩어져 있으면 `$X =` 검색은 0건을 내고 그 0건이 "없다"로 읽힌다. 템플릿 변수는 더한데, `extract()` 가 변수로 바꿀 때까지 문자열 키로만 존재하므로 정의문 자체가 없다. "이 변수 어디서 와", "이거 누가 넣어주는 거야", "정의가 어디 있어", "이 페이지 로그인 필요해", "이 이름 어디서 정의돼", "phpwhere", "같은 이름 클래스 여러 개", "이거 누가 부르는지", "phpseam callers" 같은 질문에 쓰고, 공유되는 이름을 바꾸거나 지우기 전에도 반드시 쓴다.
+description: 레거시 PHP 트리에서 이름이 어디서 오는지 찾는다 — 변수, 상수, 함수, 클래스, 그리고 아무 데서도 정의되지 않은 채 나타나는 템플릿 변수. 이 트리에는 선언 문법이 없어서 정의가 문법적으로 존재하지 않고, 그래서 grep 으로는 정의를 찾을 수 없다. 실제 정의가 `$X[키] = 값` 형태로 여러 줄에 흩어져 있으면 `$X =` 검색은 0건을 내고 그 0건이 "없다"로 읽힌다. 템플릿 변수는 더한데, `extract()` 가 변수로 바꿀 때까지 문자열 키로만 존재하므로 정의문 자체가 없다. "이 변수 어디서 와", "이거 누가 넣어주는 거야", "정의가 어디 있어", "이 페이지 로그인 필요해", "이 이름 어디서 정의돼", "phpwhere", "같은 이름 클래스 여러 개", "이거 누가 부르는지", "phpmove callers" 같은 질문에 쓰고, 공유되는 이름을 바꾸거나 지우기 전에도 반드시 쓴다.
 ---
 
-# 레거시 트리에서 이름 추적하기
+# Tracing a name in the legacy tree
 
-`phpwhere` 는 **"이것이 어디서 정의되는가"**에 답한다. `phpgrep` 은 반대 질문인 **"누가
-이것을 쓰는가"**에 답한다. 서로 대체되지 않으므로, 보통의 추적은 둘을 함께 쓴다.
+`phpwhere` answers **"where is this defined?"**. `phpgrep` answers the opposite question, **"who uses this?"**. Neither substitutes for the other, so an ordinary trace uses both.
 
-도구는 이 프로젝트의 **`.claude/scripts/`** 에 있다. 절대경로로 부른다. 범위는 `phpgrep`
-과 똑같이 서 있는 디렉터리에서 추론되고, 추론할 수 없으면 이관 대상 서비스와 공용
-라이브러리로 떨어진다.
+The tools live in this project's **`.claude/scripts/`**. Call them by absolute path. Scope is inferred from the directory you stand in exactly as it is for `phpgrep`, falling back to the service being migrated plus the shared library when it cannot be inferred.
 
-## grep 으로 부족한 이유
+## Why grep is not enough
 
-| 무엇을 치면 | 무슨 일이 벌어지는가 |
+| What you type | What happens |
 |---|---|
-| `phpgrep '\$전역변수\s*='` | **0건.** 실제 정의가 `$전역변수['키'] = array(…)` 로 수십 줄일 때 그렇다. 0건은 "어디에도 정의되지 않았다"로 읽히고 그것은 틀렸다 |
-| `phpgrep '<이름>'` | 여러 페이지에 걸쳐 나오지만 그중 아무것도 출처가 아니다. 정작 중요한 것은 템플릿에 넘겨지는 **문자열 키**다 |
-| `phpgrep 'class <이름>'` | 파일 여러 개가 나온다. 어느 것이 로드되는지는 그 페이지의 include 순서에 달렸고, 지금 읽고 있는 파일에는 그 답이 없다 |
+| `phpgrep '\$globalVar\s*='` | **Zero hits**, when the real definition is dozens of lines of `$globalVar['key'] = array(…)`. Zero reads as "defined nowhere", and that is wrong |
+| `phpgrep '<name>'` | Hits across several pages, none of which is the source. What matters is the **string key** handed to the template |
+| `phpgrep 'class <Name>'` | Several files. Which one loads depends on that page's include order, and the file you are reading does not contain that answer |
 
-`phpwhere` 는 미리 만들어 둔 인덱스를 읽는다. 그래서 0건은 **그 범위에** 이름이 정말
-없다는 뜻이고, 검색 표현이 빗나갔다는 뜻이 아니다. 이 구분이 이 도구의 존재 이유다.
+`phpwhere` reads a pre-built index. So zero hits means the name really is absent **from that scope**, not that your search expression missed. That distinction is the reason this tool exists.
 
-## 네 가지 질문
+## Four questions
 
-### 이 이름은 어디서 정의되는가
+### Where is this name defined?
 
 ```
 phpwhere <ClassName>
 phpwhere <CONSTANT_NAME>
-phpwhere '$<전역변수>'          따옴표로 묶는다. 셸이 $ 를 먹는다
+phpwhere '$<globalVar>'         quote it; the shell eats the $
 ```
 
-클래스, 톱레벨 함수, 상수, 전역변수를 한 번의 조회로 답한다.
+Classes, top-level functions, constants and global variables are all answered in one lookup.
 
-**공유와 페이지 지역의 구분을 읽어야 한다.** 다른 파일이 `include` 하는 파일에서의 정의만
-진짜 출처다. 엔트리포인트 안의 컬럼 0 대입은 그 페이지 자신의 지역 변수이고, 실측하면 날
-전역변수 대입의 대부분이 이쪽이다. 도구는 공유 쪽을 전부 보여주고 나머지는 건수로만
-접는다.
+**Read the split between shared and page-local.** Only a definition in a file that other files `include` is a real source. A column-0 assignment inside an entry point is that page's own local variable, and measured here, most bare global-variable assignments are of that kind. The tool shows every shared one and folds the rest into a count.
 
 ```
-$<이름>  [전역변수]  정의 7곳 / 파일 6개
-  (그 밖에 페이지 지역 대입 6개 파일 — 각 페이지의 자기 변수라 출처가 아니다)
-  → 템플릿 변수이기도 하다 (extract() 로 주입되어 정의문이 없다)
-     쓰는 템플릿 8개: …
+$<name>  [global]  7 definitions / 6 files
+  (plus page-local assignments in 6 files - each page's own variable, so not a source)
+  → it is also a template variable (injected by extract(), so it has no definition statement)
+     used by 8 templates: …
 ```
 
-이 출력의 뜻은 **공유 정의가 없다**는 것이다. 그 여섯 파일을 읽으러 가지 말고 `--tpl` 로
-간다.
+What that output means is **there is no shared definition**. Do not go and read those six files; go to `--tpl`.
 
-`⚠ 공유 파일 여러 곳에 정의됨` 줄이 나오면, 지금 읽고 있는 파일만으로는 답을 정할 수
-없다는 뜻이다. 어느 것이 로드되는지는 include 순서가 정하므로 그 페이지에 `--entry` 를
-쓴다.
+A `⚠ defined in several shared files` line means the file you are reading cannot settle the answer on its own. Include order decides which one loads, so run `--entry` on that page.
 
-### 템플릿 변수는 어디서 오는가
+### Where does a template variable come from?
 
 ```
-phpwhere --tpl <파일.tpl.php>
+phpwhere --tpl <file.tpl.php>
 ```
 
-grep 이 아예 할 수 없는 것이 이것이다. `extract()` 사슬의 양쪽을 이어 붙인다 — 템플릿이
-정의 없이 쓰는 변수들과, 렌더하는 페이지가 넘기는 `set()` 키들이다.
+This is the thing grep cannot do at all. It joins the two ends of the `extract()` chain — the variables a template uses without defining, and the `set()` keys the page that renders it passes in.
 
-`⚠ set 에서 못 찾은 변수` 는 렌더러가 넘기지 않는 변수들이다. 그것들은 감싼 스코프에서
-온다 — `include` 가 호출자의 스코프를 물려받으므로 페이지 자신의 변수가 머리·꼬리
-템플릿으로 새어 들어간다. 그런 것은 맨 `phpwhere` 로 따라간다.
+`⚠ … variables not found in set` lists variables the renderer does not pass. Those come from the enclosing scope — `include` inherits the caller's scope, so a page's own variables leak into header and footer templates. Follow those with a plain `phpwhere`.
 
-`렌더하는 곳 0개` 는 `fetch('<이름>')` 호출을 못 찾았다는 뜻이다. 그 템플릿은 아마 직접
-`include` 되므로 파일명으로 `phpgrep` 한다.
+`rendered by 0` means no `fetch('<name>')` call was found. That template is probably `include`d directly, so `phpgrep` for its filename.
 
-### 이 페이지는 무엇을 끌어오고, 로그인을 요구하는가
+### What does this page pull in, and does it require a login?
 
 ```
-phpwhere --entry <파일.php>
-phpwhere --entry <파일.php> --full
+phpwhere --entry <file.php>
+phpwhere --entry <file.php> --full
 ```
 
-기본은 요약이다. 직접 include, 사슬 크기, 출력을 내는 파일, 요청을 끝낼 수 있는 파일을
-보여준다.
+The default is a summary: direct includes, the size of the chain, which files emit output, and which can end the request.
 
-**`요청중단` 은 "인증 게이트"와 같은 말이 아니다.** 그것은 `header('Location: …')` 뒤에
-`exit` 이 오는 모양을 잡는데, 그 모양은 로그인 리다이렉트이기도 하고 점검 페이지
-리다이렉트이기도 하다. 리다이렉트 대상이 함께 찍히므로 그것으로 가른다.
+**`[can end the request]` is not a synonym for "auth gate".** It catches the shape of `header('Location: …')` followed by `exit`, and that shape is both a login redirect and a maintenance-page redirect. The redirect target is printed alongside it, so use that to tell them apart.
 
-`--full` 은 요약으로 부족할 때만 붙인다. 전체 트리는 대략 열두 배 크고, 대개 정작 관심
-있는 두세 파일을 읽는 것보다 비싸다.
+Add `--full` only when the summary is not enough. The whole tree is roughly twelve times larger and is usually more expensive than just reading the two or three files you actually care about.
 
-### 공유되는 이름 중 무엇이 충돌하는가
+### Which shared names collide?
 
 ```
-phpwhere --conflicts                 네 종류 전부, 종류별 상위 몇 개
-phpwhere --conflicts classes         한 종류만, 더 많은 행
+phpwhere --conflicts                 all four kinds, a few rows per kind
+phpwhere --conflicts classes         one kind, more rows
 ```
 
-같은 이름이 공유 파일 여러 곳에 정의된 경우다. 실측하면 이 트리에는 그런 클래스 이름이
-수십 개 있고 거의 전부 공용 라이브러리 안이다. 공유되는 이름을 바꾸거나 지우기 전에
-돌리고, 평소 읽기로는 돌리지 않는다. 실제로 include 되는 파일 사이의 충돌만 센다 —
-엔트리포인트 둘이 같은 지역 변수 이름을 쓰는 것은 충돌이 아니다.
+These are names defined in several shared files at once. Measured here, this tree has dozens of such class names and nearly all of them are inside the shared library. Run it before renaming or deleting a shared name; do not run it during ordinary reading. It counts only collisions between files that are actually included — two entry points using the same local variable name is not a collision.
 
-## 답이 "정의 없음"일 때
+## When the answer is "no definition"
 
-가능성이 높은 순서로.
+In descending order of likelihood.
 
-1. **템플릿 변수다** → 출력이 그렇게 말하고 `--tpl` 을 가리킨다
-2. **범위 밖이다** → 다른 팀의 트리에 있거나, 이 체크아웃에 클론되지 않은 서비스에 있다.
-   `phpgrep --all` 로 넓힌다
-3. **런타임에 만들어진다** — `$$name`, 계산된 배열에 대한 `extract()`, `$GLOBALS[$k]`.
-   인덱스도 grep 도 이것을 볼 수 없다. 코드 경로를 읽어야 한다
-4. **인덱스가 낡았다** → 다시 만든다
+1. **It is a template variable** → the output says so and points at `--tpl`
+2. **It is out of scope** → it lives in another team's tree, or in a service not cloned into this checkout. Widen with `phpgrep --all`
+3. **It is built at runtime** — `$$name`, `extract()` over a computed array, `$GLOBALS[$k]`. Neither the index nor grep can see those. You have to read the code path
+4. **The index is stale** → rebuild it
 
-## 인덱스 관리
+## Managing the index
 
 ```
-phpindex              서 있는 서비스 + 공용 라이브러리
-phpindex --all        이관 대상 서비스 + 공용 라이브러리
-phpindex --list       무엇이 있고 언제 만들어졌는지
+phpindex              the service you are standing in, plus the shared library
+phpindex --all        the service being migrated, plus the shared library
+phpindex --list       what exists and when it was built
 ```
 
-받아온 뒤에 다시 만든다. 인덱스는 프로젝트의 `.claude/.state/index/` 에 있는 생성물이고
-런타임에 PHP 가 로드하지 않으므로, 낡은 인덱스는 조회 하나를 틀리게 하는 값이 전부다.
-**그 JSON 을 `phpv`·`cat`·Read 로 열지 않는다** — 파일 하나가 수 MB 이고 `phpwhere` 가
-유일한 제정신인 독자다.
+Rebuild after pulling. The index is a generated artifact under the project's `.claude/.state/index/` and PHP never loads it at runtime, so a stale index costs exactly one wrong lookup. **Do not open that JSON with `phpv`, `cat` or Read** — a single file is several MB and `phpwhere` is its only sane reader.
 
-재생성에 걸리는 시간은 파일시스템에 달려 있다. 보안 소프트웨어가 모든 파일 열기를 동기로
-검사하는 환경에서는 훨씬 오래 걸리므로, 낡았다고 습관적으로 다시 만들지 말고 `--list` 로
-생성 시각을 먼저 본다.
+How long a rebuild takes depends on the filesystem. Where security software inspects every file open synchronously it takes much longer, so do not rebuild out of habit — check the build time with `--list` first.
 
-## "누가 부르는가" 가 이음새 질문일 때
+## When "who calls it" is a swap-point question
 
 ```
-phpseam callers <symbol> [--allow-file <이음새 파일>]... [--scope <서비스>]
+phpmove callers <symbol> [--allow-file <swap file>]… [--scope <service>]
 ```
 
-`phpgrep '<이름>('` 도 호출부를 찾는다. 다른 것은 **판정**이다. `callers` 는 이음새 파일과 그 이름의 정의 파일을 빼고 남은 것만 나열하고, 하나라도 남으면 exit 1 로 끝낸다. 즉 "이 메서드를 이음새 **밖에서** 부르는 곳이 있는가"라는 예·아니오 질문의 형태로 답한다 — 스왑이 끝났는지, 감사가 통과할 수 있는지가 그 답 하나에 걸려 있다.
+`phpgrep '<name>('` also finds call sites. What is different is the **verdict**. `callers` lists what remains after excluding the swap-point file and the file defining that name, and exits 1 if anything remains. That is, it answers the yes-or-no question "does anything call this method **outside** the swap point?" — and whether the swap is finished, and whether the completeness pass can succeed, hang on that one answer.
 
-`->이름(` 과 `::이름(` 을 둘 다 본다. 한 축만 세면 정적 호출이나 인스턴스 호출이 통째로 빠지고, 그 누락은 0건과 똑같은 모양으로 도착한다.
+It looks at both `->name(` and `::name(`. Count one axis only and static or instance calls drop out entirely, and that omission arrives in exactly the same shape as zero hits.
 
-**0건과 "검색이 답하지 못했다"를 구분한다.** 안에서 `phpgrep` 을 쓰므로 검색이 답할 수 없었으면 그 exit 2 를 그대로 전파한다. 이 질문에서는 그 구분이 전부다 — "부르는 곳이 없다"는 스왑 완료 판정의 근거이고, "못 찾았다"는 아무 근거도 아니다.
+**It distinguishes zero from "the search could not answer".** It uses `phpgrep` internally, so when the search could not answer it propagates that exit 2 unchanged. On this question that distinction is everything — "nothing calls it" is the basis for declaring the swap complete, and "could not find out" is the basis for nothing.
 
-정의가 어디인지는 여전히 `phpwhere` 다. 두 도구는 같은 이름의 두 방향이고, 스왑 전에는 대개 둘 다 필요하다.
+Where the definition is remains `phpwhere`'s job. The two tools are two directions on the same name, and before a swap you usually need both.
 
-## 할 수 없는 것
+## What it cannot do
 
-- **같은 상수를 다른 값으로 두 번 `define` 한 것은 정적으로 풀리지 않는다.** 어느 것이
-  이기는지는 실행 순서가 정한다. 인덱스는 전부 보여주고 하나를 고르지 않는다
-- 런타임에 만들어지는 이름은 보이지 않는다 (위와 같다)
-- `if` 분기 안의 정의는 위치로 나열되지만, 그것이 실제로 실행되는지는 정적으로 알 수 없다
+- **The same constant `define`d twice with different values does not resolve statically.** Execution order decides which wins. The index shows all of them and picks none
+- Names built at runtime are invisible (as above)
+- Definitions inside an `if` branch are listed by position, but whether that branch actually executes cannot be known statically
 
-## 이 체크아웃에서 실제로 측정한 값
+## Values actually measured in this checkout
 
-충돌하는 이름의 실제 개수, 페이지 지역 대입의 비율, 사슬 크기 같은 실측치는
-`references/measured.local.md` 에 있다. 그 파일은 실제 심볼명을 그대로 적으므로 추적되지
-않는다. 없으면 위의 판독 규칙은 수치 없이도 그대로 성립한다.
+Measured figures — the real number of colliding names, the proportion of page-local assignments, chain sizes — are in `references/measured.local.md`. That file names real symbols verbatim, so it is not tracked. If it is absent, the reading rules above hold without the numbers.

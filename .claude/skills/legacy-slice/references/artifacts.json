@@ -1,8 +1,0 @@
-{
-  "00-seam.md":       {"phase": 1, "writer": "php-seam-extractor"},
-  "01-ledger.md":     {"phase": 2, "writer": "php-behavior-analyst"},
-  "02-design.md":     {"phase": 3, "writer": "backend-slice-designer"},
-  "03-dualrun.md":    {"phase": 5, "writer": "php-swap-engineer"},
-  "04-audit.md":      {"phase": 7, "writer": "domain-boundary-auditor"},
-  "05-domain-doc.md": {"phase": 8, "writer": "domain-scribe"}
-}
